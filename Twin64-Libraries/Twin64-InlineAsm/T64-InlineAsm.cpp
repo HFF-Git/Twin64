@@ -1251,7 +1251,7 @@ void parseExpr( Expr *rExpr ) {
 //----------------------------------------------------------------------------------------
 inline void depositInstrFieldS( T64Instr *instr, int bitpos, int len, T64Word value ) {
     
-    if ( isInRangeForInstrBitField( value, len )) 
+    if ( isInRangeForInstrBitFieldS( value, len )) 
         depositInstrField( instr, bitpos, len, value );
     else throw ( ERR_IMM_VAL_RANGE );
 }
@@ -1264,35 +1264,29 @@ inline void depositInstrFieldU( T64Instr *instr, int bitpos, int len, uint32_t v
 }
 
 inline void depositInstrImm13( T64Instr *instr, int val ) {
-    
-    if ( isInRangeForInstrBitField( val, 13 )) depositInstrField( instr, 0, 13, val );
-    else throw ( ERR_IMM_VAL_RANGE );
+
+    depositInstrFieldS( instr, 0, 13, val );
 }
 
 inline void depositInstrScaledImm13( T64Instr *instr, int val ) {
    
     val = val >> extractInstrFieldU( *instr, 13, 2 );
-    
-    if ( isInRangeForInstrBitField( val, 13 )) depositInstrField( instr, 0, 13, val );
-    else throw ( ERR_IMM_VAL_RANGE );
+    depositInstrFieldS( instr, 0, 13, val );
 }
 
 inline void depositInstrImm15( T64Instr *instr, int val ) {
-    
-    if ( isInRangeForInstrBitField( val, 15 )) depositInstrField( instr, 0, 15, val );
-    else throw ( ERR_IMM_VAL_RANGE );
+
+    depositInstrFieldS( instr, 0, 15, val );
 }
 
 inline void depositInstrImm19( T64Instr *instr, int val ) {
-    
-    if ( isInRangeForInstrBitField( val, 19 )) depositInstrField( instr, 0, 19, val );
-    else throw ( ERR_IMM_VAL_RANGE );
+
+    depositInstrFieldS( instr, 0, 19, val );
 }
 
 inline void depositInstrImm20U( T64Instr *instr, uint32_t val ) {
-    
-    if ( isInRangeForInstrBitFieldU( val, 20 )) depositInstrField( instr, 0, 20, val );
-    else throw ( ERR_IMM_VAL_RANGE );
+
+    depositInstrFieldU( instr, 0, 20, val );
 }
 
 inline bool hasDataWidthFlags( uint32_t instrFlags ) {
@@ -1455,39 +1449,37 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
             }
         }
 
-        // ??? should each such tests bracketed by the opCode ?
-        
-        int cnt = 0;
-        if ( instrMask & IF_B   ) cnt ++;
-        if ( instrMask & IF_H   ) cnt ++;
-        if ( instrMask & IF_W   ) cnt ++;
-        if ( instrMask & IF_D   ) cnt ++;
-        if ( cnt >  1 ) throw ( ERR_DUPLICATE_INSTR_OPT );
-        
-        cnt = 0;
-        if ( instrMask & IF_EQ ) cnt ++;
-        if ( instrMask & IF_LT ) cnt ++;
-        if ( instrMask & IF_NE ) cnt ++;
-        if ( instrMask & IF_LE ) cnt ++;
-        if ( instrMask & IF_GT ) cnt ++;
-        if ( instrMask & IF_GE ) cnt ++;
-        if ( instrMask & IF_OD ) cnt ++;
-        if ( instrMask & IF_EV ) cnt ++;
-        if ( cnt > 1 ) throw ( ERR_DUPLICATE_INSTR_OPT );
-        
-        cnt = 0;
-        if ( instrMask & IF_T ) cnt ++;
-        if ( instrMask & IF_F ) cnt ++;
-        if ( cnt > 1 ) throw ( ERR_DUPLICATE_INSTR_OPT );
-        
-        cnt = 0;
-        if ( instrMask & IF_L ) cnt ++;
-        if ( instrMask & IF_M ) cnt ++;
-        if ( instrMask & IF_U ) cnt ++;
-        if ( cnt > 1 ) throw ( ERR_DUPLICATE_INSTR_OPT );
-        
         nextToken( );
     }
+
+    int cnt = 0;
+    if ( instrMask & IF_B   ) cnt ++;
+    if ( instrMask & IF_H   ) cnt ++;
+    if ( instrMask & IF_W   ) cnt ++;
+    if ( instrMask & IF_D   ) cnt ++;
+    if ( cnt >  1 ) throw ( ERR_DUPLICATE_INSTR_OPT );
+    
+    cnt = 0;
+    if ( instrMask & IF_EQ ) cnt ++;
+    if ( instrMask & IF_LT ) cnt ++;
+    if ( instrMask & IF_NE ) cnt ++;
+    if ( instrMask & IF_LE ) cnt ++;
+    if ( instrMask & IF_GT ) cnt ++;
+    if ( instrMask & IF_GE ) cnt ++;
+    if ( instrMask & IF_OD ) cnt ++;
+    if ( instrMask & IF_EV ) cnt ++;
+    if ( cnt > 1 ) throw ( ERR_DUPLICATE_INSTR_OPT );
+    
+    cnt = 0;
+    if ( instrMask & IF_T ) cnt ++;
+    if ( instrMask & IF_F ) cnt ++;
+    if ( cnt > 1 ) throw ( ERR_DUPLICATE_INSTR_OPT );
+    
+    cnt = 0;
+    if ( instrMask & IF_L ) cnt ++;
+    if ( instrMask & IF_M ) cnt ++;
+    if ( instrMask & IF_U ) cnt ++;
+    if ( cnt > 1 ) throw ( ERR_DUPLICATE_INSTR_OPT );
 
     if ((( instrOpToken == TOK_OP_LD  ) && (( instrMask & IM_LD_OP )  == 0 )) ||
         (( instrOpToken == TOK_OP_ST  ) && (( instrMask & IM_ST_OP )  == 0 )) ||
@@ -1497,8 +1489,6 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
             
          instrMask |= IF_D;
     }
-
-    // ??? Validate instruction options based on instruction type.
 
     if ((( instrOpToken == TOK_OP_ADD  ) && ( instrMask & ~IM_ADD_OP    )) ||
         (( instrOpToken == TOK_OP_SUB  ) && ( instrMask & ~IM_SUB_OP    )) ||
@@ -1536,8 +1526,8 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
         
         (( instrOpToken == TOK_OP_NOP  ) && ( instrMask & ~IM_NIL       ))) { 
     
-            throw ( ERR_INVALID_INSTR_OPT );
-        }
+        throw ( ERR_INVALID_INSTR_OPT );
+    }
 
     *instrFlags = instrMask;
 }
@@ -1553,6 +1543,7 @@ void acceptRegR( uint32_t *instr ) {
     
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_GREG ) depositInstrRegR( instr, (uint32_t) rExpr.val );
+    else throw ( ERR_EXPECTED_GENERAL_REG );
 }
 
 void acceptRegA( uint32_t *instr ) {
@@ -1967,9 +1958,10 @@ void parseInstrImmOp( uint32_t *instr, uint32_t instrOpToken ) {
     nextToken( );
     parseInstrOptions( &instrFlags, instrOpToken );
 
-    if ( instrFlags & IF_L ) depositInstrFieldU( instr, 20, 2, 1 );
+    if      ( instrFlags & IF_L ) depositInstrFieldU( instr, 20, 2, 1 );
     else if ( instrFlags & IF_M ) depositInstrFieldU( instr, 20, 2, 2 );
     else if ( instrFlags & IF_U ) depositInstrFieldU( instr, 20, 2, 3 );
+    else                          depositInstrFieldU( instr, 20, 2, 1 );
 
     acceptRegR( instr );
     acceptComma( );
@@ -2091,6 +2083,8 @@ void parseInstrB( uint32_t *instr, uint32_t instrOpToken ) {
     
     nextToken( );
     parseInstrOptions( &instrFlags, instrOpToken );
+    if ( instrFlags & IF_G ) depositInstrBit( instr, 19, true );
+
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_NUM ) {
      
@@ -2098,15 +2092,17 @@ void parseInstrB( uint32_t *instr, uint32_t instrOpToken ) {
         depositInstrImm19( instr, (uint32_t) rExpr.val );
     }
     else throw ( ERR_EXPECTED_BR_OFS );
-    
+
     if ( isToken( TOK_COMMA )) {
-        
+
         nextToken( );
         acceptRegR( instr );
+        acceptEOS( );
     }
-    
-    if ( instrFlags & IF_G ) depositInstrBit( instr, 19, true );
-    acceptEOS( ); 
+    else if ( ! isToken( TOK_EOS )) {
+
+        throw ( ERR_EXPECTED_COMMA );
+    }  
 }
 
 //----------------------------------------------------------------------------------------
@@ -2119,27 +2115,32 @@ void parseInstrB( uint32_t *instr, uint32_t instrOpToken ) {
 void parseInstrBE( uint32_t *instr, uint32_t instrOpToken ) {
 
     Expr rExpr = INIT_EXPR;
-   
-    acceptRegB( instr );
-    acceptComma( );
-
+    
+    nextToken( );
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_NUM ) {
 
         depositInstrImm15( instr, (uint32_t) rExpr.val );    
+
+        acceptLparen( );
+        acceptRegB( instr );
+        acceptRparen( );
+    }
+    else if ( rExpr.typ == TYP_GREG ) {
+
+        depositInstrRegB( instr, rExpr.val );
     }
     
-    acceptLparen( );
-    acceptRegB( instr );
-    acceptRparen( );
-
     if ( isToken( TOK_COMMA )) {
 
         nextToken( );
         acceptRegR( instr );
+        acceptEOS( );
     }
-    
-    acceptEOS( );
+    else if ( ! isToken( TOK_EOS )) {
+
+        throw ( ERR_EXPECTED_COMMA );
+    }  
 }
 
 //----------------------------------------------------------------------------------------
@@ -2150,50 +2151,64 @@ void parseInstrBE( uint32_t *instr, uint32_t instrOpToken ) {
 //
 //----------------------------------------------------------------------------------------
 void parseInstrBR( uint32_t *instr, uint32_t instrOpToken ) {
-    
-    Expr rExpr = INIT_EXPR;
-  
+   
     nextToken( );
-    parseExpr( &rExpr );
     acceptRegB( instr );
     
     if ( isToken( TOK_COMMA )) {
-        
+
         nextToken( );
         acceptRegR( instr );
+        acceptEOS( );
     }
-    
-    acceptEOS( );
+    else if ( ! isToken( TOK_EOS )) {
+
+        throw ( ERR_EXPECTED_COMMA );
+    }  
 }
 
 //----------------------------------------------------------------------------------------
-// "parseOpBV" is the vectored branch. We add RegB and RegX, which form the target 
+// "parseOpBV" is the vectored branch. We add RegX and RegB, which form the target 
 // offset. Optionally, we can specify a return link register.
 //
-//      BV <regB>, <RegX> [ "," <regR> ]
+//      BV [ <RegX> "," ] "(" <RegB> ")" [ "," <regR> ]
 //
 //----------------------------------------------------------------------------------------
 void parseInstrBV( uint32_t *instr, uint32_t instrOpToken ) {
-    
+
+     Expr rExpr = INIT_EXPR;
+  
     nextToken( );
-    acceptRegB( instr );
-    acceptComma( );
-    acceptRegA( instr );
+
+    if ( isTokenTyp( TYP_GREG )) {
+
+        acceptRegA( instr );
+    }
+
+    parseExpr( &rExpr );
+    if ( rExpr.typ = TYP_GREG ) {
+
+        depositInstrRegB( instr, rExpr.val );
+    }
+    else throw ( ERR_EXPECTED_LPAREN );
     
     if ( isToken( TOK_COMMA )) {
-        
+
         nextToken( );
         acceptRegR( instr );
+        acceptEOS( );
     }
-    
-    acceptEOS( );
+    else if ( ! isToken( TOK_EOS )) {
+
+        throw ( ERR_EXPECTED_COMMA );
+    }  
 }
 
 //----------------------------------------------------------------------------------------
 // "parseOpBB" is the branch on bit instruction.
 //
-//      BB ".T/F" <regB> "," <pos>
-//      BB ".T/F" <regB> "," "SAR"
+//      BB ".T/F" <regB> "," <pos> "," <target>
+//      BB ".T/F" <regB> "," "SAR" "," <target>
 //
 //----------------------------------------------------------------------------------------
 void parseInstrBB( uint32_t *instr, uint32_t instrOpToken ) {
@@ -2206,19 +2221,29 @@ void parseInstrBB( uint32_t *instr, uint32_t instrOpToken ) {
     
     if ( instrFlags & IF_T ) depositInstrBit( instr, 19, true );
     
-    acceptRegB( instr );
+    acceptRegR( instr );
     acceptComma( );
     
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_NUM ) {
         
-        depositInstrFieldS( instr, 0, 6, (uint32_t) rExpr.val );
+        depositInstrFieldU( instr, 13, 6, (uint32_t) rExpr.val );
     }
-    else if (( rExpr.typ == TYP_GREG ) && ( rExpr.val == 1 )) {
+    else if (( rExpr.typ == TYP_CREG ) && ( rExpr.val == 2 )) {
         
         depositInstrBit( instr, 20, true );
     }
     else throw ( ERR_EXPECTED_POS_ARG );
+
+    acceptComma( );
+
+    parseExpr( &rExpr );
+    if ( rExpr.typ == TYP_NUM ) {
+     
+        rExpr.val = rExpr.val >> 2;
+        depositInstrImm13( instr, (uint32_t) rExpr.val );
+    }
+    else throw ( ERR_EXPECTED_BR_OFS );
    
     acceptEOS( );
 }
@@ -2238,6 +2263,9 @@ void parseInstrXBR( uint32_t *instr, uint32_t instrOpToken ) {
     
     nextToken( );
     parseInstrOptions( &instrFlags, instrOpToken );
+
+     if ( ! hasCmpCodeFlags( instrFlags )) throw( ERR_INVALID_INSTR_MODE );
+    setInstrCompareCondField( instr, instrFlags );
     acceptRegR( instr );
     acceptComma( );
     acceptRegB( instr );
@@ -2247,11 +2275,10 @@ void parseInstrXBR( uint32_t *instr, uint32_t instrOpToken ) {
     if ( rExpr.typ == TYP_NUM ) {
      
         rExpr.val = rExpr.val >> 2;
-        depositInstrImm19( instr, (uint32_t) rExpr.val );
+        depositInstrImm15( instr, (uint32_t) rExpr.val );
     }
     else throw ( ERR_EXPECTED_BR_OFS );
     
-    setInstrCompareCondField( instr, instrFlags );
     acceptEOS( );
 }
 

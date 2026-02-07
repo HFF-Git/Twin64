@@ -163,7 +163,7 @@ inline bool copyToBigEndian( uint8_t *dst, uint8_t *src, int len ) {
 // Helper function to check a bit range value in the instruction.
 //
 //----------------------------------------------------------------------------------------
-inline bool isInRangeForInstrBitField( int val, int bitLen ) {
+inline bool isInRangeForInstrBitFieldS( int val, int bitLen ) {
     
     int min = - ( 1 << (( bitLen - 1 ) % 64 ));
     int max = ( 1 << (( bitLen - 1 ) % 64 )) - 1;
@@ -194,11 +194,10 @@ inline int extractInstrFieldU( T64Instr arg, int bitpos, int len ) {
 }
 
 inline int extractInstrFieldS( T64Instr arg, int bitpos, int len ) {
-    
-    T64Word field = ( arg >> bitpos ) & (( 1ULL << len ) - 1 );
-    
-    if ( len < 32 )  return ( field << ( 32 - len )) >> ( 32 - len );
-    else             return ( field );
+
+    if ( len == 0 ) return ( 0 );
+    uint64_t field = (arg >> bitpos) & ((1ULL << len) - 1);
+    return (int)((int32_t)(field << (32 - len)) >> (32 - len));
 }
 
 inline T64Word signExtend( T64Word data, int pos ) {

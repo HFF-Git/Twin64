@@ -367,8 +367,6 @@ int buildOpCodeStr( char *buf, T64Instr instr ) {
         case ( OPC_GRP_BR * 16 + OPC_CBR ): {
             
             int cursor = snprintf( buf, LEN_16, "CBR" );
-            if ( extractInstrBit( instr, 19 )) 
-                cursor += snprintf( buf + cursor, 4, ".**" );
             cursor += printCondField( buf + cursor, extractInstrFieldU( instr, 19, 3 ));
             return ( cursor );
         }
@@ -376,8 +374,6 @@ int buildOpCodeStr( char *buf, T64Instr instr ) {
         case ( OPC_GRP_BR * 16 + OPC_MBR ): {
             
             int cursor = snprintf( buf, LEN_16, "MBR" );
-            if ( extractInstrBit( instr, 19 )) 
-                cursor += snprintf( buf + cursor, 4, ".**" );
             cursor += printCondField( buf + cursor, extractInstrFieldU( instr, 19, 3 ));
             return ( cursor );
         }
@@ -385,8 +381,6 @@ int buildOpCodeStr( char *buf, T64Instr instr ) {
         case ( OPC_GRP_BR * 16 + OPC_ABR ): {
             
             int cursor = snprintf( buf, LEN_16, "ABR" );
-            if ( extractInstrBit( instr, 19 )) 
-                cursor += snprintf( buf + cursor, 4, ".**" );
             cursor += printCondField( buf + cursor, extractInstrFieldU( instr, 19, 3 ));
             return ( cursor );
         }
@@ -508,14 +502,14 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
             if ( extractInstrBit( instr, 19 )) {
                 
-                return ( snprintf( buf, LEN_32, "R%d, R%d, %d",
+                return ( snprintf( buf, LEN_32, "R%d,R%d,%d",
                                    extractInstrRegR( instr ),
                                    extractInstrRegB( instr ),
                                    extractInstrSignedImm15( instr )));
             }
             else {
                 
-                return ( snprintf( buf, LEN_32, "R%d, R%d, R%d",
+                return ( snprintf( buf, LEN_32, "R%d,R%d,R%d",
                                    extractInstrRegR( instr ),
                                    extractInstrRegB( instr ),
                                    extractInstrRegA( instr )));
@@ -527,14 +521,14 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
             if ( extractInstrBit( instr, 26 )) {
                 
-                return ( snprintf( buf, LEN_32, "R%d, R%d, %d",
+                return ( snprintf( buf, LEN_32, "R%d,R%d,%d",
                                    extractInstrRegR( instr ),
                                    extractInstrRegB( instr ),
                                    extractInstrSignedImm15( instr )));
             }
             else {
                 
-                return ( snprintf( buf, LEN_32, "R%d, R%d, R%d",
+                return ( snprintf( buf, LEN_32, "R%d,R%d,R%d",
                                    extractInstrRegR( instr ),
                                    extractInstrRegB( instr ),
                                    extractInstrRegA( instr )));
@@ -549,14 +543,14 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
                     
                     if ( extractInstrBit( instr, 13 )) {
                         
-                        return ( snprintf( buf, LEN_32, "R%d, R%d, SAR, %d",
+                        return ( snprintf( buf, LEN_32, "R%d,R%d,SAR,%d",
                                            extractInstrRegR( instr ),
                                            extractInstrRegB( instr ),
                                            extractInstrFieldU( instr, 0, 6 )));
                     }
                     else {
                         
-                        return ( snprintf( buf, LEN_32, "R%d, R%d, %d, %d",
+                        return ( snprintf( buf, LEN_32, "R%d,R%d,%d,%d",
                                            extractInstrRegR( instr ),
                                            extractInstrRegB( instr ),
                                            extractInstrFieldU( instr, 6, 6 ),
@@ -570,14 +564,14 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
                         
                         if ( extractInstrBit( instr, 13 )) {
                             
-                            return ( snprintf( buf, LEN_32, "R%d, %d, SAR, %d",
+                            return ( snprintf( buf, LEN_32, "R%d,%d,SAR,%d",
                                                extractInstrRegR( instr ),
                                                extractInstrFieldU( instr, 15, 4 ),
                                                extractInstrFieldU( instr, 0, 6 )));
                         }
                         else {
                             
-                            return ( snprintf( buf, LEN_32, "R%d, %d, %d, %d",
+                            return ( snprintf( buf, LEN_32, "R%d,%d,%d,%d",
                                                extractInstrRegR( instr ),
                                                extractInstrFieldU( instr, 15, 4 ),
                                                extractInstrFieldU( instr, 6, 6 ),
@@ -588,14 +582,14 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
                         
                         if ( extractInstrBit( instr, 13 )) {
                             
-                            return ( snprintf( buf, LEN_32, "R%d, R%d, SAR, %d",
+                            return ( snprintf( buf, LEN_32, "R%d,R%d,SAR,%d",
                                                extractInstrRegR( instr ),
                                                extractInstrRegB( instr ),
                                                extractInstrFieldU( instr, 0, 6 )));
                         }
                         else {
                             
-                            return ( snprintf( buf, LEN_32, "R%d, R%d, %d, %d",
+                            return ( snprintf( buf, LEN_32, "R%d,R%d,%d,%d",
                                                extractInstrRegR( instr ),
                                                extractInstrRegB( instr ),
                                                extractInstrFieldU( instr, 6, 6 ),
@@ -608,14 +602,14 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
                     
                     if ( extractInstrBit( instr, 13 )) {
                         
-                        return ( snprintf( buf, LEN_32, "R%d, R%d, R%d, SAR",
+                        return ( snprintf( buf, LEN_32, "R%d,R%d,R%d,SAR",
                                            extractInstrRegR( instr ),
                                            extractInstrRegB( instr ),
                                            extractInstrRegA( instr )));
                     }
                     else {
                         
-                        return ( snprintf( buf, LEN_32, "R%d, R%d, R%d, %d",
+                        return ( snprintf( buf, LEN_32, "R%d,R%d,R%d,%d",
                                            extractInstrRegR( instr ),
                                            extractInstrRegB( instr ),
                                            extractInstrRegA( instr ),
@@ -631,14 +625,14 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
             if ( extractInstrBit( instr, 19 )) {
                 
-                return ( snprintf( buf, LEN_32, "R%d, R%d, %d",
+                return ( snprintf( buf, LEN_32, "R%d,R%d,%d",
                                    extractInstrRegR( instr ),
                                    extractInstrRegB( instr ),
                                    extractInstrSignedImm15( instr )));
             }
             else {
                 
-                return ( snprintf( buf, LEN_32, "R%d, R%d, R%d",
+                return ( snprintf( buf, LEN_32, "R%d,R%d,R%d",
                                    extractInstrRegR( instr ),
                                    extractInstrRegB( instr ),
                                    extractInstrRegA( instr )));
@@ -647,7 +641,7 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
         case ( OPC_GRP_ALU * 16 + OPC_IMMOP ): {
             
-            return ( snprintf( buf, LEN_32, "R%d, %d",
+            return ( snprintf( buf, LEN_32, "R%d,%d",
                               extractInstrRegR( instr ),
                               extractInstrImm20( instr )));
         }
@@ -664,14 +658,14 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
             if ( extractInstrBit( instr, 19 ) == 0 ) {
                 
-                return ( snprintf( buf, LEN_32, "R%d, %d(R%d)",
+                return ( snprintf( buf, LEN_32, "R%d,%d(R%d)",
                                    extractInstrRegR( instr ),
                                    extractInstrSignedScaledImm13( instr ),
                                    extractInstrRegB( instr )));
             }
             else {
                 
-                return ( snprintf( buf, LEN_32, "R%d, R%d(R%d)",
+                return ( snprintf( buf, LEN_32, "R%d,R%d(R%d)",
                                    extractInstrRegR( instr ),
                                    extractInstrRegA( instr ),
                                    extractInstrRegB( instr )));
@@ -683,14 +677,14 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
             if ( extractInstrBit( instr, 26 ) == 0 ) {
                 
-                return ( snprintf( buf, LEN_32, "R%d, %d(R%d)",
+                return ( snprintf( buf, LEN_32, "R%d,%d(R%d)",
                                    extractInstrRegR( instr ),
                                    extractInstrSignedScaledImm13( instr ),
                                    extractInstrRegB( instr )));
             }
             else {
                 
-                return ( snprintf( buf, LEN_32, "R%d, R%d(R%d)",
+                return ( snprintf( buf, LEN_32, "R%d,R%d(R%d)",
                                    extractInstrRegR( instr ),
                                    extractInstrRegA( instr ),
                                    extractInstrRegB( instr )));
@@ -699,16 +693,16 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
 
         case ( OPC_GRP_ALU * 16 + OPC_LDO ): {
 
-            if ( extractInstrBit( instr, 19 ) == 0 ) {
+            if ( extractInstrFieldU( instr, 19, 3 ) == 0 ) {
                 
-                return ( snprintf( buf, LEN_32, "R%d, %d(R%d)",
+                return ( snprintf( buf, LEN_32, "R%d,%d(R%d)",
                                    extractInstrRegR( instr ),
                                    extractInstrSignedScaledImm13( instr ),
                                    extractInstrRegB( instr )));
             }
-            else if ( extractInstrBit( instr, 19 ) == 1 ) {
+            else if ( extractInstrFieldU( instr, 19, 3 ) == 1 ) {
             
-                return ( snprintf( buf, LEN_32, "R%d, R%d(R%d)",
+                return ( snprintf( buf, LEN_32, "R%d,R%d(R%d)",
                                    extractInstrRegR( instr ),
                                    extractInstrRegA( instr ),
                                    extractInstrRegB( instr )));
@@ -718,11 +712,12 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
         case ( OPC_GRP_BR * 16 + OPC_B ): {
             
-            int cursor = snprintf( buf, LEN_32, ", %d", extractInstrSignedImm19( instr ));
+            int cursor = snprintf( buf, LEN_32, "%d", 
+                                   extractInstrSignedImm19( instr ) << 2 );
             
-            if ( extractInstrFieldU( instr, 26, 4 ) != 0 ) {
+            if ( extractInstrRegR( instr ) != 0 ) {
 
-                cursor += snprintf( buf + cursor, LEN_32, ", R%d", 
+                cursor += snprintf( buf + cursor, LEN_32, ",R%d", 
                                     extractInstrRegR( instr ));
             }
             
@@ -731,13 +726,18 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
 
         case ( OPC_GRP_BR * 16 + OPC_BE ): {
 
-            int cursor = snprintf( buf, LEN_32, "%d", extractInstrSignedImm15( instr ));
+            int cursor = 0;
+            
+            if ( extractInstrSignedImm15( instr ) != 0 ) {
+
+                cursor += snprintf( buf, LEN_32, "%d", extractInstrSignedImm15( instr ));
+            }
 
             cursor += snprintf( buf + cursor, LEN_32, "(R%d)", extractInstrRegB( instr ));
             
-            if ( extractInstrFieldU( instr, 26, 4 ) != 0 ) {
+            if ( extractInstrRegR( instr ) != 0 ) {
 
-                cursor += snprintf( buf + cursor, LEN_32, ", R%d", 
+                cursor += snprintf( buf + cursor, LEN_32, ",R%d", 
                                     extractInstrRegR( instr ));
             }
             
@@ -748,24 +748,31 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
 
             int cursor = snprintf( buf, LEN_32, "R%d", extractInstrRegB( instr ));
             
-                if ( extractInstrFieldU( instr, 26, 4 ) != 0 ) {
+            if ( extractInstrRegR( instr ) != 0 ) {
 
-                    cursor += snprintf( buf + cursor, LEN_32, ", R%d", 
-                                                    extractInstrRegR( instr ));
-                }
-            
-               return ( cursor ); 
+                cursor += snprintf( buf + cursor, LEN_32, ",R%d", 
+                                    extractInstrRegR( instr ));
+            }
+        
+            return ( cursor ); 
         }
 
          case ( OPC_GRP_BR * 16 + OPC_BV ): {
 
-            int cursor = snprintf( buf, LEN_32, "R%d, R%d",
-                                   extractInstrRegB( instr ),
-                                   extractInstrRegA( instr ));
-            
-            if ( extractInstrFieldU( instr, 26, 4 ) != 0 ) {
+            int cursor = 0;
 
-                cursor += snprintf( buf + cursor, LEN_32, ", R%d", 
+            if ( extractInstrRegA( instr ) != 0 ) {
+
+                cursor += snprintf( buf + cursor, LEN_16, "R%d", 
+                                    extractInstrRegA( instr ));
+            }
+            
+            cursor += snprintf( buf + cursor, LEN_32, "(R%d)",
+                                extractInstrRegB( instr ));
+
+            if ( extractInstrRegR( instr ) != 0 ) {
+
+                cursor += snprintf( buf + cursor, LEN_32, ",R%d", 
                                     extractInstrRegR( instr ));
                 }
 
@@ -777,23 +784,26 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             int cursor = snprintf( buf, LEN_32, "R%d", extractInstrRegR( instr ));
             
             if ( extractInstrBit( instr, 20 )) 
-                cursor += snprintf( buf + cursor, LEN_32, ", SAR" );
+                cursor += snprintf( buf + cursor, LEN_32, ",SAR" );
             else  
-                cursor += snprintf( buf + cursor, LEN_32, ", %d", 
+                cursor += snprintf( buf + cursor, LEN_32, ",%d", 
                                     extractInstrFieldU( instr, 13, 6 ));
             
-            cursor += snprintf( buf + cursor, LEN_32, ", %d", extractInstrSignedImm13( instr ));
+            cursor += snprintf( buf + cursor, LEN_32, ",%d", 
+                                extractInstrSignedImm13( instr ) << 2 );
             return ( cursor );
         }
             
+        case ( OPC_GRP_BR * 16 + OPC_ABR ):
         case ( OPC_GRP_BR * 16 + OPC_CBR ):
         case ( OPC_GRP_BR * 16 + OPC_MBR ):  {
             
-            int cursor = snprintf( buf, LEN_32, "R%d, R%d",
+            int cursor = snprintf( buf, LEN_32, "R%d,R%d",
                                    extractInstrRegR( instr ),
                                    extractInstrRegB( instr ));
             
-            cursor += snprintf( buf + cursor, LEN_32, ", %d", extractInstrSignedImm15( instr ));
+            cursor += snprintf( buf + cursor, LEN_32, ",%d", 
+                                extractInstrSignedImm15( instr ) << 2);
             
             return ( cursor );
         }
@@ -808,7 +818,7 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             }
             else if (extractInstrFieldU( instr, 19, 3 ) == 1 ) {
             
-                return ( snprintf( buf, LEN_32, "R%d, C%d, R%d",
+                return ( snprintf( buf, LEN_32, "R%d, C%d,R%d",
                                     extractInstrRegR( instr ),
                                     extractInstrRegB( instr ),
                                     extractInstrFieldU( instr, 0, 6 )));
@@ -824,14 +834,14 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
             if ( extractInstrFieldU( instr, 19, 3 ) == 0 ) {
                 
-                return ( snprintf( buf, LEN_32, "R%d, %d(R%d)",
+                return ( snprintf( buf, LEN_32, "R%d,%d(R%d)",
                                    extractInstrRegR( instr ),
                                    extractInstrSignedImm13( instr ),
                                    extractInstrRegB( instr )));
             }
             else {
                 
-                return ( snprintf( buf, LEN_32, "R%d, R%d(R%d)",
+                return ( snprintf( buf, LEN_32, "R%d,R%d(R%d)",
                                    extractInstrRegR( instr ),
                                    extractInstrRegA( instr ),
                                    extractInstrRegB( instr )));
@@ -842,13 +852,13 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
             if ( extractInstrBit( instr, 14 )) {
                 
-                return ( snprintf( buf, LEN_32, "R%d, R%d",
+                return ( snprintf( buf, LEN_32, "R%d,R%d",
                                    extractInstrRegR( instr ),
                                    extractInstrRegB( instr )));
             }
             else {
                 
-                return ( snprintf( buf, LEN_32, "R%d, R%d, R%d",
+                return ( snprintf( buf, LEN_32, "R%d,R%d,R%d",
                                    extractInstrRegR( instr ),
                                    extractInstrRegB( instr ),
                                    extractInstrRegA( instr )));
@@ -857,7 +867,7 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
         case ( OPC_GRP_SYS * 16 + OPC_TLB ): {
             
-            return ( snprintf( buf, LEN_32, "R%d, R%d, R%d",
+            return ( snprintf( buf, LEN_32, "R%d,R%d,R%d",
                                extractInstrRegR( instr ),
                                extractInstrRegB( instr ),
                                extractInstrRegA( instr )));
@@ -865,7 +875,7 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
         case ( OPC_GRP_SYS * 16 + OPC_CA ): {
             
-            return ( snprintf( buf, LEN_32, "R%d, R%d",
+            return ( snprintf( buf, LEN_32, "R%d,R%d",
                                extractInstrRegR( instr ),
                                extractInstrRegB( instr )));
         }
@@ -887,7 +897,7 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
         case ( OPC_GRP_SYS * 16 + OPC_DIAG ):  {
             
-            return ( snprintf( buf, LEN_32, "R%d, R%d, R%d",
+            return ( snprintf( buf, LEN_32, "R%d,R%d,R%d",
                                extractInstrRegR( instr ),
                                extractInstrRegB( instr ),
                                extractInstrRegA( instr )));
