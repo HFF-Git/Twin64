@@ -317,22 +317,23 @@ enum InstrTemplate : uint32_t {
 enum InstrFlags : uint32_t {
    
     IF_NIL      = 0,
-    IF_B        = ( 1U << 1  ),
-    IF_C        = ( 1U << 2  ),
-    IF_D        = ( 1U << 3  ),
-    IF_F        = ( 1U << 4  ),
-    IF_G        = ( 1U << 5  ),
-    IF_H        = ( 1U << 6  ),
-    IF_I        = ( 1U << 7  ),
-    IF_L        = ( 1U << 8  ),
-    IF_M        = ( 1U << 9  ),
-    IF_N        = ( 1U << 11 ),
-    IF_R        = ( 1U << 12 ),
-    IF_S        = ( 1U << 13 ),
-    IF_T        = ( 1U << 14 ),
-    IF_U        = ( 1U << 15 ),
-    IF_W        = ( 1U << 16 ),
-    IF_Z        = ( 1U << 17 ),
+    IF_A        = ( 1U << 1  ),
+    IF_B        = ( 1U << 2  ),
+    IF_C        = ( 1U << 3  ),
+    IF_D        = ( 1U << 4  ),
+    IF_F        = ( 1U << 5  ),
+    IF_G        = ( 1U << 6  ),
+    IF_H        = ( 1U << 7  ),
+    IF_I        = ( 1U << 8  ),
+    IF_L        = ( 1U << 9  ),
+    IF_M        = ( 1U << 11 ),
+    IF_N        = ( 1U << 12 ),
+    IF_R        = ( 1U << 13 ),
+    IF_S        = ( 1U << 14 ),
+    IF_T        = ( 1U << 15 ),
+    IF_U        = ( 1U << 16 ),
+    IF_W        = ( 1U << 17 ),
+    IF_Z        = ( 1U << 18 ),
     
     IF_EQ       = ( 1U << 24 ),
     IF_LT       = ( 1U << 25 ),
@@ -366,6 +367,7 @@ enum InstrFlags : uint32_t {
     IM_CBR_OP   = ( IF_EQ | IF_LT | IF_NE | IF_LE | IF_GT | IF_GE ),
     IM_MBR_OP   = ( IF_EQ | IF_LT | IF_NE | IF_LE | IF_GT | IF_GE | IF_EV | IF_OD ),
     IM_ABR_OP   = ( IF_EQ | IF_LT | IF_NE | IF_LE | IF_GT | IF_GE | IF_EV | IF_OD ),
+    IM_MFIA_OP  = ( IF_A | IF_L | IF_R ),
     IM_ITLB_OP  = ( IF_I | IF_D ),
     IM_PTLB_OP  = ( IF_I | IF_D ),
     IM_PCA_OP   = ( IF_I | IF_D )
@@ -1429,6 +1431,7 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
                 
                 switch ( optBuf[ i ] ) {
                  
+                    case 'A': instrMask = instrMask |= IF_A; break;
                     case 'B': instrMask = instrMask |= IF_B; break;
                     case 'C': instrMask = instrMask |= IF_C; break;
                     case 'D': instrMask = instrMask |= IF_D; break;
@@ -1523,6 +1526,8 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
     
         (( instrOpToken == TOK_OP_B    ) && ( instrMask & ~IM_B_OP      )) ||
         (( instrOpToken == TOK_OP_BB   ) && ( instrMask & ~IM_BB_OP     )) ||
+
+        (( instrOpToken == TOK_OP_MFIA ) && ( instrMask & ~IM_MFIA_OP   )) ||
         
         (( instrOpToken == TOK_OP_NOP  ) && ( instrMask & ~IM_NIL       ))) { 
     
@@ -2265,9 +2270,9 @@ void parseInstrXBR( uint32_t *instr, uint32_t instrOpToken ) {
     
     nextToken( );
     parseInstrOptions( &instrFlags, instrOpToken );
-
-     if ( ! hasCmpCodeFlags( instrFlags )) throw( ERR_EXPECTED_INSTR_OPT );
+    if ( ! hasCmpCodeFlags( instrFlags )) throw( ERR_EXPECTED_INSTR_OPT );
     setInstrCompareCondField( instr, instrFlags );
+    
     acceptRegR( instr );
     acceptComma( );
     acceptRegB( instr );
@@ -2335,10 +2340,21 @@ void parseInstrMTCR( uint32_t *instr, uint32_t instrOpToken ) {
 //----------------------------------------------------------------------------------------
 // "parseInstrMFIA" copies the instruction offset to a general register.
 //
-//      MFIA <RegR>
+//      MFIA [.A/L/R] <RegR>
 //
 //----------------------------------------------------------------------------------------
 void parseInstrMFIA( uint32_t *instr, uint32_t instrOpToken ) {
+
+    Expr        rExpr       = INIT_EXPR;
+    uint32_t    instrFlags  = IF_NIL;
+    
+    nextToken( );
+    parseInstrOptions( &instrFlags, instrOpToken );
+
+    if      ( instrFlags & IF_A ) depositInstrFieldU( instr, 19, 2, 0 );
+    else if ( instrFlags & IF_L ) depositInstrFieldU( instr, 19, 2, 1 );
+    else if ( instrFlags & IF_R ) depositInstrFieldU( instr, 19, 2, 2 );
+    else                          depositInstrFieldU( instr, 19, 2, 1 );
    
     nextToken( );
     acceptRegR( instr );
