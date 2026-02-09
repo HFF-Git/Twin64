@@ -2219,7 +2219,9 @@ void parseInstrBB( uint32_t *instr, uint32_t instrOpToken ) {
     nextToken( );
     parseInstrOptions( &instrFlags, instrOpToken );
     
-    if ( instrFlags & IF_T ) depositInstrBit( instr, 19, true );
+    if      ( instrFlags & IF_T ) depositInstrBit( instr, 19, true );
+    else if ( instrFlags & IF_F ) depositInstrBit( instr, 19, false );
+    else                          throw ( ERR_EXPECTED_INSTR_OPT );
     
     acceptRegR( instr );
     acceptComma( );
@@ -2264,7 +2266,7 @@ void parseInstrXBR( uint32_t *instr, uint32_t instrOpToken ) {
     nextToken( );
     parseInstrOptions( &instrFlags, instrOpToken );
 
-     if ( ! hasCmpCodeFlags( instrFlags )) throw( ERR_INVALID_INSTR_MODE );
+     if ( ! hasCmpCodeFlags( instrFlags )) throw( ERR_EXPECTED_INSTR_OPT );
     setInstrCompareCondField( instr, instrFlags );
     acceptRegR( instr );
     acceptComma( );
@@ -2273,7 +2275,7 @@ void parseInstrXBR( uint32_t *instr, uint32_t instrOpToken ) {
     
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_NUM ) {
-     
+
         rExpr.val = rExpr.val >> 2;
         depositInstrImm15( instr, (uint32_t) rExpr.val );
     }
