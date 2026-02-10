@@ -4,27 +4,27 @@
 //
 //----------------------------------------------------------------------------------------
 // The one line assembler assembles an instruction without further context. It is 
-// intended to for testing instructions in the monitor. There is no symbol table or 
-// any concept of assembling multiple instructions. The instruction to generate test
-// is completely self sufficient. The parser is a straightforward recursive descendant
-// parser, LL1 grammar. It uses the C++ try / catch to escape when an error is detected. 
-// Considering that we only have one line to  parse, there is no need to implement a
-// better parser error recovery method.
+// intended to for testing instructions in the monitor. There is no symbol table 
+// or any concept of assembling multiple instructions. The instruction to generate 
+// test is completely self sufficient. The parser is a straightforward recursive 
+// descendant parser, LL1 grammar. It uses the C++ try / catch to escape when an 
+// error is detected. Considering that we only have one line to  parse, there is 
+// no need to implement a better parser error recovery method.
 //
 //----------------------------------------------------------------------------------------
 //
 // T64 - A 64-bit Processor - One Line Assembler
 // Copyright (C) 2020 - 2026 Helmut Fieres
 //
-// This program is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or any later version.
+// This program is free software: you can redistribute it and/or modify it under 
+// the terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should
-//  have received a copy of the GNU General Public License along with this program.  
-// If not, see <http://www.gnu.org/licenses/>.
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You 
+// should have received a copy of the GNU General Public License along with this 
+// program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #include "T64-InlineAsm.h"
@@ -328,12 +328,13 @@ enum InstrFlags : uint32_t {
     IF_L        = ( 1U << 9  ),
     IF_M        = ( 1U << 11 ),
     IF_N        = ( 1U << 12 ),
-    IF_R        = ( 1U << 13 ),
-    IF_S        = ( 1U << 14 ),
-    IF_T        = ( 1U << 15 ),
-    IF_U        = ( 1U << 16 ),
-    IF_W        = ( 1U << 17 ),
-    IF_Z        = ( 1U << 18 ),
+    IF_Q        = ( 1U << 13 ),
+    IF_R        = ( 1U << 14 ),
+    IF_S        = ( 1U << 15 ),
+    IF_T        = ( 1U << 16 ),
+    IF_U        = ( 1U << 17 ),
+    IF_W        = ( 1U << 18 ),
+    IF_Z        = ( 1U << 19 ),
     
     IF_EQ       = ( 1U << 24 ),
     IF_LT       = ( 1U << 25 ),
@@ -363,6 +364,8 @@ enum InstrFlags : uint32_t {
     IM_LDR_OP   = ( IF_D | IF_U ),
     IM_STC_OP   = ( IF_D ),
     IM_B_OP     = ( IF_G ),
+    IM_BR_OP    = ( IF_W | IF_D | IF_Q ),
+    IM_BV_OP    = ( IF_W | IF_D | IF_Q ),
     IM_BB_OP    = ( IF_T | IF_F ),
     IM_CBR_OP   = ( IF_EQ | IF_LT | IF_NE | IF_LE | IF_GT | IF_GE ),
     IM_MBR_OP   = ( IF_EQ | IF_LT | IF_NE | IF_LE | IF_GT | IF_GE | IF_EV | IF_OD ),
@@ -1442,6 +1445,7 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
                     case 'L': instrMask = instrMask |= IF_L; break;
                     case 'M': instrMask = instrMask |= IF_M; break;
                     case 'N': instrMask = instrMask |= IF_N; break;
+                    case 'Q': instrMask = instrMask |= IF_Q; break;
                     case 'S': instrMask = instrMask |= IF_S; break;
                     case 'T': instrMask = instrMask |= IF_T; break;
                     case 'U': instrMask = instrMask |= IF_U; break;
@@ -1456,6 +1460,12 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
     }
 
     int cnt = 0;
+    if ( instrMask & IF_W   ) cnt ++;
+    if ( instrMask & IF_D   ) cnt ++;
+    if ( instrMask & IF_Q   ) cnt ++;
+    if ( cnt >  1 ) throw ( ERR_DUPLICATE_INSTR_OPT );
+
+    cnt = 0;
     if ( instrMask & IF_B   ) cnt ++;
     if ( instrMask & IF_H   ) cnt ++;
     if ( instrMask & IF_W   ) cnt ++;
@@ -1525,6 +1535,8 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
         (( instrOpToken == TOK_OP_STC  ) && ( instrMask & ~IM_STC_OP    )) ||
     
         (( instrOpToken == TOK_OP_B    ) && ( instrMask & ~IM_B_OP      )) ||
+        (( instrOpToken == TOK_OP_BR   ) && ( instrMask & ~IM_BR_OP     )) ||
+        (( instrOpToken == TOK_OP_BV   ) && ( instrMask & ~IM_BV_OP     )) ||
         (( instrOpToken == TOK_OP_BB   ) && ( instrMask & ~IM_BB_OP     )) ||
 
         (( instrOpToken == TOK_OP_MFIA ) && ( instrMask & ~IM_MFIA_OP   )) ||
@@ -2152,12 +2164,21 @@ void parseInstrBE( uint32_t *instr, uint32_t instrOpToken ) {
 // "parseOpBR" is the IA-relative branch adding RegB to IA. Optionally, we can specify
 // a return link register.
 //
-//      BR <regB> [ "," <regR> ]
+//      BR [.W/D/Q] <regB> [ "," <regR> ]
 //
 //----------------------------------------------------------------------------------------
 void parseInstrBR( uint32_t *instr, uint32_t instrOpToken ) {
+
+    uint32_t instrFlags  = IF_NIL;
    
     nextToken( );
+    parseInstrOptions( &instrFlags, instrOpToken );
+
+    if      ( instrFlags & IF_W ) depositInstrField( instr, 13, 2, 0 );
+    else if ( instrFlags & IF_D ) depositInstrField( instr, 13, 2, 1 );
+    else if ( instrFlags & IF_Q ) depositInstrField( instr, 13, 2, 2 );
+    else                          depositInstrField( instr, 13, 2, 0 );
+
     acceptRegB( instr );
     
     if ( isToken( TOK_COMMA )) {
@@ -2176,14 +2197,21 @@ void parseInstrBR( uint32_t *instr, uint32_t instrOpToken ) {
 // "parseOpBV" is the vectored branch. We add RegX and RegB, which form the target 
 // offset. Optionally, we can specify a return link register.
 //
-//      BV [ <RegX> "," ] "(" <RegB> ")" [ "," <regR> ]
+//      BV [.W/D/Q] [ <RegX> "," ] "(" <RegB> ")" [ "," <regR> ]
 //
 //----------------------------------------------------------------------------------------
 void parseInstrBV( uint32_t *instr, uint32_t instrOpToken ) {
 
-     Expr rExpr = INIT_EXPR;
-  
+    Expr    rExpr        = INIT_EXPR;
+    uint32_t instrFlags  = IF_NIL;
+   
     nextToken( );
+    parseInstrOptions( &instrFlags, instrOpToken );
+
+    if      ( instrFlags & IF_W ) depositInstrField( instr, 13, 2, 0 );
+    else if ( instrFlags & IF_D ) depositInstrField( instr, 13, 2, 1 );
+    else if ( instrFlags & IF_Q ) depositInstrField( instr, 13, 2, 2 );
+    else                          depositInstrField( instr, 13, 2, 0 );
 
     if ( isTokenTyp( TYP_GREG )) {
 
@@ -2191,10 +2219,7 @@ void parseInstrBV( uint32_t *instr, uint32_t instrOpToken ) {
     }
 
     parseExpr( &rExpr );
-    if ( rExpr.typ = TYP_GREG ) {
-
-        depositInstrRegB( instr, rExpr.val );
-    }
+    if ( rExpr.typ == TYP_GREG ) depositInstrRegB( instr, rExpr.val );
     else throw ( ERR_EXPECTED_LPAREN );
     
     if ( isToken( TOK_COMMA )) {

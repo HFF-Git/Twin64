@@ -343,16 +343,21 @@ int buildOpCodeStr( char *buf, T64Instr instr ) {
             return ( cursor );
         }
 
-        case ( OPC_GRP_BR * 16 + OPC_BR ): {
-
-           return ( snprintf( buf, LEN_16, "BR" ));
-        }
-            
+        case ( OPC_GRP_BR * 16 + OPC_BR ): 
         case ( OPC_GRP_BR * 16 + OPC_BV ): {
 
-           return ( snprintf( buf, LEN_16, "BV" ));
+            int cursor = snprintf( buf, LEN_16, "BR" );
+            if ( extractInstrFieldU( instr, 13, 2) == 0 ) 
+                cursor += snprintf( buf + cursor, 4, ".W" );
+            else if ( extractInstrFieldU( instr, 13, 2) == 1 )
+                cursor += snprintf( buf + cursor, 4, ".D" );
+            else if ( extractInstrFieldU( instr, 13, 2) == 2 )
+                cursor += snprintf( buf + cursor, 4, ".Q" );
+            else cursor += snprintf( buf + cursor, 4, ".**" );
+
+            return ( cursor );
         }
-      
+            
         case ( OPC_GRP_BR * 16 + OPC_BB ): {
             
             int cursor = snprintf( buf, LEN_16, "BB" );
