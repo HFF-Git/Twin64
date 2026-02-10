@@ -411,7 +411,6 @@ int buildOpCodeStr( char *buf, T64Instr instr ) {
             else                                     
                 cursor = snprintf( buf, LEN_16, "**LPAOP**" );
             
-            cursor += printDwField( buf + cursor, extractInstrDwField( instr ));
             return ( cursor );
         }
             
@@ -819,7 +818,7 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
                 return ( snprintf( buf, LEN_32, "R%d, C%d",
                                     extractInstrRegR( instr ),
-                                    extractInstrRegB( instr )));
+                                    extractInstrFieldU( instr, 0, 6 )));
             }
             else if (extractInstrFieldU( instr, 19, 3 ) == 1 ) {
             
@@ -836,32 +835,33 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
         }
             
         case ( OPC_GRP_SYS * 16 + OPC_LPA ): {
+
+            int cursor = snprintf( buf, LEN_32, "R%d,", extractInstrRegR( instr ));
+
+            if ( extractInstrRegA( instr ) != 0 ) {
+
+                    cursor += snprintf( buf + cursor, LEN_32, "R%d", 
+                                        extractInstrRegA( instr ));
+            }
+
+            cursor += snprintf( buf + cursor, LEN_32, "(R%d)", 
+                                extractInstrRegB( instr ));
             
-            if ( extractInstrFieldU( instr, 19, 3 ) == 0 ) {
-                
-                return ( snprintf( buf, LEN_32, "R%d,%d(R%d)",
-                                   extractInstrRegR( instr ),
-                                   extractInstrSignedImm13( instr ),
-                                   extractInstrRegB( instr )));
-            }
-            else {
-                
-                return ( snprintf( buf, LEN_32, "R%d,R%d(R%d)",
-                                   extractInstrRegR( instr ),
-                                   extractInstrRegA( instr ),
-                                   extractInstrRegB( instr )));
-            }
+            return ( cursor );
         }
             
         case ( OPC_GRP_SYS * 16 + OPC_PRB ): {
-            
-            if ( extractInstrBit( instr, 14 )) {
+
+            int mode = extractInstrFieldU( instr, 13, 2 );
+
+            if (( mode >= 0 ) && ( mode <= 2 )) {
                 
-                return ( snprintf( buf, LEN_32, "R%d,R%d",
+                return ( snprintf( buf, LEN_32, "R%d,R%d,%d",
                                    extractInstrRegR( instr ),
-                                   extractInstrRegB( instr )));
+                                   extractInstrRegB( instr ),
+                                   mode ));
             }
-            else {
+            else if ( mode == 3 ) {
                 
                 return ( snprintf( buf, LEN_32, "R%d,R%d,R%d",
                                    extractInstrRegR( instr ),
@@ -871,23 +871,65 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
         }
             
         case ( OPC_GRP_SYS * 16 + OPC_TLB ): {
+
+            int cursor = 0;
+            int field = extractInstrFieldU( instr, 19, 3 );
+
+            if (( field == 0 ) || ( field == 1 )) {
             
-            return ( snprintf( buf, LEN_32, "R%d,R%d,R%d",
-                               extractInstrRegR( instr ),
-                               extractInstrRegB( instr ),
-                               extractInstrRegA( instr )));
+                return ( snprintf( buf + cursor, LEN_32, "R%d,R%d,R%d",
+                                   extractInstrRegR( instr ),
+                                   extractInstrRegB( instr ),
+                                   extractInstrRegA( instr )));
+            }
+            else if (( field == 2 ) || ( field == 3 )) {
+
+                if ( extractInstrRegR( instr ) != 0 ) {
+
+                    cursor += snprintf( buf + cursor, LEN_32, "R%d,", 
+                                        extractInstrRegR( instr ));
+                }
+
+                if ( extractInstrRegA( instr ) != 0 ) {
+
+                        cursor += snprintf( buf + cursor, LEN_32, "R%d", 
+                                            extractInstrRegA( instr ));
+                }
+
+                cursor += snprintf( buf + cursor, LEN_32, "(R%d)", 
+                                    extractInstrRegB( instr ));
+            }
+            
+            return ( cursor );
         }
             
         case ( OPC_GRP_SYS * 16 + OPC_CA ): {
+
+            int cursor = 0;
+
+            if ( extractInstrRegR( instr ) != 0 ) {
+
+                    cursor += snprintf( buf + cursor, LEN_32, "R%d,", 
+                                        extractInstrRegR( instr ));
+            }
+
+            if ( extractInstrRegA( instr ) != 0 ) {
+
+                cursor += snprintf( buf + cursor, LEN_32, "R%d", 
+                                    extractInstrRegA( instr ));
+            }
+
+            cursor += snprintf( buf + cursor, LEN_32, "(R%d)", 
+                                extractInstrRegB( instr ));
             
-            return ( snprintf( buf, LEN_32, "R%d,R%d",
-                               extractInstrRegR( instr ),
-                               extractInstrRegB( instr )));
+            return ( cursor );
         }
             
         case ( OPC_GRP_SYS * 16 + OPC_MST ): {
             
-            return ( snprintf( buf, LEN_32, "R%d", extractInstrRegR( instr )));
+            return ( snprintf( buf, LEN_32, "R%d,%d", 
+                               extractInstrRegR( instr ),
+                               extractInstrFieldU( instr, 0, 6 )));
         }
             
         case ( OPC_GRP_SYS * 16 + OPC_RFI ): {
@@ -896,8 +938,15 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
         }
             
         case ( OPC_GRP_SYS * 16 + OPC_TRAP ):  {
+
+            int info = ( extractInstrFieldU( instr, 19, 3 ) << 2 ) +
+                         extractInstrFieldU( instr, 13, 2 );
             
-            return ( 0 );  // ??? to do ...
+            
+            return ( snprintf( buf, LEN_32, "%d,R%d,R%d", 
+                               info, 
+                               extractInstrRegB( instr ), 
+                               extractInstrRegA( instr ) ));
         }
             
         case ( OPC_GRP_SYS * 16 + OPC_DIAG ):  {
@@ -910,7 +959,6 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
         case ( OPC_GRP_ALU * 16 + OPC_NOP ): {
             
-            buf[0] = 0;
             return ( 0 );
         }
             
@@ -964,8 +1012,8 @@ int T64DisAssemble::formatInstr( char *buf, int bufLen, uint32_t instr, int rdx 
 
         int cursor = buildOpCodeStr( buf, instr );
         
-        buildOperandStr( operandBuf, instr, rdx );
-        if ( strlen( operandBuf ) > 0 ) {
+        int len = buildOperandStr( operandBuf, instr, rdx );
+        if ( len > 0 ) {
             
             cursor += snprintf( buf + cursor, LEN_32, " %s", operandBuf );
         }

@@ -153,10 +153,9 @@ char *SimTokenizer::tokStr( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseNum" will parse a number. We accept decimals and hexadecimals. The 
-// numeric string can also contain "_" characters for a better readable string. 
-// Hex numbers start with a "0x", decimals just with the numeric digits.
-//
+// "parseNum" will parse a number. We accept decimals, hexadecimals and binary 
+// numbers. The numeric string can also contain "_" characters for readability.
+// Hex numbers start with "0x", binary with "0b", decimals just with numeric digits.
 //----------------------------------------------------------------------------------------
 void SimTokenizer::parseNum( ) {
     
@@ -170,13 +169,18 @@ void SimTokenizer::parseNum( ) {
     T64Word tmpVal      = 0;
     
     if ( currentChar == '0' ) {
-
-        while ( currentChar == '0' ) nextChar( );
         
-        if (( currentChar == 'x' ) || ( currentChar == 'X' )) {
+        nextChar( );
+        if (( currentChar == 'X' ) || ( currentChar == 'x' )) {
             
             base        = 16;
             maxDigits   = 16;
+            nextChar( );
+        }
+        else if (( currentChar == 'B' ) || ( currentChar == 'b' )) {
+            
+            base        = 2;
+            maxDigits   = 64;
             nextChar( );
         }
         else if ( !isdigit( currentChar )) {
@@ -196,7 +200,10 @@ void SimTokenizer::parseNum( ) {
 
             if ( isdigit( currentChar )) {
 
-                tmpVal = ( tmpVal * base ) + currentChar - '0';
+                int digit = currentChar - '0';
+                if ( digit >= base ) throw ( ERR_INVALID_NUM );
+
+                tmpVal = ( tmpVal * base ) + digit;
             }
             else if (( base == 16         ) && 
                      ( currentChar >= 'a' ) && 
@@ -218,11 +225,17 @@ void SimTokenizer::parseNum( ) {
             if ( digits > maxDigits ) throw ( ERR_INVALID_NUM );
         }
     }
-    while ( isxdigit( currentChar ) || ( currentChar == '_' ));
+    while (
+        ( currentChar == '_' ) ||
+        ( isdigit( currentChar )) ||
+        ( base == 16 &&
+          (( currentChar >= 'a' && currentChar <= 'f' ) ||
+           ( currentChar >= 'A' && currentChar <= 'F' ) ) 
+        )
+    );
 
     currentToken.u.val = tmpVal;
 }
-
 
 //----------------------------------------------------------------------------------------
 // "parseString" gets a string. We manage special characters inside the string 

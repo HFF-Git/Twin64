@@ -296,6 +296,7 @@ enum InstrTemplate : uint32_t {
     OPF_RFI      = ( OPC_RFI    << 26 ),
     OPF_TRAP     = ( OPC_TRAP   << 26 ),
     OPF_DIAG     = ( OPC_DIAG   << 26 ),
+    OPF_NOP      = ( OPC_NOP    << 26 ),
     
     OPM_FLD_0    = ( 0U  << 19 ),
     OPM_FLD_1    = ( 1U  << 19 ),
@@ -605,6 +606,9 @@ const Token AsmTokTab[ ] = {
 
     {   .name   = "DIAG",       .typ = TYP_OP_CODE, 
         .tid    = TOK_OP_DIAG,  .val = ( OPG_SYS | OPF_DIAG   | OPM_FLD_0 ) },
+
+    {   .name   = "NOP",        .typ = TYP_OP_CODE, 
+        .tid    = TOK_OP_NOP,   .val = ( OPG_ALU | OPF_NOP    | OPM_FLD_0 ) },
     
     //------------------------------------------------------------------------------------
     // Assembler synthetic mnemonics. They are like the assembler mnemonics, except 
@@ -758,16 +762,15 @@ T64Word modOp( Expr *a, Expr *b ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseNum" will parse a number. We accept decimals and hexadecimals. The numeric 
-// string can also contain "_" characters for a better readable string. Hex numbers 
-// start with a "0x", decimals just with the numeric digits.
-//
+// "parseNum" will parse a number. We accept decimals, hexadecimals and binary 
+// numbers. The numeric string can also contain "_" characters for readability.
+// Hex numbers start with "0x", binary with "0b", decimals just with numeric digits.
 //----------------------------------------------------------------------------------------
 void parseNum( ) {
     
     currentToken.tid    = TOK_NUM;
     currentToken.typ    = TYP_NUM;
-    currentToken.val  = 0;
+    currentToken.val    = 0;
     
     int     base        = 10;
     int     maxDigits   = 22;
@@ -781,6 +784,12 @@ void parseNum( ) {
             
             base        = 16;
             maxDigits   = 16;
+            nextChar( );
+        }
+        else if (( currentChar == 'B' ) || ( currentChar == 'b' )) {
+            
+            base        = 2;
+            maxDigits   = 64;
             nextChar( );
         }
         else if ( !isdigit( currentChar )) {
@@ -800,7 +809,10 @@ void parseNum( ) {
 
             if ( isdigit( currentChar )) {
 
-                tmpVal = ( tmpVal * base ) + currentChar - '0';
+                int digit = currentChar - '0';
+                if ( digit >= base ) throw ( ERR_INVALID_NUM );
+
+                tmpVal = ( tmpVal * base ) + digit;
             }
             else if (( base == 16         ) && 
                      ( currentChar >= 'a' ) && 
@@ -822,7 +834,14 @@ void parseNum( ) {
             if ( digits > maxDigits ) throw ( ERR_INVALID_NUM );
         }
     }
-    while ( isxdigit( currentChar ) || ( currentChar == '_' ));
+    while (
+        ( currentChar == '_' ) ||
+        ( isdigit( currentChar )) ||
+        ( base == 16 &&
+          (( currentChar >= 'a' && currentChar <= 'f' ) ||
+           ( currentChar >= 'A' && currentChar <= 'F' ) ) 
+        )
+    );
 
     currentToken.val = tmpVal;
 }
@@ -2126,7 +2145,7 @@ void parseInstrB( uint32_t *instr, uint32_t instrOpToken ) {
 // "parseOpBE" is the external branch. We add and offset to RegB which forms the target 
 // offset. Optionally, we can specify a return link register.
 //
-//      BE  [ <ofs> ] "("" <regB> ")" [ "," <regR> ]
+//      BE  [ <ofs> ] "(" <regB> ")" [ "," <regR> ]
 //
 //----------------------------------------------------------------------------------------
 void parseInstrBE( uint32_t *instr, uint32_t instrOpToken ) {
@@ -2370,8 +2389,7 @@ void parseInstrMTCR( uint32_t *instr, uint32_t instrOpToken ) {
 //----------------------------------------------------------------------------------------
 void parseInstrMFIA( uint32_t *instr, uint32_t instrOpToken ) {
 
-    Expr        rExpr       = INIT_EXPR;
-    uint32_t    instrFlags  = IF_NIL;
+    uint32_t instrFlags  = IF_NIL;
     
     nextToken( );
     parseInstrOptions( &instrFlags, instrOpToken );
@@ -2379,7 +2397,7 @@ void parseInstrMFIA( uint32_t *instr, uint32_t instrOpToken ) {
     if      ( instrFlags & IF_A ) depositInstrFieldU( instr, 19, 2, 0 );
     else if ( instrFlags & IF_L ) depositInstrFieldU( instr, 19, 2, 1 );
     else if ( instrFlags & IF_R ) depositInstrFieldU( instr, 19, 2, 2 );
-    else                          depositInstrFieldU( instr, 19, 2, 1 );
+    else                          depositInstrFieldU( instr, 19, 2, 0 );
    
     nextToken( );
     acceptRegR( instr );
@@ -2401,16 +2419,16 @@ void parseInstrLPA( uint32_t *instr, uint32_t instrOpToken ) {
     nextToken( );
     acceptRegR( instr );
     acceptComma( );
-   
-    parseExpr( &rExpr );
-    if ( rExpr.typ == TYP_GREG) {
-        
-        depositInstrRegA( instr, (uint32_t) rExpr.val );
+
+    if ( isTokenTyp( TYP_GREG )) {
+
+        acceptRegA( instr );
     }
-    
-    acceptLparen( );
-    acceptRegB( instr );
-    acceptRparen( );
+
+    parseExpr( &rExpr );
+    if ( rExpr.typ == TYP_GREG ) depositInstrRegB( instr, rExpr.val );
+    else throw ( ERR_EXPECTED_LPAREN );
+
     acceptEOS( );
 }
 
@@ -2433,8 +2451,15 @@ void parseInstrPRB( uint32_t *instr, uint32_t instrOpToken ) {
     acceptComma( );
     
     parseExpr( &rExpr );
-    if      ( rExpr.typ == TYP_GREG ) depositInstrRegA( instr, (uint32_t) rExpr.val );
-    else if ( rExpr.typ == TYP_NUM  ) depositInstrField( instr, 9, 2, rExpr.val );
+    if ( rExpr.typ == TYP_GREG ) {
+        
+        depositInstrRegA( instr, (uint32_t) rExpr.val );
+        depositInstrFieldU( instr, 13, 2, 3 );
+    }
+    else if ( rExpr.typ == TYP_NUM  ) {
+        
+        depositInstrField( instr, 13, 2, rExpr.val );
+    }
     else throw ( ERR_EXPECTED_PRB_ARG );
     
     acceptEOS( );
@@ -2476,15 +2501,15 @@ void parseInstrPurgeTlb( uint32_t *instr, uint32_t instrOpToken ) {
     acceptRegR( instr );
     acceptComma( );
 
-    parseExpr( &rExpr );
-    if ( rExpr.typ == TYP_GREG) {
-        
-        depositInstrRegA( instr, (uint32_t) rExpr.val );
+    if ( isTokenTyp( TYP_GREG )) {
+
+        acceptRegA( instr );
     }
-    
-    acceptLparen( );
-    acceptRegB( instr );
-    acceptRparen( );
+
+    parseExpr( &rExpr );
+    if ( rExpr.typ == TYP_GREG ) depositInstrRegB( instr, rExpr.val );
+    else throw ( ERR_EXPECTED_LPAREN );
+
     acceptEOS( );
 }
 
@@ -2504,15 +2529,15 @@ void parseInstrFlushCache( uint32_t *instr, uint32_t instrOpToken ) {
     acceptRegR( instr );
     acceptComma( );
 
-    parseExpr( &rExpr );
-    if ( rExpr.typ == TYP_GREG) {
-        
-        depositInstrRegA( instr, (uint32_t) rExpr.val );
+    if ( isTokenTyp( TYP_GREG )) {
+
+        acceptRegA( instr );
     }
-    
-    acceptLparen( );
-    acceptRegB( instr );
-    acceptRparen( );
+
+    parseExpr( &rExpr );
+    if ( rExpr.typ == TYP_GREG ) depositInstrRegB( instr, rExpr.val );
+    else throw ( ERR_EXPECTED_LPAREN );
+
     acceptEOS( );
 }
 
@@ -2531,15 +2556,15 @@ void parseInstrPurgeCache( uint32_t *instr, uint32_t instrOpToken ) {
     acceptRegR( instr );
     acceptComma( );
 
-    parseExpr( &rExpr );
-    if ( rExpr.typ == TYP_GREG) {
-        
-        depositInstrRegA( instr, (uint32_t) rExpr.val );
+    if ( isTokenTyp( TYP_GREG )) {
+
+        acceptRegA( instr );
     }
-    
-    acceptLparen( );
-    acceptRegB( instr );
-    acceptRparen( );
+
+    parseExpr( &rExpr );
+    if ( rExpr.typ == TYP_GREG ) depositInstrRegB( instr, rExpr.val );
+    else throw ( ERR_EXPECTED_LPAREN );
+
     acceptEOS( );
 }
 
@@ -2623,6 +2648,7 @@ void parseInstrTrapOp( uint32_t *instr, uint32_t instrOpToken ) {
 
     Expr rExpr = INIT_EXPR;
 
+    nextToken( );
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_NUM ) {
 
@@ -2714,6 +2740,7 @@ void parseLine( char *inputStr, uint32_t *instr ) {
             case TOK_OP_PICA:
             case TOK_OP_PDCA:   parseInstrPurgeCache( instr, instrOpToken );break;
 
+            case TOK_OP_FICA:
             case TOK_OP_FDCA:   parseInstrFlushCache( instr, instrOpToken );break;
                 
             case TOK_OP_SSM:
