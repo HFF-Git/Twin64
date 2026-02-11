@@ -734,7 +734,8 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
             if ( extractInstrSignedImm15( instr ) != 0 ) {
 
-                cursor += snprintf( buf, LEN_32, "%d", extractInstrSignedImm15( instr ));
+                cursor += snprintf( buf, LEN_32, "%d", 
+                                    extractInstrSignedImm15( instr ) << 2 );
             }
 
             cursor += snprintf( buf + cursor, LEN_32, "(R%d)", extractInstrRegB( instr ));

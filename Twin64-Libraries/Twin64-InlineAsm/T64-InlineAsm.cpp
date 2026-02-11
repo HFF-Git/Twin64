@@ -2123,6 +2123,8 @@ void parseInstrB( uint32_t *instr, uint32_t instrOpToken ) {
 
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_NUM ) {
+
+        if ( ! isAlignedOfs( rExpr.val, 4 )) throw( ERR_INVALID_OFS );
      
         rExpr.val = rExpr.val >> 2;
         depositInstrImm19( instr, (uint32_t) rExpr.val );
@@ -2156,7 +2158,9 @@ void parseInstrBE( uint32_t *instr, uint32_t instrOpToken ) {
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_NUM ) {
 
-        depositInstrImm15( instr, (uint32_t) rExpr.val );    
+        if ( ! isAlignedOfs( rExpr.val, 4 )) throw( ERR_INVALID_OFS );
+
+        depositInstrImm15( instr, ((uint32_t) rExpr.val >> 2 ));    
 
         acceptLparen( );
         acceptRegB( instr );
@@ -2291,6 +2295,8 @@ void parseInstrBB( uint32_t *instr, uint32_t instrOpToken ) {
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_NUM ) {
      
+        if ( ! isAlignedOfs( rExpr.val, 4 )) throw( ERR_INVALID_OFS );
+
         rExpr.val = rExpr.val >> 2;
         depositInstrImm13( instr, (uint32_t) rExpr.val );
     }
@@ -2325,6 +2331,8 @@ void parseInstrXBR( uint32_t *instr, uint32_t instrOpToken ) {
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_NUM ) {
 
+        if ( ! isAlignedOfs( rExpr.val, 4 )) throw( ERR_INVALID_OFS );
+        
         rExpr.val = rExpr.val >> 2;
         depositInstrImm15( instr, (uint32_t) rExpr.val );
     }

@@ -106,6 +106,16 @@ inline bool isAlignedPageAdr( T64Word adr, int align ) {
         else return( false );
 }
 
+inline bool isAlignedInstrAdr( T64Word adr ) {
+
+    return (( adr & 0x3 ) == 0 );
+}
+
+inline bool isAlignedOfs( T64Word ofs,  int align ) {
+
+    return (( ofs & ( align - 1 )) == 0 );
+}
+
 //----------------------------------------------------------------------------------------
 // "copyToBigEndian" converts the input data in little endian format to big endian
 // format. Both source and destination must be aligned to the length of the data
