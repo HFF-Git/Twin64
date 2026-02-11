@@ -411,22 +411,22 @@ const Token AsmTokTab[ ] = {
     // Control registers.
     //
     //------------------------------------------------------------------------------------
-    {   .name = "C0",   .typ = TYP_CREG,    .tid = TOK_CR_0,    .val = 0    },
-    {   .name = "C1",   .typ = TYP_CREG,    .tid = TOK_CR_1,    .val = 1    },
-    {   .name = "C2",   .typ = TYP_CREG,    .tid = TOK_CR_2,    .val = 2    },
-    {   .name = "C3",   .typ = TYP_CREG,    .tid = TOK_CR_3,    .val = 3    },
-    {   .name = "C4",   .typ = TYP_CREG,    .tid = TOK_CR_4,    .val = 4    },
-    {   .name = "C5",   .typ = TYP_CREG,    .tid = TOK_CR_5,    .val = 5    },
-    {   .name = "C6",   .typ = TYP_CREG,    .tid = TOK_CR_6,    .val = 6    },
-    {   .name = "C7",   .typ = TYP_CREG,    .tid = TOK_CR_7,    .val = 7    },
-    {   .name = "C8",   .typ = TYP_CREG,    .tid = TOK_CR_8,    .val = 8    },
-    {   .name = "C9",   .typ = TYP_CREG,    .tid = TOK_CR_9,    .val = 9    },
-    {   .name = "C10",  .typ = TYP_CREG,    .tid = TOK_CR_10,   .val = 10   },
-    {   .name = "C11",  .typ = TYP_CREG,    .tid = TOK_CR_11,   .val = 11   },
-    {   .name = "C12",  .typ = TYP_CREG,    .tid = TOK_CR_12,   .val = 12   },
-    {   .name = "C13",  .typ = TYP_CREG,    .tid = TOK_CR_13,   .val = 13   },
-    {   .name = "C14",  .typ = TYP_CREG,    .tid = TOK_CR_14,   .val = 14   },
-    {   .name = "C15",  .typ = TYP_CREG,    .tid = TOK_CR_15,   .val = 15   },
+    {   .name = "CR0",  .typ = TYP_CREG,    .tid = TOK_CR_0,    .val = 0    },
+    {   .name = "CR1",  .typ = TYP_CREG,    .tid = TOK_CR_1,    .val = 1    },
+    {   .name = "CR2",  .typ = TYP_CREG,    .tid = TOK_CR_2,    .val = 2    },
+    {   .name = "CR3",  .typ = TYP_CREG,    .tid = TOK_CR_3,    .val = 3    },
+    {   .name = "CR4",  .typ = TYP_CREG,    .tid = TOK_CR_4,    .val = 4    },
+    {   .name = "CR5",  .typ = TYP_CREG,    .tid = TOK_CR_5,    .val = 5    },
+    {   .name = "CR6",  .typ = TYP_CREG,    .tid = TOK_CR_6,    .val = 6    },
+    {   .name = "CR7",  .typ = TYP_CREG,    .tid = TOK_CR_7,    .val = 7    },
+    {   .name = "CR8",  .typ = TYP_CREG,    .tid = TOK_CR_8,    .val = 8    },
+    {   .name = "CR9",  .typ = TYP_CREG,    .tid = TOK_CR_9,    .val = 9    },
+    {   .name = "CR10", .typ = TYP_CREG,    .tid = TOK_CR_10,   .val = 10   },
+    {   .name = "CR11", .typ = TYP_CREG,    .tid = TOK_CR_11,   .val = 11   },
+    {   .name = "CR12", .typ = TYP_CREG,    .tid = TOK_CR_12,   .val = 12   },
+    {   .name = "CR13", .typ = TYP_CREG,    .tid = TOK_CR_13,   .val = 13   },
+    {   .name = "CR14", .typ = TYP_CREG,    .tid = TOK_CR_14,   .val = 14   },
+    {   .name = "CR15", .typ = TYP_CREG,    .tid = TOK_CR_15,   .val = 15   },
 
     //------------------------------------------------------------------------------------
     // Runtime architecture register names for general registers.
@@ -2344,7 +2344,7 @@ void parseInstrXBR( uint32_t *instr, uint32_t instrOpToken ) {
 //----------------------------------------------------------------------------------------
 // "parseInstrMFCR" copies a control register to a general register.
 //
-//      MFCR <RegB> "," <CReg>
+//      MFCR <RegR> "," <CReg>
 //
 //----------------------------------------------------------------------------------------
 void parseInstrMFCR( uint32_t *instr, uint32_t instrOpToken ) {
@@ -2352,7 +2352,7 @@ void parseInstrMFCR( uint32_t *instr, uint32_t instrOpToken ) {
     Expr rExpr = INIT_EXPR;
 
     nextToken( );
-    acceptRegB( instr );
+    acceptRegR( instr );
     acceptComma( );
 
     parseExpr( &rExpr );
