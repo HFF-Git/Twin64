@@ -1614,7 +1614,8 @@ void parseNopInstr( uint32_t *instr, uint32_t instrOpToken ) {
 
 //----------------------------------------------------------------------------------------
 // "parseModeTypeInstr" parses all instructions of type "mode" based on the syntax, 
-// which will determine the exact instruction layout and option setting. 
+// which will determine the exact instruction layout and option setting. An 
+// exception is the CMP instruction, which is handled in a separate function.
 //
 // Instruction group ALU syntax:
 //
@@ -1648,9 +1649,105 @@ void parseModeTypeInstr( uint32_t *instr, uint32_t instrOpToken ) {
     if ( rExpr.typ == TYP_NUM ) {
 
         replaceInstrGroupField( instr, OPG_MEM );
+        checkOfsAlignment( rExpr.val, instrFlags );
+        setInstrDwField( instr, instrFlags );
+        depositInstrScaledImm13( instr, (uint32_t) rExpr.val );
+  
+        acceptLparen( );
+        acceptRegB( instr );        
+        acceptRparen( );
+        acceptEOS( );
+    }
+    else if ( rExpr.typ == TYP_GREG ) {
+        
+        if ( isToken( TOK_COMMA )) {
+            
+            if ( hasDataWidthFlags( instrFlags )) throw ( ERR_INVALID_INSTR_MODE );
 
-        if ( instrOpToken == TOK_OP_CMP ) 
-           replaceInstrOpCodeField( instr, OPF_CMP_A );
+            replaceInstrGroupField( instr, OPG_ALU );
+
+            int tmpRegId = (int) rExpr.val;
+            
+            nextToken( );
+            parseExpr( &rExpr );
+            if ( rExpr.typ == TYP_NUM ) {
+
+                depositInstrBit( instr, 19, true );
+                depositInstrRegB( instr, tmpRegId );
+                depositInstrImm15( instr, (uint32_t) rExpr.val );
+            }
+            else if ( rExpr.typ == TYP_GREG ) {
+
+                depositInstrRegB( instr, tmpRegId );
+                depositInstrRegA( instr, (uint32_t) rExpr.val );
+            }
+            else throw ( ERR_EXPECTED_GENERAL_REG );
+        
+            acceptEOS( );
+        }
+        else if ( isToken( TOK_LPAREN )) {
+
+            replaceInstrGroupField( instr, OPG_MEM );
+            depositInstrBit( instr, 19, true );
+            setInstrDwField( instr, instrFlags );
+            depositInstrRegA( instr, (uint32_t) rExpr.val );
+            
+            nextToken( );
+            acceptRegB( instr );
+            acceptRparen( );
+            acceptEOS( );
+        }
+        else throw ( ERR_EXPECTED_COMMA );
+    }
+    
+    if (( instrOpToken == TOK_OP_AND ) || ( instrOpToken == TOK_OP_OR )){
+        
+        if ( instrFlags & IF_C ) depositInstrBit( instr, 20, true );
+        if ( instrFlags & IF_N ) depositInstrBit( instr, 21, true );
+    }
+    else if ( instrOpToken == TOK_OP_XOR ) {
+        
+        if ( instrFlags & IF_N ) depositInstrBit( instr, 21, true );
+    }
+}
+
+//----------------------------------------------------------------------------------------
+// "parseInstrCMP" parses the CMP instruction. It is very similar to the mode 
+// type instructions. Since we map the CMP instruction to two different opCodes
+// it is clearer to hav it in a separate function, even if we duplicate a lot. 
+//
+// Instruction group ALU syntax:
+//
+//      CMP .<cond> [ "." <opt> ] <targetReg> "," <sourceReg> "," <num>          
+//      CMP .<cond> [ "." <opt> ] <targetReg> "," <sourceReg> "," <sourceRegB> 
+//
+// Instruction group MEM syntax:
+//
+//      CMP .<cond> [ "." <opt> ] <targetReg> "," [ <num> ]  "(" <baseReg> ")"  
+//      CMP .<cond> [ "." <opt> ] <targetReg> "," <indexReg> "(" <baseReg> ")"  
+//
+// When we have the indexed addressing mode, the numeric offset needs to be in 
+// alignment with the data width.
+//
+//----------------------------------------------------------------------------------------
+void parseInstrCMP( uint32_t *instr, uint32_t instrOpToken ) {
+    
+    Expr        rExpr       = INIT_EXPR;
+    uint32_t    instrFlags  = IF_NIL;
+    
+    nextToken( );
+    parseInstrOptions( &instrFlags, instrOpToken );
+    if ( ! hasCmpCodeFlags( instrFlags )) throw( ERR_INVALID_INSTR_MODE );
+    setInstrCompareCondField( instr, instrFlags );
+
+    acceptRegR( instr );
+    acceptComma( );
+
+    parseExpr( &rExpr );
+    if ( rExpr.typ == TYP_NUM ) {
+
+        replaceInstrGroupField( instr, OPG_MEM );
+        replaceInstrOpCodeField( instr, OPF_CMP_A );
 
         checkOfsAlignment( rExpr.val, instrFlags );
         setInstrDwField( instr, instrFlags );
@@ -1675,19 +1772,13 @@ void parseModeTypeInstr( uint32_t *instr, uint32_t instrOpToken ) {
             parseExpr( &rExpr );
             if ( rExpr.typ == TYP_NUM ) {
 
-                if ( instrOpToken == TOK_OP_CMP ) 
-                    replaceInstrOpCodeField( instr, OPF_CMP_B );
-                else
-                    depositInstrBit( instr, 19, true );
-
+                replaceInstrOpCodeField( instr, OPF_CMP_B );
                 depositInstrRegB( instr, tmpRegId );
                 depositInstrImm15( instr, (uint32_t) rExpr.val );
             }
             else if ( rExpr.typ == TYP_GREG ) {
 
-                if ( instrOpToken == TOK_OP_CMP )
-                    replaceInstrOpCodeField( instr, OPF_CMP_A );
-            
+                replaceInstrOpCodeField( instr, OPF_CMP_A );
                 depositInstrRegB( instr, tmpRegId );
                 depositInstrRegA( instr, (uint32_t) rExpr.val );
             }
@@ -1698,12 +1789,7 @@ void parseModeTypeInstr( uint32_t *instr, uint32_t instrOpToken ) {
         else if ( isToken( TOK_LPAREN )) {
 
             replaceInstrGroupField( instr, OPG_MEM );
-            
-            if ( instrOpToken == TOK_OP_CMP )
-                replaceInstrOpCodeField( instr, OPF_CMP_B );
-            else
-                depositInstrBit( instr, 19, true );
-
+            replaceInstrOpCodeField( instr, OPF_CMP_B );
             setInstrDwField( instr, instrFlags );
             depositInstrRegA( instr, (uint32_t) rExpr.val );
             
@@ -1713,21 +1799,6 @@ void parseModeTypeInstr( uint32_t *instr, uint32_t instrOpToken ) {
             acceptEOS( );
         }
         else throw ( ERR_EXPECTED_COMMA );
-    }
-    
-    if (( instrOpToken == TOK_OP_AND ) || ( instrOpToken == TOK_OP_OR )){
-        
-        if ( instrFlags & IF_C ) depositInstrBit( instr, 20, true );
-        if ( instrFlags & IF_N ) depositInstrBit( instr, 21, true );
-    }
-    else if ( instrOpToken == TOK_OP_XOR ) {
-        
-        if ( instrFlags & IF_N ) depositInstrBit( instr, 21, true );
-    }
-    else if ( instrOpToken == TOK_OP_CMP ) {
-
-        if ( ! hasCmpCodeFlags( instrFlags )) throw( ERR_INVALID_INSTR_MODE );
-        setInstrCompareCondField( instr, instrFlags );
     }
 }
 
@@ -2695,8 +2766,9 @@ void parseLine( char *inputStr, uint32_t *instr ) {
             case TOK_OP_SUB:
             case TOK_OP_AND:
             case TOK_OP_OR:
-            case TOK_OP_XOR:
-            case TOK_OP_CMP:    parseModeTypeInstr( instr, instrOpToken );  break;
+            case TOK_OP_XOR:    parseModeTypeInstr( instr, instrOpToken );  break;
+
+            case TOK_OP_CMP:    parseInstrCMP( instr, instrOpToken );       break;
                 
             case TOK_OP_EXTR:   parseInstrEXTR( instr, instrOpToken );      break;
             case TOK_OP_DEP:    parseInstrDEP( instr, instrOpToken );       break;
