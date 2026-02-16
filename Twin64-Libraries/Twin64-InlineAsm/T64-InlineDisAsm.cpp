@@ -393,11 +393,11 @@ int buildOpCodeStr( char *buf, T64Instr instr ) {
         case ( OPC_GRP_SYS * 16 + OPC_MR ): {
           
             if ( extractInstrFieldU( instr, 19, 3 ) == 0 )
-                return ( snprintf( buf, 8, "MFCR "));
+                return ( snprintf( buf, 8, "MFCR"));
             else if ( extractInstrFieldU( instr, 19, 3 ) == 1 )   
-                return ( snprintf( buf, 8, "MTCR "));
-            else if ( extractInstrFieldU( instr, 19, 3 ) == 2 )   
-                return ( snprintf( buf, 8, "MFIA "));
+                return ( snprintf( buf, 8, "MTCR"));
+            else if ( extractInstrBit( instr, 21 ))   
+                return ( snprintf( buf, 8, "MFIA"));
             else 
                 return ( snprintf( buf, LEN_16, "**MROP**" ));
         }
@@ -828,7 +828,7 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
                                     extractInstrRegB( instr ),
                                     extractInstrFieldU( instr, 0, 6 )));
             }
-            else if ( extractInstrFieldU( instr, 19, 3 ) == 2 ) {
+            else if ( extractInstrBit( instr, 21 )) {
 
                 return ( snprintf( buf, LEN_32, "R%d",
                                     extractInstrRegR( instr )));
@@ -952,8 +952,10 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
         case ( OPC_GRP_SYS * 16 + OPC_DIAG ):  {
             
-            return ( snprintf( buf, LEN_32, "R%d,R%d,R%d",
+            return ( snprintf( buf, LEN_32, "R%d,%d, R%d,R%d",
                                extractInstrRegR( instr ),
+                               ( extractInstrFieldU( instr, 19, 3 ) << 2 ) + 
+                               extractInstrFieldU( instr, 13, 2 ),
                                extractInstrRegB( instr ),
                                extractInstrRegA( instr )));
         }

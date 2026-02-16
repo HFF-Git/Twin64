@@ -581,15 +581,18 @@ const Token AsmTokTab[ ] = {
 
     {   .name   = "PDTLB",      .typ = TYP_OP_CODE,
         .tid    = TOK_OP_PDTLB, .val = ( OPG_SYS | OPF_TLB    | OPM_FLD_3 ) },
+       
+    {   .name   = "FICA",        .typ = TYP_OP_CODE, 
+        .tid    = TOK_OP_FICA,   .val = ( OPG_SYS | OPF_CA    | OPM_FLD_0 ) },
+
+    {   .name   = "FDCA",        .typ = TYP_OP_CODE, 
+        .tid    = TOK_OP_FDCA,   .val = ( OPG_SYS | OPF_CA    | OPM_FLD_1 ) },
     
     {   .name   = "PICA",       .typ = TYP_OP_CODE, 
-        .tid    = TOK_OP_PICA,  .val = ( OPG_SYS | OPF_CA     | OPM_FLD_0 ) },
+        .tid    = TOK_OP_PICA,  .val = ( OPG_SYS | OPF_CA     | OPM_FLD_2 ) },
 
     {   .name   = "PDCA",        .typ = TYP_OP_CODE, 
-        .tid    = TOK_OP_PDCA,   .val = ( OPG_SYS | OPF_CA    | OPM_FLD_1 ) },
-
-    {   .name   = "FICA",        .typ = TYP_OP_CODE, 
-        .tid    = TOK_OP_FICA,   .val = ( OPG_SYS | OPF_CA    | OPM_FLD_2 ) },
+        .tid    = TOK_OP_PDCA,   .val = ( OPG_SYS | OPF_CA    | OPM_FLD_3 ) },
 
     {   .name   = "FDCA",        .typ = TYP_OP_CODE, 
         .tid    = TOK_OP_FDCA,   .val = ( OPG_SYS | OPF_CA    | OPM_FLD_3 ) },
@@ -2485,10 +2488,10 @@ void parseInstrMFIA( uint32_t *instr, uint32_t instrOpToken ) {
     nextToken( );
     parseInstrOptions( &instrFlags, instrOpToken );
 
-    if      ( instrFlags & IF_A ) depositInstrFieldU( instr, 19, 2, 0 );
-    else if ( instrFlags & IF_L ) depositInstrFieldU( instr, 19, 2, 1 );
-    else if ( instrFlags & IF_R ) depositInstrFieldU( instr, 19, 2, 2 );
-    else                          depositInstrFieldU( instr, 19, 2, 0 );
+    if      ( instrFlags & IF_A ) depositInstrFieldU( instr, 19, 3, 4 );
+    else if ( instrFlags & IF_L ) depositInstrFieldU( instr, 19, 3, 5 );
+    else if ( instrFlags & IF_R ) depositInstrFieldU( instr, 19, 3, 6 );
+    else                          depositInstrFieldU( instr, 19, 3, 4 );
    
     acceptRegR( instr );
     acceptEOS( );
@@ -2714,8 +2717,8 @@ void parseInstrDIAG( uint32_t *instr, uint32_t instrOpToken ) {
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_NUM ) {
         
-        depositInstrField( instr, 19, 3, (uint32_t) rExpr.val >> 2 );
-        depositInstrField( instr, 20, 2, (uint32_t) rExpr.val );
+        depositInstrFieldU( instr, 19, 3, (uint32_t) rExpr.val >> 2 );
+        depositInstrFieldU( instr, 13, 2, (uint32_t) rExpr.val & 0x3);
     }
     else throw ( ERR_EXPECTED_DIAG_OP );
     
