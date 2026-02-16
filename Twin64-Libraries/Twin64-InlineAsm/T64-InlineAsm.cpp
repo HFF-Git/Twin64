@@ -335,7 +335,8 @@ enum InstrFlags : uint32_t {
     IF_T        = ( 1U << 16 ),
     IF_U        = ( 1U << 17 ),
     IF_W        = ( 1U << 18 ),
-    IF_Z        = ( 1U << 19 ),
+    IF_X        = ( 1U << 19 ),
+    IF_Z        = ( 1U << 20 ),
     
     IF_EQ       = ( 1U << 24 ),
     IF_LT       = ( 1U << 25 ),
@@ -374,7 +375,8 @@ enum InstrFlags : uint32_t {
     IM_MFIA_OP  = ( IF_A | IF_L | IF_R ),
     IM_ITLB_OP  = ( IF_I | IF_D ),
     IM_PTLB_OP  = ( IF_I | IF_D ),
-    IM_PCA_OP   = ( IF_I | IF_D )
+    IM_PCA_OP   = ( IF_I | IF_D ),
+    IM_PRB_OP   = ( IF_A | IF_R | IF_W | IF_X )
 };
 
 //----------------------------------------------------------------------------------------
@@ -1465,10 +1467,12 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
                     case 'M': instrMask = instrMask |= IF_M; break;
                     case 'N': instrMask = instrMask |= IF_N; break;
                     case 'Q': instrMask = instrMask |= IF_Q; break;
+                    case 'R': instrMask = instrMask |= IF_R; break;
                     case 'S': instrMask = instrMask |= IF_S; break;
                     case 'T': instrMask = instrMask |= IF_T; break;
                     case 'U': instrMask = instrMask |= IF_U; break;
                     case 'W': instrMask = instrMask |= IF_W; break;
+                    case 'X': instrMask = instrMask |= IF_X; break;
                     case 'Z': instrMask = instrMask |= IF_Z; break;
                     default: throw ( ERR_INVALID_INSTR_OPT );
                 }
@@ -1505,6 +1509,13 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
     cnt = 0;
     if ( instrMask & IF_T ) cnt ++;
     if ( instrMask & IF_F ) cnt ++;
+    if ( cnt > 1 ) throw ( ERR_DUPLICATE_INSTR_OPT );
+
+    cnt = 0;
+    if ( instrMask & IF_R ) cnt ++;
+    if ( instrMask & IF_W ) cnt ++;
+    if ( instrMask & IF_X ) cnt ++;
+    if ( instrMask & IF_A ) cnt ++;
     if ( cnt > 1 ) throw ( ERR_DUPLICATE_INSTR_OPT );
     
     cnt = 0;
@@ -1559,6 +1570,7 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
         (( instrOpToken == TOK_OP_BB   ) && ( instrMask & ~IM_BB_OP     )) ||
 
         (( instrOpToken == TOK_OP_MFIA ) && ( instrMask & ~IM_MFIA_OP   )) ||
+        (( instrOpToken == TOK_OP_PRB )  && ( instrMask & ~IM_PRB_OP    )) ||
         
         (( instrOpToken == TOK_OP_NOP  ) && ( instrMask & ~IM_NIL       ))) { 
     
@@ -2478,7 +2490,6 @@ void parseInstrMFIA( uint32_t *instr, uint32_t instrOpToken ) {
     else if ( instrFlags & IF_R ) depositInstrFieldU( instr, 19, 2, 2 );
     else                          depositInstrFieldU( instr, 19, 2, 0 );
    
-    nextToken( );
     acceptRegR( instr );
     acceptEOS( );
 }
@@ -2512,35 +2523,42 @@ void parseInstrLPA( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseInstrPRB" probes a virtual address for access. The "P/U" indicate privileged
-//  and user mode access.
+// "parseInstrPRB" probes a virtual address for access.
 //
-//      PRB <RegR> "," <RegB> "," <RegA>
-//      PRB <RegR> "," <RegB> "," <val>
+//      PRB.A <RegR> "," <RegB> "," <RegA>
+//      PRB .R/W/X <RegR> "," <RegB>
 //
 //----------------------------------------------------------------------------------------
 void parseInstrPRB( uint32_t *instr, uint32_t instrOpToken ) {
     
-    Expr rExpr = INIT_EXPR;
+    uint32_t instrFlags  = IF_NIL;
 
     nextToken( );
+    parseInstrOptions( &instrFlags, instrOpToken );
+
     acceptRegR( instr );
     acceptComma( );
     acceptRegB( instr );
-    acceptComma( );
     
-    parseExpr( &rExpr );
-    if ( rExpr.typ == TYP_GREG ) {
-        
-        depositInstrRegA( instr, (uint32_t) rExpr.val );
+    if ( instrFlags & IF_A ) {
+
+        acceptComma( );
+        acceptRegA( instr );
         depositInstrFieldU( instr, 13, 2, 3 );
     }
-    else if ( rExpr.typ == TYP_NUM  ) {
-        
-        depositInstrField( instr, 13, 2, rExpr.val );
+    else if ( instrFlags & IF_R ) {
+
+        depositInstrFieldU( instr, 13, 2, 0 );
     }
-    else throw ( ERR_EXPECTED_PRB_ARG );
-    
+    else if ( instrFlags & IF_W ) {
+
+        depositInstrFieldU( instr, 13, 2, 1 );
+    }
+    else if ( instrFlags & IF_X ) {
+
+        depositInstrFieldU( instr, 13, 2, 2 );
+    }
+
     acceptEOS( );
 }
 
@@ -2608,11 +2626,7 @@ void parseInstrFlushCache( uint32_t *instr, uint32_t instrOpToken ) {
     acceptRegR( instr );
     acceptComma( );
 
-    if ( isTokenTyp( TYP_GREG )) {
-
-        acceptRegA( instr );
-    }
-
+    if ( isTokenTyp( TYP_GREG )) acceptRegA( instr );
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_GREG ) depositInstrRegB( instr, rExpr.val );
     else throw ( ERR_EXPECTED_LPAREN );
@@ -2635,10 +2649,7 @@ void parseInstrPurgeCache( uint32_t *instr, uint32_t instrOpToken ) {
     acceptRegR( instr );
     acceptComma( );
 
-    if ( isTokenTyp( TYP_GREG )) {
-
-        acceptRegA( instr );
-    }
+    if ( isTokenTyp( TYP_GREG )) acceptRegA( instr );
 
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_GREG ) depositInstrRegB( instr, rExpr.val );
