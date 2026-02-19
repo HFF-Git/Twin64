@@ -2711,8 +2711,6 @@ void parseInstrDIAG( uint32_t *instr, uint32_t instrOpToken ) {
     Expr rExpr = INIT_EXPR;
    
     nextToken( );
-    acceptRegR( instr );
-    acceptComma( );
     
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_NUM ) {
@@ -2726,6 +2724,13 @@ void parseInstrDIAG( uint32_t *instr, uint32_t instrOpToken ) {
     acceptRegB( instr );
     acceptComma( );
     acceptRegA( instr );
+
+    if ( isToken ( TOK_COMMA )) {
+
+        nextToken( );
+        acceptRegR( instr );
+    }
+
     acceptEOS( );
 }
 

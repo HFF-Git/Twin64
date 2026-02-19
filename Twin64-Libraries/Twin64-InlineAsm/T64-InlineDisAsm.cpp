@@ -951,13 +951,22 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
         }
             
         case ( OPC_GRP_SYS * 16 + OPC_DIAG ):  {
-            
-            return ( snprintf( buf, LEN_32, "R%d,%d, R%d,R%d",
-                               extractInstrRegR( instr ),
+
+            int cursor = 0;
+
+            cursor = snprintf( buf, LEN_32, "%d, R%d,R%d",
                                ( extractInstrFieldU( instr, 19, 3 ) << 2 ) + 
                                extractInstrFieldU( instr, 13, 2 ),
                                extractInstrRegB( instr ),
-                               extractInstrRegA( instr )));
+                               extractInstrRegA( instr ));
+
+            if ( extractInstrRegR( instr ) != 0 ) {
+
+                cursor += snprintf( buf + cursor, LEN_32, ",R%d", 
+                                    extractInstrRegR( instr ));
+            }
+                
+            return ( cursor );
         }
             
         case ( OPC_GRP_ALU * 16 + OPC_NOP ): {
