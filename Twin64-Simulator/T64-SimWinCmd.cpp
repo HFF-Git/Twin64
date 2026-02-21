@@ -80,6 +80,18 @@ bool isLeftBracketChar( int ch ) {
 }
 
 //----------------------------------------------------------------------------------------
+// Trim trailing blanks from a string. 
+//
+//
+//----------------------------------------------------------------------------------------
+void rtrim( char *s ) {
+
+    char *end = s + strlen( s );
+    while (( end > s ) && ( isspace((unsigned char) *(end - 1)))) end--;
+    *end = '\0';
+}
+
+//----------------------------------------------------------------------------------------
 // A little helper function to remove the comment part of a command line. We do 
 // the changes on the buffer passed in by just setting the end of string at the
 // position of the "#" comment indicator. A "#" inside a string is ignored.
@@ -471,6 +483,7 @@ void SimCommandsWin::clearCmdWin( ) {
 // to ensure that when a new command line is read in, we are with our cursor at 
 // the input line, right after the prompt string.
 //
+// ??? command line editing is still an issue when using cursors...
 //----------------------------------------------------------------------------------------
 int SimCommandsWin::readCmdLine( char *cmdBuf, int initialCmdBufLen, char *promptBuf ) {
     
@@ -849,6 +862,8 @@ int SimCommandsWin::buildCmdPrompt( char *promptStr, int promptStrLen ) {
 // the token being the module type keyword. The routine loops over the key/value
 // pairs to get all module type info. Omitted key/value pairs are set to reasonable
 // defaults.
+//
+//  NM proc, num, ITLB=xxx, DTLB=xxx, ...
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addProcModule( ) {
@@ -1290,48 +1305,65 @@ void SimCommandsWin::parseWinNumRange( int *winNumStart, int *winNumEnd ) {
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::execCmdsFromFile( char* fileName ) {
-    
+
+    char lineBuf[ MAX_CMD_LINE_SIZE ];
     char cmdLineBuf[ MAX_CMD_LINE_SIZE ] = "";
-    
+
     try {
-        
-        if ( strlen( fileName ) > 0 ) {
-            
-            FILE *f = fopen( fileName, "r" );
-            if ( f != nullptr ) {
-                
-                while ( ! feof( f )) {
-                    
-                    strcpy( cmdLineBuf, "" );
-                    fgets( cmdLineBuf, sizeof( cmdLineBuf ), f );
-                    cmdLineBuf[ strcspn( cmdLineBuf, "\r\n" ) ] = 0;
-                    
-                    if ( glb -> env -> getEnvVarBool((char *) ENV_ECHO_CMD_INPUT )) {
-                        
-                        winOut -> writeChars( "%s\n", cmdLineBuf );
-                    }
-                    
-                    removeComment( cmdLineBuf );
-                    evalInputLine( cmdLineBuf );
-                }
+
+        if ( strlen( fileName ) == 0 ) throw( ERR_EXPECTED_FILE_NAME );
+
+        rtrim( fileName );
+
+        FILE *f = fopen( fileName, "r" );
+        if ( f == nullptr ) {
+
+            winOut -> writeChars( "File: \"%s\"\n", fileName );
+            winOut -> writeChars( "File open error: %s\n", strerror( errno ));
+            throw( ERR_OPEN_EXEC_FILE );
+        }
+
+        cmdLineBuf[0] = '\0';
+
+        while ( fgets( lineBuf, sizeof(lineBuf), f ) != nullptr ) {
+
+            lineBuf[ strcspn(lineBuf, "\r\n") ] = 0;
+
+            size_t len          = strlen(lineBuf);
+            int    continuation = 0;
+
+            if (( len > 0 ) && ( lineBuf[ len - 1 ] == '\\' )) {
+
+                continuation = 1;
+                lineBuf[ len - 1 ] = '\0';
             }
-            else throw( ERR_OPEN_EXEC_FILE );
+
+            if ( strlen(cmdLineBuf) + strlen( lineBuf ) + 1 >= sizeof( cmdLineBuf )) {
+
+                fclose( f );
+                throw( ERR_CMD_LINE_TOO_LONG );
+            }
+
+            strcat( cmdLineBuf, lineBuf );
+
+            if ( continuation ) continue;
+
+            if ( glb -> env -> getEnvVarBool((char*) ENV_ECHO_CMD_INPUT )) {
+
+                winOut -> writeChars( "%s\n", cmdLineBuf );
+            }
+
+            removeComment( cmdLineBuf );
+            evalInputLine( cmdLineBuf );
+
+            cmdLineBuf[0] = '\0'; 
         }
-        else throw ( ERR_EXPECTED_FILE_NAME  );
+
+        fclose( f );
     }
-    
     catch ( SimErrMsgId errNum ) {
-        
-        switch ( errNum ) {
-                
-            case ERR_OPEN_EXEC_FILE: {
-                
-                winOut -> writeChars( "Error in opening file: \"%s\"", fileName );
-                
-            } break;
-                
-            default: throw ( errNum );
-        }
+
+        throw(errNum);
     }
 }
 
@@ -1517,7 +1549,6 @@ void SimCommandsWin::loadElfFileCmd( ) {
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addModuleCmd( ) {
-
 
     switch ( tok -> tokId( )) {
 

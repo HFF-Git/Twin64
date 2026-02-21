@@ -434,6 +434,9 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
     { .errNum = ERR_TOO_MANY_ARGS_CMD_LINE,     
       .errStr = (char *) "Too many args in command line" },
 
+    { .errNum = ERR_CMD_LINE_TOO_LONG,    
+      .errStr = (char *) "Command line input too long" },
+
     { .errNum = ERR_OFS_LEN_LIMIT_EXCEEDED,     
       .errStr = (char *) "Offset/Length exceeds limit" },
 

@@ -607,7 +607,7 @@ void T64Cpu::instrMemAndOp( T64Instr instr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// ALU:OP operation.
+// ALU:OR operation.
 //
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrAluOrOp( T64Instr instr ) {
@@ -980,6 +980,7 @@ void T64Cpu::instrBrBeOp( T64Instr instr ) {
 //----------------------------------------------------------------------------------------
 // BR:BR_OP operation.
 //
+// ??? rework...
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrBrBrOp( T64Instr instr ) {
 
@@ -996,6 +997,7 @@ void T64Cpu::instrBrBrOp( T64Instr instr ) {
 //----------------------------------------------------------------------------------------
 // BR:BV_OP operation.
 //
+// ??? rework...
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrBrBvOp( T64Instr instr ) {
 
@@ -1093,12 +1095,13 @@ void T64Cpu::instrBrMbrOp( T64Instr instr ) {
 //
 //  0       -> MFCR
 //  1       -> MTCR
-//. 2 .. 3  -> undefined.
+//  2 .. 3  -> undefined.
 //  4       -> MFIA: psrReg
 //  5       -> MFIA: psrReg.[ 31..12 ] 
 //  6       -> MFIA: psrReg.[ 51..32 ] 
 //  7       -> MFIA: psrReg.[ 63..52 ] 
 //
+// ??? rework...
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrSysMrOp( T64Instr instr ) {
 
@@ -1307,7 +1310,7 @@ void T64Cpu::instrSysRfiOp( T64Instr instr ) {
 
     if ( extractInstrFieldU( instr, 19, 3 ) != 0 ) illegalInstrTrap( );
 
-    setRegR( instr, psrReg ); // ??? or + 4 ?
+    setRegR( instr, addAdrOfs32( psrReg, 4 ));
     psrReg = cRegFile[ CTL_REG_IPSR ];
 }
 

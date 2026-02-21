@@ -156,14 +156,14 @@ T64Cache *T64Processor::getDCachePtr( ) {
 //      definition, we do not own that block in any case.
 //
 // For all cases, we first check that we are not the originator of that request. 
-// Just a little sanity check. Next, we lookup the responsible module by the physical 
-// address of the request. If we are not the address range owner, we perform the 
-// operations described above on our caches. If we are the owner, we simply carry 
-// the request.
+// Just a little sanity check. Next, we lookup the responsible module by the 
+// physical address of the request. If we are not the address range owner, we 
+// perform the operations described above on our caches. If we are the owner, 
+// we simply carry the request.
 //
-// A processor cannot be the target of a cache operation. It does not own a physical
-// address range other then its HPA address range. And this range can only be accessed
-// uncached.
+// A processor cannot be the target of a cache operation. It does not own a 
+// physical address range other then its HPA address range. And this range can 
+// only be accessed uncached.
 //
 //----------------------------------------------------------------------------------------
 bool T64Processor::busOpReadSharedBlock(  int      reqModNum, 
@@ -225,19 +225,19 @@ bool T64Processor::busOpWriteBlock( int     reqModNum,
 }
 
 //----------------------------------------------------------------------------------------
-// System Bus operations non-cache interface routines. When a module issues a request,
-// any other module will be informed. We can now check whether the bus transactions 
-// would concern us.
+// System Bus operations non-cache interface routines. When a module issues a 
+// request, any other module will be informed. We can now check whether the bus
+// transactions would concern us.
 //
 //      busReadUncached:
 //
-//      Another module issued an uncached read. We check wether this concerns our
-//      HPA address range. If so, we return the data from the HPA space.
+//      Another module issued an uncached read. We check wether this concerns 
+//      our HPA address range. If so, we return the data from the HPA space.
 //
 //      busWriteUncached:
 //
-//      Another module issued an uncached write. We check wether this concerns our
-//      HPA address range. If so, we update the data in our HPA space.
+//      Another module issued an uncached write. We check wether this concerns 
+//      our HPA address range. If so, we update the data in our HPA space.
 //    
 // ??? need a function to call for processor HPA data
 //
@@ -297,8 +297,8 @@ bool T64Processor::busOpWriteUncached( int     reqModNum,
 }
 
 //----------------------------------------------------------------------------------------
-// The step routine is the entry point to the processor for executing one or more 
-// instructions.
+// The step routine is the entry point to the processor for executing one or 
+// more instructions.
 //
 //----------------------------------------------------------------------------------------
 void T64Processor::step( ) {
