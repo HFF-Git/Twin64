@@ -359,7 +359,7 @@ enum InstrFlags : uint32_t {
     IM_DEP_OP   = ( IF_Z | IF_I ),
     IM_SHLxA_OP = ( IF_I ),
     IM_SHRxA_OP = ( IF_I ),
-    IM_LDI_OP   = ( IF_L | IF_M | IF_U ),
+    IM_LDIL_OP  = ( IF_L | IF_M | IF_U ),
     IM_LDO_OP   = ( IF_B | IF_H | IF_W | IF_D ),
     IM_LD_OP    = ( IF_B | IF_H | IF_W | IF_D | IF_U ),
     IM_ST_OP    = ( IF_B | IF_H | IF_W | IF_D ),
@@ -1555,7 +1555,7 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
         (( instrOpToken == TOK_OP_SHR3A ) && ( instrMask & ~IM_SHRxA_OP )) ||
 
         (( instrOpToken == TOK_OP_LDO   ) && ( instrMask & ~IM_LDO_OP   )) ||
-        (( instrOpToken == TOK_OP_LDIL  ) && ( instrMask & ~IM_LDI_OP   )) ||
+        (( instrOpToken == TOK_OP_LDIL  ) && ( instrMask & ~IM_LDIL_OP  )) ||
         (( instrOpToken == TOK_OP_ADDIL ) && ( instrMask & ~IM_NIL      )) || 
         
         (( instrOpToken == TOK_OP_ABR  ) && ( instrMask & ~IM_ABR_OP    )) ||
@@ -2068,11 +2068,10 @@ void parseInstrSHRxA( uint32_t *instr, uint32_t instrOpToken ) {
 // addition of the ADDIL instruction, which will add the encoded value left shifted to
 // <sourceReg>. The result is in R1.
 //
-//      LDI [ .L/S/U ] <targetReg> "," <val>
-//      ADDIL <sourceReg> "," <val>
+//      LDIL [ .L/S/U ] <targetReg> "," <val>
 //
 //----------------------------------------------------------------------------------------
-void parseInstrImmOp( uint32_t *instr, uint32_t instrOpToken ) {
+void parseInstrLDIL( uint32_t *instr, uint32_t instrOpToken ) {
     
     Expr        rExpr      = INIT_EXPR;
     uint32_t    instrFlags = IF_NIL;
@@ -2084,6 +2083,32 @@ void parseInstrImmOp( uint32_t *instr, uint32_t instrOpToken ) {
     else if ( instrFlags & IF_M ) depositInstrFieldU( instr, 20, 2, 2 );
     else if ( instrFlags & IF_U ) depositInstrFieldU( instr, 20, 2, 3 );
     else                          depositInstrFieldU( instr, 20, 2, 1 );
+
+    acceptRegR( instr );
+    acceptComma( );
+    
+    parseExpr( &rExpr );
+    if ( rExpr.typ == TYP_NUM ) depositInstrImm20U( instr, (uint32_t) rExpr.val );
+    else throw ( ERR_EXPECTED_NUMERIC );
+    
+    acceptEOS( );
+}
+
+//----------------------------------------------------------------------------------------
+// The ADDIL-OP instruction group deals with the loading of immediate subfield and the
+// addition of the ADDIL instruction, which will add the encoded value left shifted to
+// <sourceReg>. The result is in R1.
+//
+//      ADDIL <sourceReg> "," <val>
+//
+//----------------------------------------------------------------------------------------
+void parseInstrADDIL( uint32_t *instr, uint32_t instrOpToken ) {
+    
+    Expr        rExpr      = INIT_EXPR;
+    uint32_t    instrFlags = IF_NIL;
+    
+    nextToken( );
+    parseInstrOptions( &instrFlags, instrOpToken );
 
     acceptRegR( instr );
     acceptComma( );
@@ -2801,8 +2826,8 @@ void parseLine( char *inputStr, uint32_t *instr ) {
             case TOK_OP_SHR2A:
             case TOK_OP_SHR3A:  parseInstrSHRxA( instr, instrOpToken );     break;
                 
-            case TOK_OP_LDIL:
-            case TOK_OP_ADDIL:  parseInstrImmOp( instr, instrOpToken );     break;
+            case TOK_OP_LDIL:   parseInstrLDIL( instr, instrOpToken );      break;
+            case TOK_OP_ADDIL:  parseInstrADDIL( instr, instrOpToken );     break;
                 
             case TOK_OP_LDO:    parseInstrLDO( instr, instrOpToken );       break;
                 
