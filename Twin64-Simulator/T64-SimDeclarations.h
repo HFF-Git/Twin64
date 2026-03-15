@@ -535,6 +535,7 @@ struct SimTokenizer {
 
     int             parseHex2( );
     int             parseHex4( );
+    uint32_t        parseHex8( );
     void            parseNum( );
     void            parseString( );
     void            parseIdent( );

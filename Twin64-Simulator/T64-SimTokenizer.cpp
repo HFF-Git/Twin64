@@ -333,6 +333,25 @@ int SimTokenizer::parseHex4( ) {
 }
 
 //----------------------------------------------------------------------------------------
+// "parseHex8" gets an eight digit hex number.
+//
+//----------------------------------------------------------------------------------------
+uint32_t SimTokenizer::parseHex8( ) {
+
+    uint32_t value = 0;
+
+    for ( int i = 0; i < 8; i++ ) {
+
+        nextChar( );
+        int h = hexValue( currentChar );
+        if ( h < 0 )throw(ERR_INVALID_UNICODE_ESCAPE);
+        value = ( value << 4 ) | h;
+    }
+
+    return value;
+}
+
+//----------------------------------------------------------------------------------------
 // "parseString" gets a string. We manage special characters inside the string 
 // with the "\" prefix. Right now, we do not use strings, so the function is 
 // perhaps for the future. We will just parse it, but record no result. One day,
@@ -387,6 +406,13 @@ void SimTokenizer::parseString() {
                         
                     } break;
 
+                    case 'U': {
+
+                        uint32_t cp = parseHex8();
+                        appendUTF8( out, end, cp );
+                    
+                    } break;
+
                     default: {
 
                         appendChar( out, end, currentChar );
@@ -400,20 +426,17 @@ void SimTokenizer::parseString() {
                 appendChar( out, end, currentChar );
             }
 
-            nextChar();
+            nextChar( );
         }
 
-        if (currentChar != '"')
-            throw(ERR_EXPECTED_CLOSING_QUOTE);
+        if ( currentChar != '"' ) throw(ERR_EXPECTED_CLOSING_QUOTE);
 
-        nextChar();
-        while (isspace(currentChar))
-            nextChar();
+        nextChar( );
+        while ( isspace( currentChar )) nextChar();
 
-    } while (currentChar == '"');   // concatenation support
+    } while ( currentChar == '"' );
 
-    appendChar(out, end, '\0');     // terminate string
-
+    appendChar( out, end, '\0' ); 
     currentToken.u.str = strTokenBuf;
 }
 
