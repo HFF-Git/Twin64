@@ -149,6 +149,7 @@ struct SimFormatter {
   
     void            clearScreen( );
     void            clearLine( );
+    void            clearToEndOfLine( );
     void            setAbsCursor( int row, int col );
     void            setCursorInLine( int col ); 
     void            setWindowSize( int row, int col );

@@ -483,11 +483,13 @@ void SimCommandsWin::clearCmdWin( ) {
 // to ensure that when a new command line is read in, we are with our cursor at 
 // the input line, right after the prompt string.
 //
-// ??? command line editing is still an issue when using cursors...
 //----------------------------------------------------------------------------------------
 int SimCommandsWin::readCmdLine( char *cmdBuf, int initialCmdBufLen, char *promptBuf ) {
     
-    enum CharType : uint16_t { CT_NORMAL, CT_ESCAPE, CT_ESCAPE_BRACKET, CT_WIN_SPECIAL };
+    enum CharType : uint16_t { 
+        
+        CT_NORMAL, CT_ESCAPE, CT_ESCAPE_BRACKET, CT_WIN_SPECIAL 
+    };
     
     int         promptBufLen    = (int) strlen( promptBuf );
     int         cmdBufCursor    = 0;
@@ -497,8 +499,7 @@ int SimCommandsWin::readCmdLine( char *cmdBuf, int initialCmdBufLen, char *promp
     
     if (( promptBufLen > 0 ) && ( glb -> console -> isConsole( ))) {
         
-        promptBufLen =  glb -> console -> writeChars( " " );
-        promptBufLen += glb -> console -> writeChars( "%s", promptBuf );
+        promptBufLen = glb -> console -> writeChars( " %s", promptBuf );
     }
     
     if ( initialCmdBufLen > 0 ) {
@@ -546,7 +547,7 @@ int SimCommandsWin::readCmdLine( char *cmdBuf, int initialCmdBufLen, char *promp
                     else {
                   
                         cmdBuf[ cmdBufLen ] = '\0';
-                        glb -> console -> writeCarriageReturn();
+                        glb -> console -> writeCarriageReturn( );
 
                         winOut -> addToBuffer( promptBuf );
                         winOut -> addToBuffer( cmdBuf );
@@ -560,10 +561,9 @@ int SimCommandsWin::readCmdLine( char *cmdBuf, int initialCmdBufLen, char *promp
                     if ( cmdBufLen > 0 ) {
                         
                         removeChar( cmdBuf, &cmdBufLen, &cmdBufCursor );
-                        
-                        glb -> console -> eraseChar( );
-                        glb -> console -> writeCursorLeft( );
-                        glb -> console -> writeChars( "%c", cmdBuf[ cmdBufCursor ] );
+                        glb -> console -> writeChars( "\r %s%s", promptBuf, cmdBuf );
+                        glb -> console -> clearToEndOfLine( ); 
+                        setWinCursor( 0, promptBufLen + cmdBufCursor + 1 );
                     }
                 }
                 else {
@@ -571,10 +571,12 @@ int SimCommandsWin::readCmdLine( char *cmdBuf, int initialCmdBufLen, char *promp
                     if ( cmdBufLen < MAX_CMD_LINE_SIZE - 1 ) {
                        
                         insertChar( cmdBuf, ch, &cmdBufLen, &cmdBufCursor );
-                        
+
                         if ( isprint( ch )) {
 
-                            glb -> console -> writeChars( "%c", ch );
+                            glb -> console -> writeChars( "\r %s%s", promptBuf, cmdBuf);
+                            glb -> console -> clearToEndOfLine( ); 
+                            setWinCursor(0, promptBufLen + cmdBufCursor );
                         }
                     }
                 }

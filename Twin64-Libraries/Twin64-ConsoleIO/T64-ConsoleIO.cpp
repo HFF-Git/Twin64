@@ -368,6 +368,11 @@ void SimFormatter::clearLine( ) {
     writeChars((char *) "\x1b[2K" );
 }
 
+void SimFormatter::clearToEndOfLine( ) {
+    
+    writeChars((char *) "\x1b[K" );
+}
+
 void SimFormatter::setAbsCursor( int row, int col ) {
     
     writeChars((char *) "\x1b[%d;%dH", row, col );
