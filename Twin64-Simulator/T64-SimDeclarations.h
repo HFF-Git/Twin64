@@ -359,6 +359,10 @@ enum SimErrMsgId : int {
 
     ERR_NUMERIC_RANGE               = 420,
 
+    ERR_INVALID_HEX_ESCAPE          = 430,
+    ERR_INVALID_UNICODE_ESCAPE      = 431,
+    ERR_STRING_TOO_LONG             = 432,
+
     ERR_TLB_TYPE                    = 500,
     ERR_TLB_PURGE_OP                = 501,
     ERR_TLB_INSERT_OP               = 502,
@@ -528,6 +532,9 @@ struct SimTokenizer {
     private:
     
     virtual void    nextChar( ) = 0;
+
+    int             parseHex2( );
+    int             parseHex4( );
     void            parseNum( );
     void            parseString( );
     void            parseIdent( );

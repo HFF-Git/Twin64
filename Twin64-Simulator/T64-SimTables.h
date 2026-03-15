@@ -431,6 +431,15 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
     { .errNum = ERR_EXPR_FACTOR,                
       .errStr = (char *) "Expression error: factor" },
 
+    { .errNum = ERR_INVALID_HEX_ESCAPE,                
+      .errStr = (char *) "Invalid hex escape code for char" },
+
+    { .errNum = ERR_INVALID_UNICODE_ESCAPE,                
+      .errStr = (char *) "Invalid unicode escape code for char" },
+
+    { .errNum = ERR_STRING_TOO_LONG,                
+      .errStr = (char *) "String size exceeds limit" },
+
     { .errNum = ERR_TOO_MANY_ARGS_CMD_LINE,     
       .errStr = (char *) "Too many args in command line" },
 

@@ -94,6 +94,62 @@ void addChar( char *buf, int size, char ch ) {
     }
 }
 
+//----------------------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------------------
+void appendChar(char *&out, char *end, char c) {
+   
+    if ( out >= end )  throw( ERR_STRING_TOO_LONG );
+    *out++ = c;
+}
+
+//----------------------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------------------
+void appendUTF8( char *&out, char *end, uint32_t cp ) {
+
+    if (cp <= 0x7F) {
+        
+        appendChar( out, end, (char)cp );
+    }
+    else if (cp <= 0x7FF) {
+        
+        appendChar( out, end, 0xC0 | ( cp >> 6 ));
+        appendChar( out, end, 0x80 | ( cp & 0x3F ));
+    }
+    else if ( cp <= 0xFFFF ) {
+        
+        appendChar( out, end, 0xE0 | ( cp >> 12 ));
+        appendChar( out, end, 0x80 | (( cp >> 6 ) & 0x3F ));
+        appendChar( out, end, 0x80 | ( cp & 0x3F ));
+    }
+    else if ( cp <= 0x10FFFF ) {
+        
+        appendChar( out, end, 0xF0 | ( cp >> 18 ));
+        appendChar( out, end, 0x80 | (( cp >> 12 ) & 0x3F ));
+        appendChar( out, end, 0x80 | (( cp >> 6 ) & 0x3F ));
+        appendChar( out, end, 0x80 | ( cp & 0x3F ));
+    }
+    else throw( ERR_INVALID_UNICODE_ESCAPE );
+}
+
+//----------------------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------------------
+int hexValue( char c ) {
+
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
 }; // namespace
 
 //----------------------------------------------------------------------------------------
@@ -155,7 +211,8 @@ char *SimTokenizer::tokStr( ) {
 //----------------------------------------------------------------------------------------
 // "parseNum" will parse a number. We accept decimals, hexadecimals and binary 
 // numbers. The numeric string can also contain "_" characters for readability.
-// Hex numbers start with "0x", binary with "0b", decimals just with numeric digits.
+// Hex numbers start with "0x", binary with "0b", decimals just with numeric 
+// digits.
 //----------------------------------------------------------------------------------------
 void SimTokenizer::parseNum( ) {
     
@@ -238,6 +295,44 @@ void SimTokenizer::parseNum( ) {
 }
 
 //----------------------------------------------------------------------------------------
+// "parseHex2" gets a two digit hex number.
+//
+//----------------------------------------------------------------------------------------
+int SimTokenizer::parseHex2( ) {
+
+    int value = 0;
+
+    for ( int i = 0; i < 2; i++ ) {
+
+        nextChar( );
+        int h = hexValue( currentChar) ;
+        if ( h < 0 ) throw( ERR_INVALID_HEX_ESCAPE );
+        value = ( value << 4 ) | h;
+    }
+
+    return value;
+}
+
+//----------------------------------------------------------------------------------------
+// "parseHex4" gets a four digit hex number.
+//
+//----------------------------------------------------------------------------------------
+int SimTokenizer::parseHex4( ) {
+
+    int value = 0;
+
+    for ( int i = 0; i < 4; i++ ) {
+
+        nextChar( );
+        int h = hexValue( currentChar );
+        if ( h < 0 ) throw( ERR_INVALID_UNICODE_ESCAPE );
+        value = ( value << 4 ) | h;
+    }
+
+    return value;
+}
+
+//----------------------------------------------------------------------------------------
 // "parseString" gets a string. We manage special characters inside the string 
 // with the "\" prefix. Right now, we do not use strings, so the function is 
 // perhaps for the future. We will just parse it, but record no result. One day,
@@ -250,42 +345,74 @@ void SimTokenizer::parseString() {
     currentToken.typ   = TYP_STR;
     currentToken.u.str = nullptr;
 
-    strTokenBuf[0] = '\0';
+    char *out = strTokenBuf;
+    char *end = strTokenBuf + sizeof(strTokenBuf) - 1;
 
     do {
-       
+
         nextChar();
 
         while ((currentChar != EOS_CHAR) && (currentChar != '"')) {
 
             if (currentChar == '\\') {
 
-                nextChar();
+                nextChar( );
 
                 if (currentChar == EOS_CHAR)
                     throw(ERR_EXPECTED_CLOSING_QUOTE);
 
                 switch (currentChar) {
 
-                    case 'n':  strcat( strTokenBuf, "\n"); break;
-                    case 't':  strcat( strTokenBuf, "\t"); break;
-                    case '\\': strcat( strTokenBuf, "\\"); break;
-                    case '"':  strcat( strTokenBuf, "\""); break;
+                    case 'n': appendChar(out, end, '\n'); break;
+                    case 't': appendChar(out, end, '\t'); break;
+                    case 'r': appendChar(out, end, '\r'); break;
+                    case '\\': appendChar(out, end, '\\'); break;
+                    case '"': appendChar(out, end, '"'); break;
+
+                    case 'x': {
+
+                        int v = parseHex2( );
+                        appendChar(out, end, (char)v);
+                        
+                    } break;
+
+                    case 'u': {
+
+                        uint32_t codepoint = parseHex4();
+
+                        if ( codepoint >= 0xD800 && codepoint <= 0xDFFF )
+                            throw(ERR_INVALID_UNICODE_ESCAPE);
+
+                        appendUTF8(out, end, codepoint);
+                        
+                    } break;
+
+                    default: {
+
+                        appendChar( out, end, currentChar );
                     
-                    default:   addChar( strTokenBuf, sizeof(strTokenBuf), currentChar);
-                } 
+                    } break;
+                }
+
+            } 
+            else {
+                
+                appendChar( out, end, currentChar );
             }
-            else addChar( strTokenBuf, sizeof(strTokenBuf), currentChar );
 
             nextChar();
         }
 
-        if ( currentChar != '"' ) throw( ERR_EXPECTED_CLOSING_QUOTE );
+        if (currentChar != '"')
+            throw(ERR_EXPECTED_CLOSING_QUOTE);
 
-        nextChar( );
-        while ( isspace( currentChar )) nextChar( );
+        nextChar();
+        while (isspace(currentChar))
+            nextChar();
 
-    } while ( currentChar == '"' );
+    } while (currentChar == '"');   // concatenation support
+
+    appendChar(out, end, '\0');     // terminate string
 
     currentToken.u.str = strTokenBuf;
 }
@@ -638,7 +765,7 @@ SimTokenizerFromFile::~SimTokenizerFromFile( ) {
 // parsing process. This call is the first before any other method can be 
 // called.
 //
- 
+//----------------------------------------------------------------------------------------
 void SimTokenizerFromFile::setupTokenizer( char *filePath, SimToken *tokTab ) {
 
     this -> tokTab          = tokTab;
