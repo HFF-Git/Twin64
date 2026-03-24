@@ -39,17 +39,21 @@
 namespace {
 
 //----------------------------------------------------------------------------------------
-// The previous terminal attribute settings. We restore them when the console IO object
-// is deleted.
+// The previous terminal attribute settings. We restore them when the console IO
+// object is deleted. There is a handler procedure which we will register at 
+// console IO creation.
 //
 //----------------------------------------------------------------------------------------
 #if __APPLE__
 struct termios saveTermSetting;
+
+void restoreTerminal( ) {
+
+    tcsetattr(fileno(stdin), TCSANOW, &saveTermSetting);
+}
 #endif
 
 //----------------------------------------------------------------------------------------
-//
-//
 //
 //----------------------------------------------------------------------------------------
 char outputBuffer[ 1024 ];
@@ -71,13 +75,15 @@ char outputBuffer[ 1024 ];
 
 
 //----------------------------------------------------------------------------------------
-// Object constructor. We will save the current terminal settings.
+// Object constructor. We will save the current terminal settings and also
+// register a handler if the program is terminated via an exit call.
 //
 //----------------------------------------------------------------------------------------
 SimConsoleIO::SimConsoleIO( ) {
   
 #if __APPLE__
     tcgetattr( fileno( stdin ), &saveTermSetting );
+    atexit( restoreTerminal );
 #endif
     
 }
