@@ -391,15 +391,19 @@ int buildOpCodeStr( char *buf, T64Instr instr ) {
         }
             
         case ( OPC_GRP_SYS * 16 + OPC_MR ): {
-          
-            if ( extractInstrFieldU( instr, 19, 3 ) == 0 )
-                return ( snprintf( buf, 8, "MFCR"));
-            else if ( extractInstrFieldU( instr, 19, 3 ) == 1 )   
-                return ( snprintf( buf, 8, "MTCR"));
-            else if ( extractInstrBit( instr, 21 ))   
-                return ( snprintf( buf, 8, "MFIA"));
-            else 
-                return ( snprintf( buf, LEN_16, "**MROP**" ));
+
+            switch ( extractInstrFieldU( instr, 19, 3 )) {
+
+                case 0: return ( snprintf( buf, 8, "MFCR"));
+                case 1: return ( snprintf( buf, 8, "MTCR"));
+
+                case 4: return ( snprintf( buf, 8, "MFIA"));
+                case 5: return ( snprintf( buf, 8, "MFIA.L"));
+                case 6: return ( snprintf( buf, 8, "MFIA.R"));
+                case 7: return ( snprintf( buf, 8, "MFIA.U"));
+
+                default: return ( snprintf( buf, LEN_16, "**MROP**" ));
+            }
         }
             
         case ( OPC_GRP_SYS * 16 + OPC_LPA ): {

@@ -337,13 +337,14 @@ struct T64Cpu {
    
     T64Word         instrRead( T64Word vAdr );
     T64Word         dataRead( T64Word vAdr, int len, bool sExt );
-    T64Word         dataReadRegBOfsImm13( uint32_t instr );
-    T64Word         dataReadRegBOfsRegX( uint32_t instr );
+    T64Word         dataReadRegBOfsImm13( uint32_t instr, bool sExt );
+    T64Word         dataReadRegBOfsRegX( uint32_t instr, bool sExt );
 
     void            dataWrite( T64Word vAdr, T64Word val, int len );
     void            dataWriteRegBOfsImm13( uint32_t instr );
     void            dataWriteRegBOfsRegX( uint32_t instr );
 
+    void            instrAluNopOp( T64Instr instr );
     void            instrAluAddOp( T64Instr instr );
     void            instrMemAddOp( T64Instr instr );
     void            instrAluSubOp( T64Instr instr );
@@ -383,6 +384,7 @@ struct T64Cpu {
     void            instrSysTrapOp( T64Instr instr );
 
     void            instrExecute( uint32_t instr );
+    void            handleExtInterrupts( );
 
     T64Word         diagOpHandler( int opt, T64Word arg1, T64Word arg2 );
 

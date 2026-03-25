@@ -372,7 +372,7 @@ enum InstrFlags : uint32_t {
     IM_CBR_OP   = ( IF_EQ | IF_LT | IF_NE | IF_LE | IF_GT | IF_GE ),
     IM_MBR_OP   = ( IF_EQ | IF_LT | IF_NE | IF_LE | IF_GT | IF_GE | IF_EV | IF_OD ),
     IM_ABR_OP   = ( IF_EQ | IF_LT | IF_NE | IF_LE | IF_GT | IF_GE | IF_EV | IF_OD ),
-    IM_MFIA_OP  = ( IF_A | IF_L | IF_R ),
+    IM_MFIA_OP  = ( IF_A | IF_L | IF_R | IF_U),
     IM_ITLB_OP  = ( IF_I | IF_D ),
     IM_PTLB_OP  = ( IF_I | IF_D ),
     IM_PCA_OP   = ( IF_I | IF_D ),
@@ -2516,6 +2516,7 @@ void parseInstrMFIA( uint32_t *instr, uint32_t instrOpToken ) {
     if      ( instrFlags & IF_A ) depositInstrFieldU( instr, 19, 3, 4 );
     else if ( instrFlags & IF_L ) depositInstrFieldU( instr, 19, 3, 5 );
     else if ( instrFlags & IF_R ) depositInstrFieldU( instr, 19, 3, 6 );
+    else if ( instrFlags & IF_U ) depositInstrFieldU( instr, 19, 3, 7 );
     else                          depositInstrFieldU( instr, 19, 3, 4 );
    
     acceptRegR( instr );
