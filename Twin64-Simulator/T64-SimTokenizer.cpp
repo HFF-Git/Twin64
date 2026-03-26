@@ -344,7 +344,7 @@ uint32_t SimTokenizer::parseHex8( ) {
 
         nextChar( );
         int h = hexValue( currentChar );
-        if ( h < 0 )throw(ERR_INVALID_UNICODE_ESCAPE);
+        if ( h < 0 ) throw( ERR_INVALID_UNICODE_ESCAPE) ;
         value = ( value << 4 ) | h;
     }
 
@@ -365,33 +365,33 @@ void SimTokenizer::parseString() {
     currentToken.u.str = nullptr;
 
     char *out = strTokenBuf;
-    char *end = strTokenBuf + sizeof(strTokenBuf) - 1;
+    char *end = strTokenBuf + sizeof( strTokenBuf ) - 1;
 
     do {
 
-        nextChar();
+        nextChar( );
 
-        while ((currentChar != EOS_CHAR) && (currentChar != '"')) {
+        while (( currentChar != EOS_CHAR ) && ( currentChar != '"' )) {
 
-            if (currentChar == '\\') {
+            if ( currentChar == '\\' ) {
 
                 nextChar( );
 
-                if (currentChar == EOS_CHAR)
-                    throw(ERR_EXPECTED_CLOSING_QUOTE);
+                if ( currentChar == EOS_CHAR )
+                    throw( ERR_EXPECTED_CLOSING_QUOTE );
 
                 switch (currentChar) {
 
-                    case 'n': appendChar(out, end, '\n'); break;
-                    case 't': appendChar(out, end, '\t'); break;
-                    case 'r': appendChar(out, end, '\r'); break;
-                    case '\\': appendChar(out, end, '\\'); break;
-                    case '"': appendChar(out, end, '"'); break;
+                    case 'n': appendChar( out, end, '\n' ); break;
+                    case 't': appendChar( out, end, '\t' ); break;
+                    case 'r': appendChar( out, end, '\r' ); break;
+                    case '\\': appendChar( out, end, '\\' ); break;
+                    case '"': appendChar( out, end, '"' ); break;
 
                     case 'x': {
 
                         int v = parseHex2( );
-                        appendChar(out, end, (char)v);
+                        appendChar( out, end, (char)v) ;
                         
                     } break;
 
@@ -400,15 +400,15 @@ void SimTokenizer::parseString() {
                         uint32_t codepoint = parseHex4();
 
                         if ( codepoint >= 0xD800 && codepoint <= 0xDFFF )
-                            throw(ERR_INVALID_UNICODE_ESCAPE);
+                            throw( ERR_INVALID_UNICODE_ESCAPE );
 
-                        appendUTF8(out, end, codepoint);
+                        appendUTF8( out, end, codepoint );
                         
                     } break;
 
                     case 'U': {
 
-                        uint32_t cp = parseHex8();
+                        uint32_t cp = parseHex8( );
                         appendUTF8( out, end, cp );
                     
                     } break;

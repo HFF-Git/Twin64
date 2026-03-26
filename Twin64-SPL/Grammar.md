@@ -5,18 +5,20 @@ A system programming language compiler for the Twin-64 System. The idea is to ha
 ## Scalar types
 
 ```
-<typ>               ->  <scalar-typ> | <structured-typ>
+<typ>               	   ->  <scalar-typ> | <structured-typ>
 
 <scalar-typ>        ->  "BYTE" | "SHORT" | "WORD" | "INT"
 
+<structured-typ>  -> <array-typ> | <record-typ> | <string-type>
+
 <array-typ>         ->  "ARRAY" <const-expr> "OF" <typ>
-                        "END
+                        		"END"
 
 <record-typ>        ->  "RECORD" [ "(" <ident> ")" ]
-                        [ <field-list> ]
-                        "END"    
+                        		[ <field-list> ]
+                        		"END"    
 
-<field-list>        ->  { <ident> ":" <typ> ";" }
+<field-list>            ->  { <ident> ":" <typ> ";" }
 
 <pointer-typ>       ->  "POINTER" "TO" <typ"> ";"
 
@@ -33,68 +35,64 @@ A system programming language compiler for the Twin-64 System. The idea is to ha
 <var-decl>          ->  "VAR"   <ident> [ "=" <value> ] ";"
 
 <func-decl>         ->  "FUNC" <ident> 
-                        "(" <parm-list> ")"
-                        [ ":" <typ> ] ";"
-                        <option-list>
-                        <stmt-seq>
-                        "END"
+                        		"(" <parm-list> ")"
+                        		[ ":" <typ> ] ";"
+                        		<option-list>
+                        		<stmt-seq>
+                        		"END"
 
 <parm-list>         -> [ <ident> ":" <type> ] { "," <ident> ":" <type> }
 
 <option-list>       -> { "OPTION" <ident> "=" <val> ";" }
 
-<module-decl>       ->  "MODULE"
-                        [ <import-decl> ] 
-                        [ <export-decl> ]
-                        [ <var-decl> ]
-                        [ <const-decl> ]
-                        [ <type-decl> ]
-                        [ <func-dec> ]
-                        "BEGIN"
-                        <stmt-seq>
-                        "END"
+<module-decl>       	->  "MODULE"
+                        		     [ <import-decl> ] 
+                              	     [ <export-decl> ]
+                                       [ <var-decl> ]
+                                       [ <const-decl> ]
+                                       [ <type-decl> ]
+                                       [ <func-dec> ]
+                        		     "BEGIN"
+                        		    <stmt-seq>
+                        		   "END"
 
-<import-decl>       ->  "IMPORT <ident> { "," <ident> } ";"
+<import-decl>       	->  "IMPORT <ident> { "," <ident> } ";"
 
-<export-decl>       ->  "EXPORT <ident> { "," <ident> } ";"
+<export-decl>       	->  "EXPORT <ident> { "," <ident> } ";"
 
-<var-decl>          ->  "VAR" <ident> ":" <type> [ ":=" <val> ] ";"
+<var-decl>  		->  "VAR" <ident> ":" <type> [ ":=" <val> ] ";"
 
-<const-decl>        ->  "CONST" <ident> ":" <type> ":=" <val> ";"
+<const-decl>        	->  "CONST" <ident> [  ":" <type> ] ":=" <val> ";"
 
-<func-decl>         ->  "FUNC" <ident> "(" <parm-list> ")" { ":" <type> } ";"
-                        <var-decl>
-                        <const-decl>
-                        "BEGIN"
-                        <stmt-seq>
-                        "END"
-
-                        ( should we have ENTER and LEAVE ? )
-```
+<func-decl>       	->  "FUNC" <ident> "(" <parm-list> ")" [ ":" <type> ] ";"
+                        			<var-decl>
+                        			<const-decl>
+                        			"BEGIN"
+                        			<stmt-seq>
+                        			"END"
 
 ## Expressions
 
 rework expressions, they are much simpler....
 
 ```
-<expr>              ->  <simple-expr> <rel-op> <simple-expr>
+<expr>              		->  <simple-expr> <rel-op> <simple-expr>
 
-<rel-op>            ->  ( "==" | "!=" | "<" | ">" | "<=" | ">=" )
+<rel-op>            	->  ( "==" | "!=" | "<" | ">" | "<=" | ">=" )
 
-<simple-expr>       ->  [ "+" | "-" ] <term> { <termOp> <term> }
+<simple-expr>       	->  [ "+" | "-" ] <term> { <termOp> <term> }
 
-<termOp>            ->  "+" | “-“ | “OR“ | "XOR"
+<termOp>            	->  "+" | “-“ | “OR“ | "XOR"
 
-<term>              ->  <factor> { <facOp> <factor> }
+<term>              	->  <factor> { <facOp> <factor> }
 
-<facOp>             ->  "*" | “/“ | “%“ | "AND"
+<facOp>             	->  "*" | “/“ |  "\%“ | "AND"
 
-<factor>            ->  <val> |
-                        <ident> |
-                        <reg> |
-                        "~" <factor> |
-                        "(" <expr> ")" |
-                        <func-call>
+<factor>            		->  <val> |
+                        		    <ident> |
+                                     "NOT" "(" <factor> ")"  |
+                                     "(" <expr> ")" |
+                                     <func-call>
 
 <val>               ->  "<numeric> | 
                         "L%" <val> | 
@@ -170,7 +168,7 @@ MODULE example
 
     CONST maxItem = 10;
 
-    TYPE listEntry = STRUCT
+    TYPE listEntry = RECORD
 
         field1 : WORD;
         field2 : BYTE;

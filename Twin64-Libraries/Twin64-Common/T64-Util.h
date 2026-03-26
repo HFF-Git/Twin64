@@ -175,14 +175,14 @@ inline bool copyToBigEndian( uint8_t *dst, uint8_t *src, int len ) {
 //----------------------------------------------------------------------------------------
 inline bool isInRangeForInstrBitFieldS( int val, int bitLen ) {
     
-    int min = - ( 1 << (( bitLen - 1 ) % 64 ));
-    int max = ( 1 << (( bitLen - 1 ) % 64 )) - 1;
+    int min = - ( 1 << (( bitLen - 1 ) % 32 ));
+    int max = ( 1 << (( bitLen - 1 ) % 32 )) - 1;
     return (( val <= max ) && ( val >= min ));
 }
 
 inline bool isInRangeForInstrBitFieldU( uint32_t val, int bitLen ) {
     
-    uint32_t max = (( 1 << ( bitLen % 64 )) - 1 );
+    uint32_t max = (( 1 << ( bitLen % 32 )) - 1 );
     return ( val <= max );
 }
 

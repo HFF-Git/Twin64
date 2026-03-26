@@ -113,7 +113,7 @@ void loadSegmentIntoMemory( elfio           *reader,
                             T64System       *sys,
                             SimWinOutBuffer *winOut ) {
     
-    if ( segment ->get_type( ) == PT_LOAD ) {
+    if ( segment -> get_type( ) == PT_LOAD ) {
       
         Elf_Xword       index       = segment -> get_index( );
         Elf_Xword       fileSize    = segment -> get_file_size( );

@@ -3,7 +3,7 @@
 // Twin-64 - Inline Assembler/Disassembler Test Program.
 //
 //----------------------------------------------------------------------------------------
-// AsmTest is a simple program for testing the one line assembler and disassembler. 
+// AsmTest is a simple program for testing the inline assembler and disassembler. 
 // It reads commands from standard input and executes them. The commands are:
 //
 //  A <argStr> -> assemble input argument
@@ -76,7 +76,6 @@ void testAsmDisAsm( char *asmStr ) {
         printf( "\"%s\"\n", buf );
     }
     else printf( "%s\n", doAsm -> getErrStr( doAsm -> getErrId( )));
-
 }
 
 void printHelp( ) {
