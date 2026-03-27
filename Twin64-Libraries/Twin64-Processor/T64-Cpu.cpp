@@ -344,7 +344,7 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
 
         // ??? get the access right data from the TLB entry.
 
-        instrAccessRightsCheck( tlbPtr, ACC_EXECUTE );      
+        instrAccessRightsCheck( tlbPtr, PT_EXECUTE );      
         instrRegionIdCheck( vAdr );
        
         proc -> iCache -> read( tlbPtr -> pAdr, 
@@ -382,7 +382,7 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
         T64TlbEntry *tlbPtr = proc -> dTlb -> lookup( vAdr );
         if ( tlbPtr == nullptr ) dataTlbMissTrap( vAdr );
        
-        dataAccessRightsCheck( tlbPtr, ACC_READ_ONLY );             
+        dataAccessRightsCheck( tlbPtr, PT_READ_ONLY );             
         dataRegionIdCheck( vAdr, false );
 
         proc -> iCache -> read( tlbPtr -> pAdr, 
@@ -429,7 +429,7 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
         T64TlbEntry *tlbPtr = proc -> dTlb -> lookup( vAdr );
          if ( tlbPtr == nullptr ) dataTlbMissTrap( vAdr );
 
-        dataAccessRightsCheck( tlbPtr, ACC_READ_WRITE );
+        dataAccessRightsCheck( tlbPtr, PT_READ_WRITE );
         dataRegionIdCheck( vAdr, true );
         
         proc -> dCache -> write( tlbPtr -> pAdr, 

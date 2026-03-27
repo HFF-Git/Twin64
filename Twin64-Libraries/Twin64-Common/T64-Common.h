@@ -107,12 +107,12 @@ const   int     T64_PADR_BITS               = 36;
 //
 // ??? also doubles as acc mode ?
 //----------------------------------------------------------------------------------------
-enum T64PageType : int {
+enum T64PageType : uint8_t {
 
-    ACC_NONE        = 0,
-    ACC_READ_ONLY   = 1,
-    ACC_READ_WRITE  = 2,
-    ACC_EXECUTE     = 3
+    PT_NONE        = 0,
+    PT_READ_ONLY   = 1,
+    PT_READ_WRITE  = 2,
+    PT_EXECUTE     = 3
 };
 
 //----------------------------------------------------------------------------------------

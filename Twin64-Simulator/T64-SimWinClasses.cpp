@@ -718,7 +718,6 @@ void SimWinTlb::drawLine( T64Word index ) {
     printTextField(( ePtr -> modified ) ? (char *) "M" : (char *) "m" );
     printTextField(( ePtr -> locked ) ? (char *) "L" : (char *) "l" );
     printTextField(( ePtr -> uncached ) ? (char *) "U" : (char *) "u" );
-    printTextField(( ePtr -> trapOnBranch ) ? (char *) "B" : (char *) "b" );
     printTextField((char *) "] [", fmtDesc );
     printTextField((char *) pageTypeStr( ePtr -> pageType ));
     printTextField((char *) ":", fmtDesc );
@@ -731,7 +730,7 @@ void SimWinTlb::drawLine( T64Word index ) {
     printTextField((char *) "  pAdr: ", fmtDesc );
     printNumericField( ePtr -> pAdr, fmtDesc | FMT_HEX_2_4_4 );
     printTextField((char *) "  len: ", fmtDesc );
-    printNumericField( ePtr -> pSize, fmtDesc | FMT_HEX_8 );
+    printNumericField( ePtr -> pageSize, fmtDesc | FMT_HEX_8 );
 }
 
 //****************************************************************************************

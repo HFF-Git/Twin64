@@ -236,6 +236,12 @@ const SimToken cmdTokTab[ ] = {
     // TLB and Cache configuration types.
     //
     //------------------------------------------------------------------------------------
+    { .name = "TLB_FA_16S",                 .typ = TYP_SYM, 
+      .tid = TOK_TLB_FA_16S,                .u = { .val = 0 }},
+
+    { .name = "TLB_FA_32S",                 .typ = TYP_SYM, 
+      .tid = TOK_TLB_FA_32S,                .u = { .val = 0 }},
+
     { .name = "TLB_FA_64S",                 .typ = TYP_SYM, 
       .tid = TOK_TLB_FA_64S,                .u = { .val = 0 }},   
 

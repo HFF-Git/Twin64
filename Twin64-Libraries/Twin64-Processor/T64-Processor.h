@@ -54,9 +54,10 @@ enum T64CpuType : int {
 };
 
 //----------------------------------------------------------------------------------------
-// TLBs. A translation lookaside buffer is essential. We support a TLB kind, and
-// fully associative TLBs. TLB kind specifies the kind of cache, i.e. instruction, 
-// data or unified TLB. TLB type encoded as follows:
+// TLBs. A translation lookaside buffer is essential. The TLB kind specifies 
+// the kind of TLB, i.e. instruction, data or unified TLB. The TLB type specifies
+// type of TLB. Currently there are fully associative TLBs defined. The TLB  
+// configuration is encoded as follows:
 //
 //  T64_TT_<type>_<sets>S
 //
@@ -72,16 +73,18 @@ enum T64TlbKind : int {
 enum T64TlbType : int {
 
     T64_TT_NIL          = 0,
-    T64_TT_FA_64S       = 1,
-    T64_TT_FA_128S      = 2
+    T64_TT_FA_16S       = 1,
+    T64_TT_FA_32S       = 2,
+    T64_TT_FA_64S       = 3,
+    T64_TT_FA_128S      = 4
 };
 
 //----------------------------------------------------------------------------------------
-// Caches. Caches are sub modules to the processor. We support a cache type, set 
-// associative caches, 2, 4, and 8-way. There is a cache line info with flags and 
-// the tag and an array of bytes which holds the cache data. Cache kind specifies 
-// the kind of cache, i.e. instruction, data or unified cache. Cache type encoded
-// as follows:
+// Caches. Caches are sub modules to the processor. We support a cache type of 
+// set associative caches, 2, 4, and 8-way. There is a cache line info with flags
+// and the tag and an array of bytes which holds the cache data. Cache kind 
+// specifies the kind of cache, i.e. instruction, data or unified cache. Cache 
+// configuration is encoded as follows:
 //
 //  T64_CT_<ways>W_<sets>S_<words>L
 //
@@ -226,13 +229,12 @@ struct T64TlbEntry {
     bool            uncached        = false;
     bool            locked          = false;
     bool            modified        = false;
-    bool            trapOnBranch    = false;
-    T64Word         vAdr            = 0;
-    T64Word         pAdr            = 0;
-    int             pSize           = 0;
-    uint8_t         pageType        = 0;
+    T64PageType     pageType        = PT_NONE;
+    T64Word         pageSize        = T64_PAGE_SIZE_BYTES;
     bool            pLev1           = false;
     bool            pLev2           = false;
+    T64Word         vAdr            = 0;
+    T64Word         pAdr            = 0;
     T64Word         lastUsed        = 0;
 };
 

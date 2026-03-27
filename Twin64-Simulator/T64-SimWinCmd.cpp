@@ -901,7 +901,11 @@ void SimCommandsWin::addProcModule( ) {
                 tok -> nextToken( );
                 tok -> acceptEqual( );
 
-                if ( tok -> isToken( TOK_TLB_FA_64S )) 
+                if ( tok -> isToken( TOK_TLB_FA_16S )) 
+                    iTlbType = T64_TT_FA_16S;
+                else if ( tok -> isToken( TOK_TLB_FA_32S )) 
+                    iTlbType = T64_TT_FA_32S;
+                else if ( tok -> isToken( TOK_TLB_FA_64S )) 
                     iTlbType = T64_TT_FA_64S;
                 else if ( tok -> isToken( TOK_TLB_FA_128S )) 
                     iTlbType = T64_TT_FA_128S;
@@ -914,7 +918,11 @@ void SimCommandsWin::addProcModule( ) {
                 tok -> nextToken( );
                 tok -> acceptEqual( );
 
-                if ( tok -> isToken( TOK_TLB_FA_64S )) 
+                if ( tok -> isToken( TOK_TLB_FA_16S )) 
+                    iTlbType = T64_TT_FA_16S;
+                else if ( tok -> isToken( TOK_TLB_FA_32S )) 
+                    dTlbType = T64_TT_FA_64S;
+                else if ( tok -> isToken( TOK_TLB_FA_64S )) 
                     dTlbType = T64_TT_FA_64S;
                 else if ( tok -> isToken( TOK_TLB_FA_128S )) 
                     dTlbType = T64_TT_FA_128S;

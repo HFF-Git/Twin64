@@ -196,7 +196,11 @@ enum SimTokId : uint16_t {
     TOK_STATS,                  TOK_TEXT,                   TOK_SYS,
     TOK_PROC,                   TOK_CPU,                    TOK_IO,
     TOK_ITLB,                   TOK_DTLB,                   TOK_ICACHE,
-    TOK_DCACHE,                 TOK_TLB_FA_64S,             TOK_TLB_FA_128S,
+    TOK_DCACHE,                 
+    
+    TOK_TLB_FA_16S,             TOK_TLB_FA_32S,             TOK_TLB_FA_64S,             
+    TOK_TLB_FA_128S,
+    
     TOK_CACHE_SA_2W_128S_4L,    TOK_CACHE_SA_4W_128S_4L,    TOK_CACHE_SA_8W_128S_4L,
     TOK_CACHE_SA_2W_64S_8L,     TOK_CACHE_SA_4W_64S_8L,     TOK_CACHE_SA_8W_64S_8L,
     TOK_MEM_READ_ONLY,          TOK_MEM_READ_WRITE,         TOK_MOD_SPA_ADR,
