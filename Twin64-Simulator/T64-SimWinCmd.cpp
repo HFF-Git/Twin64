@@ -2140,30 +2140,26 @@ void SimCommandsWin::insertTLBCmd( ) {
     info = depositField( info, 36, 4, size );
     info = depositField( info, 12, 24, pAdr >> T64_PAGE_OFS_BITS );
 
-    if ( tok -> isToken( TOK_COMMA )) {
+    while ( tok -> isToken( TOK_COMMA )) {
 
         tok -> nextToken( );
-        if ( tok -> isTokenIdent((char *) "L" )) {
+        if (( tok -> isTokenIdent((char *) "L" )) ||
+            ( tok -> isTokenIdent((char *) "l" ))) {
 
-            info = depositField( info, 56, 2, 0x1 );
-            tok -> nextToken( );
+            info = depositField( info, 63, 1, 1 );
+        }
+        else if (( tok -> isTokenIdent((char *) "U" )) ||
+                 ( tok -> isTokenIdent((char *) "u" ))) {
 
-            if ( tok -> isToken( TOK_COMMA )) {
-
-                tok -> nextToken( );
-                if ( tok -> isTokenIdent((char *) "U" )) {
-
-                    info = depositField( info, 58, 2, 0x2 );
-                    tok -> nextToken( );
-                }
-                else throw( ERR_INVALID_TLB_ACC_FLAG );
-            }
+            info = depositField( info, 62, 1, 1 );
         }
         else throw( ERR_INVALID_TLB_ACC_FLAG );
+        tok -> nextToken( );
     }
-    
+
     tok -> checkEOS( );
 
+    // ??? needed ? We only need to get the module number
     if ( glb -> winDisplay -> getCurrentWinType( ) != WT_TLB_WIN ) 
         throw( ERR_INVALID_WIN_TYPE );
 
