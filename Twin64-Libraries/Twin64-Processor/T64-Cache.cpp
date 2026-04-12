@@ -3,18 +3,20 @@
 // T64 - A 64-bit Processor - Cache
 //
 //----------------------------------------------------------------------------------------
-// The Twin-64 processor has a cache subsystem. Since there can be more than one 
-// processor, the caches need to maintain cache coherence. We implement this in a 
-// simple protocol where each operation in a processor will trigger the cache coherence
-// action immediately. For example, if there is a write operation to a cache line not
-// available so far, a read private operation will be communicated to the T64 system.
-// The T64 system in turn will tell all modules that they need to flush and or purge 
-// their cache line. Then the data is read and the processor is the exclusive owner of
-// this cache line. In other words, all actions with respect to the cache line are 
-// done right away transparently to the processor.
+// The Twin-64 processor has a cache subsystem. Since there can be more than
+// one processor, the caches need to maintain cache coherence. We implement 
+// this in a simple protocol where each operation in a processor will trigger 
+// the cache coherence action immediately. For example, if there is a write 
+// operation to a cache line not available so far, a read private operation 
+// will be communicated to the T64 system. The T64 system in turn will tell 
+// all modules that they need to flush and or purge their cache line. This 
+// is perhaps not the most efficient way, but coherence is maintained. Then 
+// the data is read and the processor is the exclusive owner of this cache 
+// line. In other words, all actions with respect to the cache line are done
+// right away transparently to the processor.
 //
-// The caches themselves are set associative caches. There are defined cache types to 
-// experiment with ways and set sizes. 
+// The caches themselves are set associative caches. There are defined cache
+// types to experiment with ways and set sizes. 
 //
 // NOTE: This class throws the T64Trap traps.
 //
@@ -23,34 +25,38 @@
 // T64 - A 64-bit Processor - Cache
 // Copyright (C) 2020 - 2026 Helmut Fieres
 //
-// This program is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or any later version.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should
-//  have received a copy of the GNU General Public License along with this program.  
-// If not, see <http://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #include "T64-Processor.h"
 
-// We:                          Them:
+//----------------------------------------------------------------------------------------
+//
+// Our processor:               All others:
+//
 //                              INV     SHARED      EXCL            MODIFIED                
-
+//
 // READ:        (shared)        -       OK          flush, shared   -
-
+//
 // READ MISS:   (shared)        -       OK          flush, shared   -
-
+//
 // WRITE:       (excl)          -       Purge       flush, purge    flush, purge
-
+//
 // WRITE MISS:  (excl)          -       purge       flush, purge    flush, purge
-
+//
 // FLUSH:                       -
-
+//
 // PRURGE:                      -
-
+//
+//----------------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------
 // Local name space. 
@@ -208,8 +214,8 @@ static inline uint8_t plru8Update( uint8_t state, int way ) {
 // Cache
 //
 //----------------------------------------------------------------------------------------
-// "T64Cache" is the object constructor. We decode the valid cache type options and
-// precompute bit offsets, masks, and so on.
+// "T64Cache" is the object constructor. We decode the valid cache type options 
+// and precompute bit offsets, masks, and so on. The default is T64_CT_2W_128S_4L.
 //
 //----------------------------------------------------------------------------------------
 T64Cache::T64Cache( T64Processor    *proc, 
@@ -276,7 +282,9 @@ T64Cache::T64Cache( T64Processor    *proc,
     cacheMiss       = 0;
     plruState       = 0;
 
-    cacheInfo = (T64CacheLineInfo *) malloc( ways * sets * sizeof( T64CacheLineInfo ));
+    cacheInfo = (T64CacheLineInfo *) 
+                    malloc( ways * sets * sizeof( T64CacheLineInfo ));
+
     cacheData = (uint8_t *) malloc( ways * sets * lineSize );
 
     reset( );
@@ -293,7 +301,7 @@ T64Cache:: ~T64Cache( ) {
 }   
 
 //----------------------------------------------------------------------------------------
-// Reset. For now, clear the statistics.
+// Reset. Clear all date structures.
 //
 //----------------------------------------------------------------------------------------
 void T64Cache::reset( ) {
@@ -308,8 +316,15 @@ void T64Cache::reset( ) {
         cacheInfo[ i ].modified = false;
         cacheInfo[ i ].tag      = 0;
     }
+
+    int limit = ways * sets * lineSize;
+    for ( int i = 0; i < limit; i++ ) cacheData[ i ] = 0;
 }
 
+//----------------------------------------------------------------------------------------
+// Dummy function. 
+//
+//----------------------------------------------------------------------------------------
 void T64Cache::step( ) { }
 
 //----------------------------------------------------------------------------------------
@@ -348,7 +363,7 @@ int T64Cache::getWays( ) {
 
 T64Word T64Cache:: pAdrFromTag( uint32_t tag, uint32_t index ) {
 
-    return(( tag << ( offsetBits + indexBits ) | ( index < indexShift )));
+    return(( tag << ( offsetBits + indexBits ) | ( index << indexShift )));
 }
 
 T64CacheKind T64Cache::getCacheKind( ) {
@@ -376,9 +391,9 @@ char *T64Cache::getCacheTypeString( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The set associative cache uses a pseudo LRU scheme. There are two local routines,
-// select a victim and update the state. Depending on the number of ways, we call the
-// respective local routine.
+// The set associative cache uses a pseudo LRU scheme. There are two local 
+// routines, select a victim and update the state. Depending on the number of
+// ways, we call the respective local routine.
 //
 //----------------------------------------------------------------------------------------
 int T64Cache::plruVictim( ) {
@@ -404,8 +419,8 @@ void T64Cache::plruUpdate( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "lookup" searches the cache sets. If we find a valid cache line with the matching
-// tag, we return the pointers to the line.
+// "lookup" searches the cache sets. If we find a valid cache line with the 
+// matching tag, we return the pointers to the line.
 //
 //----------------------------------------------------------------------------------------
 bool T64Cache::lookupCache( T64Word          pAdr, 
@@ -430,14 +445,14 @@ bool T64Cache::lookupCache( T64Word          pAdr,
 }
 
 //----------------------------------------------------------------------------------------
-// "selectCacheLine" will return the slot based on way an set index regardless if 
-// the slot is valid.
+// "selectCacheLine" will return the slot based on way an set index regardless
+// if the slot is valid.
 //
 //----------------------------------------------------------------------------------------
 bool T64Cache::getCacheLineByIndex( uint32_t         way,
-                             uint32_t         set, 
-                             T64CacheLineInfo **info, 
-                             uint8_t       **data ) {
+                                    uint32_t         set, 
+                                    T64CacheLineInfo **info, 
+                                    uint8_t       **data ) {
 
     if (( way > ways ) || ( set > sets )) return ( false );
    
@@ -450,8 +465,9 @@ bool T64Cache::purgeCacheLineByIndex( uint32_t way, uint32_t set ) {
 
     if (( way > ways ) || ( set > sets )) return ( false );
 
-    // ??? to do ...
-
+    T64CacheLineInfo *info = &cacheInfo[ way * set ];
+    info -> valid = false;
+    
     return( true );
 }
 
@@ -459,16 +475,18 @@ bool T64Cache::flushCacheLineByIndex( uint32_t way, uint32_t set ) {
 
     if (( way > ways ) || ( set > sets )) return ( false );
 
-    // ??? to do ...
+    T64CacheLineInfo *info = &cacheInfo[ way * set ];
+
+    // ??? to do ... write to memory...
 
     return( true );
 }
 
 //----------------------------------------------------------------------------------------
-// "getCacheLineData" copies data from the cache line. We expect a valid len argument.
-// We essentially copy data from the cache line to the target location. Care has to 
-// be taken about the endianess of the host CPU. Our simulator is big endian. 
-// Depending on the endianess of the host CPU, the data needs to be converted.
+// "getCacheLineData" copies data from the cache line. We essentially copy data
+// from the cache line to the target location. Care has to be taken about the 
+// endianess of the host CPU. Our simulator is big endian. Depending on the 
+// endianess of the host CPU, the data needs to be converted.
 // 
 //----------------------------------------------------------------------------------------
 bool T64Cache::getCacheLineData( uint8_t *line, 
@@ -481,10 +499,10 @@ bool T64Cache::getCacheLineData( uint8_t *line,
 }
 
 //----------------------------------------------------------------------------------------
-// "setCacheLineData" copies data to the cache line. We expect a valid len argument.
-// We essentially copy data from the source to the cache line to the target location. 
-// Care has to be taken about the endianess of the host CPU. Our simulator is big 
-// endian. Depending on the endianess of the host CPU, the data needs to be converted.
+// "setCacheLineData" copies data to the cache line. We essentially copy data 
+// from the source to the cache line to the target location. Care has to be 
+// taken about the endianess of the host CPU. Our simulator is big endian. 
+// Depending on the endianess of the host CPU, the data needs to be converted.
 //
 //----------------------------------------------------------------------------------------
 bool T64Cache::setCacheLineData( uint8_t *line,
@@ -496,15 +514,16 @@ bool T64Cache::setCacheLineData( uint8_t *line,
 }
 
 //----------------------------------------------------------------------------------------
-// "readCacheData" is the routine to get the data from the cache. We first check for
-// any alignment errors. Next, lookup the cache. If the line is found, just return
-// the data.
+// "readCacheData" is the routine to get the data from the cache. We first check
+// for any alignment errors. Next, lookup the cache. If the line is found, just
+// return the data.
 //
-// If the cache does not have the data, we need to get it. First select a victim line
-// to read in the cache line from memory. If we select an unused line, easy, just 
-// issue a shared read request to the T64 system. If the cache line is valid, we need
-// to check if it was modified. If so, we need to flush the data first. Then we READ 
-// SHARED the new cache line into this slot. Finally, we return the requested data.
+// If the cache does not have the data, we need to get it. First select a victim
+// line to read in the cache line from memory. If we select an unused line, easy,
+// just issue a shared read request to the T64 system. If the cache line is valid,
+// we need to check if it was modified. If so, we need to flush the data first.
+// Then we READ SHARED the new cache line into this slot. Finally, we return the
+// requested data.
 //
 //----------------------------------------------------------------------------------------
 void T64Cache::readCacheData( T64Word pAdr, uint8_t *data, int len ) {
@@ -517,21 +536,13 @@ void T64Cache::readCacheData( T64Word pAdr, uint8_t *data, int len ) {
     T64CacheLineInfo *cInfo;
     uint8_t          *cData;
 
-    if ( lookupCache( pAdr, &cInfo, &cData )) {
-
-        cacheHits ++;
-        plruUpdate( );
-
-        getCacheLineData( cData, getLineOfs( pAdr ), len, data );
-    }
-    else {
+    if ( ! lookupCache( pAdr, &cInfo, &cData )) {
 
         cacheMiss ++;
 
         int      vWay     = plruVictim( );
         uint32_t setIndex = getSetIndex( pAdr );
-        plruUpdate( );
-        
+     
         if ( ! getCacheLineByIndex( vWay, setIndex, &cInfo, &cData )) {
         
             throw( T64Trap( MACHINE_CHECK ));
@@ -541,11 +552,13 @@ void T64Cache::readCacheData( T64Word pAdr, uint8_t *data, int len ) {
 
             if ( cInfo -> modified ) {
 
+                // ??? shouldn't we write ?
+
                 if ( ! proc -> busOpReadSharedBlock( 
-                                            proc -> getModuleNum( ),
-                                            pAdrFromTag( cInfo -> tag, setIndex ), 
-                                            cData,
-                                            lineSize )) {
+                                        proc -> getModuleNum( ),
+                                        pAdrFromTag( cInfo -> tag, setIndex ), 
+                                        cData,
+                                        lineSize )) {
 
                     throw( T64Trap( MACHINE_CHECK )); // ??? fill in ...
                 }
@@ -561,22 +574,28 @@ void T64Cache::readCacheData( T64Word pAdr, uint8_t *data, int len ) {
 
             throw( T64Trap( MACHINE_CHECK )); // ??? fill in ...
         }
-    }
 
+        cInfo -> valid    = true;     
+        cInfo -> modified = false;
+       //  cInfo -> tag      = ;  // ??? FIX ... build tag.
+    }
+    else cacheHits ++;
+
+    plruUpdate( );
     getCacheLineData( cData, getLineOfs( pAdr ), len, data );
 }
 
 //----------------------------------------------------------------------------------------
-// "writeCacheData" is the routine to write data to the cache. We first check for
-// any alignment errors. Next, lookup the cache. If the line is found, just update
-// the data in the cache line.
+// "writeCacheData" is the routine to write data to the cache. We first check 
+// for any alignment errors. Next, lookup the cache. If the line is found, just
+// update the data in the cache line.
 //
-// If the cache does not have the cache line, we need to get it first. First select 
-// a victim line to read in the cache line from memory. If we select an unused line,
-// easy, just issue a shared private request to the T64 system. If the cache line is
-// valid, we need to check if it was modified. If so, we need to flush the data first.
-// Then we READ PRIVATE the new cache line into this slot. Finally, we update the 
-// cache line.
+// If the cache does not have the cache line, we need to get it first. First 
+// select a victim line to read in the cache line from memory. If we select an
+// unused line, easy, just issue a shared private request to the T64 system. If
+// the cache line is valid, we need to check if it was modified. If so, we need
+// to flush the data first. Then we READ PRIVATE the new cache line into this 
+// slot. Finally, we update the cache line.
 //
 //----------------------------------------------------------------------------------------
 void T64Cache::writeCacheData( T64Word pAdr, uint8_t *data, int len ) {
@@ -589,20 +608,13 @@ void T64Cache::writeCacheData( T64Word pAdr, uint8_t *data, int len ) {
     T64CacheLineInfo *cInfo;
     uint8_t          *cData;
 
-    if ( lookupCache( pAdr, &cInfo, &cData )) {
-
-        cacheHits ++;
-        plruUpdate( );
-        setCacheLineData( cData, getLineOfs( pAdr ), len, data );
-    }
-    else {
+    if ( ! lookupCache( pAdr, &cInfo, &cData )) {
 
         int      vWay     = plruVictim( );
         uint32_t setIndex = getSetIndex( pAdr );
 
         cacheMiss ++;
-        plruUpdate( );
-
+        
         if ( ! getCacheLineByIndex( vWay, setIndex, &cInfo, &cData )) {
         
             throw( T64Trap( MACHINE_CHECK ));
@@ -613,9 +625,9 @@ void T64Cache::writeCacheData( T64Word pAdr, uint8_t *data, int len ) {
             if ( cInfo -> modified ) {
 
                 if ( ! proc -> busOpWriteBlock( proc -> getModuleNum( ),
-                                                pAdrFromTag( cInfo -> tag, setIndex ), 
-                                                cData, 
-                                                lineSize )) {        
+                                        pAdrFromTag( cInfo -> tag, setIndex ), 
+                                        cData, 
+                                        lineSize )) {        
                     
                     throw( T64Trap( MACHINE_CHECK ));
                 }
@@ -632,13 +644,15 @@ void T64Cache::writeCacheData( T64Word pAdr, uint8_t *data, int len ) {
             throw( T64Trap( MACHINE_CHECK ));
         }
     }
+    else  cacheHits ++;
 
+    plruUpdate( );    
     setCacheLineData( cData, getLineOfs( pAdr ), len, data );
 }
 
 //----------------------------------------------------------------------------------------
-// "flushCacheLine" will write back a cache line to memory if it is modified. If we 
-// do not have such a cache line, the request is ignored. 
+// "flushCacheLine" will write back a cache line to memory if it is modified. 
+// If we do not have such a cache line, the request is ignored. 
 //
 //----------------------------------------------------------------------------------------
 void T64Cache::flushCacheLine( T64Word pAdr ) {
@@ -654,9 +668,9 @@ void T64Cache::flushCacheLine( T64Word pAdr ) {
 
             // ??? need to mask pAdr ? 
             if ( ! proc -> busOpWriteBlock( proc -> getModuleNum( ),
-                                            pAdrFromTag( cInfo -> tag, setIndex ),  
-                                            cData, 
-                                            lineSize )) {
+                                        pAdrFromTag( cInfo -> tag, setIndex ),  
+                                        cData, 
+                                        lineSize )) {
         
                 throw( T64Trap( MACHINE_CHECK ));
             }
@@ -667,8 +681,8 @@ void T64Cache::flushCacheLine( T64Word pAdr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "purgeCacheLine" will remove a cache line. If the line was modified it is flushed
-// first.
+// "purgeCacheLine" will remove a cache line. If the line was modified it is
+// flushed first.
 //
 //----------------------------------------------------------------------------------------
 void T64Cache::purgeCacheLine( T64Word pAdr ) {
@@ -684,9 +698,9 @@ void T64Cache::purgeCacheLine( T64Word pAdr ) {
 
             // ??? need to mask pAdr ? 
             if ( ! proc -> busOpWriteBlock( proc -> getModuleNum( ),
-                                            pAdrFromTag( cInfo -> tag, setIndex ), 
-                                            cData, 
-                                            lineSize )) {
+                                        pAdrFromTag( cInfo -> tag, setIndex ), 
+                                        cData, 
+                                        lineSize )) {
         
                 throw( T64Trap( MACHINE_CHECK ));
             }
@@ -700,8 +714,8 @@ void T64Cache::purgeCacheLine( T64Word pAdr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// A cache read operation. For non-cached requests, we directly read the data from 
-// memory.
+// A cache read operation. This is the entry point for the CPU. For non-cached
+// requests, we directly read the data from memory.
 //
 //----------------------------------------------------------------------------------------
 void T64Cache::read( T64Word pAdr, uint8_t *data, int len, bool cached ) {
@@ -720,8 +734,8 @@ void T64Cache::read( T64Word pAdr, uint8_t *data, int len, bool cached ) {
 }
 
 //----------------------------------------------------------------------------------------
-// A cache write operation. For non-cached requests, we directly write the data to 
-// memory.
+// A cache write operation. This is the entry point for the CPU. For non-cached
+// requests, we directly write the data to memory.
 //
 //----------------------------------------------------------------------------------------
 void T64Cache::write( T64Word pAdr, uint8_t *data, int len, bool cached ) {
@@ -740,8 +754,8 @@ void T64Cache::write( T64Word pAdr, uint8_t *data, int len, bool cached ) {
 }
 
 //----------------------------------------------------------------------------------------
-// A cache flush operation. Only valid for virtual address ranges. The cache line
-// flush function will issue a write back when the line was modified.
+// A cache flush operation. Only valid for virtual address ranges. The cache 
+// line flush function will issue a write back when the line was modified.
 //
 //----------------------------------------------------------------------------------------
 void T64Cache::flush( T64Word pAdr ) {

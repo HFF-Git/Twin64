@@ -141,8 +141,16 @@ struct T64Cache {
     void                reset( );
     void                step( );
 
-    void                read( T64Word pAdr, uint8_t *data, int len, bool cached = true);
-    void                write( T64Word pAdr, uint8_t *data, int len, bool cached = true );
+    void                read( T64Word pAdr, 
+                              uint8_t *data, 
+                              int len, 
+                              bool cached = true );
+
+    void                write( T64Word pAdr, 
+                               uint8_t *data, 
+                               int len, 
+                               bool cached = true );
+
     void                flush( T64Word pAdr );
     void                purge( T64Word pAdr );
 
@@ -267,7 +275,7 @@ struct T64Tlb {
 
     T64TlbKind      getTlbKind( );  
     T64TlbType      getTlbType( );
-    char           *getTlbTypeString( );
+    char            *getTlbTypeString( );
 
     private:
     
