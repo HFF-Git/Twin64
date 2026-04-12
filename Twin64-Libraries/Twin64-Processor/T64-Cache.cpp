@@ -484,25 +484,22 @@ bool T64Cache::flushCacheLineByIndex( uint32_t way, uint32_t set ) {
 
 //----------------------------------------------------------------------------------------
 // "getCacheLineData" copies data from the cache line. We essentially copy data
-// from the cache line to the target location. Care has to be taken about the 
-// endianess of the host CPU. Our simulator is big endian. Depending on the 
-// endianess of the host CPU, the data needs to be converted.
+// from the cache line to the target location. 
 // 
 //----------------------------------------------------------------------------------------
 bool T64Cache::getCacheLineData( uint8_t *line, 
-                                    int     lineOfs,
-                                    int     len, 
-                                    uint8_t *data ) {
+                                 int     lineOfs,
+                                 int     len, 
+                                 uint8_t *data ) {
 
     int wOfs = sizeof( T64Word ) - len;
-    return ( copyToBigEndian(( data + wOfs ), &line[ lineOfs ], len )); 
+    memcpy( data, &line[ lineOfs ], len );
+    return( true );
 }
 
 //----------------------------------------------------------------------------------------
 // "setCacheLineData" copies data to the cache line. We essentially copy data 
-// from the source to the cache line to the target location. Care has to be 
-// taken about the endianess of the host CPU. Our simulator is big endian. 
-// Depending on the endianess of the host CPU, the data needs to be converted.
+// from the source to the cache line to the target location. 
 //
 //----------------------------------------------------------------------------------------
 bool T64Cache::setCacheLineData( uint8_t *line,
@@ -510,7 +507,8 @@ bool T64Cache::setCacheLineData( uint8_t *line,
                                  int     len,
                                  uint8_t *data ) {
 
-    return( copyToBigEndian( &line[ lineOfs ], data, len ));
+    memcpy( &line[ lineOfs ], data, len );
+    return( true );
 }
 
 //----------------------------------------------------------------------------------------

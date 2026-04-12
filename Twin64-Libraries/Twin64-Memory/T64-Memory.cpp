@@ -3,22 +3,22 @@
 // Twin-64 - A 64-bit CPU - Physical memory
 //
 //----------------------------------------------------------------------------------------
-// This module contains ...
+// This module contains the implementation of the physical memory modules.
 //
 //----------------------------------------------------------------------------------------
 //
 // Twin-64 - A 64-bit CPU - Physical memory
 // Copyright (C) 2020 - 2026 Helmut Fieres
 //
-// This program is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or any later version.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should
-//  have received a copy of the GNU General Public License along with this program.  
-// If not, see <http://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #include "T64-Memory.h"
@@ -37,11 +37,12 @@ namespace {
 // Physical memory
 //
 //----------------------------------------------------------------------------------------
-// Physical memory. We have a rather simple module for memory. It is a range of bytes.
-// The SPA range describes where in physical memory this memory is allocated. It is
-// possible to have several memory modules, each mapping a different range of physical 
-// memory. The read and write function merely copy data from and to memory. The 
-// address must however be aligned to the length of the data to fetch.
+// We have a rather simple module for memory. It is just a range of bytes. The 
+// SPA range describes where in physical memory this memory is allocated. It is
+// possible to have several memory modules, each mapping a different range of 
+// physical memory. The read and write function merely copy data from and to 
+// memory. The address must however be aligned to the length of the data to 
+// fetch.
 //
 //----------------------------------------------------------------------------------------
 T64Memory::T64Memory( T64System     *sys, 
@@ -69,7 +70,8 @@ T64Memory:: ~T64Memory( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Reset the memory module. We clear out the physical memory range.
+// Reset the memory module. We clear out the physical memory range. The easiest
+// way is to free the old memory and create a new one.
 //
 //----------------------------------------------------------------------------------------
 void T64Memory::reset( ) {
@@ -87,13 +89,14 @@ void T64Memory::step( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Read function. We read a block of data from memory. The address the physical address
-// and we compute the offset on our SPA range. The address needs to be aligned with 
+// Read a block of data from memory. The address the physical address and we 
+// compute the offset on our SPA range. The address needs to be aligned with 
 // length parameter.
 //
-// Twin-64 is a big endian machine. Running on a little endian host, this causes the 
-// issue that the data is read into little endian order when just memory copying. 
-// So, we have to convert after reading the data from memory.
+// Twin-64 is a big endian machine. Running on a little endian host, we have 
+// to convert after reading the data from memory.
+// 
+// Issue!!! we cannot convert big/little endian if the len is larger. 
 //
 //----------------------------------------------------------------------------------------
 bool T64Memory::read( T64Word adr, uint8_t *data, int len ) {
@@ -110,7 +113,10 @@ bool T64Memory::read( T64Word adr, uint8_t *data, int len ) {
         if ( ! isAlignedDataAdr( adr, len )) return( false );
 
         uint8_t *srcPtr = &memData[ adr - spaAdr ];
-        return( copyToBigEndian( data, srcPtr, len ));
+
+        // memcpy( data, srcPtr, len );
+        // return( true );
+        return( copyEndianAware( data, srcPtr, len ));
     }
 }
 
@@ -122,6 +128,8 @@ bool T64Memory::read( T64Word adr, uint8_t *data, int len ) {
 // Twin-64 is a big endian machine. Running on a little endian host, this causes
 // the issue that the data is stored in little endian order when just memory 
 // copying. So, we have to convert before writing to memory.
+//
+// Issue!!! we cannot convert big/little endian if the len is larger. 
 //
 //----------------------------------------------------------------------------------------
 bool T64Memory::write( T64Word adr, uint8_t *data, int len ) {
@@ -139,7 +147,10 @@ bool T64Memory::write( T64Word adr, uint8_t *data, int len ) {
         if ( spaReadOnly ) return ( false );
 
         uint8_t *dstPtr = &memData[ adr - spaAdr ];
-        return( copyToBigEndian( dstPtr, data, len ));
+
+       // memcpy( dstPtr, data, len );
+       // return( true );
+        return( copyEndianAware( dstPtr, data, len ));
     }
 }
 

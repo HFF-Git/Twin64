@@ -879,7 +879,7 @@ void SimWinCache::drawLine( T64Word index ) {
         for ( int i = 0; i < 4; i++ ) { 
 
             T64Word tmp;
-            copyToBigEndian((uint8_t *) &tmp, 
+            copyEndianAware((uint8_t *) &tmp, 
                              cData + (( start + i ) * sizeof( T64Word )), 
                              sizeof( T64Word ));
             printNumericField( tmp, fmtDesc | FMT_HEX_4_4_4_4 );

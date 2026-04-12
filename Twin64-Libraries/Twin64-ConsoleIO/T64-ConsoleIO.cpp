@@ -583,7 +583,7 @@ int SimFormatter::printNumber( T64Word val, uint32_t fmtDesc ) {
                 else 
                     len += writeChars((char *) "%016x", val );
                 
-                    return( len );
+                return( len );
 
             } break;
 

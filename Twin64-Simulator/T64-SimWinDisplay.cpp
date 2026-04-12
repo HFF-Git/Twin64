@@ -26,7 +26,8 @@
 #include "T64-SimDeclarations.h"
 
 //----------------------------------------------------------------------------------------
-// Local name space. We try to keep utility functions local to the file. None so far.
+// Local name space. We try to keep utility functions local to the file. None 
+// so far.
 //
 //----------------------------------------------------------------------------------------
 namespace {
@@ -55,8 +56,8 @@ void SimWinDisplay::setupWinDisplay( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Start the window display. We start in screen mode and print the initial screen. 
-// All left to do is to enter the command loop.
+// Start the window display. We start in screen mode and print the initial 
+// screen. All left to do is to enter the command loop.
 //
 //----------------------------------------------------------------------------------------
 void SimWinDisplay::startWinDisplay( ) {
@@ -68,7 +69,6 @@ SimTokId SimWinDisplay::getCurrentCmd( ) {
     
     return( cmdWin -> getCurrentCmd( ));
 }
-
 
 bool SimWinDisplay::isWinModeOn( ) {
     

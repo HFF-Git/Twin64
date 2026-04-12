@@ -10,15 +10,15 @@
 // Twin-64 - A 64-bit CPU - Physical memory
 // Copyright (C) 2020 - 2026 Helmut Fieres
 //
-// This program is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or any later version.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should
-//  have received a copy of the GNU General Public License along with this program.  
-// If not, see <http://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #ifndef T64_Memory_h
@@ -34,14 +34,14 @@
 //----------------------------------------------------------------------------------------
 enum T64MemKind : int {
 
-    T64_MK_NIL          = 0
+    T64_MK_NIL = 0
 };
 
 enum T64MemType : int {
 
-    T64_MT_NIL          = 0,
-    T64_MT_RAM          = 1,
-    T64_MT_ROM          = 2
+    T64_MT_NIL  = 0,
+    T64_MT_RAM  = 1,
+    T64_MT_ROM  = 2
 };
 
 //----------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ public:
                T64MemKind   mKind,
                T64MemType   mType,
                T64Word      spaAdr,
-               int          spaLen);
+               int          spaLen );
 
     virtual     ~ T64Memory( );
     
@@ -73,29 +73,29 @@ public:
     char        *getMemTypeString( );
 
     bool        busOpReadUncached( int srcModNum,
-                                 T64Word pAdr, 
-                                 uint8_t *data, 
-                                 int len );
+                                   T64Word pAdr, 
+                                   uint8_t *data, 
+                                   int len );
 
     bool        busOpWriteUncached( int srcModNum,
-                                  T64Word pAdr, 
-                                  uint8_t *data, 
-                                  int len );
-
-    bool        busOpReadSharedBlock( int srcModNum,
-                                    T64Word pAdr,
+                                    T64Word pAdr, 
                                     uint8_t *data, 
                                     int len );
 
-    bool        busOpReadPrivateBlock( int srcModNum, 
-                                     T64Word pAdr, 
-                                     uint8_t *data, 
-                                     int len );
+    bool        busOpReadSharedBlock( int srcModNum,
+                                      T64Word pAdr,
+                                      uint8_t *data, 
+                                      int len );
 
-    bool        busOpWriteBlock(  int srcModNum,
-                                T64Word pAdr, 
-                                uint8_t *data, 
-                                int len );
+    bool        busOpReadPrivateBlock( int srcModNum, 
+                                       T64Word pAdr, 
+                                       uint8_t *data, 
+                                       int len );
+
+    bool        busOpWriteBlock( int srcModNum,
+                                 T64Word pAdr, 
+                                 uint8_t *data, 
+                                 int len );
 
     // ??? routines to load/save memory ?
 

@@ -117,12 +117,12 @@ inline bool isAlignedOfs( T64Word ofs,  int align ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "copyToBigEndian" converts the input data in little endian format to big endian
-// format. Both source and destination must be aligned to the length of the data
-// input.
+// "copyEndianAware" converts the data to little endian format if we run on a
+// little endian machine. Both source and destination must be aligned to the
+// length of the data input. Only lengths of 1, 2, 4, or 8 are supported.
 //
 //----------------------------------------------------------------------------------------
-inline bool copyToBigEndian( uint8_t *dst, uint8_t *src, int len ) {
+inline bool copyEndianAware( uint8_t *dst, uint8_t *src, int len ) {
 
     if (( len != 1 ) && ( len != 2 ) && 
         ( len != 4 ) && ( len != 8 )) return( false );     

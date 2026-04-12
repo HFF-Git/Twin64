@@ -325,6 +325,7 @@ T64Word T64Cpu::diagOpHandler( int opt, T64Word arg1, T64Word arg2 ) {
 // priv mode. For a virtual address, the TLB is consulted for address translation
 // and access control data.
 //
+// ??? should we do the big endian/ little endian conversion at this level ?
 //----------------------------------------------------------------------------------------
 T64Word T64Cpu::instrRead( T64Word vAdr ) {
 
@@ -335,7 +336,10 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
     if ( isInPhysMemAdrRange( vAdr )) { 
 
         privModeCheck( );
-        proc -> iCache -> read( vAdr, (uint8_t *) &instr, 4, false );     
+        proc -> iCache -> read( vAdr, (uint8_t *) &instr, 4, false );   
+        
+         // ??? convert data !!!!
+         copyEndianAware( ((uint8_t *) &instr ), ((uint8_t *) &instr ), 4 );  
     }
     else {
 
@@ -351,6 +355,8 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
                                 (uint8_t *) &instr, 
                                 4, 
                                 tlbPtr -> uncached );
+
+        copyEndianAware( ((uint8_t *) &instr ), ((uint8_t *) &instr ), 4 );  
     }
 
     return( instr );
@@ -364,6 +370,7 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
 // a virtual address, the TLB is consulted for the translation and security 
 // checking. 
 //
+// ??? should we do the big endian/ little endian conversion at this level ?
 //----------------------------------------------------------------------------------------
 T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
 
@@ -371,11 +378,18 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
     int     wordOfs = sizeof( T64Word ) - len;
 
     dataAlignmentCheck( vAdr, len );
-   
+           
     if ( isPhysMemAdr( vAdr )) { 
         
         privModeCheck( );
+
         proc -> dCache -> read( vAdr, ((uint8_t *) &data ) + wordOfs, len, false );
+
+        // ??? convert data !!!!
+
+        copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
+                         ((uint8_t *) &data ) + wordOfs, 
+                         len );
     }
     else {
 
@@ -389,6 +403,13 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
                                 ((uint8_t *) &data ) + wordOfs, 
                                 len, 
                                 tlbPtr -> uncached );
+
+        // ??? convert data !!!!
+
+        copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
+                         ((uint8_t *) &data ) + wordOfs, 
+                         len );
+
     }
 
     if ( sExt ) {
@@ -412,6 +433,7 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
 // in priv mode. For a virtual address, the TLB is consulted for the translation
 // and security checking. 
 //
+// ??? should we do the big endian/ little endian conversion at this level ?
 //----------------------------------------------------------------------------------------
 void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
 
@@ -422,7 +444,14 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
     if ( isPhysMemAdr( vAdr )) { 
         
         privModeCheck( );
-        proc -> dCache -> write( vAdr, ((uint8_t *) &data ) + wordOfs, len, false );           
+
+        // ??? convert data !!!!
+
+        copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
+                         ((uint8_t *) &data ) + wordOfs, 
+                         len );
+
+        proc -> dCache -> write( vAdr, ((uint8_t *) &data ) + wordOfs, len, false );   
     }
     else {
 
@@ -431,6 +460,10 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
 
         dataAccessRightsCheck( tlbPtr, PT_READ_WRITE );
         dataRegionIdCheck( vAdr, true );
+
+        copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
+                         ((uint8_t *) &data ) + wordOfs, 
+                         len );
         
         proc -> dCache -> write( tlbPtr -> pAdr, 
                                  ((uint8_t *) &data ) + wordOfs, 
