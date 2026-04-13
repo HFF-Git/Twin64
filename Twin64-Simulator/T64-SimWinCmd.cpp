@@ -1176,7 +1176,6 @@ void SimCommandsWin::addIoModule( ) {
 // down to the next 8-byte boundary, the limit is rounded up to the next 8-byte 
 // boundary. We display the data in words.
 //
-// ??? should we do the big endian/ little endian conversion at this level ?
 //----------------------------------------------------------------------------------------
 void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) {
     
@@ -1197,6 +1196,8 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
                 if ( glb -> system -> readMem( index, 
                                                (uint8_t *) &val, 
                                                sizeof( val ))) {
+
+                    copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
 
                     if ( rdx == 16 )
                         winOut -> printNumber( val, FMT_HEX_4_4_4_4 );
@@ -1228,7 +1229,6 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
 // Display absolute memory content as code shown in assembler syntax. There is one
 // word per line.
 //
-// ??? should we do the big endian/ little endian conversion at this level ?
 //----------------------------------------------------------------------------------------
 void  SimCommandsWin::displayAbsMemContentAsCode( T64Word adr, T64Word len ) {
     
@@ -1243,6 +1243,8 @@ void  SimCommandsWin::displayAbsMemContentAsCode( T64Word adr, T64Word len ) {
         winOut -> writeChars( ": " );
 
         if ( glb -> system -> readMem( index, (uint8_t *) &instr, 4 )) {
+
+            copyEndianAware((uint8_t *) &instr, (uint8_t *) &instr, sizeof( instr ));
 
             disAsm -> formatInstr( buf, sizeof( buf ), instr, 16 );
             winOut -> writeChars( "%s\n", buf ); 
@@ -1988,6 +1990,8 @@ void SimCommandsWin::modifyAbsMemCmd( ) {
     T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_OFS, 0, INT64_MAX );
     T64Word val = eval -> acceptNumExpr( ERR_INVALID_NUM );
     tok -> checkEOS( );
+
+    copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
 
     if ( ! glb -> system -> writeMem( adr, (uint8_t *) &val, sizeof( T64Word ))) {
 

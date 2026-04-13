@@ -114,9 +114,8 @@ bool T64Memory::read( T64Word adr, uint8_t *data, int len ) {
 
         uint8_t *srcPtr = &memData[ adr - spaAdr ];
 
-        // memcpy( data, srcPtr, len );
-        // return( true );
-        return( copyEndianAware( data, srcPtr, len ));
+        memcpy( data, srcPtr, len );
+        return( true );
     }
 }
 
@@ -148,9 +147,8 @@ bool T64Memory::write( T64Word adr, uint8_t *data, int len ) {
 
         uint8_t *dstPtr = &memData[ adr - spaAdr ];
 
-       // memcpy( dstPtr, data, len );
-       // return( true );
-        return( copyEndianAware( dstPtr, data, len ));
+        memcpy( dstPtr, data, len );
+        return( true );
     }
 }
 

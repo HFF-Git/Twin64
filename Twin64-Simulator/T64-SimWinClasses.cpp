@@ -467,7 +467,10 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
         
             uint32_t val = 0;
             glb -> system -> readMem( itemAdr + i, (uint8_t *)&val, sizeof( val ));
+
+            copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
             printNumericField( val, fmtDesc | FMT_HEX_4_4 );
+
             printTextField((char *) "   " );
         }
     }
@@ -477,6 +480,9 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
         
             T64Word val = 0;
             glb -> system -> readMem( itemAdr + i, (uint8_t *)&val, sizeof( val ));
+
+            copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
+
             printNumericField( val, fmtDesc | FMT_HEX_4_4_4_4 );
             printTextField((char *) "   " );
         }
@@ -487,6 +493,9 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
         
             uint32_t val = 0;
             glb -> system -> readMem( itemAdr + i, (uint8_t *)&val, sizeof( val ));
+
+            copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
+
             printNumericField( val, fmtDesc | FMT_DEC_32 );
             printTextField((char *) "   " );
         }
@@ -497,6 +506,9 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
         
             uint32_t val = 0;
             glb -> system -> readMem( itemAdr + i, (uint8_t *)&val, sizeof( val ));
+
+            copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
+            
             printNumericField( val, fmtDesc | FMT_ASCII_4 );
             printTextField((char *) "   " );
         }
