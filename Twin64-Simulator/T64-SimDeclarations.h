@@ -294,8 +294,7 @@ enum SimErrMsgId : int {
    
     ERR_INVALID_NUM                 = 25,
     
-    // -----
-   
+    // -----   
     
     ERR_EXPECTED_COMMA              = 100,
     ERR_EXPECTED_COLON              = 101,
@@ -317,55 +316,44 @@ enum SimErrMsgId : int {
     ERR_EXPECTED_LEN                = 215,
     ERR_EXPECTED_STEPS              = 116,
     ERR_EXPECTED_INSTR_VAL          = 117,
-    ERR_EXPECTED_INSTR_OPT          = 318,
-
+    ERR_EXPECTED_INSTR_OPT          = 218,
     ERR_EXPECTED_MOD_NUM            = 219,
-   
-    ERR_IN_ASM_PFUNC                = 320,
-    ERR_IN_DISASM_PFUNC             = 321,
 
-   
-    ERR_INVALID_ELF_FILE            = 700,
-    ERR_ELF_INVALID_ADR_RANGE       = 701,
-    ERR_ELF_MEMORY_SIZE_EXCEEDED    = 702,
-    ERR_INVALID_ELF_BYTE_ORDER      = 703,
+    ERR_INVALID_ELF_FILE            = 250,
+    ERR_ELF_INVALID_ADR_RANGE       = 251,
+    ERR_ELF_MEMORY_SIZE_EXCEEDED    = 252,
+    ERR_INVALID_ELF_BYTE_ORDER      = 253,
 
-    ERR_EXPECTED_AN_OFFSET_VAL      = 321,
-    ERR_EXPECTED_FMT_OPT            = 322,
-   
-    ERR_EXPECTED_STR                = 324,
-    ERR_EXPECTED_EXPR               = 325,
+    ERR_EXPECTED_AN_OFFSET_VAL      = 310,
+    ERR_EXPECTED_FMT_OPT            = 311,
+    ERR_EXPECTED_STR                = 312,
+    ERR_EXPECTED_EXPR               = 313,   
+    ERR_FILE_NOT_FOUND              = 314,
+    ERR_UNEXPECTED_EOS              = 315,
+    ERR_ENV_VAR_NOT_FOUND           = 316,
+    ERR_ENV_VALUE_EXPR              = 317,
+    ERR_ENV_PREDEFINED              = 318,
+    ERR_ENV_TABLE_FULL              = 319,
+    ERR_OPEN_EXEC_FILE              = 320,
     
-    ERR_FILE_NOT_FOUND              = 350,
-    ERR_UNEXPECTED_EOS              = 351,
-    
-    ERR_ENV_VAR_NOT_FOUND           = 400,
-    ERR_ENV_VALUE_EXPR              = 401,
-    ERR_ENV_PREDEFINED              = 403,
-    ERR_ENV_TABLE_FULL              = 404,
-    ERR_OPEN_EXEC_FILE              = 405,
-    
-    ERR_EXPR_TYPE_MATCH             = 406,
-    ERR_EXPR_FACTOR                 = 407,
+    ERR_EXPR_TYPE_MATCH             = 400,
+    ERR_EXPR_FACTOR                 = 401,
+    ERR_IN_ASM_PFUNC                = 402,
+    ERR_IN_DISASM_PFUNC             = 403,
+    ERR_OFS_LEN_LIMIT_EXCEEDED      = 404,
+    ERR_INSTR_HAS_NO_OPT            = 405,
+    ERR_IMM_VAL_RANGE               = 406,
+    ERR_POS_VAL_RANGE               = 407,
+    ERR_LEN_VAL_RANGE               = 408,
+    ERR_OFFSET_VAL_RANGE            = 409,
+    ERR_OUT_OF_WINDOWS              = 410,
+    ERR_WIN_TYPE_NOT_CONFIGURED     = 411,
+    ERR_UNDEFINED_PFUNC             = 412,
+    ERR_NUMERIC_RANGE               = 413,
 
-    ERR_OFS_LEN_LIMIT_EXCEEDED      = 408,
-    ERR_INSTR_HAS_NO_OPT            = 409,
-    ERR_IMM_VAL_RANGE               = 410,
-   
-    ERR_POS_VAL_RANGE               = 412,
-    ERR_LEN_VAL_RANGE               = 413,
-    ERR_OFFSET_VAL_RANGE            = 414,
-    
-    ERR_OUT_OF_WINDOWS              = 415,
-    ERR_WIN_TYPE_NOT_CONFIGURED     = 416,
-    
-    ERR_UNDEFINED_PFUNC             = 417,
-
-    ERR_NUMERIC_RANGE               = 420,
-
-    ERR_INVALID_HEX_ESCAPE          = 430,
-    ERR_INVALID_UNICODE_ESCAPE      = 431,
-    ERR_STRING_TOO_LONG             = 432,
+    ERR_INVALID_HEX_ESCAPE          = 420,
+    ERR_INVALID_UNICODE_ESCAPE      = 421,
+    ERR_STRING_TOO_LONG             = 422,
 
     ERR_TLB_TYPE                    = 500,
     ERR_TLB_PURGE_OP                = 501,
@@ -374,6 +362,7 @@ enum SimErrMsgId : int {
     ERR_TLB_ADR_DATA                = 504,
     ERR_TLB_NOT_CONFIGURED          = 505,
     ERR_TLB_SIZE_EXCEEDED           = 506,
+    ERR_INVALID_TLB_ACC_FLAG        = 507,
     
     ERR_CACHE_TYPE                  = 600,
     ERR_CACHE_FLUSH_OP              = 601,
@@ -385,9 +374,8 @@ enum SimErrMsgId : int {
     ERR_MEM_OP_FAILED               = 700,
 
     ERR_CREATE_PROC_MODULE          = 701,
-    ERR_CREATE_MEM_MODULE           = 702,
-
-    ERR_INVALID_TLB_ACC_FLAG        = 800
+    ERR_CREATE_MEM_MODULE           = 702
+    
 };
 
 //----------------------------------------------------------------------------------------

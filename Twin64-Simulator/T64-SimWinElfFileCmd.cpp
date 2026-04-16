@@ -59,6 +59,7 @@ elfio *openElfFile( char *fileName ) {
     
     ELFIO::elfio *reader = new ( std::nothrow ) elfio;
     
+
     if ( ! reader -> load( fileName )) throw( ERR_INVALID_ELF_FILE );
     if ( reader -> get_encoding( ) != ELFDATA2MSB ) throw( ERR_INVALID_ELF_BYTE_ORDER );
     return( reader );
@@ -90,22 +91,27 @@ bool elfioValidate( elfio *reader, char* msg, int msg_len ) {
 // Write a word to the simulator memory.
 //
 //----------------------------------------------------------------------------------------
-bool writeMem( T64System *sys, uint32_t ofs, uint32_t val ) {
+bool writeMem( T64System *sys, int32_t ofs, uint32_t val ) {
 
+    if ( ! sys -> writeMem( ofs, (uint8_t *) &val, sizeof( uint32_t ))) {
+
+        throw( ERR_MEM_OP_FAILED );
+    }
    
     return( true );
 }
 
 //----------------------------------------------------------------------------------------
 // Load a segment into main memory. We are passed the segment and the CPU handle. 
-// Currently we only load physical memory. First we get the segment attributes and 
-// validate them for size, etc. Next we clear the physical memory in the size of what
-// it should be according to the segment data. Next, we copy the segment data word by
-// word up to the segment file size attribute. Note that a segment needs to have 
-// loadable data. Since our memory access is on a word basis, there is one more thing.
-// The data is correctly encoded in big endian format. However, the coercion from that
-// byte array to a word array will place the data in the host system order, in our
-// case little endian. We need to swap each word accordingly.
+// Currently we only load physical memory. First we get the segment attributes 
+// and validate them for size, etc. Next we clear the physical memory in the size
+// of what it should be according to the segment data. Next, we copy the segment
+// data word by word up to the segment file size attribute. Note that a segment 
+// needs to have loadable data. Since our memory access is on a word basis, there
+// is one more thing. The data is correctly encoded in big endian format. However,
+// the coercion from that byte array to a word array will place the data in the 
+// host system order, in our case little endian. We need to swap each word
+// accordingly.
 //
 //----------------------------------------------------------------------------------------
 void loadSegmentIntoMemory( elfio           *reader, 
@@ -130,6 +136,7 @@ void loadSegmentIntoMemory( elfio           *reader,
         
         winOut -> writeChars( "R" );
         if ( flags & SHF_WRITE )     winOut -> writeChars( "W" );
+
         if ( flags & SHF_EXECINSTR ) winOut -> writeChars( "X" );
        
         winOut -> writeChars( "\n" );
@@ -148,18 +155,21 @@ void loadSegmentIntoMemory( elfio           *reader,
             
             throw( ERR_ELF_MEMORY_SIZE_EXCEEDED );
         }
-            
+
         for ( Elf64_Addr i = 0; i < memorySize; i += 4  ) {
             
            if ( ! writeMem( sys, uint32_t( vAdr + i ), 0 )) {
 
-                throw( 99 ); // ??? fix ....
+                throw( ERR_MEM_OP_FAILED ); 
            }
         }
         
         for ( Elf64_Addr i = 0; i < fileSize; i += 4  ) {
             
-           writeMem( sys, uint32_t( vAdr + i ), swap32( wordPtr[ i / 4 ] ));
+           if ( ! writeMem( sys, uint32_t( vAdr + i ), wordPtr[ i / 4 ] )) {
+
+                throw( ERR_MEM_OP_FAILED ); 
+           }
         }
     }
 }
@@ -204,16 +214,20 @@ void SimCommandsWin::loadElfFile( char *fileName ) {
         
         winOut -> writeChars( "Set entry: 0x%08x\n", entry );
     
+        // ??? to do ....
         // glb -> cpu -> setReg( RC_FD_PSTAGE, PSTAGE_REG_ID_PSW_0, (uint32_t) 0 );
         // glb -> cpu -> setReg( RC_FD_PSTAGE, PSTAGE_REG_ID_PSW_1, (uint32_t) entry );
         
         winOut -> writeChars( "Done\n" );
+
+        if ( reader != nullptr ) closeElfFile( reader );
     }
     
     catch ( SimErrMsgId errNum ) {
-        
-        winOut -> writeChars( "ELF file load error: %d\n", errNum );
+
+        if ( reader != nullptr ) closeElfFile( reader );
+        throw( errNum );
     }
     
-    if ( reader != nullptr ) closeElfFile( reader );
+    
 }

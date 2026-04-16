@@ -95,8 +95,6 @@ void T64Memory::step( ) {
 //
 // Twin-64 is a big endian machine. Running on a little endian host, we have 
 // to convert after reading the data from memory.
-// 
-// Issue!!! we cannot convert big/little endian if the len is larger. 
 //
 //----------------------------------------------------------------------------------------
 bool T64Memory::read( T64Word adr, uint8_t *data, int len ) {
@@ -123,12 +121,6 @@ bool T64Memory::read( T64Word adr, uint8_t *data, int len ) {
 // Write function. We write a block of data to memory. The address the physical 
 // address and we compute the offset on our SPA range. The address needs to be 
 // aligned with length parameter.
-//
-// Twin-64 is a big endian machine. Running on a little endian host, this causes
-// the issue that the data is stored in little endian order when just memory 
-// copying. So, we have to convert before writing to memory.
-//
-// Issue!!! we cannot convert big/little endian if the len is larger. 
 //
 //----------------------------------------------------------------------------------------
 bool T64Memory::write( T64Word adr, uint8_t *data, int len ) {

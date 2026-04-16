@@ -534,7 +534,19 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
       .errStr = (char *) "Create processor module error" }, 
 
     { .errNum = ERR_CREATE_MEM_MODULE,              
-      .errStr = (char *) "Create memory module error" }
+      .errStr = (char *) "Create memory module error" },
+
+    { .errNum = ERR_INVALID_ELF_FILE,              
+      .errStr = (char *) "Error while open ELF file" },
+
+    { .errNum = ERR_ELF_INVALID_ADR_RANGE,              
+      .errStr = (char *) "ELF: invalid address range" },
+
+    { .errNum = ERR_ELF_MEMORY_SIZE_EXCEEDED,              
+      .errStr = (char *) "ELF: memory size exceeded" },
+
+    { .errNum = ERR_INVALID_ELF_BYTE_ORDER,              
+      .errStr = (char *) "EELF: invalid byte order" }
    
 };
 
