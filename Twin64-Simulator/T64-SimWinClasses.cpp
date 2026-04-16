@@ -557,7 +557,7 @@ void SimWinCode::setDefaults( ) {
     setRows( getWinDefSize( 0 ).row );
     setColumns( getWinDefSize( 0 ).col );
     setHomeItemAdr( adr );
-    setCurrentItemAdr( 0 );
+    setCurrentItemAdr( adr );
     setLineIncrementItemAdr( 4 );
     setLimitItemAdr( T64_MAX_PHYS_MEM_LIMIT );
     setWinToggleLimit( 0 );
@@ -615,6 +615,13 @@ void SimWinCode::drawLine( T64Word itemAdr ) {
     uint32_t    fmtDesc                     = FMT_DEF_ATTR;
     uint32_t    instr                       = 0x0;
     char        buf[ MAX_TEXT_LINE_SIZE ]   = { 0 };
+
+    if ( ! glb -> system -> readMem( itemAdr, (uint8_t *) &instr, sizeof( uint32_t ))) {
+
+        printNumericField( 0, fmtDesc | FMT_INVALID_NUM );
+    } 
+
+    copyEndianAware((uint8_t *) &instr, (uint8_t *) &instr, sizeof(uint32_t));
     
     printNumericField( itemAdr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_2_4_4, 14 );
   

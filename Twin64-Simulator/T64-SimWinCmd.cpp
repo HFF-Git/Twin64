@@ -133,19 +133,16 @@ int removeComment( char *cmdBuf ) {
 //----------------------------------------------------------------------------------------
 void removeChar( char *buf, int *strSize, int *pos ) {
     
-    if (( *strSize > 0 ) && ( *strSize == *pos )) {
+    if ( (*strSize > 0) && (*pos > 0) ) {
         
-        *strSize        = *strSize - 1;
-        *pos            = *pos - 1;
-        buf[ *strSize ] = '\0';
-    }
-    else if (( *strSize > 0 ) && ( *pos > 0 )) {
+        // shift everything left starting from the character BEFORE cursor
+        for ( int i = *pos - 1; i < *strSize; i++ ) {
+            buf[i] = buf[i + 1];
+        }
         
-        for ( int i = *pos; i < *strSize; i++ ) buf[ i ] = buf[ i + 1 ];
-        
-        *strSize        = *strSize - 1;
-        *pos            = *pos - 1;
-        buf[ *strSize ] = '\0';
+        (*strSize)--;
+        (*pos)--;          // cursor moves left
+        buf[*strSize] = '\0';
     }
 }
 
@@ -498,8 +495,9 @@ int SimCommandsWin::readCmdLine( char *cmdBuf, int initialCmdBufLen, char *promp
     CharType    state           = CT_NORMAL;
     
     if (( promptBufLen > 0 ) && ( glb -> console -> isConsole( ))) {
-        
-        promptBufLen = glb -> console -> writeChars( " %s", promptBuf );
+
+        glb -> console -> writeChars( " %s", promptBuf );
+        promptBufLen = strlen(promptBuf);
     }
     
     if ( initialCmdBufLen > 0 ) {
@@ -507,6 +505,9 @@ int SimCommandsWin::readCmdLine( char *cmdBuf, int initialCmdBufLen, char *promp
         cmdBuf[ initialCmdBufLen ]  = '\0';
         cmdBufLen                   = initialCmdBufLen;
         cmdBufCursor                = initialCmdBufLen;
+
+        glb->console->writeChars("\r %s%s", promptBuf, cmdBuf);
+        setWinCursor(0, 1 + promptBufLen + cmdBufCursor);
     }
     else cmdBuf[ 0 ] = '\0';
     
@@ -537,8 +538,8 @@ int SimCommandsWin::readCmdLine( char *cmdBuf, int initialCmdBufLen, char *promp
 
                         if ( glb -> console -> isConsole( ) ) {
 
-                            glb->console -> writeChars( ">>" ); 
-                            promptBufLen = 2;                       
+                            glb->console -> writeChars( ":" ); 
+                            promptBufLen = strlen(":");                       
                         }
 
                         cmdBufCursor = cmdBufLen;
@@ -558,12 +559,14 @@ int SimCommandsWin::readCmdLine( char *cmdBuf, int initialCmdBufLen, char *promp
                 }
                 else if ( isBackSpaceChar( ch )) {
                     
-                    if ( cmdBufLen > 0 ) {
+                    if ( cmdBufCursor > 0 ) {
+
+                    // if ( cmdBufLen > 0 ) {
                         
                         removeChar( cmdBuf, &cmdBufLen, &cmdBufCursor );
                         glb -> console -> writeChars( "\r %s%s", promptBuf, cmdBuf );
                         glb -> console -> clearToEndOfLine( ); 
-                        setWinCursor( 0, promptBufLen + cmdBufCursor + 1 );
+                        setWinCursor( 0, 1 + promptBufLen + cmdBufCursor );
                     }
                 }
                 else {
@@ -576,7 +579,7 @@ int SimCommandsWin::readCmdLine( char *cmdBuf, int initialCmdBufLen, char *promp
 
                             glb -> console -> writeChars( "\r %s%s", promptBuf, cmdBuf);
                             glb -> console -> clearToEndOfLine( ); 
-                            setWinCursor(0, promptBufLen + cmdBufCursor );
+                            setWinCursor(0, 1 + promptBufLen + cmdBufCursor );
                         }
                     }
                 }
@@ -742,8 +745,7 @@ void SimCommandsWin::configureT64Sim( ) {
         
         winOut -> writeChars( "Configuring Twin-64 Simulator...\n" );
        
-        // ??? just use execute file ...
-        // ??? if fails write to log ?
+        // ??? just use execute file ... if fails write to log ?
 
         winOut -> writeChars( "Configuration done.\n\n" );
     }
@@ -2128,7 +2130,6 @@ void SimCommandsWin::flushCacheCmd( ) {
 //  IITLB <vAdr> "," <pAdr> "," <pSize> "," <acc> [ "," "L" [ "," "U" ]]
 //  IDTLB <vAdr> "," <pAdr> "," <pSize> "," <acc> [ "," "L" [ "," "U" ]]
 //
-// ??? cross check flags field for correct position...
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::insertTLBCmd( ) {
 
@@ -2149,6 +2150,7 @@ void SimCommandsWin::insertTLBCmd( ) {
     while ( tok -> isToken( TOK_COMMA )) {
 
         tok -> nextToken( );
+
         if (( tok -> isTokenIdent((char *) "L" )) ||
             ( tok -> isTokenIdent((char *) "l" ))) {
 
@@ -2164,10 +2166,6 @@ void SimCommandsWin::insertTLBCmd( ) {
     }
 
     tok -> checkEOS( );
-
-    // ??? needed ? We only need to get the module number
-    if ( glb -> winDisplay -> getCurrentWinType( ) != WT_TLB_WIN ) 
-        throw( ERR_INVALID_WIN_TYPE );
 
     int modNum = glb -> winDisplay -> getCurrentWinModNum( );
    
