@@ -60,8 +60,7 @@ const SimToken cmdTokTab[ ] = {
     { .name = "MOD",        .typ = TYP_SYM,     .tid = TOK_MOD                      },
     { .name = "PROC",       .typ = TYP_SYM,     .tid = TOK_PROC                     },              
     { .name = "CPU",        .typ = TYP_SYM,     .tid = TOK_CPU                      },
-    { .name = "ITLB",       .typ = TYP_SYM,     .tid = TOK_ITLB                     },
-    { .name = "DTLB",       .typ = TYP_SYM,     .tid = TOK_DTLB                     },
+    { .name = "TLB",        .typ = TYP_SYM,     .tid = TOK_TLB                      },
     { .name = "ICACHE",     .typ = TYP_SYM,     .tid = TOK_ICACHE                   },
     { .name = "DCACHE",     .typ = TYP_SYM,     .tid = TOK_DCACHE                   },
     { .name = "MEM",        .typ = TYP_SYM,     .tid = TOK_MEM                      },
@@ -107,10 +106,8 @@ const SimToken cmdTokTab[ ] = {
     { .name = "DA",         .typ = TYP_CMD,     .tid = CMD_DA                       },
     { .name = "MA",         .typ = TYP_CMD,     .tid = CMD_MA                       },
     
-    { .name = "IITLB",      .typ = TYP_CMD,     .tid = CMD_ITLB_I                   },
-    { .name = "IDTLB",      .typ = TYP_CMD,     .tid = CMD_ITLB_D                   },
-    { .name = "PITLB",      .typ = TYP_CMD,     .tid = CMD_PTLB_I                   },
-    { .name = "PDTLB",      .typ = TYP_CMD,     .tid = CMD_PTLB_D                   },
+    { .name = "ITLB",       .typ = TYP_CMD,     .tid = CMD_ITLB                     },
+    { .name = "PTLB",       .typ = TYP_CMD,     .tid = CMD_PTLB                     },
     
     { .name = "PICA",       .typ = TYP_CMD,     .tid = CMD_PCA_I                    },
     { .name = "PDCA",       .typ = TYP_CMD,     .tid = CMD_PCA_D                    },
@@ -719,33 +716,18 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     },
     
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ITLB_I,
-        .cmdNameStr     = (char *) "iitlb",
-        .cmdSyntaxStr   = (char *) "iitlb <vAdr> , <pAdr> , <size> , "
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ITLB,
+        .cmdNameStr     = (char *) "itlb",
+        .cmdSyntaxStr   = (char *) "itlb <vAdr> , <pAdr> , <size> , "
                                    "<acc> , [ , L [ , U ]]",
-        .helpStr        = (char *) "inserts an entry into the instruction TLB"
+        .helpStr        = (char *) "inserts an entry into the unified TLB"
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ITLB_D,
-        .cmdNameStr     = (char *) "idtlb",
-        .cmdSyntaxStr   = (char *) "idtlb <vAdr> , <pAdr> , <size> , "
-                                   "<acc> , [ , L [ , U ]]",
-        .helpStr        = (char *) "inserts an entry into the data TLB"
-    },
-    
-    {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_PTLB_I,
-        .cmdNameStr     = (char *) "pitlb",
-        .cmdSyntaxStr   = (char *) "pitlb <vAdr>",
-        .helpStr        = (char *) "purges an entry from the instruction TLB"
-    },
-
-    {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_PTLB_D,
-        .cmdNameStr     = (char *) "pdtlb",
-        .cmdSyntaxStr   = (char *) "pdtlb <vAdr>",
-        .helpStr        = (char *) "purges an entry from the data TLB"
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_PTLB,
+        .cmdNameStr     = (char *) "ptlb",
+        .cmdSyntaxStr   = (char *) "ptlb <vAdr>",
+        .helpStr        = (char *) "purges an entry from the unified TLB"
     },
     
     {

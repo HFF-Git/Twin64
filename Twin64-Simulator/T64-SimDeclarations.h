@@ -195,8 +195,7 @@ enum SimTokId : uint16_t {
     TOK_HEX,                    TOK_MEM,                    TOK_CODE,
     TOK_STATS,                  TOK_TEXT,                   TOK_SYS,
     TOK_PROC,                   TOK_CPU,                    TOK_IO,
-    TOK_ITLB,                   TOK_DTLB,                   TOK_ICACHE,
-    TOK_DCACHE,                 
+    TOK_TLB,                    TOK_ICACHE,                 TOK_DCACHE,                 
     
     TOK_TLB_FA_16S,             TOK_TLB_FA_32S,             TOK_TLB_FA_64S,             
     TOK_TLB_FA_128S,
@@ -216,8 +215,8 @@ enum SimTokId : uint16_t {
     CMD_WRITE_LINE,             CMD_DM,                     CMD_DW,
     CMD_NM,                     CMD_RM,                     CMD_RESET,
     CMD_RUN,                    CMD_STEP,                   CMD_MR,
-    CMD_DA,                     CMD_MA,                     CMD_ITLB_I,
-    CMD_ITLB_D,                 CMD_PTLB_I,                 CMD_PTLB_D,
+    CMD_DA,                     CMD_MA,                     CMD_ITLB,
+    CMD_PTLB,                
     CMD_PCA_I,                  CMD_PCA_D,                  CMD_FCA_I,
     CMD_FCA_D,
 

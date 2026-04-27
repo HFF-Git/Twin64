@@ -239,18 +239,21 @@ struct T64TlbEntry {
     bool            modified        = false;
     T64PageType     pageType        = PT_NONE;
     T64Word         pageSize        = T64_PAGE_SIZE_BYTES;
+    T64Word         pageMask        = 0;
     bool            pLev1           = false;
     bool            pLev2           = false;
     T64Word         vAdr            = 0;
     T64Word         pAdr            = 0;
-    T64Word         lastUsed        = 0;
+    T64Word         lastUsed        = 0;  
 };
 
 //----------------------------------------------------------------------------------------
-// The TLB submodule. A CPU can have one or two TLBs. Our TLBs are simple arrays 
-// of entries, i.e. modeling a full associative array with a LRU replacement 
-// policy. The CPU uses the lookup, insert and purge methods. The simulator uses 
-// the methods for display and directly inserting or removing an entry.
+// The TLB submodule. In the real worlds most processors have an ITLB and DTLB.
+// Our TLB consist of three simple arrays of entries. There are two very small
+// arrays, the ITLB and DTLB L1 structure. Both are loaded from the unified 
+// UTLB. The CPU uses the lookup, insert and purge methods. The simulator uses 
+// the methods for display and directly inserting or removing an UTLB entry.
+// Note that ITLB and DTLB are indirectly manipulated by operations on the UTLB.
 //
 //----------------------------------------------------------------------------------------
 struct T64Tlb {
@@ -262,29 +265,37 @@ struct T64Tlb {
     virtual         ~ T64Tlb( );
     
     void            reset( );
-    T64TlbEntry     *lookup( T64Word vAdr );
-    
-    bool            insert( T64Word vAdr, T64Word info );
-    bool            purge( T64Word vAdr );
 
-    bool            insertTlbByIndex( uint32_t index, T64Word vAdr, T64Word info );
-    bool            purgeTlbByIndex( uint32_t index );
+    T64TlbEntry     *lookupItlb( T64Word vAdr );
+    T64TlbEntry     *lookupDtlb( T64Word vAdr );
     
+    bool            insertTlb( T64Word vAdr, T64Word info );
+    bool            purgeTlb( T64Word vAdr );
+
     int             getTlbSize( );
     T64TlbEntry     *getTlbEntry( int index );
-
+   
     T64TlbKind      getTlbKind( );  
     T64TlbType      getTlbType( );
     char            *getTlbTypeString( );
 
     private:
-    
+
+    T64Processor    *proc           = nullptr;
+
     T64TlbKind      tlbKind         = T64_TK_NIL;
     T64TlbType      tlbType         = T64_TT_NIL;
-    T64TlbEntry     *map            = nullptr; 
-    int             tlbEntries      = 0;
-    T64Word         timeCounter     = 0;
-    T64Processor    *proc           = nullptr;
+    T64TlbEntry     *iTlb;
+    T64TlbEntry     *dTlb;
+    T64TlbEntry     *uTlb;
+
+    int             iTlbEntries     = 0;
+    int             dTlbEntries     = 0;
+    int             uTlbEntries     = 0;
+
+    uint32_t        uTlbRoundRobin  = 0;       
+    uint32_t        iTlbRoundRobin  = 0;       
+    uint64_t        dTlbtimeGlobal  = 0;       
 };
 
 //----------------------------------------------------------------------------------------
@@ -439,8 +450,7 @@ struct T64Processor : T64Module {
                   int               modNum,
                   T64Options        options,  
                   T64CpuType        cpuType,
-                  T64TlbType        iTlbType,
-                  T64TlbType        dTlbType,
+                  T64TlbType        tlbType,
                   T64CacheType      iCacheType,
                   T64CacheType      dCacheType,
                   T64Word           spaAdr,
@@ -477,8 +487,7 @@ struct T64Processor : T64Module {
                                         int len );
 
     T64Cpu          *getCpuPtr( );
-    T64Tlb          *getITlbPtr( );
-    T64Tlb          *getDTlbPtr( );
+    T64Tlb          *getTlbPtr( );
     T64Cache        *getICachePtr( );
     T64Cache        *getDCachePtr( );
     
@@ -488,8 +497,7 @@ private:
 
     T64System       *sys                = nullptr;
     T64Cpu          *cpu                = nullptr;
-    T64Tlb          *iTlb               = nullptr;
-    T64Tlb          *dTlb               = nullptr;
+    T64Tlb          *tlb                = nullptr;
     T64Cache        *iCache             = nullptr;
     T64Cache        *dCache             = nullptr;
 

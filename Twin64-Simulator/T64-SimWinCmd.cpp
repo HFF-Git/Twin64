@@ -873,8 +873,7 @@ int SimCommandsWin::buildCmdPrompt( char *promptStr, int promptStrLen ) {
 void SimCommandsWin::addProcModule( ) {
 
     int          modNum     = -1;
-    T64TlbType   iTlbType   = T64_TT_FA_64S; 
-    T64TlbType   dTlbType   = T64_TT_FA_64S; 
+    T64TlbType   tlbType    = T64_TT_FA_64S;  
     T64CacheType iCacheType = T64_CT_2W_128S_4L;
     T64CacheType dCacheType = T64_CT_4W_128S_4L;
     
@@ -898,38 +897,21 @@ void SimCommandsWin::addProcModule( ) {
 
             } break;
 
-            case TOK_ITLB: {
+            case TOK_TLB: {
 
                 tok -> nextToken( );
                 tok -> acceptEqual( );
 
                 if ( tok -> isToken( TOK_TLB_FA_16S )) 
-                    iTlbType = T64_TT_FA_16S;
+                    tlbType = T64_TT_FA_16S;
                 else if ( tok -> isToken( TOK_TLB_FA_32S )) 
-                    iTlbType = T64_TT_FA_32S;
+                    tlbType = T64_TT_FA_32S;
                 else if ( tok -> isToken( TOK_TLB_FA_64S )) 
-                    iTlbType = T64_TT_FA_64S;
+                    tlbType = T64_TT_FA_64S;
                 else if ( tok -> isToken( TOK_TLB_FA_128S )) 
-                    iTlbType = T64_TT_FA_128S;
+                    tlbType = T64_TT_FA_128S;
                 else throw( ERR_INVALID_ARG );
 
-            } break;
-
-            case TOK_DTLB: {
-
-                tok -> nextToken( );
-                tok -> acceptEqual( );
-
-                if ( tok -> isToken( TOK_TLB_FA_16S )) 
-                    iTlbType = T64_TT_FA_16S;
-                else if ( tok -> isToken( TOK_TLB_FA_32S )) 
-                    dTlbType = T64_TT_FA_64S;
-                else if ( tok -> isToken( TOK_TLB_FA_64S )) 
-                    dTlbType = T64_TT_FA_64S;
-                else if ( tok -> isToken( TOK_TLB_FA_128S )) 
-                    dTlbType = T64_TT_FA_128S;
-                else throw( ERR_INVALID_ARG );
-      
             } break;
 
             case TOK_ICACHE: {
@@ -1042,8 +1024,7 @@ void SimCommandsWin::addProcModule( ) {
                                         modNum,
                                         T64_PO_NIL,
                                         T64_CPU_T_NIL,
-                                        iTlbType,
-                                        dTlbType,
+                                        tlbType,
                                         iCacheType,
                                         dCacheType,
                                         0,
@@ -2127,8 +2108,7 @@ void SimCommandsWin::flushCacheCmd( ) {
 // Insert into TLB command. We have two modes. We must be in windows mode and the 
 // current window must be a TLB window. 
 //
-//  IITLB <vAdr> "," <pAdr> "," <pSize> "," <acc> [ "," "L" [ "," "U" ]]
-//  IDTLB <vAdr> "," <pAdr> "," <pSize> "," <acc> [ "," "L" [ "," "U" ]]
+//  ITLB <vAdr> "," <pAdr> "," <pSize> "," <acc> [ "," "L" [ "," "U" ]]
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::insertTLBCmd( ) {
@@ -2173,16 +2153,11 @@ void SimCommandsWin::insertTLBCmd( ) {
     if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
     if ( proc -> getModuleType( ) != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
 
-    if ( currentCmd == CMD_ITLB_I ) {
+    if ( currentCmd == CMD_ITLB ) {
         
-        if ( ! proc -> getITlbPtr( ) -> insert( vAdr, info )) 
+        if ( ! proc -> getTlbPtr( ) -> insertTlb( vAdr, info )) 
             throw( ERR_TLB_INSERT_OP );
     }
-    else if ( currentCmd == CMD_ITLB_D ) { 
-        
-        if ( ! proc -> getDTlbPtr( ) -> insert( vAdr, info )) 
-            throw( ERR_TLB_INSERT_OP );
-    } 
     else throw( ERR_TLB_INSERT_OP ); 
 }
 
@@ -2209,8 +2184,7 @@ void SimCommandsWin::purgeTLBCmd( ) {
     if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
     if ( proc -> getModuleType( ) != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
 
-    if      ( currentCmd == CMD_PTLB_I ) proc -> getITlbPtr( ) -> purge( vAdr );
-    else if ( currentCmd == CMD_PTLB_D ) proc -> getDTlbPtr( ) -> purge( vAdr );
+    if ( currentCmd == CMD_PTLB ) proc -> getTlbPtr( ) -> purgeTlb( vAdr );
     else ;
 }
 
@@ -2624,8 +2598,7 @@ void SimCommandsWin::winExchangeCmd( ) {
 //  WN  CPU     "," <mod>
 //  WN  ICACHE  "," <mod>
 //  WN  DCACHE  "," <mod>
-//  WN  ITLB    "," <mod>
-//  WN  DTLB    "," <mod>
+//  WN  TLB     "," <mod>
 //  WN  MEM     "," <adr>
 //  WN  CODE    "," <adr>
 //  WN  TEXT    "," <str>
@@ -2647,8 +2620,7 @@ void SimCommandsWin::winNewWinCmd( ) {
             tok -> checkEOS( );
 
             glb -> winDisplay -> windowNewCpuState( modNum );
-            glb -> winDisplay -> windowNewTlb( modNum, T64_TK_INSTR_TLB );  
-            glb -> winDisplay -> windowNewTlb( modNum, T64_TK_DATA_TLB );
+            glb -> winDisplay -> windowNewTlb( modNum, T64_TK_UNIFIED_TLB );  
             glb -> winDisplay -> windowNewCache( modNum, T64_CK_INSTR_CACHE );
             glb -> winDisplay -> windowNewCache( modNum, T64_CK_DATA_CACHE ); 
 
@@ -2664,23 +2636,13 @@ void SimCommandsWin::winNewWinCmd( ) {
 
         } break;
 
-        case TOK_ITLB: {
+        case TOK_TLB: {
 
             tok -> acceptComma( );
             int modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC );
             tok -> checkEOS( );
 
-            glb -> winDisplay -> windowNewTlb( modNum, T64_TK_INSTR_TLB );  
-
-        } break;
-
-        case TOK_DTLB: {
-
-            tok -> acceptComma( );
-            int modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC );
-            tok -> checkEOS( );
-
-            glb -> winDisplay -> windowNewTlb( modNum, T64_TK_DATA_TLB );  
+            glb -> winDisplay -> windowNewTlb( modNum, T64_TK_UNIFIED_TLB );  
 
         } break;
 
@@ -2878,11 +2840,8 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                     case CMD_DA:            displayAbsMemCmd( );            break;
                     case CMD_MA:            modifyAbsMemCmd( );             break;
                         
-                    case CMD_ITLB_I: 
-                    case CMD_ITLB_D:        insertTLBCmd( );                break;
-
-                    case CMD_PTLB_I:
-                    case CMD_PTLB_D:        purgeTLBCmd( );                 break;
+                    case CMD_ITLB:          insertTLBCmd( );                break;
+                    case CMD_PTLB:          purgeTLBCmd( );                 break;
                         
                     case CMD_PCA_I:  
                     case CMD_PCA_D:         purgeCacheCmd( );               break;

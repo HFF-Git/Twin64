@@ -47,8 +47,7 @@ T64Processor::T64Processor( T64System           *sys,
                             int                 modNum,
                             T64Options          options,  
                             T64CpuType          cpuType,
-                            T64TlbType          iTlbType,
-                            T64TlbType          dTlbType,
+                            T64TlbType          tlbType,
                             T64CacheType        iCacheType,
                             T64CacheType        dCacheType,
                             T64Word             spaAdr,
@@ -63,9 +62,7 @@ T64Processor::T64Processor( T64System           *sys,
     this -> sys     = sys;
 
     cpu     = new T64Cpu( this, cpuType );
-
-    iTlb    = new T64Tlb( this, T64_TK_INSTR_TLB, iTlbType );
-    dTlb    = new T64Tlb( this, T64_TK_DATA_TLB, dTlbType );
+    tlb     = new T64Tlb( this, T64_TK_UNIFIED_TLB, tlbType );
 
     iCache  = new T64Cache( this, T64_CK_INSTR_CACHE, iCacheType );
     dCache  = new T64Cache( this, T64_CK_DATA_CACHE, dCacheType );
@@ -80,8 +77,7 @@ T64Processor::T64Processor( T64System           *sys,
 T64Processor:: ~T64Processor( ) {
 
     delete cpu;
-    delete iTlb;
-    delete dTlb;
+    delete tlb;
     delete iCache;
     delete dCache;
 }
@@ -93,8 +89,7 @@ T64Processor:: ~T64Processor( ) {
 void T64Processor::reset( ) {
 
     this -> cpu -> reset( );
-    this -> iTlb -> reset( );
-    this -> dTlb -> reset( );
+    this -> tlb -> reset( );
     this -> iCache -> reset( );
     this -> dCache -> reset( );
 
@@ -111,14 +106,9 @@ T64Cpu *T64Processor::getCpuPtr( ) {
     return ( cpu );
 }
 
-T64Tlb *T64Processor::getITlbPtr( ) {
+T64Tlb *T64Processor::getTlbPtr( ) {
 
-    return( iTlb );
-}
-
-T64Tlb *T64Processor::getDTlbPtr( ) {
-
-    return( dTlb );
+    return ( tlb );
 }
 
 T64Cache *T64Processor::getICachePtr( ) {

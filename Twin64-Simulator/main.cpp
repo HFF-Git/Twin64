@@ -48,7 +48,6 @@ int main( int argc, char * argv[] ) {
                             T64_PO_NIL,
                             T64_CPU_T_NIL,
                             T64_TT_FA_64S,
-                            T64_TT_FA_64S,
                             T64_CT_2W_128S_4L,
                             T64_CT_8W_128S_4L,
                             0,

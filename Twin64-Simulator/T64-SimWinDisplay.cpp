@@ -151,8 +151,7 @@ bool SimWinDisplay::validWindowType( SimTokId winType ) {
     
     return( ( winType == TOK_CPU    ) ||
             ( winType == TOK_MEM    ) || 
-            ( winType == TOK_ITLB   ) ||
-            ( winType == TOK_DTLB   ) ||
+            ( winType == TOK_TLB    ) ||
             ( winType == TOK_ICACHE ) ||
             ( winType == TOK_DCACHE ) ||
             ( winType == TOK_CODE   ) || 
@@ -858,19 +857,13 @@ void SimWinDisplay::windowNewTlb( int modNum, T64TlbKind tKind ) {
     T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
     if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
 
-    if ( tKind == T64_TK_INSTR_TLB ) {
+    if ( tKind == T64_TK_UNIFIED_TLB ) {
 
         windowList[ slot ] = 
-            (SimWin *) new SimWinTlb( glb, modNum, proc -> getITlbPtr( ));
-        windowList[ slot ] -> setWinName(( char *) "I-TLB" );
+            (SimWin *) new SimWinTlb( glb, modNum, proc -> getTlbPtr( ));
+        windowList[ slot ] -> setWinName(( char *) "U-TLB" );
     }
-    else if ( tKind == T64_TK_DATA_TLB ) {
-
-        windowList[ slot ] = 
-            (SimWin *) new SimWinTlb( glb, modNum, proc -> getDTlbPtr( ));
-        windowList[ slot ] -> setWinName(( char *) "D-TLB" );
-    }
-    else ;
+    else throw( ERR_INVALID_WIN_TYPE );
 
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
@@ -903,7 +896,7 @@ void SimWinDisplay::windowNewCache( int modNum, T64CacheKind cType ) {
         
         windowList[ slot ] -> setWinName(( char *) "D-CACHE" );
     }
-    else ;
+    else throw( ERR_INVALID_WIN_TYPE );
 
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );

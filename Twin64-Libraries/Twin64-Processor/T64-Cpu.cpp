@@ -343,7 +343,7 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
     }
     else {
 
-        T64TlbEntry *tlbPtr = proc -> iTlb -> lookup( vAdr );
+        T64TlbEntry *tlbPtr = proc -> tlb -> lookupItlb( vAdr );
         if ( tlbPtr == nullptr ) instrTlbMissTrap( vAdr );
 
         // ??? get the access right data from the TLB entry.
@@ -393,7 +393,7 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
     }
     else {
 
-        T64TlbEntry *tlbPtr = proc -> dTlb -> lookup( vAdr );
+        T64TlbEntry *tlbPtr = proc -> tlb ->lookupDtlb( vAdr );
         if ( tlbPtr == nullptr ) dataTlbMissTrap( vAdr );
        
         dataAccessRightsCheck( tlbPtr, PT_READ_ONLY );             
@@ -455,7 +455,7 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
     }
     else {
 
-        T64TlbEntry *tlbPtr = proc -> dTlb -> lookup( vAdr );
+        T64TlbEntry *tlbPtr = proc -> tlb -> lookupDtlb( vAdr );
          if ( tlbPtr == nullptr ) dataTlbMissTrap( vAdr );
 
         dataAccessRightsCheck( tlbPtr, PT_READ_WRITE );
@@ -1381,9 +1381,11 @@ void T64Cpu::instrSysLpaOp( T64Instr instr ) {
     if ( extractInstrFieldU( instr, 19, 3 ) != 0 ) illegalInstrTrap( );
     if ( extractInstrFieldU( instr, 0, 9 ) != 0 ) illegalInstrTrap( );
 
-    T64TlbEntry *e = proc -> dTlb -> lookup( vAdr );
+    T64TlbEntry *e = proc -> tlb -> lookupDtlb( vAdr );
+    if ( e == nullptr ) e = proc -> tlb -> lookupItlb( vAdr );
+        
     if ( e == nullptr ) setRegR( instr, 0 );
-    else setRegR( instr, e ->pAdr );
+    else                setRegR( instr, e ->pAdr );
    
     nextInstr( );
 }
@@ -1403,10 +1405,11 @@ void T64Cpu::instrSysPrbOp( T64Instr instr ) {
 
     if ( mode == 3 ) mode = extractField64( getRegA( instr ), 0, 2 );
    
-    T64TlbEntry *e = proc -> dTlb -> lookup( vAdr );
+    T64TlbEntry *e = proc -> tlb -> lookupDtlb( vAdr );
+    if ( e == nullptr ) e = proc -> tlb -> lookupItlb( vAdr );
+    
     if ( e == nullptr ) {
 
-        
         // ??? non-access trap ?
     }  
 
@@ -1436,32 +1439,19 @@ void T64Cpu::instrSysTlbOp( T64Instr instr ) {
 
     switch ( extractInstrFieldU( instr, 19, 3 )) {
 
-        case 0: {
-
-            proc -> iTlb -> insert( getRegB( instr ), getRegA( instr ));
-            setRegR( instr, 1 );
-
-        } break;
-
+        case 0: 
         case 1: {
 
-            proc -> dTlb -> insert( getRegB( instr ), getRegA( instr ));
+            proc -> tlb -> insertTlb( getRegB( instr ), getRegA( instr ));
             setRegR( instr, 1 );
 
         } break;
 
-        case 2: {
-
-            T64Word vAdr = addAdrOfs32( getRegB( instr ), getRegA( instr ));
-            proc -> iTlb -> purge( vAdr );
-            setRegR( instr, 1 );
-
-        } break;
-
+        case 2: 
         case 3: {
 
             T64Word vAdr = addAdrOfs32( getRegB( instr ), getRegA( instr ));
-            proc -> dTlb -> purge( vAdr );
+            proc -> tlb -> purgeTlb( vAdr );
             setRegR( instr, 1 );
 
         } break;
