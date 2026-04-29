@@ -152,8 +152,6 @@ bool SimWinDisplay::validWindowType( SimTokId winType ) {
     return( ( winType == TOK_CPU    ) ||
             ( winType == TOK_MEM    ) || 
             ( winType == TOK_TLB    ) ||
-            ( winType == TOK_ICACHE ) ||
-            ( winType == TOK_DCACHE ) ||
             ( winType == TOK_CODE   ) || 
             ( winType == TOK_TEXT   ));
 }
@@ -178,7 +176,6 @@ char *SimWinDisplay::getWinTypeName( int winNum ) {
             case WT_TEXT_WIN:      return((char *) "Text" );
             case WT_CPU_WIN:       return((char *) "CPU" );
             case WT_TLB_WIN:       return((char *) "TLB" );
-            case WT_CACHE_WIN:     return((char *) "Cache" );
             case WT_MEM_WIN:       return((char *) "Memory" );
             case WT_CODE_WIN:      return((char *) "Code" );
             
@@ -208,7 +205,6 @@ bool SimWinDisplay::isScrollableWin ( int typ ) {
         return (( typ == WT_MEM_WIN     ) ||
                 ( typ == WT_CODE_WIN    ) ||
                 ( typ == WT_TLB_WIN     ) ||        
-                ( typ == WT_CACHE_WIN   ) ||
                 ( typ == WT_TEXT_WIN    ));
 }
 
@@ -872,15 +868,18 @@ void SimWinDisplay::windowNewTlb( int modNum, T64TlbKind tKind ) {
     currentWinNum = slot;
 }
 
+// ??? will go out ...
 void SimWinDisplay::windowNewCache( int modNum, T64CacheKind cType ) {
-
-    int slot = getFreeWindowSlot( );
 
     T64ModuleType mType = glb -> system -> getModuleType( modNum );
     if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
 
     T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
     if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
+
+    #if 0 // ???
+
+    int slot = getFreeWindowSlot( );
 
     if ( cType == T64_CK_INSTR_CACHE ) {
 
@@ -903,6 +902,8 @@ void SimWinDisplay::windowNewCache( int modNum, T64CacheKind cType ) {
     windowList[ slot ] -> setWinStack( 0 );
     windowList[ slot ] -> setEnable( true );
     currentWinNum = slot;
+
+    #endif
 }
    
 void SimWinDisplay::windowNewText( char *pathStr ) {

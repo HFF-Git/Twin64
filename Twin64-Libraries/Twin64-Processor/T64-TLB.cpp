@@ -77,7 +77,7 @@ void resetTlbEntry( T64TlbEntry *ptr ) {
     ptr -> pLev1        = false;
     ptr -> pLev2        = false;
     ptr -> pageType     = PT_NONE;
-    ptr -> pageSize     = T64_PAGE_SIZE_BYTES;
+    ptr -> pageSize     = 0;
     ptr -> vAdr         = 0;
     ptr -> pAdr         = 0;
     ptr -> lastUsed     = 0;
@@ -362,6 +362,7 @@ bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
     }
 
     /* 4. all locked → drop */
+    return( false );
 }
 
 //----------------------------------------------------------------------------------------
@@ -385,28 +386,40 @@ bool T64Tlb::purgeTlb( T64Word vAdr ) {
 // Utility routines used by the Simulator.
 // 
 //----------------------------------------------------------------------------------------
-T64TlbEntry *T64Tlb::getTlbEntry( int index ) {
+T64TlbEntry *T64Tlb::getUTLBEntry( int index ) const {
     
   if ( isInRange( index, 0, uTlbEntries - 1 )) return( &uTlb[ index ] );
   else                                         return( nullptr );
 }
 
-int T64Tlb::getTlbSize( ) {
+T64TlbEntry *T64Tlb::getITLBEntry( int index ) const {
+    
+  if ( isInRange( index, 0, iTlbEntries - 1 )) return( &iTlb[ index ] );
+  else                                         return( nullptr );
+}
+
+T64TlbEntry *T64Tlb::getDTLBEntry( int index ) const {
+    
+  if ( isInRange( index, 0, dTlbEntries - 1 )) return( &dTlb[ index ] );
+  else                                         return( nullptr );
+}
+
+int T64Tlb::getTlbSize( ) const {
 
     return ( uTlbEntries );
 }
 
-T64TlbKind T64Tlb::getTlbKind( ) {
+T64TlbKind T64Tlb::getTlbKind( ) const{
 
     return ( tlbKind );
 }
 
-T64TlbType T64Tlb::getTlbType( ) {
+T64TlbType T64Tlb::getTlbType( ) const {
 
     return ( tlbType );
 }
 
-char *T64Tlb::getTlbTypeString( ) {
+char *T64Tlb::getTlbTypeString( ) const {
 
     switch ( tlbType ) {
 

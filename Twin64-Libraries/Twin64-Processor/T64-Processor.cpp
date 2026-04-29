@@ -4,7 +4,7 @@
 //
 //----------------------------------------------------------------------------------------
 // The processor object is a module for the T64 System. It consist of the CPU 
-// itself, the TLB and Cache subsystems.
+// and the TLB subsystems.
 //
 //----------------------------------------------------------------------------------------
 //
@@ -23,6 +23,38 @@
 //
 //----------------------------------------------------------------------------------------
 #include "T64-Processor.h"
+
+//----------------------------------------------------------------------------------------
+// Threading Notes.
+//
+// A processor could become a thread of execution implemented with C++ threads. 
+// This way we can exploit a multi-core host CPU. The processor thread would 
+// then be responsible for executing the instructions. 
+//
+// The processor thread interacts with the system bus, which is essentially a
+// shared resource. The system bus will route read and write request to the 
+// responsible module that is responsible for the address. A module, including
+// the processor, can also be responsible for an address range. In this case, 
+// the busOpEvent routines of the module are called to handle the bus event. 
+//
+// Over time the simulator will just be the launcher of the system. A processor
+// will simply just run execution. We could think however think about ways to
+// intercept traps and machine checks for analysis and display purposes.
+//
+// A processor thread is still an object that is created and managed by the 
+// simulator. The processor thread is not a thread that is created by the 
+// processor object itself, threads are created by the simulator main thread.
+// Care needs to be taken with access to these object.
+//
+// Processor states: Running, Stopped, Stepping, Halted, Resetting.
+//
+// If there more than one processor, there needs to be a selection process for
+// the monarch, which will bring up the system.  
+
+
+
+
+
 
 //----------------------------------------------------------------------------------------
 // Name space for local routines.
@@ -48,8 +80,7 @@ T64Processor::T64Processor( T64System           *sys,
                             T64Options          options,  
                             T64CpuType          cpuType,
                             T64TlbType          tlbType,
-                            T64CacheType        iCacheType,
-                            T64CacheType        dCacheType,
+                            T64CacheType        cacheType,
                             T64Word             spaAdr,
                             int                 spaLen ) : 
 
@@ -64,8 +95,8 @@ T64Processor::T64Processor( T64System           *sys,
     cpu     = new T64Cpu( this, cpuType );
     tlb     = new T64Tlb( this, T64_TK_UNIFIED_TLB, tlbType );
 
-    iCache  = new T64Cache( this, T64_CK_INSTR_CACHE, iCacheType );
-    dCache  = new T64Cache( this, T64_CK_DATA_CACHE, dCacheType );
+  //  iCache  = new T64Cache( this, T64_CK_INSTR_CACHE, iCacheType );
+  //  dCache  = new T64Cache( this, T64_CK_DATA_CACHE, dCacheType );
 
     this -> reset( );
 }
@@ -78,8 +109,8 @@ T64Processor:: ~T64Processor( ) {
 
     delete cpu;
     delete tlb;
-    delete iCache;
-    delete dCache;
+   // delete iCache;
+   // delete dCache;
 }
 
 //----------------------------------------------------------------------------------------
@@ -90,8 +121,8 @@ void T64Processor::reset( ) {
 
     this -> cpu -> reset( );
     this -> tlb -> reset( );
-    this -> iCache -> reset( );
-    this -> dCache -> reset( );
+ //   this -> iCache -> reset( );
+ //   this -> dCache -> reset( );
 
     instructionCount    = 0;
     cycleCount          = 0;
@@ -111,55 +142,28 @@ T64Tlb *T64Processor::getTlbPtr( ) {
     return ( tlb );
 }
 
-T64Cache *T64Processor::getICachePtr( ) {
-
-    return( iCache );
-}
-
-T64Cache *T64Processor::getDCachePtr( ) {
-
-    return( dCache );
-}
-
 //----------------------------------------------------------------------------------------
-// System Bus operations interface routines. When a module issues a request, any 
-// other module will be informed. We can now check whether the bus transactions 
-// would concern us.
-//
-//      busReadSharedBlock:
-//
-//      Another module is requesting a shared cache block read. If we are a 
-//      an observer, we need to check that we do not have the block exclusive.
-//      If so and modified, the block is written back to memory and marked as 
-//      shared.
-//
-//      busReadPrivateBlock:
-//      
-//      Another module is requesting a private copy. If we are an observer, we
-//      need to check that we do not have that copy exclusive or shared. In the 
-//      exclusive case, we flush and purge the block. In the shared case we just 
-//      purge the block from our cache.
-//      
-//      busWriteBlock:
-//
-//      Another module is writing back an exclusive copy if its cache block. By
-//      definition, we do not own that block in any case.
-//
-// For all cases, we first check that we are not the originator of that request. 
-// Just a little sanity check. Next, we lookup the responsible module by the 
-// physical address of the request. If we are not the address range owner, we 
-// perform the operations described above on our caches. If we are the owner, 
-// we simply carry the request.
-//
-// A processor cannot be the target of a cache operation. It does not own a 
-// physical address range other then its HPA address range. And this range can 
-// only be accessed uncached.
+// System Bus operations interface routines.
 //
 //----------------------------------------------------------------------------------------
-bool T64Processor::busOpReadSharedBlock(  int      reqModNum, 
-                                          T64Word  pAdr, 
-                                          uint8_t  *data, 
-                                          int      len ) {
+bool T64Processor::busOpRead( T64Word adr, 
+                             uint8_t *data, 
+                             int len ) {
+
+    return( sys -> busOpRead( moduleNum, adr, data, len ));
+}
+
+bool T64Processor::busOpWrite( T64Word adr, 
+                              uint8_t *data, 
+                              int len ) {
+
+    return( sys -> busOpWrite( moduleNum, adr, data, len ));
+}
+
+bool T64Processor::busOpReadEvent( int     reqModNum,
+                                   T64Word pAdr, 
+                                   uint8_t *data, 
+                                   int     len ) {
 
     if ( reqModNum == moduleNum ) return( false );
 
@@ -167,123 +171,41 @@ bool T64Processor::busOpReadSharedBlock(  int      reqModNum,
     if ( proc == this ) {
 
         // ??? we are responsible...
-    }
-    else {
-
-        // ??? we are not responsible, but may have to say something ...
-
-        iCache -> flush( pAdr );
-        dCache -> flush( pAdr );
-    }
-
-    return (true );
-}
-
-bool T64Processor::busOpReadPrivateBlock( int     reqModNum, 
-                                          T64Word pAdr, 
-                                          uint8_t *data, 
-                                          int     len ) {
-
-    if ( reqModNum == moduleNum ) return( false );
-
-    T64Processor *proc = (T64Processor *) sys -> lookupByAdr( pAdr );
-    if ( proc == this ) {
-
-        // ??? we are responsible...
-    }
-    else {
-
-        // ??? we are not responsible, but may have to say something ...
-
-        iCache -> purge( pAdr );
-        dCache -> purge( pAdr );
-    }
-
-    return (true );
-}
-
-bool T64Processor::busOpWriteBlock( int     reqModNum, 
-                                    T64Word pAdr, 
-                                    uint8_t *data, 
-                                    int     len ) {
-               
-    if ( reqModNum == moduleNum ) return( false );
-
-    // by definition, if someone is issuing a write block, the cache line 
-    // is exclusive with the module. we ignore... ???
-    return (true );
-}
-
-//----------------------------------------------------------------------------------------
-// System Bus operations non-cache interface routines. When a module issues a 
-// request, any other module will be informed. We can now check whether the bus
-// transactions would concern us.
-//
-//      busReadUncached:
-//
-//      Another module issued an uncached read. We check wether this concerns 
-//      our HPA address range. If so, we return the data from the HPA space.
-//
-//      busWriteUncached:
-//
-//      Another module issued an uncached write. We check wether this concerns 
-//      our HPA address range. If so, we update the data in our HPA space.
-//    
-// ??? need a function to call for processor HPA data
-//
-//----------------------------------------------------------------------------------------
-bool T64Processor::busOpReadUncached( int     reqModNum, 
-                                      T64Word pAdr, 
-                                      uint8_t *data, 
-                                      int     len ) {
-    
-    if ( reqModNum == moduleNum ) return( false );
-
-    T64Processor *proc = (T64Processor *) sys -> lookupByAdr( pAdr );
-    if ( proc == this ) {
-
-        // ??? we are the target, deliver the data
-        *data = 0;
-        return (true );
-    }
-    else {
-
-         // ??? we could have that data in our caches... remove.
-
-        iCache -> flush( pAdr );
-        dCache -> flush( pAdr );
-        iCache -> purge( pAdr );
-        dCache -> purge( pAdr );
     }
 
     return( true );
 }
 
-bool T64Processor::busOpWriteUncached( int     reqModNum,
-                                       T64Word pAdr, 
-                                       uint8_t *data, 
-                                       int     len ) {
+bool T64Processor::busOpWriteEvent( int     reqModNum,
+                                    T64Word pAdr, 
+                                    uint8_t *data, 
+                                    int     len ) {
 
-   if ( reqModNum == moduleNum ) return( false );
+    if ( reqModNum == moduleNum ) return( false );
 
     T64Processor *proc = (T64Processor *) sys -> lookupByAdr( pAdr );
     if ( proc == this ) {
 
-        // ??? we are the target, deliver the data
-        *data = 0;
-        return (true );
-    }
-    else {
-
-        // ??? if we have a copy of that data, flush it first. delete the line.
-
-        iCache -> flush( pAdr );
-        dCache -> flush( pAdr );
-        iCache -> purge( pAdr );
-        dCache -> purge( pAdr );
+        // ??? we are responsible...
     }
         
-    return( false );
+    return( true );
+}   
+
+//----------------------------------------------------------------------------------------
+// The step routine is the entry point to the processor for executing one or 
+// more instructions.
+//
+//----------------------------------------------------------------------------------------
+void T64Processor::run( ) {
+
+    try {
+
+        while ( true ) step( );
+    }
+    catch ( const T64Trap t ) {
+        
+    }
 }
 
 //----------------------------------------------------------------------------------------

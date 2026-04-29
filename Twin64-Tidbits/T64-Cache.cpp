@@ -551,7 +551,7 @@ void T64Cache::readCacheData( T64Word pAdr, uint8_t *data, int len ) {
             if ( cInfo -> modified ) {
 
                 // ??? shouldn't we write ?
-
+            
                 if ( ! proc -> busOpReadSharedBlock( 
                                         proc -> getModuleNum( ),
                                         pAdrFromTag( cInfo -> tag, setIndex ), 

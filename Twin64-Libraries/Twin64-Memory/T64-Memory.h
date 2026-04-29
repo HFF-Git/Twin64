@@ -47,8 +47,6 @@ enum T64MemType : int {
 //----------------------------------------------------------------------------------------
 // T64 Memory module. A physical memory module is an array of pages. Each module 
 // covers a range of physical memory and reacts to read and write bus operations.
-// Although the memory module does not participate in cache coherency operations,
-// it uses the same read / write interfaces.
 //
 //----------------------------------------------------------------------------------------
 struct T64Memory : T64Module {
@@ -68,37 +66,20 @@ public:
     void        step( );
     void        setSpaReadOnly( bool arg );
 
-    T64MemKind  getMemKind( );
-    T64MemType  getMemType( );
-    char        *getMemTypeString( );
+    T64MemKind  getMemKind( ) const;
+    T64MemType  getMemType( ) const;
+    char        *getMemTypeString( ) const;
 
-    bool        busOpReadUncached( int srcModNum,
-                                   T64Word pAdr, 
-                                   uint8_t *data, 
-                                   int len );
+    bool        busOpReadEvent( int     reqModNum,
+                                T64Word pAdr, 
+                                uint8_t *data, 
+                                int     len );
 
-    bool        busOpWriteUncached( int srcModNum,
-                                    T64Word pAdr, 
-                                    uint8_t *data, 
-                                    int len );
-
-    bool        busOpReadSharedBlock( int srcModNum,
-                                      T64Word pAdr,
-                                      uint8_t *data, 
-                                      int len );
-
-    bool        busOpReadPrivateBlock( int srcModNum, 
-                                       T64Word pAdr, 
-                                       uint8_t *data, 
-                                       int len );
-
-    bool        busOpWriteBlock( int srcModNum,
+    bool        busOpWriteEvent( int     reqModNum,
                                  T64Word pAdr, 
                                  uint8_t *data, 
-                                 int len );
-
-    // ??? routines to load/save memory ?
-
+                                 int     len );
+                                 
 private:
 
     bool        read( T64Word adr, uint8_t *data, int len );

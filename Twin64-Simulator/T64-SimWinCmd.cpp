@@ -867,16 +867,15 @@ int SimCommandsWin::buildCmdPrompt( char *promptStr, int promptStrLen ) {
 // pairs to get all module type info. Omitted key/value pairs are set to reasonable
 // defaults.
 //
-//  NM proc, num, ITLB=xxx, DTLB=xxx, ...
+//  NM proc, num, TLB=xxx, ...
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addProcModule( ) {
 
     int          modNum     = -1;
     T64TlbType   tlbType    = T64_TT_FA_64S;  
-    T64CacheType iCacheType = T64_CT_2W_128S_4L;
-    T64CacheType dCacheType = T64_CT_4W_128S_4L;
-    
+    T64CacheType cacheType  = T64_CT_NIL;
+  
     tok -> nextToken( );
     while ( tok -> isToken( TOK_COMMA )) {
 
@@ -914,102 +913,6 @@ void SimCommandsWin::addProcModule( ) {
 
             } break;
 
-            case TOK_ICACHE: {
-
-                tok -> nextToken( );
-                tok -> acceptEqual( );
-
-                switch ( tok -> tokId( )) {
-
-                    case TOK_CACHE_SA_2W_128S_4L: {
-                        
-                        iCacheType = T64_CT_2W_128S_4L; 
-                    
-                    } break;
-
-                    case TOK_CACHE_SA_4W_128S_4L: {
-                        
-                        iCacheType = T64_CT_4W_128S_4L; 
-                    
-                    } break;
-
-                    case TOK_CACHE_SA_8W_128S_4L: {
-                        
-                        iCacheType = T64_CT_8W_128S_4L; 
-                    
-                    } break;
-
-                    case TOK_CACHE_SA_2W_64S_8L: {
-                        
-                        iCacheType = T64_CT_2W_64S_8L; 
-                    
-                    } break;
-
-                    case TOK_CACHE_SA_4W_64S_8L: {
-                        
-                        iCacheType = T64_CT_4W_64S_8L; 
-                    
-                    } break;
-
-                    case TOK_CACHE_SA_8W_64S_8L: {
-                        
-                        iCacheType = T64_CT_8W_64S_8L; 
-                    
-                    } break;
-                
-                    default: throw( ERR_INVALID_ARG );
-                }
-
-            } break;
-
-            case TOK_DCACHE: {
-
-                tok -> nextToken( );
-                tok -> acceptEqual( );
-
-                switch ( tok -> tokId( )) {
-
-                    case TOK_CACHE_SA_2W_128S_4L: {
-                        
-                        dCacheType = T64_CT_2W_128S_4L; 
-                    
-                    } break;
-
-                    case TOK_CACHE_SA_4W_128S_4L: {
-                        
-                        dCacheType = T64_CT_4W_128S_4L; 
-                    
-                    } break;
-
-                    case TOK_CACHE_SA_8W_128S_4L: {
-                        
-                        dCacheType = T64_CT_8W_128S_4L; 
-                    
-                    } break;
-
-                    case TOK_CACHE_SA_2W_64S_8L: {
-                        
-                        dCacheType = T64_CT_2W_64S_8L; 
-                    
-                    } break;
-
-                    case TOK_CACHE_SA_4W_64S_8L: {
-                        
-                        dCacheType = T64_CT_4W_64S_8L; 
-                    
-                    } break;
-
-                    case TOK_CACHE_SA_8W_64S_8L: {
-                        
-                        dCacheType = T64_CT_8W_64S_8L; 
-                    
-                    } break;
-                
-                    default: throw( ERR_INVALID_ARG );
-                }
-
-            } break;
-
             default: throw( ERR_INVALID_MODULE_TYPE );
         }
 
@@ -1025,8 +928,7 @@ void SimCommandsWin::addProcModule( ) {
                                         T64_PO_NIL,
                                         T64_CPU_T_NIL,
                                         tlbType,
-                                        iCacheType,
-                                        dCacheType,
+                                        cacheType,
                                         0,
                                         0 );
                     
@@ -1176,9 +1078,10 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
             if ( index < limit ) {
 
                 T64Word val = 0;
-                if ( glb -> system -> readMem( index, 
-                                               (uint8_t *) &val, 
-                                               sizeof( val ))) {
+                if ( glb -> system -> busOpRead( -1,
+                                                 index, 
+                                                 (uint8_t *) &val, 
+                                                 sizeof( val ))) {
 
                     copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
 
@@ -1225,7 +1128,10 @@ void  SimCommandsWin::displayAbsMemContentAsCode( T64Word adr, T64Word len ) {
         winOut -> printNumber( index, FMT_HEX_2_4_4 );
         winOut -> writeChars( ": " );
 
-        if ( glb -> system -> readMem( index, (uint8_t *) &instr, 4 )) {
+        if ( glb -> system -> busOpRead( -1, 
+                                         index, 
+                                         (uint8_t *) &instr, 
+                                         sizeof( uint32_t))) {
 
             copyEndianAware((uint8_t *) &instr, (uint8_t *) &instr, sizeof( instr ));
 
@@ -1731,6 +1637,11 @@ void SimCommandsWin::resetCmd( ) {
 //
 //  RUN
 //
+// ??? we need to handle the console window. It should be enabled before we pass 
+// control to the CPU. Make it the current window, saving the previous current 
+// window. Put the console mode into non-blocking and hand over to the CPU. On 
+// return from the CPU steps, enable blocking mode again and restore the current 
+// window.
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::runCmd( ) {
     
@@ -1741,7 +1652,7 @@ void SimCommandsWin::runCmd( ) {
 // Step command. The command will advance all processors by one instruction. Default
 // is step number is one instruction.
 //
-//  S [ <steps> ]
+//  S [ <steps> [ "," <modNum> ]]
 //
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 
@@ -1749,18 +1660,27 @@ void SimCommandsWin::runCmd( ) {
 // return from the CPU steps, enable blocking mode again and restore the current 
 // window.
 // 
+// ??? need to pass the step to the module, not the system...
+//
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::stepCmd( ) {
     
     uint32_t numOfSteps = 1;
+    int      modNum     = -1;
     
     if ( tok -> tokTyp( ) == TYP_NUM ) {
 
         numOfSteps = eval -> acceptNumExpr( ERR_EXPECTED_STEPS, 0, UINT32_MAX );
+    
+         if ( tok -> isToken( TOK_COMMA )) {
+        
+            tok -> nextToken( );
+            modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MODULES - 1 );
+        }
     }
     
     tok -> checkEOS( );
-    glb -> system -> step( numOfSteps );
+    glb -> system -> step( numOfSteps, modNum );
 }
 
 //----------------------------------------------------------------------------------------
@@ -1976,7 +1896,10 @@ void SimCommandsWin::modifyAbsMemCmd( ) {
 
     copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
 
-    if ( ! glb -> system -> writeMem( adr, (uint8_t *) &val, sizeof( T64Word ))) {
+    if ( ! glb -> system -> busOpWrite( -1,
+                                        adr, 
+                                        (uint8_t *) &val, 
+                                        sizeof( T64Word ))) {
 
         throw( ERR_MEM_OP_FAILED );
     }
@@ -2038,70 +1961,6 @@ void SimCommandsWin::modifyRegCmd( ) {
  
         default: throw( ERR_EXPECTED_REG_SET );
     }
-}
-
-//----------------------------------------------------------------------------------------
-// Purges a cache line from the cache. We must be in windows mode and the current
-// window must be a cache window. 
-//
-//  PICA <vAdr> 
-//  PDCA <vAdr> 
-//
-//----------------------------------------------------------------------------------------
-void SimCommandsWin::purgeCacheCmd( ) {
-   
-    ensureWinModeOn( );
-    T64Word vAdr = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC ); 
-    tok -> checkEOS( );
-
-    if ( glb -> winDisplay -> getCurrentWinType( ) != WT_CACHE_WIN ) 
-        throw( ERR_INVALID_WIN_TYPE );
-
-    int modNum = glb -> winDisplay -> getCurrentWinModNum( );
-   
-    T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
-    if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
-    if ( proc -> getModuleType( ) != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
-    
-    if      ( currentCmd == CMD_PCA_I ) proc -> getICachePtr( ) -> purge( vAdr );
-    else if ( currentCmd == CMD_PCA_D ) proc -> getDCachePtr( ) -> purge( vAdr );
-    else throw( ERR_CACHE_PURGE_OP );
-}
-
-//----------------------------------------------------------------------------------------
-// Flushes a cache line from the data cache. We must be in windows mode and the
-// current window must be a Cache window. 
-//
-//  FDCA <vAdr> 
-//  FICA <vAdr>
-//
-//----------------------------------------------------------------------------------------
-void SimCommandsWin::flushCacheCmd( ) {
-
-    ensureWinModeOn( );
-   
-    T64Word vAdr = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC ); 
-    tok -> checkEOS( );
-
-    if ( glb -> winDisplay -> getCurrentWinType( ) != WT_CACHE_WIN ) 
-        throw( ERR_INVALID_WIN_TYPE );
-
-    int modNum = glb -> winDisplay -> getCurrentWinModNum( );
-   
-    T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
-    if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
-    if ( proc -> getModuleType( ) != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
-
-    if ( currentCmd == CMD_FCA_I ) {
-
-         proc -> getICachePtr( ) -> flush( vAdr );
-    }
-    else if ( currentCmd == CMD_FCA_D ) {
-
-        proc -> getDCachePtr( ) -> flush( vAdr );
-       
-    }
-    else throw( ERR_CACHE_FLUSH_OP );
 }
 
 //----------------------------------------------------------------------------------------
@@ -2265,8 +2124,8 @@ void SimCommandsWin::winDefCmd( ) {
 // Windows enable and disable. When enabled, a window does show up on the screen. 
 // The window number is optional, used for user definable windows.
 //
-//  <win>E [[ <winNumStart> [ "," <winNumEnd]] || "ALL" ]
-//  <win>D [[ <winNumStart> [ "," <winNumEnd]] || "ALL" ]
+//  WE [[ <winNumStart> [ "," <winNumEnd]] || "ALL" ]
+//  WD [[ <winNumStart> [ "," <winNumEnd]] || "ALL" ]
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winEnableCmd( bool enable ) {
@@ -2335,8 +2194,8 @@ void SimCommandsWin::winSetRadixCmd( ) {
 // number is optional, used for user definable windows. If omitted, we mean the 
 // current window.
 //
-//  <win>F [ <amt> [ , <winNum> ]]
-//  <win>B [ <amt> [ , <winNum> ]]
+//  WF [ <amt> [ , <winNum> ]]
+//  WB [ <amt> [ , <winNum> ]]
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winForwardCmd( ) {
@@ -2387,7 +2246,7 @@ void SimCommandsWin::winBackwardCmd( ) {
 // window item address to this value. The meaning of the item address is window 
 // dependent. The window number is optional, used for user definable windows.
 //
-//  <win>H [ <pos> [ "," <winNum> ]]
+//  WH [ <pos> [ "," <winNum> ]]
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winHomeCmd( ) {
@@ -2512,6 +2371,9 @@ void SimCommandsWin::winClearCmdWinCmd( ) {
 //
 //  WC <winNum>
 //
+// ??? do we need a way to set the command window as current window. This would
+// be the case if we have console windows that take the console input.
+//
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winCurrentCmd( ) {
     
@@ -2586,9 +2448,9 @@ void SimCommandsWin::winExchangeCmd( ) {
 
 //----------------------------------------------------------------------------------------
 // This command creates a new window. The window is assigned a free index from 
-// the windows list. This index is used in all the calls to this window. The window 
-// type is determined by the keyword plus additional info such as module and 
-// submodule number. Note that we do not create simulator module objects, we 
+// the windows list. This index is used in all the calls to this window. The 
+// window type is determined by the keyword plus additional info such as module
+// and submodule number. Note that we do not create simulator module objects, we 
 // merely attach a window to them. So they must exist. The general form of the
 // command is:
 //
@@ -2596,8 +2458,6 @@ void SimCommandsWin::winExchangeCmd( ) {
 //
 //  WN  PROC    "," <mod>
 //  WN  CPU     "," <mod>
-//  WN  ICACHE  "," <mod>
-//  WN  DCACHE  "," <mod>
 //  WN  TLB     "," <mod>
 //  WN  MEM     "," <adr>
 //  WN  CODE    "," <adr>
@@ -2621,8 +2481,11 @@ void SimCommandsWin::winNewWinCmd( ) {
 
             glb -> winDisplay -> windowNewCpuState( modNum );
             glb -> winDisplay -> windowNewTlb( modNum, T64_TK_UNIFIED_TLB );  
+
+            #if 0
             glb -> winDisplay -> windowNewCache( modNum, T64_CK_INSTR_CACHE );
             glb -> winDisplay -> windowNewCache( modNum, T64_CK_DATA_CACHE ); 
+            #endif
 
         } break;
 
@@ -2646,6 +2509,7 @@ void SimCommandsWin::winNewWinCmd( ) {
 
         } break;
 
+        #if 0
         case TOK_ICACHE: {
 
             tok -> acceptComma( );
@@ -2665,6 +2529,7 @@ void SimCommandsWin::winNewWinCmd( ) {
             glb -> winDisplay -> windowNewCache( modNum, T64_CK_DATA_CACHE );  
 
         } break;
+        #endif
 
         case TOK_MEM: {
 
@@ -2842,11 +2707,13 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                         
                     case CMD_ITLB:          insertTLBCmd( );                break;
                     case CMD_PTLB:          purgeTLBCmd( );                 break;
-                        
+                    
+                    #if 0
                     case CMD_PCA_I:  
                     case CMD_PCA_D:         purgeCacheCmd( );               break;
 
                     case CMD_FCA_D:         flushCacheCmd( );               break;
+                    #endif
                         
                     case CMD_WON:           winOnCmd( );                    break;
                     case CMD_WOFF:          winOffCmd( );                   break;

@@ -24,6 +24,34 @@
 #include "T64-Memory.h"
 
 //----------------------------------------------------------------------------------------
+// For a threaded simulator, access to the memory must be synchronized. We need
+// for writes a mutex. To still have a decent performance, we implement a table
+// of mutexes which are indexed bases on the memory address. A write to memory 
+// needs to acquire the mutex  before writing writes memory.
+//
+// std::shared_mutex locks[N];
+// size_t idx = ( addr >> 12 ) & ( N - 1 );
+//
+// class Memory {
+//     std::shared_mutex lock;
+//    uint8_t data[SIZE];
+//
+// public:
+//    uint64_t read(size_t addr) {
+//        std::shared_lock<std::shared_mutex> l(lock);
+//        return data[addr];
+//    }
+//
+//    void write(size_t addr, uint64_t value) {
+//        std::unique_lock<std::shared_mutex> l(lock);
+//        data[addr] = value;
+//    }
+// };
+// 
+//----------------------------------------------------------------------------------------
+
+
+//----------------------------------------------------------------------------------------
 //
 //
 //----------------------------------------------------------------------------------------
@@ -89,13 +117,10 @@ void T64Memory::step( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Read a block of data from memory. The address the physical address and we 
-// compute the offset on our SPA range. The address needs to be aligned with 
-// length parameter.
+// Read a data from memory. The address the physical address and we compute the
+// offset on our SPA range. The address needs to be aligned with length parameter.
 //
-// Twin-64 is a big endian machine. Running on a little endian host, we have 
-// to convert after reading the data from memory.
-//
+// ??? this is not thread safe, memcpy is not.
 //----------------------------------------------------------------------------------------
 bool T64Memory::read( T64Word adr, uint8_t *data, int len ) {
 
@@ -118,10 +143,10 @@ bool T64Memory::read( T64Word adr, uint8_t *data, int len ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Write function. We write a block of data to memory. The address the physical 
-// address and we compute the offset on our SPA range. The address needs to be 
-// aligned with length parameter.
+// Write data to memory. The address the physical address and we compute the 
+// offset on our SPA range. The address needs to be aligned with length parameter.
 //
+// ??? this is not thread safe, memcpy is not.
 //----------------------------------------------------------------------------------------
 bool T64Memory::write( T64Word adr, uint8_t *data, int len ) {
 
@@ -157,17 +182,17 @@ void  T64Memory::setSpaReadOnly( bool arg ) {
 // Getters for memory kind and type.
 //
 //----------------------------------------------------------------------------------------
-T64MemKind T64Memory::getMemKind( ) {   
+T64MemKind T64Memory::getMemKind( ) const {   
 
     return( mKind );
 }           
 
-T64MemType T64Memory::getMemType( ) {   
+T64MemType T64Memory::getMemType( ) const {   
 
     return( mType );
 }
 
-char *T64Memory::getMemTypeString( ) {   
+char *T64Memory::getMemTypeString( ) const {   
 
     switch ( mType ) {
 
@@ -177,48 +202,17 @@ char *T64Memory::getMemTypeString( ) {
     }
 }
 
-//----------------------------------------------------------------------------------------
-// Bus operations. We listen to all of them and if the physical addresses matches 
-// our address range and we are not the source module, the request is handled. 
-// Since we do not have a cache, the request handling is very simple.
-//
-//----------------------------------------------------------------------------------------
-bool T64Memory::busOpReadUncached(  int     srcModNum,
-                                    T64Word pAdr, 
-                                    uint8_t *data, 
-                                    int     len ) {
-
+bool T64Memory::busOpReadEvent( int     reqModNum,
+                                T64Word pAdr, 
+                                uint8_t *data, 
+                                int     len ) {
+    
     return( read( pAdr, data, len ));
 }
 
-bool T64Memory::busOpWriteUncached( int     srcModNum,
-                                    T64Word pAdr, 
-                                    uint8_t *data, 
-                                    int     len ) {
-
-    return( write( pAdr, data, len ));
-}
-
-bool T64Memory::busOpReadSharedBlock( int     srcModNum,
-                                      T64Word pAdr,
-                                      uint8_t *data, 
-                                      int     len ) {
-
-    return( read( pAdr, data, len ));
-}
-
-bool T64Memory::busOpReadPrivateBlock( int     srcModNum, 
-                                       T64Word pAdr, 
-                                       uint8_t *data, 
-                                       int     len ) {
-
-    return( read( pAdr, data, len ));
-}
-
-bool T64Memory::busOpWriteBlock( int     srcModNum,
+bool T64Memory::busOpWriteEvent( int     reqModNum,
                                  T64Word pAdr, 
                                  uint8_t *data, 
                                  int     len ) {
-
     return( write( pAdr, data, len ));
 }

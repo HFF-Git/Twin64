@@ -24,7 +24,10 @@
 #include "T64-SimDeclarations.h"
 
 //----------------------------------------------------------------------------------------
-// Here we go.
+// Here we go. 
+//
+// ??? this should be done from a configuration file. We just hard code it for 
+// now.
 //
 //----------------------------------------------------------------------------------------
 int main( int argc, char * argv[] ) {
@@ -48,8 +51,7 @@ int main( int argc, char * argv[] ) {
                             T64_PO_NIL,
                             T64_CPU_T_NIL,
                             T64_TT_FA_64S,
-                            T64_CT_2W_128S_4L,
-                            T64_CT_8W_128S_4L,
+                            T64_CT_NIL,
                             0,
                             0 );
 

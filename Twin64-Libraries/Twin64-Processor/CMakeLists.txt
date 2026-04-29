@@ -10,7 +10,7 @@ add_library( ${PROJECT_NAME} STATIC
     T64-Processor.cpp
     T64-Cpu.cpp
     T64-Tlb.cpp 
-    T64-Cache.cpp
+    # T64-Cache.cpp
 ) 
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC Twin64-Common Twin64-System )

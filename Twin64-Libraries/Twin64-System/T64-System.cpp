@@ -26,6 +26,36 @@
 #include "T64-System.h"
 
 //----------------------------------------------------------------------------------------
+// Thread model. The system maintains also an array of threads. There could be 
+// a thread for each processor or I/O module. 
+// 
+// Basic idea:  
+//
+//  #include <array>
+//  std::array<T64Thread, MAX_THREADS> threadMap;
+//
+//  for ( int i = 0; < MAX_THREADS; i++ ) 
+//      threadMap[ i ] = str::thread( &T64Processor::processorThread, processor[ i ] );
+// 
+// A module needs a mutex, and a state. And a signal mask.
+//
+//  std::atomic<uint32_t> mask = 0;
+//
+// The thread execution loop would be something like this:
+//
+//  while ( true ) {
+//     executeInstruction( );
+//     if ( mask.load( memory_ordered_release ) != 0 ) handleSignals( );
+//  }
+//
+// We would also need a condition variable where a thread can wait for a signal.
+//
+// Need to think about all this .... :-).
+// 
+//--------------------------------------------------------------------------------------
+
+
+//----------------------------------------------------------------------------------------
 // Name space for local routines.
 //
 //----------------------------------------------------------------------------------------
@@ -95,7 +125,7 @@ void T64System::initModuleMap( ) {
         moduleMap[ i ] = nullptr;
     }
 
-    moduleMapHwm = 0;
+    systemMemMapHwm = 0;
 }
 
 //----------------------------------------------------------------------------------------
@@ -108,30 +138,47 @@ int T64System::getSystemState( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Add to the module map. The entries in the module map are sorted by the SPA 
-// address range, which also cannot overlap. We look for the insertion position,
-// shift all entries up after this position and insert the new entry.
+// Add a module. There are two tables. The first table just contains the modules.
+// The index is the module number. The second table contains on the modules which
+// have an SPA address. The entries this table are sorted by the SPA address 
+//range, which also cannot overlap. We look for the insertion position,
+// shift all entries up after this position and insert the new entry. A nice
+// side effect of the sorted address range, is that memory comes first and 
+// the lookup will be quick. It is by far the most used lookup.
 //
-// Returns 0 on success, -1 on an invalid module number, -2 on address range overlap.
+// Returns 0 on success, -1 on an invalid module number, -2 when the table is
+// full, a -3 on address range overlap, and a -4 when the module number is
+// already used.
+//
 //----------------------------------------------------------------------------------------
 int T64System::addToModuleMap( T64Module *module ) {
 
-    if (( module -> getModuleNum( ) < 0 ) || 
-        ( module -> getModuleNum( ) > MAX_MOD_MAP_ENTRIES )) return ( -1 );
+    if (( module -> getModuleNum( ) > MAX_MOD_MAP_ENTRIES )) return ( -1 );
+    if ( systemMemMapHwm >= MAX_MOD_MAP_ENTRIES ) return ( -2 );
+    
+    for ( int i = 0; i < systemMemMapHwm; ++i ) {
 
-    for ( int i = 0; i < moduleMapHwm; ++i ) {
-
-        if ( overlap( moduleMap[ i ], module )) return ( -2 ); 
+        if ( overlap( moduleMap[ i ], module )) return ( -3 );
     }
 
+    if ( moduleMap[ module -> getModuleNum( ) ] != nullptr ) return ( -4 );
+    moduleMap[ module -> getModuleNum( ) ] = module;    
+
+    if ( module -> getSpaLen( ) == 0 ) return ( 0 );
+
     int pos = 0;
-    while (( pos < moduleMapHwm ) && 
-           ( moduleMap[ pos ] -> getSpaAdr( ) < module -> getSpaAdr( ))) pos++;
+    while (( pos < systemMemMapHwm ) &&
+           ( systemMemMap[ pos ] -> getSpaAdr( ) < module->getSpaAdr( ))) {
+        pos++;
+    }
 
-    for ( int i = moduleMapHwm; i > pos; i-- ) moduleMap[ i ] = moduleMap[ i - 1 ];
+    for ( int i = systemMemMapHwm; i > pos; i-- ) {
 
-    moduleMap[ pos ] = module;
-    moduleMapHwm ++;
+        systemMemMap[ i ] = systemMemMap[ i - 1] ;
+    }
+
+    systemMemMap[ pos ] = module;
+    systemMemMapHwm++;
 
     return ( 0 );
 }
@@ -144,24 +191,29 @@ int T64System::addToModuleMap( T64Module *module ) {
 //----------------------------------------------------------------------------------------
 int T64System::removeFromModuleMap( T64Module *module ) {
 
-    int pos = -1;
+    T64Module *mPtr = nullptr;
+    int         pos = -1;
 
-    for ( int i = 0; i < moduleMapHwm; ++i ) {
+    for ( int i = 0; i < systemMemMapHwm; ++i ) {
 
-        if ( moduleMap[ i ] == module ) {
-            pos = i;
-            break;
+        if ( systemMemMap[ i ] == module ) {
+
+            pos  = i;
+            mPtr = systemMemMap[ i ];
+            break;  
         }
     }
 
+    moduleMap[ mPtr -> getModuleNum( ) ] = nullptr;
+
     if ( pos < 0 ) return ( -1 );
+    
+    for ( int i = pos; i < systemMemMapHwm - 1; ++i ) {
 
-    for ( int i = pos; i < moduleMapHwm - 1; ++i ) {
-
-        moduleMap[ i ] = moduleMap[ i + 1 ];
+        systemMemMap[ i ] = systemMemMap    [ i + 1 ];
     }
 
-    moduleMapHwm--;
+    systemMemMapHwm--;
 
     return ( 0 );
 }
@@ -170,29 +222,28 @@ int T64System::removeFromModuleMap( T64Module *module ) {
 // Find the module entry by its module number.
 //
 //----------------------------------------------------------------------------------------
-T64Module *T64System::lookupByModNum( int modNum ) {
+T64Module *T64System::lookupByModNum( int modNum ) const {
 
-    for ( int i = 0; i < moduleMapHwm; i++ ) {
-
-        if (( moduleMap[ i ] != nullptr ) &&
-            ( moduleMap[ i ] -> getModuleNum( ) == modNum )) {
-                
-            return ( moduleMap[ i ] );
-        }
-    }
-    
-    return nullptr;
+    if ( modNum > MAX_MOD_MAP_ENTRIES ) return ( nullptr );
+    return ( moduleMap[ modNum ] );
 }
 
 //----------------------------------------------------------------------------------------
-// Find the module entry that covers the address.
+// Find the module entry that covers the address. Since we have only a small
+// number of module, we do a simple linear search. We check whether the address
+// is in the SPA or HPA address range. We return the first match, which is ok 
+// since the address ranges cannot overlap. We search the SPA range first, since
+// this is the main access path. Since physical represents the lower SPA address
+// range, a lookup of a memory address will be rather quick, which is key for
+// efficient physical memory access.
 //
+// ??? well, we run through the module, which are not sorted by SPA...
 //----------------------------------------------------------------------------------------
-T64Module *T64System::lookupByAdr( T64Word adr ) {
+T64Module *T64System::lookupByAdr ( T64Word adr ) const {
 
-    for ( int i = 0; i < moduleMapHwm; i++ ) {
+    for ( int i = 0; i < systemMemMapHwm; i++ ) {
 
-        T64Module *mPtr = moduleMap[ i ];
+        T64Module *mPtr = systemMemMap[ i ];
 
         if (( adr >= mPtr -> getSpaAdr( )) && 
             ( adr <  mPtr -> getSpaAdr( ) + mPtr -> getSpaLen( ))) 
@@ -211,7 +262,7 @@ T64Module *T64System::lookupByAdr( T64Word adr ) {
 //
 // ??? where used... rather encode where used ?
 //----------------------------------------------------------------------------------------
-T64ModuleType T64System::getModuleType( int modNum ) {
+T64ModuleType T64System::getModuleType( int modNum ) const {
 
     T64Module *mod = lookupByModNum( modNum );
     return (( mod != nullptr ) ? mod -> getModuleType( ) : MT_NIL );
@@ -223,7 +274,7 @@ T64ModuleType T64System::getModuleType( int modNum ) {
 //----------------------------------------------------------------------------------------
 void T64System::reset( ) {
 
-    for ( int i = 0; i < moduleMapHwm; i++ ) {
+    for ( int i = 0; i < systemMemMapHwm; i++ ) {
 
         if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> reset( ); 
     }
@@ -231,157 +282,68 @@ void T64System::reset( ) {
 
 //----------------------------------------------------------------------------------------
 // RUN. The simulator can just run the system. We just enter an endless loop which 
-// single steps.
+// single steps all modules. 
 //
 //----------------------------------------------------------------------------------------
 void T64System::run( ) {
 
-    while ( true ) step( 1 );
+    while ( true ) step( 1, -1 );
 }
 
 //----------------------------------------------------------------------------------------
-// Single step. 
+// Step the system. We step all modules, or just the one specified by the module
+// number. The module number is -1 for all modules.
 //
 //----------------------------------------------------------------------------------------
-void T64System::step( int steps ) {
+void T64System::step( int steps, int modNum ) {
 
-    for ( int i = 0; i < moduleMapHwm; i++ ) {
+    if ( modNum != -1 ) {
+
+        T64Module *mPtr = lookupByModNum( modNum );
+        if ( mPtr != nullptr ) mPtr -> step( ); 
+    }
+    else
+
+        for ( int i = 0; i < systemMemMapHwm; i++ ) {
 
         if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> step( ); 
     }
 }
 
 //----------------------------------------------------------------------------------------
-// Bus operations. All defined bus operations follow the same basic logic. We 
-// first determine the responsible module for the requested data. Before asking 
-// the responsible module to execute the request, we will inform all others about
-// the upcoming request so that perhaps a cache coherency operation at other 
-// processors can take place before we issue the request to the target module. 
-// Note that cache coherency also applies to an uncached request, since a module 
-// may have cached and modified the data.
+// Bus read operation. The system is the dispatcher for bus operations. We look
+// up the module that covers the address and call the module's bus event handler. 
+// The module can react to the bus event and return true if it has handled the 
+// event, or false if it has not handled the event. 
 //
 //----------------------------------------------------------------------------------------
-bool T64System::busOpReadUncached( int     reqModNum,
-                                 T64Word    pAdr, 
-                                 uint8_t    *data, 
-                                 int        len ) {
-
-    T64Module *mPtr = lookupByAdr( pAdr );
-    if ( mPtr != nullptr ) return ( false );
- 
-    for ( int i = 0; i < moduleMapHwm; i++ ) {
-
-        if (( moduleMap[ i ] -> getModuleNum( ) != reqModNum ) && 
-            ( moduleMap[ i ] -> getModuleNum( ) != mPtr -> getModuleNum( ))) {
-
-             moduleMap[ i ] -> busOpReadUncached( reqModNum, pAdr, data, len );
-        }
-    }
-    
-    return ( mPtr -> busOpReadUncached( reqModNum, pAdr, data, len ));
-}
-
-bool T64System::busOpWriteUncached( int     reqModNum,
-                                  T64Word pAdr, 
-                                  uint8_t *data, 
-                                  int     len ) {
+bool T64System::busOpRead( int reqModNum,
+                           T64Word pAdr, 
+                           uint8_t *data, 
+                           int     len ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return ( false );
 
-    for ( int i = 0; i < moduleMapHwm; i++ ) {
-
-        if (( moduleMap[ i ] -> getModuleNum( ) != reqModNum ) && 
-            ( moduleMap[ i ] -> getModuleNum( ) != mPtr -> getModuleNum( ))) {
-
-             moduleMap[ i ] -> busOpWriteUncached( reqModNum, pAdr, data, len );
-        }
-    }
-
-    return ( mPtr -> busOpWriteUncached( reqModNum, pAdr, data, len ));
-}
-
-bool T64System::busOpReadSharedBlock( int     reqModNum,
-                                      T64Word pAdr, 
-                                      uint8_t *data, 
-                                      int     len ) {
-
-    T64Module *mPtr = lookupByAdr( pAdr );
-    if ( mPtr == nullptr ) return( false ); 
-        
-    for ( int i = 0; i < moduleMapHwm; i++ ) {
-
-        if (( moduleMap[ i ] -> getModuleNum( ) != reqModNum ) && 
-            ( moduleMap[ i ] -> getModuleNum( ) != mPtr -> getModuleNum( ))) {
-
-             moduleMap[ i ] -> busOpReadSharedBlock( reqModNum, pAdr, data, len );
-        }
-    }
-
-    return ( mPtr -> busOpReadSharedBlock( reqModNum, pAdr, data, len ));
-}
-
-bool T64System::busOpReadPrivateBlock( int     reqModNum,
-                                       T64Word pAdr, 
-                                       uint8_t *data, 
-                                       int     len ) {
-
-    T64Module *mPtr = lookupByAdr( pAdr );
-    if ( mPtr == nullptr ) return ( false );
-
-    for ( int i = 0; i < moduleMapHwm; i++ ) {
-
-        if (( moduleMap[ i ] -> getModuleNum( ) != reqModNum ) && 
-            ( moduleMap[ i ] -> getModuleNum( ) != mPtr -> getModuleNum( ))) {
-
-             moduleMap[ i ] -> busOpReadPrivateBlock( reqModNum, pAdr, data, len );
-        }
-    }
-
-    return ( mPtr -> busOpReadPrivateBlock( reqModNum, pAdr, data, len ));
-}
-
-bool T64System::busOpWriteBlock( int     reqModNum,
-                               T64Word pAdr, 
-                               uint8_t *data, 
-                               int     len ) {
-
-    T64Module *mPtr = lookupByAdr( pAdr );
-    if ( mPtr == nullptr ) return ( false );
-
-    for ( int i = 0; i < moduleMapHwm; i++ ) {
-
-        if (( moduleMap[ i ] -> getModuleNum( ) != reqModNum ) && 
-            ( moduleMap[ i ] -> getModuleNum( ) != mPtr -> getModuleNum( ))) {
-
-             moduleMap[ i ] -> busOpWriteBlock( reqModNum, pAdr, data, len );
-        }
-    }
-
-    return ( mPtr -> busOpWriteBlock( reqModNum, pAdr, data, len ));
+    return ( mPtr -> busOpReadEvent( reqModNum, pAdr, data, len ));
 }
 
 //----------------------------------------------------------------------------------------
-// "readMem" and "writeMem" are routines for the simulator commands and windows to
-// access physical memory. We will need to find the handling module and the perform
-// the operation. Since there is no requesting module, we mark the requesting module
-// parameter with a -1. 
+// Bus write operation. The system is the dispatcher for bus operations. We look
+// up the module that covers the address and call the module's bus event handler.
+// The module can react to the bus event and return true if it has handled the 
+// event, or false if it has not handled the event.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::readMem( T64Word pAdr, uint8_t *data, int len ) {
+bool T64System::busOpWrite( int reqModNum,
+                            T64Word pAdr, 
+                            uint8_t *data, 
+                           int     len ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return ( false );
 
-    return ( mPtr -> busOpReadUncached( -1, pAdr, data, len ));
-}
-
-bool T64System::writeMem( T64Word pAdr, uint8_t *data, int len ) {
-
-    T64Module *mPtr = lookupByAdr( pAdr );
-    if ( mPtr == nullptr ) return ( false );
-
-    return ( mPtr -> busOpWriteUncached( -1, pAdr, data, len ));
+    return ( mPtr -> busOpWriteEvent( reqModNum, pAdr, data, len ));
 }
 
 //****************************************************************************************
@@ -427,7 +389,6 @@ const char *T64Module::getModuleTypeName( ) {
         case MT_PROC:       return ((char *) "PROC" );
         case MT_CPU_CORE:   return ((char *) "CPU" );
         case MT_CPU_TLB:    return ((char *) "TLB"  );
-        case MT_CPU_CACHE:  return ((char *) "CACHE" );
         case MT_IO:         return ((char *) "IO" );
         case MT_MEM:        return ((char *) "MEM" );
 

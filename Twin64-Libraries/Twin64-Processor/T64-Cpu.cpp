@@ -325,7 +325,6 @@ T64Word T64Cpu::diagOpHandler( int opt, T64Word arg1, T64Word arg2 ) {
 // priv mode. For a virtual address, the TLB is consulted for address translation
 // and access control data.
 //
-// ??? should we do the big endian/ little endian conversion at this level ?
 //----------------------------------------------------------------------------------------
 T64Word T64Cpu::instrRead( T64Word vAdr ) {
 
@@ -336,10 +335,11 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
     if ( isInPhysMemAdrRange( vAdr )) { 
 
         privModeCheck( );
-        proc -> iCache -> read( vAdr, (uint8_t *) &instr, 4, false );   
+        if ( ! proc -> busOpRead( vAdr, (uint8_t *) &instr, 4 )) {
+
+        }   
         
-         // ??? convert data !!!!
-         copyEndianAware( ((uint8_t *) &instr ), ((uint8_t *) &instr ), 4 );  
+        copyEndianAware( ((uint8_t *) &instr ), ((uint8_t *) &instr ), 4 );  
     }
     else {
 
@@ -351,10 +351,9 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
         instrAccessRightsCheck( tlbPtr, PT_EXECUTE );      
         instrRegionIdCheck( vAdr );
        
-        proc -> iCache -> read( tlbPtr -> pAdr, 
-                                (uint8_t *) &instr, 
-                                4, 
-                                tlbPtr -> uncached );
+        if ( ! proc -> busOpRead( tlbPtr -> pAdr, (uint8_t *) &instr, 4 )) {
+
+        }
 
         copyEndianAware( ((uint8_t *) &instr ), ((uint8_t *) &instr ), 4 );  
     }
@@ -370,7 +369,6 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
 // a virtual address, the TLB is consulted for the translation and security 
 // checking. 
 //
-// ??? should we do the big endian/ little endian conversion at this level ?
 //----------------------------------------------------------------------------------------
 T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
 
@@ -383,9 +381,9 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
         
         privModeCheck( );
 
-        proc -> dCache -> read( vAdr, ((uint8_t *) &data ) + wordOfs, len, false );
+        if ( ! proc -> busOpRead( vAdr, ((uint8_t *) &data ) + wordOfs, len )) {
 
-        // ??? convert data !!!!
+        }
 
         copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
                          ((uint8_t *) &data ) + wordOfs, 
@@ -399,17 +397,15 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
         dataAccessRightsCheck( tlbPtr, PT_READ_ONLY );             
         dataRegionIdCheck( vAdr, false );
 
-        proc -> iCache -> read( tlbPtr -> pAdr, 
-                                ((uint8_t *) &data ) + wordOfs, 
-                                len, 
-                                tlbPtr -> uncached );
+        if ( ! proc -> busOpRead( tlbPtr -> pAdr, 
+                          ((uint8_t *) &data ) + wordOfs, 
+                          len )) {
 
-        // ??? convert data !!!!
+        }
 
         copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
                          ((uint8_t *) &data ) + wordOfs, 
                          len );
-
     }
 
     if ( sExt ) {
@@ -433,7 +429,6 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
 // in priv mode. For a virtual address, the TLB is consulted for the translation
 // and security checking. 
 //
-// ??? should we do the big endian/ little endian conversion at this level ?
 //----------------------------------------------------------------------------------------
 void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
 
@@ -445,13 +440,13 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
         
         privModeCheck( );
 
-        // ??? convert data !!!!
-
         copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
                          ((uint8_t *) &data ) + wordOfs, 
                          len );
 
-        proc -> dCache -> write( vAdr, ((uint8_t *) &data ) + wordOfs, len, false );   
+        if ( ! proc -> busOpWrite( vAdr, ((uint8_t *) &data ) + wordOfs, len )) {
+
+        }   
     }
     else {
 
@@ -465,10 +460,11 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
                          ((uint8_t *) &data ) + wordOfs, 
                          len );
         
-        proc -> dCache -> write( tlbPtr -> pAdr, 
+        if ( ! proc -> busOpWrite( tlbPtr -> pAdr, 
                                  ((uint8_t *) &data ) + wordOfs, 
-                                 len, 
-                                 tlbPtr -> uncached );
+                                 len )) {
+
+        }
     }
 }
 
@@ -1083,6 +1079,7 @@ void T64Cpu::instrMemLdOp( T64Instr instr ) {
 // MEM:LDR operation.
 //
 // ??? update reserved flag ?
+// ??? how would we do it without a cache ?
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrMemLdrOp( T64Instr instr ) {
 
@@ -1122,6 +1119,7 @@ void T64Cpu::instrMemStOp( T64Instr instr ) {
 // MEM:STC operation.
 //
 // ??? update reserved flag ?
+// ??? how would we do it without a cache ?
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrMemStcOp( T64Instr instr ) {
 
@@ -1430,7 +1428,8 @@ void T64Cpu::instrSysPrbOp( T64Instr instr ) {
 //  2 -> PITLB
 //  3 -> PDTLB
 //
-// ??? set RegR according to TLB op status ?
+// So far, we map both TLB types to our unified TLB.
+//
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrSysTlbOp( T64Instr instr ) {
 
@@ -1470,40 +1469,23 @@ void T64Cpu::instrSysTlbOp( T64Instr instr ) {
 //  2 -> PICA
 //  3 -> PDCA
 //
+// The cache instructions are right now a NOP. They become relevant when we 
+// have true hardware and a real cache. We do however still check that the
+// instruction is well formed. 
+//
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrSysCaOp( T64Instr instr ) {
-
-    T64Word vAdr = addAdrOfs32( getRegB( instr ), getRegA( instr ));
 
     if ( extractInstrFieldU( instr, 13, 2 ) != 0 ) illegalInstrTrap( );
     if ( extractInstrFieldU( instr, 0, 9 ) != 0 ) illegalInstrTrap( );
 
     switch ( extractInstrFieldU( instr, 19, 3 )) {
 
-        case 0: {
-
-            proc -> iCache -> flush( vAdr );
-            setRegR( instr, 1 );
-
-        } break;
-
-        case 1: {
-
-            proc -> dCache-> flush( vAdr );
-            setRegR( instr, 1 );
-
-        } break;
-
-        case 2: {
-
-            proc -> iCache -> purge( vAdr );
-            setRegR( instr, 1 );
-
-        } break;
-
+        case 0: 
+        case 1: 
+        case 2:
         case 3: {
 
-            proc -> dCache -> purge( vAdr );
             setRegR( instr, 1 );
 
         } break;

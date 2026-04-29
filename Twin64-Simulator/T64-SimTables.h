@@ -61,8 +61,6 @@ const SimToken cmdTokTab[ ] = {
     { .name = "PROC",       .typ = TYP_SYM,     .tid = TOK_PROC                     },              
     { .name = "CPU",        .typ = TYP_SYM,     .tid = TOK_CPU                      },
     { .name = "TLB",        .typ = TYP_SYM,     .tid = TOK_TLB                      },
-    { .name = "ICACHE",     .typ = TYP_SYM,     .tid = TOK_ICACHE                   },
-    { .name = "DCACHE",     .typ = TYP_SYM,     .tid = TOK_DCACHE                   },
     { .name = "MEM",        .typ = TYP_SYM,     .tid = TOK_MEM                      },
     { .name = "IO",         .typ = TYP_SYM,     .tid = TOK_IO                       },
     { .name = "TEXT",       .typ = TYP_SYM,     .tid = TOK_TEXT                     },
@@ -108,11 +106,6 @@ const SimToken cmdTokTab[ ] = {
     
     { .name = "ITLB",       .typ = TYP_CMD,     .tid = CMD_ITLB                     },
     { .name = "PTLB",       .typ = TYP_CMD,     .tid = CMD_PTLB                     },
-    
-    { .name = "PICA",       .typ = TYP_CMD,     .tid = CMD_PCA_I                    },
-    { .name = "PDCA",       .typ = TYP_CMD,     .tid = CMD_PCA_D                    },
-    { .name = "FICA",       .typ = TYP_CMD,     .tid = CMD_FCA_I                    },
-    { .name = "FDCA",       .typ = TYP_CMD,     .tid = CMD_FCA_D                    },
     
     //------------------------------------------------------------------------------------
     // Window command tokens.
@@ -244,24 +237,6 @@ const SimToken cmdTokTab[ ] = {
 
     { .name = "TLB_FA_128S",                .typ = TYP_SYM, 
       .tid = TOK_TLB_FA_128S,               .u = { .val = 0 }},
-
-    { .name = "CACHE_SA_2W_128S_4L",        .typ = TYP_SYM, 
-      .tid = TOK_CACHE_SA_2W_128S_4L,       .u = { .val = 0 }},
-
-    { .name = "CACHE_SA_4W_128S_4L",        .typ = TYP_SYM, 
-      .tid = TOK_CACHE_SA_2W_128S_4L,       .u = { .val = 0 }},
-
-    { .name = "CACHE_SA_8W_128S_4L",        .typ = TYP_SYM, 
-      .tid = TOK_CACHE_SA_2W_128S_4L,       .u = { .val = 0 }},
-
-    { .name = "CACHE_SA_2W_64S_8L",         .typ = TYP_SYM, 
-      .tid = TOK_CACHE_SA_2W_64S_8L,        .u = { .val = 0 }},
-
-    { .name = "CACHE_SA_4W_64S_8L",         .typ = TYP_SYM, 
-      .tid = TOK_CACHE_SA_2W_64S_8L,        .u = { .val = 0 }},  
-    
-    { .name = "CACHE_SA_8W_64S_8L",         .typ = TYP_SYM, 
-      .tid = TOK_CACHE_SA_2W_64S_8L,        .u = { .val = 0 }},
 
     { .name = "R_ONLY",                     .typ = TYP_SYM, 
       .tid = TOK_MEM_READ_ONLY,             .u = { .val = 0 }},
@@ -505,24 +480,6 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
 
     { .errNum = ERR_TLB_SIZE_EXCEEDED,          
       .errStr = (char *) "TLB size exceeded" },
-        
-    { .errNum = ERR_CACHE_TYPE,                 
-      .errStr = (char *) "Expected a cache type" },
-
-    { .errNum = ERR_CACHE_FLUSH_OP,             
-      .errStr = (char *) "Flush from cache operation error" },
-
-    { .errNum = ERR_CACHE_PURGE_OP,             
-      .errStr = (char *) "Purge from cache operation error" },
-
-    { .errNum = ERR_CACHE_NOT_CONFIGURED,       
-      .errStr = (char *) "Cache type not configured" },
-
-    { .errNum = ERR_CACHE_SIZE_EXCEEDED,        
-      .errStr = (char *) "Cache size exceeded" },
-
-    { .errNum = ERR_CACHE_SET_NUM,              
-      .errStr = (char *) "Invalid cache set" },
 
     { .errNum = ERR_MEM_OP_FAILED,              
       .errStr = (char *) "Memory operation error" },  
@@ -693,28 +650,7 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
         .cmdSyntaxStr   = (char *) "ma <adr> <val>",
         .helpStr        = (char *) "modify absolute memory"
     },
-    
-    {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_PCA_I,
-        .cmdNameStr     = (char *) "pica",
-        .cmdSyntaxStr   = (char *) "pica <vAdr>",
-        .helpStr        = (char *) "purges instruction cache line data"
-    },
-
-    {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_PCA_D,
-        .cmdNameStr     = (char *) "pdca",
-        .cmdSyntaxStr   = (char *) "pdca <vAdr>",
-        .helpStr        = (char *) "purges data cache line data"
-    },
-
-    {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_FCA_D,
-        .cmdNameStr     = (char *) "fdca",
-        .cmdSyntaxStr   = (char *) "fdca <vAdr>",
-        .helpStr        = (char *) "flushes data cache line data"
-    },
-    
+     
     {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ITLB,
         .cmdNameStr     = (char *) "itlb",

@@ -105,7 +105,6 @@
 //
 //  CPU Window      -> CPU
 //  TLB Window      -> TLB
-//  Cache Window    -> CACHE
 //  Memory Window   -> MEM
 //  Program Code    -> CODE
 //  Text Window     -> TEXT
@@ -149,7 +148,7 @@ enum SimWinType : int {
 
     WT_NIL,                     WT_CMD_WIN,                 WT_CONSOLE_WIN,
     WT_TEXT_WIN,                WT_CPU_WIN,                 WT_TLB_WIN,
-    WT_CACHE_WIN,               WT_MEM_WIN,                 WT_CODE_WIN
+    WT_MEM_WIN,                 WT_CODE_WIN
 };
 
 //----------------------------------------------------------------------------------------
@@ -195,13 +194,11 @@ enum SimTokId : uint16_t {
     TOK_HEX,                    TOK_MEM,                    TOK_CODE,
     TOK_STATS,                  TOK_TEXT,                   TOK_SYS,
     TOK_PROC,                   TOK_CPU,                    TOK_IO,
-    TOK_TLB,                    TOK_ICACHE,                 TOK_DCACHE,                 
+    TOK_TLB,                                    
     
     TOK_TLB_FA_16S,             TOK_TLB_FA_32S,             TOK_TLB_FA_64S,             
     TOK_TLB_FA_128S,
     
-    TOK_CACHE_SA_2W_128S_4L,    TOK_CACHE_SA_4W_128S_4L,    TOK_CACHE_SA_8W_128S_4L,
-    TOK_CACHE_SA_2W_64S_8L,     TOK_CACHE_SA_4W_64S_8L,     TOK_CACHE_SA_8W_64S_8L,
     TOK_MEM_READ_ONLY,          TOK_MEM_READ_WRITE,         TOK_MOD_SPA_ADR,
     TOK_MOD_SPA_LEN,
 
@@ -217,8 +214,6 @@ enum SimTokId : uint16_t {
     CMD_RUN,                    CMD_STEP,                   CMD_MR,
     CMD_DA,                     CMD_MA,                     CMD_ITLB,
     CMD_PTLB,                
-    CMD_PCA_I,                  CMD_PCA_D,                  CMD_FCA_I,
-    CMD_FCA_D,
 
     //------------------------------------------------------------------------------------
     // Window Commands Tokens.
@@ -363,13 +358,6 @@ enum SimErrMsgId : int {
     ERR_TLB_SIZE_EXCEEDED           = 506,
     ERR_INVALID_TLB_ACC_FLAG        = 507,
     
-    ERR_CACHE_TYPE                  = 600,
-    ERR_CACHE_FLUSH_OP              = 601,
-    ERR_CACHE_PURGE_OP              = 602,
-    ERR_CACHE_SET_NUM               = 603,
-    ERR_CACHE_NOT_CONFIGURED        = 604,
-    ERR_CACHE_SIZE_EXCEEDED         = 605,
-
     ERR_MEM_OP_FAILED               = 700,
 
     ERR_CREATE_PROC_MODULE          = 701,
@@ -1082,6 +1070,7 @@ struct SimWinTlb : SimWinScrollable {
     T64Tlb *tlb = nullptr;
 };
 
+#if 0
 //----------------------------------------------------------------------------------------
 // Cache Window. The memory object window display the cache date lines. Since we can
 // have caches with more than one set, the toggle function allows to flip through the
@@ -1102,6 +1091,7 @@ struct SimWinCache : SimWinScrollable {
 
     T64Cache    *cache  = nullptr;
 };
+#endif
 
 //----------------------------------------------------------------------------------------
 // Text Window. It may be handy to also display an ordinary ASCII text file. One day

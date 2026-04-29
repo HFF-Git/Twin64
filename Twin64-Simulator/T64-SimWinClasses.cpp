@@ -26,6 +26,11 @@
 #include "T64-SimDeclarations.h"
 
 //----------------------------------------------------------------------------------------
+// ??? How about a module window. Shows the system state and module state.
+//
+//----------------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------------
 // Local name space. We try to keep utility functions and constants local to the 
 // file.
 //
@@ -48,8 +53,10 @@ const int DEF_WIN_ROW_CPU_STATE = 5;
 const int DEF_WIN_COL_TLB       = 88;
 const int DEF_WIN_ROW_TLB       = 4;
 
+#if 0
 const int DEF_WIN_COL_CACHE     = 112;
 const int DEF_WIN_ROW_CACHE     = 4;
+#endif
 
 const int DEF_WIN_ROW_TEXT      = 10;
 
@@ -185,6 +192,7 @@ void SimWinCpuState::setDefaults( ) {
 //
 //  <winId> Proc: n IA: 0x00_0000_0000 ST: [xxxxxxx] <rdx>
 //
+// ??? add a CPU state ? ( RESET, HALT, RUNNING, EXCEPTION, WAITING, ... )
 //----------------------------------------------------------------------------------------
 void SimWinCpuState::drawBanner( ) {
     
@@ -466,7 +474,10 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
         for ( int i = 0; i < limit; i = i + 4 ) {
         
             uint32_t val = 0;
-            glb -> system -> readMem( itemAdr + i, (uint8_t *)&val, sizeof( val ));
+            glb -> system -> busOpRead( -1, 
+                                        itemAdr + i, 
+                                        (uint8_t *)&val, 
+                                        sizeof( val ));
 
             copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
             printNumericField( val, fmtDesc | FMT_HEX_4_4 );
@@ -479,7 +490,10 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
         for ( int i = 0; i < limit; i = i + 8 ) {
         
             T64Word val = 0;
-            glb -> system -> readMem( itemAdr + i, (uint8_t *)&val, sizeof( val ));
+            glb -> system -> busOpRead( -1, 
+                                        itemAdr + i, 
+                                        (uint8_t *)&val, 
+                                        sizeof( val ));
 
             copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
 
@@ -492,7 +506,10 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
         for ( int i = 0; i < limit; i = i + 4 ) {
         
             uint32_t val = 0;
-            glb -> system -> readMem( itemAdr + i, (uint8_t *)&val, sizeof( val ));
+            glb -> system -> busOpRead( -1, 
+                                        itemAdr + i, 
+                                        (uint8_t *)&val, 
+                                        sizeof( val ));
 
             copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
 
@@ -505,7 +522,10 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
         for ( int i = 0; i < limit; i = i + 4 ) {
         
             uint32_t val = 0;
-            glb -> system -> readMem( itemAdr + i, (uint8_t *)&val, sizeof( val ));
+            glb -> system -> busOpRead( -1,
+                                        itemAdr + i, 
+                                        (uint8_t *)&val, 
+                                        sizeof( val ));
 
             copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
             
@@ -616,7 +636,10 @@ void SimWinCode::drawLine( T64Word itemAdr ) {
     uint32_t    instr                       = 0x0;
     char        buf[ MAX_TEXT_LINE_SIZE ]   = { 0 };
 
-    if ( ! glb -> system -> readMem( itemAdr, (uint8_t *) &instr, sizeof( uint32_t ))) {
+    if ( ! glb -> system -> busOpRead( -1,
+                                       itemAdr, 
+                                       (uint8_t *) &instr, 
+                                       sizeof( uint32_t ))) {
 
         printNumericField( 0, fmtDesc | FMT_INVALID_NUM );
     } 
@@ -728,7 +751,7 @@ void SimWinTlb::drawLine( T64Word index ) {
 
     uint32_t  fmtDesc = FMT_DEF_ATTR;
 
-    T64TlbEntry *ePtr = tlb -> getTlbEntry( index );
+    T64TlbEntry *ePtr = tlb -> getUTLBEntry( index );
 
     printTextField((char *) "(", fmtDesc );
     printNumericField( index, fmtDesc | FMT_HEX_4 );
@@ -750,161 +773,6 @@ void SimWinTlb::drawLine( T64Word index ) {
     printNumericField( ePtr -> pAdr, fmtDesc | FMT_HEX_2_4_4 );
     printTextField((char *) "  len: ", fmtDesc );
     printNumericField( ePtr -> pageSize, fmtDesc | FMT_HEX_8 );
-}
-
-//****************************************************************************************
-//****************************************************************************************
-//
-// Methods for the Cache class.
-//
-//----------------------------------------------------------------------------------------
-// Object constructor. We are passed reference to global, the processor module number
-// and the reference to the cache object.
-//
-//----------------------------------------------------------------------------------------
-SimWinCache::SimWinCache( SimGlobals    *glb, 
-                          int           modNum,
-                          T64Cache      *cache  ) : SimWinScrollable( glb ) { 
-
-    this -> cache = cache;
-
-    setWinModNum( modNum );
-    setDefaults( );
-}
-
-//----------------------------------------------------------------------------------------
-// We have a function to set reasonable default values for the window. The default 
-// values are the initial settings when windows is brought up the first time, or 
-// for the WDEF command. The TLB window is a window  where the number of lines to
-// display can be set. However, the minimum is the default number of lines.
-//
-//----------------------------------------------------------------------------------------
-void SimWinCache::setDefaults( ) {
-
-    setWinType( WT_CACHE_WIN );
-    setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
-
-    setWinToggleLimit( cache -> getWays( ));
-
-    for ( int i = 0; i < getWinToggleLimit( ); i++ ) 
-        setWinDefSize( i, DEF_WIN_ROW_CACHE, DEF_WIN_COL_CACHE );
-    
-    setRows( getWinDefSize( 0 ).row );
-    setColumns( getWinDefSize( 0 ).col );
-    setCurrentItemAdr( 0 );
-    setLineIncrementItemAdr( 1 );
-
-    if ( cache -> getCacheLineSize( ) == 32 ) 
-        setLimitItemAdr( cache -> getSetSize( ));
-    else setLimitItemAdr( cache -> getSetSize( ) * 2 );
-    
-    setWinToggleVal( 0 );
-    setEnable( true );
-}
-
-//----------------------------------------------------------------------------------------
-// Each window consist of a headline and a body. The banner line is always shown 
-// in inverse and contains summary or head data for the window. We also need to 
-// set the item address limit. As this can change with some commands outside the 
-// windows system, better set it every time.
-//
-// Format:
-//
-//  <windId> Cpu: n Set: n Current: 0x0000.  <rdx>
-//
-//----------------------------------------------------------------------------------------
-void SimWinCache::drawBanner( ) {
-    
-    uint32_t fmtDesc = FMT_BOLD | FMT_INVERSE;
-
-    setWinCursor( 1, 1 );
-    printWindowIdField( fmtDesc );
-    printTextField((char *) "Mod:" );
-    printNumericField( getWinModNum( ), ( fmtDesc | FMT_DEC ));
-    printTextField((char *) " ( ", fmtDesc );
-    printTextField((char *) cache -> getCacheTypeString( ), fmtDesc );
-    printTextField((char *) " ) ", fmtDesc );
-    printTextField((char *) "  Way: " );
-    printNumericField( getWinToggleVal( ), ( fmtDesc | FMT_DEC ));
-    padLine( fmtDesc );
-    printRadixField( fmtDesc | FMT_LAST_FIELD );
-}
-
-//----------------------------------------------------------------------------------------
-// The draw line methods for the cache lists a cache entry. There are various cache
-// line sizes. And there are up to two sets of cache data. For the 32 byte size, we
-// will print four words, all fits in one row. For the 64 byte size, two lines will
-// be printed. We will still increment the lineItem index by one, but fetch only
-// every other time the cache. On an even index a new cache line start and the first
-// half of the line is printed, on an odd index the second half is printed.
-//
-// Format:
-//
-//  (0x0000): [xxx] [0x00_00000_0000] 0x0000_0000_0000_0000 0x... 0x... 0x... 
-//----------------------------------------------------------------------------------------
-void SimWinCache::drawLine( T64Word index ) {
-
-    uint32_t fmtDesc = FMT_DEF_ATTR;
-
-    T64CacheLineInfo *cInfo;
-    uint8_t          *cData;
-    bool             firstHalf = true;
-    
-    if ( cache -> getCacheLineSize( ) == 64 ) {
-        
-        firstHalf = ( index % 2 == 0 );
-        index = index / 2;
-    }
-
-    if ( ! cache -> getCacheLineByIndex( getWinToggleVal( ),
-                                  index,
-                                  &cInfo, 
-                                  &cData )) {
-
-    }
-    else ;
-
-    printTextField((char *) "(", fmtDesc );
-    printNumericField( index, fmtDesc | FMT_HEX_4 );
-    printTextField((char *) "): ", fmtDesc );
-
-    if ( index > getLimitItemAdr( )) {
-  
-        printTextField((char *) "[", fmtDesc );
-        printTextField((char *) "Invalid Cache index", fmtDesc );
-        printTextField((char *) "]", fmtDesc );
-        padLine( );
-    }
-    else {
-
-        if ( firstHalf ) {
-
-            printTextField((char *) "[", fmtDesc );
-
-            if ( cInfo -> valid ) printTextField((char *) "V", fmtDesc );
-            else printTextField((char *) "v", fmtDesc );
-
-            if ( cInfo -> modified ) printTextField((char *) "M", fmtDesc );
-            else printTextField((char *) "m", fmtDesc );
-
-            printTextField((char *) "] [", fmtDesc );
-            printNumericField( cInfo -> tag, fmtDesc | FMT_HEX_2_4_4 );
-            printTextField((char *) "] ", fmtDesc );
-        }
-        else printTextField(( char *) " ", fmtDesc, 20 );
-
-        int start = ( firstHalf ? 0 : 4 );
-       
-        for ( int i = 0; i < 4; i++ ) { 
-
-            T64Word tmp;
-            copyEndianAware((uint8_t *) &tmp, 
-                             cData + (( start + i ) * sizeof( T64Word )), 
-                             sizeof( T64Word ));
-            printNumericField( tmp, fmtDesc | FMT_HEX_4_4_4_4 );
-            printTextField((char *) "  " ); 
-        }         
-    }
 }
 
 //****************************************************************************************

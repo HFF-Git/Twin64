@@ -39,18 +39,6 @@ using namespace ELFIO;
 namespace {
 
 //----------------------------------------------------------------------------------------
-// A little helper to convert the byte order.
-//
-//----------------------------------------------------------------------------------------
-inline uint32_t swap32( uint32_t val ) {
-    
-    return ((val & 0xFF) << 24) |
-           ((val & 0xFF00) << 8) |
-           ((val & 0xFF0000) >> 8) |
-           ((val & 0xFF000000) >> 24);
-}
-
-//----------------------------------------------------------------------------------------
 // Open and close the ELF file. On opening we also check that it is a Big Endian 
 // type file.
 //
@@ -93,7 +81,7 @@ bool elfioValidate( elfio *reader, char* msg, int msg_len ) {
 //----------------------------------------------------------------------------------------
 bool writeMem( T64System *sys, int32_t ofs, uint32_t val ) {
 
-    if ( ! sys -> writeMem( ofs, (uint8_t *) &val, sizeof( uint32_t ))) {
+    if ( ! sys -> busOpWrite( -1, ofs, (uint8_t *) &val, sizeof( uint32_t ))) {
 
         throw( ERR_MEM_OP_FAILED );
     }

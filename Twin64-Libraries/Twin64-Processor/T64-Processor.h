@@ -61,6 +61,9 @@ enum T64CpuType : int {
 //
 //  T64_TT_<type>_<sets>S
 //
+// Currently, the processor supports a unified TLB with two small sets of an
+// instruction and data translation buffer on top.
+// 
 //----------------------------------------------------------------------------------------
 enum T64TlbKind : int {
 
@@ -87,6 +90,10 @@ enum T64TlbType : int {
 // configuration is encoded as follows:
 //
 //  T64_CT_<ways>W_<sets>S_<words>L
+//
+// Currently, we do not support caches. The simulator will run with a single 
+// cycle memory access. We may change this one day to learn about cache 
+// coherence and so on.
 //
 //----------------------------------------------------------------------------------------
 enum T64CacheKind : int {
@@ -251,9 +258,10 @@ struct T64TlbEntry {
 // The TLB submodule. In the real worlds most processors have an ITLB and DTLB.
 // Our TLB consist of three simple arrays of entries. There are two very small
 // arrays, the ITLB and DTLB L1 structure. Both are loaded from the unified 
-// UTLB. The CPU uses the lookup, insert and purge methods. The simulator uses 
-// the methods for display and directly inserting or removing an UTLB entry.
-// Note that ITLB and DTLB are indirectly manipulated by operations on the UTLB.
+// UTLB. The CPU uses dedicated methods for instruction and data address lookup.
+// The insert and purge method apply to the UTLB. The simulator uses these 
+// methods for display and directly inserting or removing an UTLB entry. Note
+// that ITLB and DTLB are indirectly manipulated by operations on the UTLB.
 //
 //----------------------------------------------------------------------------------------
 struct T64Tlb {
@@ -272,12 +280,14 @@ struct T64Tlb {
     bool            insertTlb( T64Word vAdr, T64Word info );
     bool            purgeTlb( T64Word vAdr );
 
-    int             getTlbSize( );
-    T64TlbEntry     *getTlbEntry( int index );
-   
-    T64TlbKind      getTlbKind( );  
-    T64TlbType      getTlbType( );
-    char            *getTlbTypeString( );
+    int             getTlbSize( ) const;
+    T64TlbEntry     *getUTLBEntry( int index ) const;
+    T64TlbEntry     *getITLBEntry( int index ) const;
+    T64TlbEntry     *getDTLBEntry( int index ) const;
+
+    T64TlbKind      getTlbKind( ) const;  
+    T64TlbType      getTlbType( ) const;
+    char            *getTlbTypeString( ) const;
 
     private:
 
@@ -285,9 +295,9 @@ struct T64Tlb {
 
     T64TlbKind      tlbKind         = T64_TK_NIL;
     T64TlbType      tlbType         = T64_TT_NIL;
-    T64TlbEntry     *iTlb;
-    T64TlbEntry     *dTlb;
-    T64TlbEntry     *uTlb;
+    T64TlbEntry     *iTlb           = nullptr;
+    T64TlbEntry     *dTlb           = nullptr;
+    T64TlbEntry     *uTlb           = nullptr;
 
     int             iTlbEntries     = 0;
     int             dTlbEntries     = 0;
@@ -451,46 +461,37 @@ struct T64Processor : T64Module {
                   T64Options        options,  
                   T64CpuType        cpuType,
                   T64TlbType        tlbType,
-                  T64CacheType      iCacheType,
-                  T64CacheType      dCacheType,
+                  T64CacheType      cacheType,
                   T64Word           spaAdr,
                   int               spaLen );
     
     virtual        ~ T64Processor( );
     
     void            reset( );
+     void           run( );
     void            step( );
 
-    bool            busOpReadSharedBlock( int reqModNum, 
-                                          T64Word pAdr, 
-                                          uint8_t *data, 
-                                          int len );
+    bool            busOpRead( T64Word adr, 
+                              uint8_t *data, 
+                              int len );
 
-    bool            busOpReadPrivateBlock( int reqModNum, 
-                                           T64Word pAdr, 
-                                           uint8_t *data, 
-                                           int len );
+    bool            busOpWrite( T64Word adr, 
+                               uint8_t *data, 
+                               int len );
 
-    bool            busOpWriteBlock( int reqModNum, 
+    bool            busOpReadEvent( int     reqModNum,
+                                    T64Word pAdr, 
+                                    uint8_t *data, 
+                                    int     len );
+
+    bool            busOpWriteEvent( int     reqModNum,
                                      T64Word pAdr, 
                                      uint8_t *data, 
-                                     int len );
-
-    bool            busOpReadUncached( int reqModNum, 
-                                       T64Word adr, 
-                                       uint8_t *data, 
-                                       int len );
-
-    bool            busOpWriteUncached( int reqModNum, 
-                                        T64Word adr, 
-                                        uint8_t *data, 
-                                        int len );
-
+                                     int     len );  
+                        
     T64Cpu          *getCpuPtr( );
     T64Tlb          *getTlbPtr( );
-    T64Cache        *getICachePtr( );
-    T64Cache        *getDCachePtr( );
-    
+   
 private:
 
     friend struct   T64Cpu;
@@ -498,9 +499,7 @@ private:
     T64System       *sys                = nullptr;
     T64Cpu          *cpu                = nullptr;
     T64Tlb          *tlb                = nullptr;
-    T64Cache        *iCache             = nullptr;
-    T64Cache        *dCache             = nullptr;
-
+  
     int             modNum              = 0;
     T64Word         instructionCount    = 0;
     T64Word         cycleCount          = 0;

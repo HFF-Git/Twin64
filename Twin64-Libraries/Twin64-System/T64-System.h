@@ -3,10 +3,11 @@
 // Twin-64 - System
 //
 //----------------------------------------------------------------------------------------
-// The T64-System represent the system consisting of several modules. Modules are for
-// example processor, memory and I/O modules. The simulator is connected to the system
-// which handles all module functions. A program start, the individual modules are 
-// registered to the system. Think of a kind of bus where you plug in boards.  
+// The T64-System represent the system consisting of several modules. Modules are
+// for example processor, memory and I/O modules. The simulator is connected to
+// the system which handles all module functions. A program start, the individual
+// modules are registered to the system. Think of a kind of bus where you plug in
+// boards.  
 //
 //----------------------------------------------------------------------------------------
 //
@@ -53,8 +54,7 @@ enum T64ModuleType {
     MT_NIL          = 0,
     MT_PROC         = 10,
     MT_CPU_CORE     = 11,
-    MT_CPU_CACHE    = 12,
-    MT_CPU_TLB      = 13, 
+    MT_CPU_TLB      = 12, 
     MT_MEM          = 20,
     MT_IO           = 30   
 };
@@ -86,11 +86,6 @@ enum T64ModuleType {
 // for all concrete modules and reacts to bus operations. Each module has a HPA
 // address range and an optional SPA address range in I/O memory.
 //
-
-// ??? need to rework this. A module "sees" both OP and EVT. As OP target, it reacts.
-// ??? as EVT it optionally reacts if it needs to.
-// ??? EVT routines should be virtual, and we have a dummy in the module object.
-
 //----------------------------------------------------------------------------------------
 struct T64Module {
     
@@ -104,30 +99,17 @@ struct T64Module {
     virtual void    reset( ) = 0;
     virtual void    step( ) = 0;
 
-    virtual bool    busOpReadUncached( int     srcModNum,
-                                       T64Word pAdr, 
-                                       uint8_t *data, 
-                                       int     len ) = 0;
+    // ??? each module needs to implement a handler to a bus event.
 
-    virtual bool    busOpWriteUncached( int srcModNum,
-                                  T64Word pAdr, 
-                                  uint8_t *data, 
-                                  int len ) = 0;
-
-    virtual bool    busOpReadSharedBlock( int srcModNum,
-                                    T64Word pAdr,
+    virtual bool    busOpReadEvent( int     srcModNum,
+                                    T64Word pAdr, 
                                     uint8_t *data, 
-                                    int len ) = 0;
+                                    int     len ) = 0;
 
-    virtual bool    busOpReadPrivateBlock( int srcModNum, 
+    virtual bool    busOpWriteEvent( int     srcModNum,
                                      T64Word pAdr, 
                                      uint8_t *data, 
-                                     int len ) = 0;
-
-    virtual bool    busOpWriteBlock(  int srcModNum,
-                                T64Word pAdr, 
-                                uint8_t *data, 
-                                int len ) = 0;
+                                     int     len ) = 0;
 
     T64ModuleType   getModuleType( );
     int             getModuleNum( );
@@ -137,7 +119,7 @@ struct T64Module {
     T64Word         getSpaAdr( );
     int             getSpaLen( );
 
-    protected: 
+    public: 
 
     T64ModuleType   moduleTyp   = MT_NIL;
     int             moduleNum   = 0;
@@ -175,53 +157,31 @@ struct T64System {
     int                 addToModuleMap( T64Module *module );
     int                 removeFromModuleMap( T64Module *module );
     
-    T64ModuleType       getModuleType( int modNum );
-    T64Module           *lookupByModNum( int modNum );
-    T64Module           *lookupByAdr( T64Word adr );                
+    T64ModuleType       getModuleType( int modNum ) const;
+    T64Module           *lookupByModNum( int modNum ) const;
+    T64Module           *lookupByAdr( T64Word adr ) const;                
 
     void                reset( );
     void                run( );
-    void                step( int steps = 1 );
+    void                step( int steps, int modNum );
 
-    bool                busOpReadUncached( int     reqModNum,
-                                           T64Word pAdr, 
-                                           uint8_t *data, 
-                                           int     len );
+    bool                busOpRead( int reqModNum,
+                                   T64Word pAdr, 
+                                   uint8_t *data, 
+                                   int     len );
 
-    bool                busOpWriteUncached( int     reqModNum,
-                                            T64Word pAdr, 
-                                            uint8_t *data, 
-                                            int len );
-
-    bool                busOpReadSharedBlock( int     reqModNum,
-                                              T64Word pAdr,
-                                              uint8_t *data, 
-                                              int     len );
-
-    bool                busOpReadPrivateBlock( int     reqModNum,
-                                               T64Word pAdr, 
-                                               uint8_t *data, 
-                                               int     len );
-
-    bool                busOpWriteBlock( int     reqModNum,
-                                         T64Word pAdr, 
-                                         uint8_t *data, 
-                                         int     len );
-
-    
-    bool                readMem( T64Word pAdr, uint8_t *data, int len );
-    bool                writeMem( T64Word pAdr, uint8_t *data, int len );
+    bool                busOpWrite( int reqModNum,
+                                    T64Word pAdr, 
+                                    uint8_t *data, 
+                                    int     len );
 
     private:
 
     void                initModuleMap( );
-
-    int                 addToSystemMap( T64Module  *module,
-                                        T64Word    start,
-                                        int        len );
-                                   
+                            
     T64Module           *moduleMap[ MAX_MOD_MAP_ENTRIES ];
-    int                 moduleMapHwm = 0;
+    T64Module           *systemMemMap[ MAX_MOD_MAP_ENTRIES ];
+    int                 systemMemMapHwm = 0;
 };
 
 #endif
