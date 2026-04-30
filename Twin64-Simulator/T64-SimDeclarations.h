@@ -1070,29 +1070,6 @@ struct SimWinTlb : SimWinScrollable {
     T64Tlb *tlb = nullptr;
 };
 
-#if 0
-//----------------------------------------------------------------------------------------
-// Cache Window. The memory object window display the cache date lines. Since we can
-// have caches with more than one set, the toggle function allows to flip through the
-// sets, one at a time.
-//
-//----------------------------------------------------------------------------------------
-struct SimWinCache : SimWinScrollable {
-    
-    public:
-    
-    SimWinCache( SimGlobals *glb, int modNum, T64Cache *cache );
-    
-    void setDefaults( );
-    void drawBanner( );
-    void drawLine( T64Word index );
-
-    private:
-
-    T64Cache    *cache  = nullptr;
-};
-#endif
-
 //----------------------------------------------------------------------------------------
 // Text Window. It may be handy to also display an ordinary ASCII text file. One day
 // this will allow us to display for example the source code to a running program 

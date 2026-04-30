@@ -629,12 +629,21 @@ void SimWinCode::drawBanner( ) {
 // is the instruction and options, the second is the target and operand field. 
 // We make sure that both parts are nicely aligned.
 //
+// ??? would be nice to mark the current instruction address. However we need to
+// be careful. It is a virtual address, which first needs to be translated. 
+// Perhaps add a method to the Processor class, which translates the current
+// instruction address to a physical address, which we can compare with the item 
+// address. We also need to be careful with the single step command, which changes
+// the instruction address after the command is executed. We need to detect this 
+// and scroll to the new instruction address.
+// 
 //----------------------------------------------------------------------------------------
 void SimWinCode::drawLine( T64Word itemAdr ) {
     
     uint32_t    fmtDesc                     = FMT_DEF_ATTR;
     uint32_t    instr                       = 0x0;
     char        buf[ MAX_TEXT_LINE_SIZE ]   = { 0 };
+    T64Word     currentIa                   = 0;
 
     if ( ! glb -> system -> busOpRead( -1,
                                        itemAdr, 
@@ -647,9 +656,9 @@ void SimWinCode::drawLine( T64Word itemAdr ) {
     copyEndianAware((uint8_t *) &instr, (uint8_t *) &instr, sizeof(uint32_t));
     
     printNumericField( itemAdr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_2_4_4, 14 );
-  
-    if ( itemAdr ==  0 ) printTextField((char *) "    >", fmtDesc, 5 );
-    else                 printTextField((char *) "     ", fmtDesc, 5 );
+
+    if ( itemAdr ==  currentIa ) printTextField((char *) "    >", fmtDesc, 5 );
+    else                         printTextField((char *) "     ", fmtDesc, 5 );
    
     printNumericField( instr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_8, 12 );
     

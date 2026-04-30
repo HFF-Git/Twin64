@@ -633,7 +633,7 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_MR,
         .cmdNameStr     = (char *) "mr",
-        .cmdSyntaxStr   = (char *) "mr <reg> <val>",
+        .cmdSyntaxStr   = (char *) "mr <reg> , <val>",
         .helpStr        = (char *) "modify a CPU register"
     },
     
@@ -647,7 +647,7 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_MA,
         .cmdNameStr     = (char *) "ma",
-        .cmdSyntaxStr   = (char *) "ma <adr> <val>",
+        .cmdSyntaxStr   = (char *) "ma <adr> , <val>",
         .helpStr        = (char *) "modify absolute memory"
     },
      

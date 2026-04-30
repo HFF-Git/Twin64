@@ -3,7 +3,14 @@
 // Twin-64 - A 64-bit CPU - Physical memory
 //
 //----------------------------------------------------------------------------------------
-// This module contains the implementation of the physical memory modules.
+// This module contains the implementation of the physical memory modules. We 
+// have a rather simple module for memory. It is just a range of bytes. The 
+// SPA range describes where in physical memory this memory is allocated. It is
+// possible to have several memory modules, each mapping a different range of 
+// physical memory. The read and write function merely copy data from and to 
+// memory. The address must however be aligned to the length of the data to 
+// fetch. The memory is protected by a lock, which is held during the entire 
+// read or write operation.
 //
 //----------------------------------------------------------------------------------------
 //
@@ -23,54 +30,13 @@
 //----------------------------------------------------------------------------------------
 #include "T64-Memory.h"
 
-//----------------------------------------------------------------------------------------
-// For a threaded simulator, access to the memory must be synchronized. We need
-// for writes a mutex. To still have a decent performance, we implement a table
-// of mutexes which are indexed bases on the memory address. A write to memory 
-// needs to acquire the mutex  before writing writes memory.
-//
-// std::shared_mutex locks[N];
-// size_t idx = ( addr >> 12 ) & ( N - 1 );
-//
-// class Memory {
-//     std::shared_mutex lock;
-//    uint8_t data[SIZE];
-//
-// public:
-//    uint64_t read(size_t addr) {
-//        std::shared_lock<std::shared_mutex> l(lock);
-//        return data[addr];
-//    }
-//
-//    void write(size_t addr, uint64_t value) {
-//        std::unique_lock<std::shared_mutex> l(lock);
-//        data[addr] = value;
-//    }
-// };
-// 
-//----------------------------------------------------------------------------------------
-
-
-//----------------------------------------------------------------------------------------
-//
-//
-//----------------------------------------------------------------------------------------
-namespace {
-
-} // namespace
-
 //****************************************************************************************
 //****************************************************************************************
 //
 // Physical memory
 //
 //----------------------------------------------------------------------------------------
-// We have a rather simple module for memory. It is just a range of bytes. The 
-// SPA range describes where in physical memory this memory is allocated. It is
-// possible to have several memory modules, each mapping a different range of 
-// physical memory. The read and write function merely copy data from and to 
-// memory. The address must however be aligned to the length of the data to 
-// fetch.
+// Object constructor. We need to initialize the memory data and the lock.
 //
 //----------------------------------------------------------------------------------------
 T64Memory::T64Memory( T64System     *sys, 
@@ -90,11 +56,18 @@ T64Memory::T64Memory( T64System     *sys,
     this -> mKind   = mKind;
     this -> mType   = mType;
     this -> memData = nullptr;
+    this -> memLock = false;
+
     reset( );
 }
 
-T64Memory:: ~T64Memory( ) {
+//----------------------------------------------------------------------------------------
+// Object destructor. We need to free the memory we allocated.
+//
+//----------------------------------------------------------------------------------------
+T64Memory:: ~T64Memory( ) { 
 
+    if ( memData != nullptr ) free( memData );
 }
 
 //----------------------------------------------------------------------------------------
@@ -112,19 +85,19 @@ void T64Memory::reset( ) {
 // Each module has a step function. Ours does nothing.
 // 
 //----------------------------------------------------------------------------------------
-void T64Memory::step( ) { 
-    
-}
+void T64Memory::step( ) { }
 
 //----------------------------------------------------------------------------------------
 // Read a data from memory. The address the physical address and we compute the
 // offset on our SPA range. The address needs to be aligned with length parameter.
 //
-// ??? this is not thread safe, memcpy is not.
 //----------------------------------------------------------------------------------------
-bool T64Memory::read( T64Word adr, uint8_t *data, int len ) {
+bool T64Memory::busOpReadEvent( int     reqModNum,
+                                T64Word pAdr, 
+                                uint8_t *data, 
+                                int     len ) {
 
-    if ( isInIoAdrRange( adr )) {
+    if ( isInIoAdrRange( pAdr )) {
 
          // for now ...
         *data = 0;
@@ -132,12 +105,23 @@ bool T64Memory::read( T64Word adr, uint8_t *data, int len ) {
     }
     else {
 
-        if ( adr + len >= spaAdr + spaLen ) return( false );
-        if ( ! isAlignedDataAdr( adr, len )) return( false );
+        std::atomic<bool> *lockPtr = &memLock;
+        while ( lockPtr -> exchange( true )) { /* spin */ };
+            
+         if ( pAdr + len >= spaAdr + spaLen ) {
+            lockPtr -> store( false );
+            return( false );
+        }
 
-        uint8_t *srcPtr = &memData[ adr - spaAdr ];
-
+        if ( ! isAlignedDataAdr( pAdr, len )) {
+            lockPtr -> store( false );
+            return( false );
+        }
+       
+        uint8_t *srcPtr = &memData[ pAdr - spaAdr ];
         memcpy( data, srcPtr, len );
+
+        lockPtr -> store( false );
         return( true );
     }
 }
@@ -148,9 +132,12 @@ bool T64Memory::read( T64Word adr, uint8_t *data, int len ) {
 //
 // ??? this is not thread safe, memcpy is not.
 //----------------------------------------------------------------------------------------
-bool T64Memory::write( T64Word adr, uint8_t *data, int len ) {
+bool T64Memory::busOpWriteEvent( int     reqModNum,
+                                 T64Word pAdr, 
+                                 uint8_t *data, 
+                                 int     len ) {
 
-    if ( isInIoAdrRange( adr )) {
+    if ( isInIoAdrRange( pAdr )) {
 
          // for now ...
         *data = 0;
@@ -158,11 +145,24 @@ bool T64Memory::write( T64Word adr, uint8_t *data, int len ) {
     }
     else {
 
-        if ( adr + len >= spaAdr + spaLen ) return( false );
-        if ( ! isAlignedDataAdr( adr, len )) return( false );
-        if ( spaReadOnly ) return ( false );
+        std::atomic<bool> *lockPtr = &memLock;
+        while ( lockPtr -> exchange( true )) { /* spin */ };
 
-        uint8_t *dstPtr = &memData[ adr - spaAdr ];
+        if ( pAdr + len >= spaAdr + spaLen ) {
+            lockPtr -> store( false );
+            return( false );
+        }
+        if ( ! isAlignedDataAdr( pAdr, len )) {
+            lockPtr -> store( false );
+            return( false );
+        }
+
+        if ( spaReadOnly ) {
+            lockPtr -> store( false );
+            return ( false );
+        }
+
+        uint8_t *dstPtr = &memData[ pAdr - spaAdr ];
 
         memcpy( dstPtr, data, len );
         return( true );
@@ -200,19 +200,4 @@ char *T64Memory::getMemTypeString( ) const {
         case T64_MT_ROM:   return((char *) "ROM" );
         default:           return((char *) "Unknown Mem Type" );
     }
-}
-
-bool T64Memory::busOpReadEvent( int     reqModNum,
-                                T64Word pAdr, 
-                                uint8_t *data, 
-                                int     len ) {
-    
-    return( read( pAdr, data, len ));
-}
-
-bool T64Memory::busOpWriteEvent( int     reqModNum,
-                                 T64Word pAdr, 
-                                 uint8_t *data, 
-                                 int     len ) {
-    return( write( pAdr, data, len ));
 }

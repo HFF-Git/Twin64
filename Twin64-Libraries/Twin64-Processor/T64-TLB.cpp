@@ -5,6 +5,12 @@
 //----------------------------------------------------------------------------------------
 // The T64 CPU Simulator has a unified TLB with two small TLB cache structures.
 // It is a fully associative TLB with a LRU mechanism to select replacements.
+// Our TLB is a unified TLB with two small TLB buffers for instruction and data 
+// translation. The TLB supports multiple page sizes. A miss in the the small
+// instruction or data TLB will trigger a search in the unified TLB. A miss in
+// the unified TLB will trigger a TLB miss trap. The TLB supports a locked entry,
+// which is not replaced by the LRU mechanism. This can be used to lock in critical
+// sections of code.
 //
 //----------------------------------------------------------------------------------------
 //
@@ -85,7 +91,7 @@ void resetTlbEntry( T64TlbEntry *ptr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Search the L1 level caches. Instruction and data path have a small buffer
+// Search the L1 level TLB caches. Instruction and data path have a small buffer
 // for their translation. It is a simple serial search. The comparison uses
 // the page mask to compare the correct address bits.
 //
@@ -103,10 +109,11 @@ T64TlbEntry* lookupL1( T64TlbEntry *tlb, uint32_t tlbEntries, T64Word  vAdr ) {
 
 //----------------------------------------------------------------------------------------
 // Search the unified cache. We need to scan all valid entries which to find the 
-// best match. 
+// best match. This is because we can deliberately allow for overlapping entries,
+// which can be used to deploy a large page and overlap another smaller range.
+// The best match is the entry with the largest page mask, which is the smallest
+// page size.
 //
-// ??? add comments why ... allow for a range overlap another range ...
-// ??? add a good comment here...
 //----------------------------------------------------------------------------------------
 T64TlbEntry* lookupUnified( T64TlbEntry *tlb, uint32_t tlbEntries, T64Word vAdr ) {
     
@@ -140,7 +147,8 @@ T64TlbEntry* lookupUnified( T64TlbEntry *tlb, uint32_t tlbEntries, T64Word vAdr 
 //
 //----------------------------------------------------------------------------------------
 // Object creator. Based on kind and type of TLB, we allocate the TLB data
-// structure. Right now, we only support a unified TLB of different sizes.
+// structure. Right now, we only support a fully associative unified TLB of
+// different sizes.
 //
 //----------------------------------------------------------------------------------------
 T64Tlb::T64Tlb( T64Processor *proc, T64TlbKind tlbKind, T64TlbType tlbType ) {
@@ -197,8 +205,8 @@ void T64Tlb::reset( ) {
 //----------------------------------------------------------------------------------------
 // Lookup a Instruction TLB. If we do not find the entry in the L1, we consult 
 // the unified TLB buffer and if a translation is found, the L1 buffer is updated.
-// The entry to use is found via a simple round robin selection. Instruction fetch 
-// tends to be rather serial in contrast to a data TLB.
+// The entry to update is found via a simple round robin selection. Instruction
+// fetch tends to be rather serial in contrast to a data TLB.
 //  
 //----------------------------------------------------------------------------------------
 T64TlbEntry *T64Tlb::lookupItlb( T64Word vAdr ) {
@@ -219,7 +227,7 @@ T64TlbEntry *T64Tlb::lookupItlb( T64Word vAdr ) {
 //----------------------------------------------------------------------------------------
 // Lookup a Data TLB. If we do not find the entry in the L1 buffer, we consult 
 // the unified TLB buffer and if a translation is found, the L1 buffer is updated.
-// The entry to use is found via a last used selection. Data access tends to be
+// The entry to update is found via a last used selection. Data access tends to be
 // rather random in contrast to a instruction TLB.
 //
 //----------------------------------------------------------------------------------------
@@ -241,18 +249,24 @@ T64TlbEntry *T64Tlb::lookupDtlb( T64Word vAdr ) {
 
     for ( int i = 1; i < dTlbEntries; i++ ) {
 
-        if ( dTlb[ i ].lastUsed < victim ) victim = i;
+        if ( dTlb[ i ].lastUsed < dTlb[ victim ].lastUsed ) victim = i;
     }
    
     dTlb[ victim ] = *e;
+    e -> lastUsed = dTlbtimeGlobal;
+    dTlbtimeGlobal ++;
+    
     return ( e );
 }
 
 //----------------------------------------------------------------------------------------
 // The insert method inserts a new entry into the TLB subsystem. First we check 
-// if the virtual address is in the physical address range. We do not enter such
-// ranges in the TLB. 
+// if the virtual address is in the architected physical address range. We do 
+// not enter such ranges in the TLB. 
 //
+// We first check if the entry already exists. If so, we update the fields. If
+// the is not found, we check for a free entry and insert the new entry. If no
+//  free entry is found,
 //
 // ??? work on comment ...
 
@@ -274,7 +288,6 @@ T64TlbEntry *T64Tlb::lookupDtlb( T64Word vAdr ) {
 // Finally, we check the alignment of both virtual and physical address according
 // to the page size. If not aligned, the insert operation fails.       
 //
-// 
 //    vAdr Word: "0:VPN:0" encoded.
 //
 //    Info Word: Flags:8, 0:12, Acc:4, Size:4, PPN:24, 12:0
@@ -282,6 +295,7 @@ T64TlbEntry *T64Tlb::lookupDtlb( T64Word vAdr ) {
 //    Acc: type:2, Pl1:1, Pl2:1
 //
 //    Flags: V:1, M:1, L:1, U:1, 0:4   
+//
 //----------------------------------------------------------------------------------------
 bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
 
@@ -290,7 +304,6 @@ bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
     T64TlbEntry entry;
 
     if ( isInIoAdrRange( vAdr )) return ( true );
-
     if ( ! isAlignedPageAdr( vAdr, pSize )) return ( false );
     if ( ! isAlignedPageAdr( pAdr, pSize )) return ( false );
     
@@ -313,18 +326,6 @@ bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
         T64TlbEntry *e = &uTlb[ i ];
 
         if ( ! e -> valid ) continue;
-
-        /* identical mapping → skip */
-
-        if (( e -> vAdr == entry.vAdr ) &&
-            ( e -> pageMask == entry.pageMask ) &&
-            ( e -> pAdr == entry.pAdr )) {
-
-            // ??? what about the case where attributes changed ?    
-            return ( true );
-        }
-
-        /* same VA + size → replace */
 
         if (( e -> vAdr == entry.vAdr ) &&
             ( e -> pageMask == entry.pageMask )) {
@@ -369,11 +370,24 @@ bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
 // Remove the TLB entry that contains the virtual address. The entry is removed
 // regardless if it is locked or not. 
 // 
-// ??? we need to also remove in L1 ?
 //----------------------------------------------------------------------------------------
 bool T64Tlb::purgeTlb( T64Word vAdr ) {
 
-    T64TlbEntry *e = lookupUnified( uTlb, uTlbEntries, vAdr );
+    T64TlbEntry *e = lookupL1( iTlb, iTlbEntries, vAdr );
+    if ( e != nullptr ) {   
+
+        e -> valid = false;
+        return( true );
+    }
+
+    e = lookupL1( dTlb, dTlbEntries, vAdr );
+    if ( e != nullptr ) {   
+
+        e -> valid = false;
+        return( true );
+    }
+
+    e = lookupUnified( uTlb, uTlbEntries, vAdr );
     if ( e != nullptr ) {
 
         e -> valid = false;

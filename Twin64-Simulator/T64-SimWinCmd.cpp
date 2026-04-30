@@ -1891,6 +1891,9 @@ void SimCommandsWin::displayAbsMemCmd( ) {
 void SimCommandsWin::modifyAbsMemCmd( ) {
     
     T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_OFS, 0, INT64_MAX );
+
+    tok -> acceptComma( );
+    
     T64Word val = eval -> acceptNumExpr( ERR_INVALID_NUM );
     tok -> checkEOS( );
 
@@ -1909,7 +1912,7 @@ void SimCommandsWin::modifyAbsMemCmd( ) {
 // Modify register command. This command modifies a register within a register set.
 // We must be in windows mode and the current window must be a CPU type window.
 //
-//  MR <reg> <val>
+//  MR <reg> "," <val>
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::modifyRegCmd( ) {
@@ -1929,7 +1932,9 @@ void SimCommandsWin::modifyRegCmd( ) {
         tok -> nextToken( );
     }
     else throw ( ERR_INVALID_REG_ID );
-    
+
+    tok -> acceptComma( );
+
     val = eval -> acceptNumExpr( ERR_INVALID_NUM );
 
     tok -> checkEOS( );

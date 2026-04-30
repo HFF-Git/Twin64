@@ -3,7 +3,14 @@
 // Twin-64 - A 64-bit CPU - Physical memory
 //
 //----------------------------------------------------------------------------------------
-// This module contains ...
+// A physical memory module is an array of pages. Each module covers a range of
+// physical memory and reacts to read and write bus operations. The address range
+// is defined by the HPA and SPA address range. A memory module typically uses
+// the SPA address range for the memory and the HPA address range for control 
+// registers.
+//
+// Access to the memory is protected by a lock. The lock is held during the entire
+// bus operation, including the time it takes to read or write the memory. 
 //
 //----------------------------------------------------------------------------------------
 //
@@ -27,6 +34,7 @@
 #include "T64-Util.h"
 #include "T64-Common.h"
 #include "T64-System.h"
+#include <atomic>
 
 //----------------------------------------------------------------------------------------
 // Memory. There are two basic kinds of memory. ReadWrite and ReadOnly.
@@ -45,8 +53,7 @@ enum T64MemType : int {
 };
 
 //----------------------------------------------------------------------------------------
-// T64 Memory module. A physical memory module is an array of pages. Each module 
-// covers a range of physical memory and reacts to read and write bus operations.
+// T64 Memory module object.
 //
 //----------------------------------------------------------------------------------------
 struct T64Memory : T64Module {
@@ -64,12 +71,7 @@ public:
     
     void        reset( );
     void        step( );
-    void        setSpaReadOnly( bool arg );
-
-    T64MemKind  getMemKind( ) const;
-    T64MemType  getMemType( ) const;
-    char        *getMemTypeString( ) const;
-
+   
     bool        busOpReadEvent( int     reqModNum,
                                 T64Word pAdr, 
                                 uint8_t *data, 
@@ -79,17 +81,20 @@ public:
                                  T64Word pAdr, 
                                  uint8_t *data, 
                                  int     len );
-                                 
+
+    T64MemKind  getMemKind( ) const;
+    T64MemType  getMemType( ) const;
+    char        *getMemTypeString( ) const;
+    void        setSpaReadOnly( bool arg );
+                      
 private:
 
-    bool        read( T64Word adr, uint8_t *data, int len );
-    bool        write( T64Word adr, uint8_t *data, int len );
-    
-    T64MemKind  mKind       = T64_MK_NIL;
-    T64MemType  mType       = T64_MT_NIL;
-    T64System   *sys        = nullptr;
-    uint8_t     *memData    = nullptr;
-    bool        spaReadOnly = false;
+    T64MemKind          mKind       = T64_MK_NIL;
+    T64MemType          mType       = T64_MT_NIL;
+    T64System           *sys        = nullptr;
+    uint8_t             *memData    = nullptr;
+    bool                spaReadOnly = false;
+    std::atomic<bool>   memLock     = false;
 };
 
 #endif // T64-Memory.h
