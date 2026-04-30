@@ -232,8 +232,7 @@ struct T64Cache {
 };
 
 //----------------------------------------------------------------------------------------
-// TLB Entry. The TLB entry stores one translation along with several flags. Each 
-// entry has a last used count for the LRU replacement scheme.
+// TLB Entry. The TLB entry stores one translation along with several flags. 
 //
 //----------------------------------------------------------------------------------------
 struct T64TlbEntry {
@@ -244,14 +243,13 @@ struct T64TlbEntry {
     bool            uncached        = false;
     bool            locked          = false;
     bool            modified        = false;
-    T64PageType     pageType        = PT_NONE;
-    T64Word         pageSize        = T64_PAGE_SIZE_BYTES;
-    T64Word         pageMask        = 0;
     bool            pLev1           = false;
     bool            pLev2           = false;
+    T64PageType     pageType        = PT_NONE;
+    uint32_t        pageSize        = 0;
+    T64Word         pageMask        = 0;
     T64Word         vAdr            = 0;
-    T64Word         pAdr            = 0;
-    T64Word         lastUsed        = 0;  
+    T64Word         pAdr            = 0; 
 };
 
 //----------------------------------------------------------------------------------------
@@ -291,21 +289,30 @@ struct T64Tlb {
 
     private:
 
-    T64Processor    *proc           = nullptr;
+    T64Processor    *proc               = nullptr;
 
-    T64TlbKind      tlbKind         = T64_TK_NIL;
-    T64TlbType      tlbType         = T64_TT_NIL;
-    T64TlbEntry     *iTlb           = nullptr;
-    T64TlbEntry     *dTlb           = nullptr;
-    T64TlbEntry     *uTlb           = nullptr;
+    T64TlbKind      tlbKind             = T64_TK_NIL;
+    T64TlbType      tlbType             = T64_TT_NIL;
+    T64TlbEntry     *iTlb               = nullptr;
+    T64TlbEntry     *dTlb               = nullptr;
+    T64TlbEntry     *uTlb               = nullptr;
 
-    int             iTlbEntries     = 0;
-    int             dTlbEntries     = 0;
-    int             uTlbEntries     = 0;
+    int             iTlbEntries         = 0;
+    int             dTlbEntries         = 0;
+    int             uTlbEntries         = 0;
 
-    uint32_t        uTlbRoundRobin  = 0;       
-    uint32_t        iTlbRoundRobin  = 0;       
-    uint64_t        dTlbtimeGlobal  = 0;       
+    uint32_t        uTlbRoundRobin      = 0;       
+    uint32_t        iTlbRoundRobin      = 0;       
+    
+    T64Word         iTlbHits            = 0;
+    T64Word         iTlbMisses          = 0;
+    T64Word         iTlbMissUTlbHits    = 0;
+    T64Word         iTlbMissUTlbMisses  = 0;
+
+    T64Word         dTlbHits            = 0;
+    T64Word         dTlbMisses          = 0;
+    T64Word         dTlbMissUTlbHits    = 0;
+    T64Word         dTlbMissUTlbMisses  = 0; 
 };
 
 //----------------------------------------------------------------------------------------

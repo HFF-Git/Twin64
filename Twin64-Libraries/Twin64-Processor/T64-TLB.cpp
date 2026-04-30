@@ -9,8 +9,7 @@
 // translation. The TLB supports multiple page sizes. A miss in the the small
 // instruction or data TLB will trigger a search in the unified TLB. A miss in
 // the unified TLB will trigger a TLB miss trap. The TLB supports a locked entry,
-// which is not replaced by the LRU mechanism. This can be used to lock in critical
-// sections of code.
+// which is not replaced by the LRU mechanism. 
 //
 //----------------------------------------------------------------------------------------
 //
@@ -21,9 +20,9 @@
 // the terms of the GNU General Public License as published by the Free Software 
 // Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
-// A PARTICULAR PURPOSE.  See the GNU General Public License for more details. 
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details. 
 // You should have received a copy of the GNU General Public License along with 
 // this program. If not, see <http://www.gnu.org/licenses/>.
 //
@@ -52,11 +51,10 @@ int tlbPageSize( int size ) {
 //----------------------------------------------------------------------------------------
 // "canonicalizeVa" clears the page offset part of a virtual address.
 //
-//
 //----------------------------------------------------------------------------------------
-inline uint64_t canonicalizeVa( uint64_t vAdr ) {
-    
-    return ( vAdr & (( 1ULL << T64_PAGE_OFS_BITS ) - 1 ));
+inline T64Word canonicalizeVa( T64Word vAdr ) {
+
+    return vAdr & (( 1ULL << T64_VADR_BITS ) - 1);
 }
 
 //----------------------------------------------------------------------------------------
@@ -65,9 +63,10 @@ inline uint64_t canonicalizeVa( uint64_t vAdr ) {
 // corresponding to the page size.
 //
 //----------------------------------------------------------------------------------------
-inline uint64_t pageMask( int pSize ) {
+inline T64Word pageMask( int pSize ) {
     
-    return ~(( T64_PAGE_SIZE_BYTES << ( pSize * 4 )) - 1 );
+    int shift = T64_PAGE_OFS_BITS + ( pSize * 4 );
+    return ~(( 1ULL << shift ) - 1 );
 }
 
 //----------------------------------------------------------------------------------------
@@ -86,7 +85,6 @@ void resetTlbEntry( T64TlbEntry *ptr ) {
     ptr -> pageSize     = 0;
     ptr -> vAdr         = 0;
     ptr -> pAdr         = 0;
-    ptr -> lastUsed     = 0;
     ptr -> pageMask     = 0;
 }
 
@@ -97,11 +95,16 @@ void resetTlbEntry( T64TlbEntry *ptr ) {
 //
 //----------------------------------------------------------------------------------------
 T64TlbEntry* lookupL1( T64TlbEntry *tlb, uint32_t tlbEntries, T64Word  vAdr ) {
+
+    if ( ! tlb ) return ( nullptr );
     
     for ( int i = 0; i < tlbEntries; i++ ) {
         
-        if ( tlb[ i ].valid && (( vAdr & tlb[ i ].pageMask ) == tlb[ i ].vAdr ))
+        if ( tlb[ i ].valid && (( vAdr & tlb[ i ].pageMask ) == tlb[ i ].vAdr )) {
+
             return ( &tlb[ i ] );
+        }
+            
     }
     
     return ( nullptr );
@@ -127,8 +130,8 @@ T64TlbEntry* lookupUnified( T64TlbEntry *tlb, uint32_t tlbEntries, T64Word vAdr 
 
         if (( vAdr & e -> pageMask ) == e -> vAdr ) {
             
-            if (( best != nullptr ) || ( e -> pageMask > best -> pageMask )) {
-                
+            if (( best == nullptr ) || ( e -> pageMask > best -> pageMask )) {
+    
                 best = e;
             }
         }
@@ -197,9 +200,18 @@ void T64Tlb::reset( ) {
     for ( int i = 0; i < dTlbEntries; i++ ) resetTlbEntry( &dTlb[ i ] );
     for ( int i = 0; i < uTlbEntries; i++ ) resetTlbEntry( &uTlb[ i ] );
 
-    uTlbRoundRobin  = 0;       
-    iTlbRoundRobin  = 0;       
-    dTlbtimeGlobal  = 0;       
+    uTlbRoundRobin      = 0;       
+    iTlbRoundRobin      = 0;            
+    
+    iTlbHits            = 0;
+    iTlbMisses          = 0;
+    iTlbMissUTlbHits    = 0;
+    iTlbMissUTlbMisses  = 0;
+
+    dTlbHits            = 0;
+    dTlbMisses          = 0;
+    dTlbMissUTlbHits    = 0;
+    dTlbMissUTlbMisses  = 0;
 }
 
 //----------------------------------------------------------------------------------------
@@ -211,52 +223,69 @@ void T64Tlb::reset( ) {
 //----------------------------------------------------------------------------------------
 T64TlbEntry *T64Tlb::lookupItlb( T64Word vAdr ) {
     
-    T64TlbEntry *e = lookupL1( iTlb, iTlbEntries, vAdr );
-    if ( e != nullptr ) return ( e );
+    T64TlbEntry *e = lookupL1( iTlb, iTlbEntries, canonicalizeVa( vAdr ));
+    if ( e != nullptr ) {
+        
+        iTlbHits ++;
+        return ( e );
+    }
+    else iTlbMisses ++;
 
-    e = lookupUnified( uTlb, uTlbEntries, vAdr );
-    if ( e == nullptr ) return ( nullptr );
+    e = lookupUnified( uTlb, uTlbEntries, canonicalizeVa( vAdr ));
+    if ( e == nullptr ) {
+        
+        iTlbMissUTlbMisses ++;
+        return ( nullptr );
+    }
+    else {
+        
+        iTlbMissUTlbHits ++;
 
-    int idx = iTlbRoundRobin & ( iTlbEntries - 1 );
-    iTlbRoundRobin ++;
-    iTlb[ idx ] = *e;
+        iTlb[ iTlbRoundRobin & ( iTlbEntries - 1 ) ] = *e;
+        iTlbRoundRobin ++;
     
-    return ( e );
+        return ( e );
+    }
 }
 
 //----------------------------------------------------------------------------------------
-// Lookup a Data TLB. If we do not find the entry in the L1 buffer, we consult 
-// the unified TLB buffer and if a translation is found, the L1 buffer is updated.
-// The entry to update is found via a last used selection. Data access tends to be
-// rather random in contrast to a instruction TLB.
-//
+// Lookup a Data TLB. If we find the entry in the L1 buffer, we return it and 
+// also place it in the slot 0, so that the next lookup has a higher chance of
+// finding it. All other entries are shifted by one. If we do not find the entry
+// in the L1 buffer, we consult the unified TLB buffer and if a translation is 
+// found, the L1 buffer is updated.
+// 
 //----------------------------------------------------------------------------------------
 T64TlbEntry *T64Tlb::lookupDtlb( T64Word vAdr ) {
                         
     T64TlbEntry *e = lookupL1( dTlb, dTlbEntries, canonicalizeVa( vAdr ));
-
     if ( e != nullptr ) {
 
-        e -> lastUsed = dTlbtimeGlobal;
-        dTlbtimeGlobal ++;
+        dTlbHits ++;
+
+        int         idx = e - dTlb;
+        T64TlbEntry hit = *e;
+
+        for ( int i = idx; i > 0; i-- ) dTlb[ i ] = dTlb[ i - 1 ];
+        dTlb[0] = hit;
         return ( e );
     }
+    else dTlbMisses ++;
 
-    e = lookupUnified( dTlb, dTlbEntries, vAdr );
-    if ( e == nullptr ) return ( nullptr );
+    e = lookupUnified( uTlb, uTlbEntries, canonicalizeVa( vAdr ));
+    if ( e == nullptr ) {
 
-    int victim = 0;
-
-    for ( int i = 1; i < dTlbEntries; i++ ) {
-
-        if ( dTlb[ i ].lastUsed < dTlb[ victim ].lastUsed ) victim = i;
+        dTlbMissUTlbMisses ++;
+        return ( nullptr );
     }
-   
-    dTlb[ victim ] = *e;
-    e -> lastUsed = dTlbtimeGlobal;
-    dTlbtimeGlobal ++;
-    
-    return ( e );
+    else {
+
+        dTlbMissUTlbHits ++;
+
+        for ( int i = dTlbEntries - 1; i > 0; i-- ) dTlb[i] = dTlb[i - 1];
+        dTlb[0] = *e;
+        return ( e );
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -266,35 +295,9 @@ T64TlbEntry *T64Tlb::lookupDtlb( T64Word vAdr ) {
 //
 // We first check if the entry already exists. If so, we update the fields. If
 // the is not found, we check for a free entry and insert the new entry. If no
-//  free entry is found,
-//
-// ??? work on comment ...
-
-//
-// Next, we check whether the new entry would overlap an already existing UTLB 
-// virtual address range. If there is an overlap, the overlapping entry is 
-// invalidated. If none found, find a free entry to use. If none found, we replace
-// the least recently used entry. 
-//
-
-
-// Since entries can be locked in the TLB, there is the case that all entries are
-// locked and we cannot find a free entry. In this case, we just unlock entry zero.
-// Note that this is a rather unlikely case, OS software has to ensure that we do
-// not lock all entries. 
-// 
-
-//
-// Finally, we check the alignment of both virtual and physical address according
-// to the page size. If not aligned, the insert operation fails.       
-//
-//    vAdr Word: "0:VPN:0" encoded.
-//
-//    Info Word: Flags:8, 0:12, Acc:4, Size:4, PPN:24, 12:0
-//    
-//    Acc: type:2, Pl1:1, Pl2:1
-//
-//    Flags: V:1, M:1, L:1, U:1, 0:4   
+// free entry is found, we replace an existing entry using a round robin 
+// replacement policy. We skip locked entries. If all entries are locked, we 
+// just drop the new entry.
 //
 //----------------------------------------------------------------------------------------
 bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
@@ -319,8 +322,6 @@ bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
     entry.vAdr          = canonicalizeVa( vAdr ) & entry.pageMask;
     entry.pAdr          = pAdr & entry.pageMask;
    
-    /* 1. replace identical or same mapping */
-
     for ( int i = 0; i < uTlbEntries; i++ ) {
 
         T64TlbEntry *e = &uTlb[ i ];
@@ -338,8 +339,6 @@ bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
         }
     }
 
-    /* 2. free slot and insert */
-
     for ( int i = 0; i < uTlbEntries; i++ ) {
 
         if ( ! uTlb[ i ].valid ) {
@@ -349,11 +348,9 @@ bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
         }
     }
 
-    /* 3. FIFO replace (skip locked) */
+    for ( int i = 0; i < uTlbEntries; i++ ) {
 
-    for ( int i = 0; i < dTlbEntries; i++ ) {
-
-        int idx = uTlbRoundRobin++ % dTlbEntries;
+        int idx = uTlbRoundRobin++ % uTlbEntries;
 
         if ( ! uTlb[ idx ].locked ) {
 
@@ -362,7 +359,6 @@ bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
         }
     }
 
-    /* 4. all locked → drop */
     return( false );
 }
 
