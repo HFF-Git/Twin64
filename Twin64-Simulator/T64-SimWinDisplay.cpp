@@ -857,7 +857,7 @@ void SimWinDisplay::windowNewTlb( int modNum, T64TlbKind tKind ) {
 
         windowList[ slot ] = 
             (SimWin *) new SimWinTlb( glb, modNum, proc -> getTlbPtr( ));
-        windowList[ slot ] -> setWinName(( char *) "U-TLB" );
+        windowList[ slot ] -> setWinName(( char *) "TLB" );
     }
     else throw( ERR_INVALID_WIN_TYPE );
 

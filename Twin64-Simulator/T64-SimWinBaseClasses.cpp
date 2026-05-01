@@ -108,22 +108,29 @@ void SimWin::setEnable( bool arg ) {
 
 int SimWin::getDefRows( ) { 
 
-    return ( winDefSizes[ winToggleVal ].row ); 
+    return ( winSizes[ winToggleVal ].actualRow ); 
 }
 
 int SimWin::getRows( ) { 
 
-   return( winRows );
+    return( winRows );
 }
 
 void SimWin::setRows( int arg ) { 
 
-    winRows = (( arg > MAX_WIN_ROW_SIZE ) ? MAX_WIN_ROW_SIZE : arg ); 
+    int maxRows = winSizes[ winToggleVal ].maxRow;
+    int minRows = winSizes[ winToggleVal ].minRow;
+
+    if (( arg < minRows ) || ( arg > maxRows )) arg = minRows;
+
+    winSizes[ winToggleVal ].actualRow = arg;
+
+    winRows = arg;
 }
 
 int SimWin::getDefColumns( ) { 
     
-    return ( winDefSizes[ winToggleVal ].col );
+    return ( winSizes[ winToggleVal ].actualCol );
 }
 
 int SimWin::getColumns( ) { 
@@ -178,17 +185,40 @@ void SimWin::setWinToggleLimit( int limit ) {
     else winToggleLimit = 1;
 }
 
-void SimWin::setWinDefSize( int toggleVal, int row, int col ) {
+void SimWin::setWinLimitsForToggle( int toggleVal, 
+                                    int minRow, 
+                                    int maxRow, 
+                                    int minCol,
+                                    int maxCol ) {
 
     toggleVal = toggleVal % MAX_WIN_TOGGLES;
 
-    winDefSizes[ toggleVal ].row = row;
-    winDefSizes[ toggleVal ].col = col;
+    winSizes[ toggleVal ].minRow = minRow;
+    winSizes[ toggleVal ].maxRow = maxRow;
+    winSizes[ toggleVal ].minCol = minCol;
+    winSizes[ toggleVal ].maxCol = maxCol;
+
+    winSizes[ toggleVal ].actualRow = minRow;
+    winSizes[ toggleVal ].actualCol = minCol;
 }
 
-SimWinSize SimWin::getWinDefSize( int toggleVal ) {
+void SimWin::setWinSizeForToggle( int toggleVal, int row, int col ) {
 
-    return( winDefSizes[ toggleVal % MAX_WIN_TOGGLES ]);
+    toggleVal = toggleVal % MAX_WIN_TOGGLES;
+
+    if ( row < winSizes[ toggleVal ].minRow ) row = winSizes[ toggleVal ].minRow;
+    if ( row > winSizes[ toggleVal ].maxRow ) row = winSizes[ toggleVal ].maxRow;
+
+    if ( col < winSizes[ toggleVal ].minCol ) col = winSizes[ toggleVal ].minCol;
+    if ( col > winSizes[ toggleVal ].maxCol ) col = winSizes[ toggleVal ].maxCol;
+
+    winSizes[ toggleVal ].actualRow = row;
+    winSizes[ toggleVal ].actualCol = col;
+}
+
+SimWinSize SimWin::getWinSize( int toggleVal ) {
+
+    return( winSizes[ toggleVal % MAX_WIN_TOGGLES ]);
 }
 
 int  SimWin::getWinToggleVal( ) { 
@@ -203,19 +233,10 @@ void SimWin::setWinToggleVal( int val ) {
 
 void SimWin::toggleWin( int toggleVal ) { 
 
-    if ( toggleVal == 0 ) {
+    winToggleVal = (winToggleVal + 1) % winToggleLimit;
 
-        winToggleVal++;
-        if ( winToggleVal >= winToggleLimit ) winToggleVal = 0;
-    }
-    else {
-
-        if      ( toggleVal < 0 )               winToggleVal = 0;
-        else if ( toggleVal < winToggleLimit )  winToggleVal = toggleVal;
-    }
-
-    winRows    = winDefSizes[ winToggleVal ].row; 
-    winColumns = winDefSizes[ winToggleVal ].col; 
+    winRows    = winSizes[ winToggleVal ].actualRow; 
+    winColumns = winSizes[ winToggleVal ].actualCol; 
 }
 
 //----------------------------------------------------------------------------------------

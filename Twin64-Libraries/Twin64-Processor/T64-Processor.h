@@ -54,35 +54,6 @@ enum T64CpuType : int {
 };
 
 //----------------------------------------------------------------------------------------
-// TLBs. A translation lookaside buffer is essential. The TLB kind specifies 
-// the kind of TLB, i.e. instruction, data or unified TLB. The TLB type specifies
-// type of TLB. Currently there are fully associative TLBs defined. The TLB  
-// configuration is encoded as follows:
-//
-//  T64_TT_<type>_<sets>S
-//
-// Currently, the processor supports a unified TLB with two small sets of an
-// instruction and data translation buffer on top.
-// 
-//----------------------------------------------------------------------------------------
-enum T64TlbKind : int {
-
-    T64_TK_NIL          = 0,
-    T64_TK_INSTR_TLB    = 1,
-    T64_TK_DATA_TLB     = 2,
-    T64_TK_UNIFIED_TLB  = 3
-};
-
-enum T64TlbType : int {
-
-    T64_TT_NIL          = 0,
-    T64_TT_FA_16S       = 1,
-    T64_TT_FA_32S       = 2,
-    T64_TT_FA_64S       = 3,
-    T64_TT_FA_128S      = 4
-};
-
-//----------------------------------------------------------------------------------------
 // Caches. Caches are sub modules to the processor. We support a cache type of 
 // set associative caches, 2, 4, and 8-way. There is a cache line info with flags
 // and the tag and an array of bytes which holds the cache data. Cache kind 
@@ -117,118 +88,32 @@ enum T64CacheType : int {
 };
 
 //----------------------------------------------------------------------------------------
-// Cache line info consisting of valid, modified and the cache tag.
+// TLBs. A translation lookaside buffer is essential. The TLB kind specifies 
+// the kind of TLB, i.e. instruction, data or unified TLB. The TLB type specifies
+// type of TLB. Currently there are fully associative TLBs defined. The TLB  
+// configuration is encoded as follows:
 //
+//  T64_TT_<type>_<sets>S
+//
+// Currently, the processor supports a unified TLB with two small sets of an
+// instruction and data translation buffer on top.
+// 
 //----------------------------------------------------------------------------------------
-struct T64CacheLineInfo {
+enum T64TlbKind : int {
 
-    bool        valid;
-    bool        modified;
-    uint32_t    tag;
+    T64_TK_NIL          = 0,
+    T64_TK_INSTR_TLB    = 1,
+    T64_TK_DATA_TLB     = 2,
+    T64_TK_UNIFIED_TLB  = 3
 };
 
-//----------------------------------------------------------------------------------------
-// The cache submodule. The CPU can have one or two caches. All access will go 
-// through the cache submodule, even when the request is a non-cached request. 
-// The CPU uses the read, write, flush and purge methods for access. The getting 
-// a cache line method is used by the simulator for displaying cache data. In
-// addition, the cache maintains a set of statistics.
-//
-//----------------------------------------------------------------------------------------
-struct T64Cache {
+enum T64TlbType : int {
 
-    public:
-
-    T64Cache( T64Processor  *proc, 
-              T64CacheKind  cacheType, 
-              T64CacheType  cacheStructure );
-
-    virtual         ~ T64Cache( );
-
-    void                reset( );
-    void                step( );
-
-    void                read( T64Word pAdr, 
-                              uint8_t *data, 
-                              int len, 
-                              bool cached = true );
-
-    void                write( T64Word pAdr, 
-                               uint8_t *data, 
-                               int len, 
-                               bool cached = true );
-
-    void                flush( T64Word pAdr );
-    void                purge( T64Word pAdr );
-
-    bool                getCacheLineByIndex( uint32_t          way,
-                                             uint32_t          set, 
-                                             T64CacheLineInfo  **info,
-                                             uint8_t           **data );
-
-    bool                purgeCacheLineByIndex( uint32_t way, uint32_t set );
-    bool                flushCacheLineByIndex( uint32_t way, uint32_t set );
-
-    int                 getRequestCount( );
-    int                 getHitCount( );
-    int                 getMissCount( );
-    int                 getWays( );
-    int                 getSetSize( );
-    int                 getCacheLineSize( );
-    T64CacheKind        getCacheKind( );
-    T64CacheType        getCacheType( );
-    char                *getCacheTypeString( );
-
-    private: 
-
-    bool                lookupCache( T64Word          pAdr, 
-                                     T64CacheLineInfo **info, 
-                                     uint8_t          **data );
-
-    void                readCacheData( T64Word pAdr, uint8_t *data, int len );
-    void                writeCacheData( T64Word pAdr, uint8_t *data, int len );
-    void                flushCacheLine( T64Word pAdr );
-    void                purgeCacheLine( T64Word pAdr );
-
-    bool                getCacheLineData( uint8_t *line, 
-                                          int     lineOfs,
-                                          int     len,
-                                          uint8_t *data );
-
-    bool                setCacheLineData( uint8_t *line,
-                                          int     lineOfs,
-                                          int     len,
-                                          uint8_t *data ); 
-                                          
-    uint32_t            getTag( T64Word pAdr );                           
-    uint32_t            getSetIndex( T64Word  paAdr );
-    uint32_t            getLineOfs( T64Word  paAdr );
-    T64Word             pAdrFromTag( uint32_t tag, uint32_t index );
-    int                 plruVictim( );
-    void                plruUpdate( );
-
-    private: 
-
-    T64CacheKind        cacheKind       = T64_CK_NIL;
-    T64CacheType        cacheType       = T64_CT_NIL;
-
-    T64CacheLineInfo    *cacheInfo      = nullptr;
-    uint8_t             *cacheData      = nullptr;
-    T64Processor        *proc           = nullptr;
-    T64System           *sys            = nullptr;
-
-    int                 ways            = 0;
-    int                 sets            = 0;
-    int                 lineSize        = 0;
-    int                 offsetBits      = 0;
-    int                 indexBits       = 0;
-    T64Word             offsetBitmask   = 0;
-    T64Word             indexBitmask    = 0;
-    int                 indexShift      = 0;
-    int                 tagShift        = 0;
-    int                 cacheHits       = 0;
-    int                 cacheMiss       = 0;
-    uint8_t             plruState       = 0;
+    T64_TT_NIL          = 0,
+    T64_TT_FA_16S       = 1,
+    T64_TT_FA_32S       = 2,
+    T64_TT_FA_64S       = 3,
+    T64_TT_FA_128S      = 4
 };
 
 //----------------------------------------------------------------------------------------
@@ -243,9 +128,9 @@ struct T64TlbEntry {
     bool            uncached        = false;
     bool            locked          = false;
     bool            modified        = false;
+    T64PageType     pageType        = PT_NONE;
     bool            pLev1           = false;
     bool            pLev2           = false;
-    T64PageType     pageType        = PT_NONE;
     uint32_t        pageSize        = 0;
     T64Word         pageMask        = 0;
     T64Word         vAdr            = 0;
@@ -278,12 +163,16 @@ struct T64Tlb {
     bool            insertTlb( T64Word vAdr, T64Word info );
     bool            purgeTlb( T64Word vAdr );
 
-    int             getTlbSize( ) const;
+    int             getUTlbSize( ) const;
+    int             getITlbSize( ) const;
+    int             getDTlbSize( ) const;
+
     T64TlbEntry     *getUTLBEntry( int index ) const;
     T64TlbEntry     *getITLBEntry( int index ) const;
     T64TlbEntry     *getDTLBEntry( int index ) const;
 
     T64TlbKind      getTlbKind( ) const;  
+    char            *getTlbKindString( ) const;
     T64TlbType      getTlbType( ) const;
     char            *getTlbTypeString( ) const;
 

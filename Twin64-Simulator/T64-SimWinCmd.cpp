@@ -364,9 +364,9 @@ void SimCommandsWin::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 1 );
-    setWinDefSize( 0, 24, 100 );
-    setRows( getWinDefSize( 0 ).row );
-    setColumns( getWinDefSize( 0 ).col );
+    setWinLimitsForToggle( 0, 1, 24, 100, 100 );
+    setRows( getWinSize( 0 ).actualRow );
+    setColumns( getWinSize( 0 ).actualCol );
     setWinToggleVal( 0 );
     setEnable( true );
 }
@@ -2713,13 +2713,6 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                     case CMD_ITLB:          insertTLBCmd( );                break;
                     case CMD_PTLB:          purgeTLBCmd( );                 break;
                     
-                    #if 0
-                    case CMD_PCA_I:  
-                    case CMD_PCA_D:         purgeCacheCmd( );               break;
-
-                    case CMD_FCA_D:         flushCacheCmd( );               break;
-                    #endif
-                        
                     case CMD_WON:           winOnCmd( );                    break;
                     case CMD_WOFF:          winOffCmd( );                   break;
                     case CMD_WDEF:          winDefCmd( );                   break;
@@ -2732,6 +2725,7 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                     case CMD_WS:            winSetStackCmd( );              break;
                     case CMD_WT:            winToggleCmd( );                break;
                     case CMD_WX:            winExchangeCmd( );              break;
+                    case CMD_WL:            winSetRowsCmd( );               break;
                     case CMD_WF:            winForwardCmd( );               break;
                     case CMD_WB:            winBackwardCmd( );              break;
                     case CMD_WH:            winHomeCmd( );                  break;
@@ -2741,8 +2735,7 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                     case CMD_WR:            winSetRadixCmd( );              break;    
                     case CMD_CWL:           winSetCmdWinRowsCmd( );         break;
                     case CMD_CWC:           winClearCmdWinCmd( );           break;
-                    case CMD_WL:            winSetRowsCmd( );               break;
-                        
+                    
                     default:                throw ( ERR_INVALID_CMD );
                 }
             }

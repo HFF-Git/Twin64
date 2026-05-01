@@ -38,6 +38,160 @@
 //----------------------------------------------------------------------------------------
 #include "T64-Processor.h"
 
+
+// ??? taken form the include file "processor.h"...
+
+//----------------------------------------------------------------------------------------
+// Caches. Caches are sub modules to the processor. We support a cache type of 
+// set associative caches, 2, 4, and 8-way. There is a cache line info with flags
+// and the tag and an array of bytes which holds the cache data. Cache kind 
+// specifies the kind of cache, i.e. instruction, data or unified cache. Cache 
+// configuration is encoded as follows:
+//
+//  T64_CT_<ways>W_<sets>S_<words>L
+//
+// Currently, we do not support caches. The simulator will run with a single 
+// cycle memory access. We may change this one day to learn about cache 
+// coherence and so on.
+//
+//----------------------------------------------------------------------------------------
+enum T64CacheKind : int {
+
+    T64_CK_NIL              = 0,
+    T64_CK_INSTR_CACHE      = 1,
+    T64_CK_DATA_CACHE       = 2,
+    T64_CK_UNIFIED_CACHE    = 3,
+};
+
+enum T64CacheType : int {
+
+    T64_CT_NIL              = 0,
+    T64_CT_2W_128S_4L       = 1,
+    T64_CT_4W_128S_4L       = 2,
+    T64_CT_8W_128S_4L       = 3,
+
+    T64_CT_2W_64S_8L        = 4,
+    T64_CT_4W_64S_8L        = 5,
+    T64_CT_8W_64S_8L        = 6
+};
+
+//----------------------------------------------------------------------------------------
+// Cache line info consisting of valid, modified and the cache tag.
+//
+//----------------------------------------------------------------------------------------
+struct T64CacheLineInfo {
+
+    bool        valid;
+    bool        modified;
+    uint32_t    tag;
+};
+
+//----------------------------------------------------------------------------------------
+// The cache submodule. The CPU can have one or two caches. All access will go 
+// through the cache submodule, even when the request is a non-cached request. 
+// The CPU uses the read, write, flush and purge methods for access. The getting 
+// a cache line method is used by the simulator for displaying cache data. In
+// addition, the cache maintains a set of statistics.
+//
+//----------------------------------------------------------------------------------------
+struct T64Cache {
+
+    public:
+
+    T64Cache( T64Processor  *proc, 
+              T64CacheKind  cacheType, 
+              T64CacheType  cacheStructure );
+
+    virtual             ~ T64Cache( );
+
+    void                reset( );
+    void                step( );
+
+    void                read( T64Word pAdr, 
+                              uint8_t *data, 
+                              int len, 
+                              bool cached = true );
+
+    void                write( T64Word pAdr, 
+                               uint8_t *data, 
+                               int len, 
+                               bool cached = true );
+
+    void                flush( T64Word pAdr );
+    void                purge( T64Word pAdr );
+
+    bool                getCacheLineByIndex( uint32_t          way,
+                                             uint32_t          set, 
+                                             T64CacheLineInfo  **info,
+                                             uint8_t           **data );
+
+    bool                purgeCacheLineByIndex( uint32_t way, uint32_t set );
+    bool                flushCacheLineByIndex( uint32_t way, uint32_t set );
+
+    int                 getRequestCount( );
+    int                 getHitCount( );
+    int                 getMissCount( );
+    int                 getWays( );
+    int                 getSetSize( );
+    int                 getCacheLineSize( );
+    T64CacheKind        getCacheKind( );
+    T64CacheType        getCacheType( );
+    char                *getCacheTypeString( );
+
+    private: 
+
+    bool                lookupCache( T64Word          pAdr, 
+                                     T64CacheLineInfo **info, 
+                                     uint8_t          **data );
+
+    void                readCacheData( T64Word pAdr, uint8_t *data, int len );
+    void                writeCacheData( T64Word pAdr, uint8_t *data, int len );
+    void                flushCacheLine( T64Word pAdr );
+    void                purgeCacheLine( T64Word pAdr );
+
+    bool                getCacheLineData( uint8_t *line, 
+                                          int     lineOfs,
+                                          int     len,
+                                          uint8_t *data );
+
+    bool                setCacheLineData( uint8_t *line,
+                                          int     lineOfs,
+                                          int     len,
+                                          uint8_t *data ); 
+                                          
+    uint32_t            getTag( T64Word pAdr );                           
+    uint32_t            getSetIndex( T64Word  paAdr );
+    uint32_t            getLineOfs( T64Word  paAdr );
+    T64Word             pAdrFromTag( uint32_t tag, uint32_t index );
+    int                 plruVictim( );
+    void                plruUpdate( );
+
+    private: 
+
+    T64CacheKind        cacheKind       = T64_CK_NIL;
+    T64CacheType        cacheType       = T64_CT_NIL;
+
+    T64CacheLineInfo    *cacheInfo      = nullptr;
+    uint8_t             *cacheData      = nullptr;
+    T64Processor        *proc           = nullptr;
+    T64System           *sys            = nullptr;
+
+    int                 ways            = 0;
+    int                 sets            = 0;
+    int                 lineSize        = 0;
+    int                 offsetBits      = 0;
+    int                 indexBits       = 0;
+    T64Word             offsetBitmask   = 0;
+    T64Word             indexBitmask    = 0;
+    int                 indexShift      = 0;
+    int                 tagShift        = 0;
+    int                 cacheHits       = 0;
+    int                 cacheMiss       = 0;
+    uint8_t             plruState       = 0;
+};
+
+
+
 //----------------------------------------------------------------------------------------
 //
 // Our processor:               All others:

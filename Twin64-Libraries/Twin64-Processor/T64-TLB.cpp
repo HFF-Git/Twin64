@@ -414,9 +414,19 @@ T64TlbEntry *T64Tlb::getDTLBEntry( int index ) const {
   else                                         return( nullptr );
 }
 
-int T64Tlb::getTlbSize( ) const {
+int T64Tlb::getUTlbSize( ) const {
 
     return ( uTlbEntries );
+}
+
+int T64Tlb::getITlbSize( ) const {
+
+    return ( iTlbEntries );
+}
+
+int T64Tlb::getDTlbSize( ) const {
+
+    return ( dTlbEntries );
 }
 
 T64TlbKind T64Tlb::getTlbKind( ) const{
@@ -427,6 +437,17 @@ T64TlbKind T64Tlb::getTlbKind( ) const{
 T64TlbType T64Tlb::getTlbType( ) const {
 
     return ( tlbType );
+}
+
+char *T64Tlb::getTlbKindString( ) const {
+
+    switch ( tlbKind ) {
+
+        case T64_TK_UNIFIED_TLB:    return ( (char *) "UTLB" );
+        case T64_TK_INSTR_TLB:      return ( (char *) "ITLB" );
+        case T64_TK_DATA_TLB:       return ( (char *) "DTLB " );
+        default:                    return ( (char *) "Unknown TLB Kind" );
+    }
 }
 
 char *T64Tlb::getTlbTypeString( ) const {
@@ -440,3 +461,4 @@ char *T64Tlb::getTlbTypeString( ) const {
         default:                return ( (char *) "Unknown TLB Type" );
     }
 }
+

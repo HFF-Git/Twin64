@@ -785,13 +785,19 @@ struct SimWinOutBuffer : SimFormatter {
 };
 
 //----------------------------------------------------------------------------------------
-// A window area is defined by the number of rows and columns.e
+// A window area is defined by the number of rows and columns. The structure
+// defines a min and maximum value, as well as the current value. 
 // 
 //----------------------------------------------------------------------------------------
 struct SimWinSize {
 
-    int         col = 0;
-    int         row = 0;
+    int minCol = 0;
+    int maxCol = 0;
+    int minRow = 0;
+    int maxRow = 0;
+
+    int actualRow = 0;
+    int actualCol = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -859,8 +865,15 @@ struct SimWin {
     int             getWinToggleVal( );
     void            setWinToggleVal( int val );
 
-    SimWinSize      getWinDefSize( int toggleVal );
-    void            setWinDefSize( int toggleVal, int row, int col );
+    SimWinSize      getWinSize( int toggleVal );
+    
+    void            setWinLimitsForToggle( int toggleVal, 
+                                           int minRow, 
+                                           int maxRow,
+                                           int minCol,
+                                           int maxCol );
+
+    void            setWinSizeForToggle( int toggleVal, int row, int col );
 
     void            initWinToggleSizes( );
     
@@ -914,7 +927,7 @@ struct SimWin {
     int             winIndex            = 0;
     int             winModNum           = -1;
     char            winName[ MAX_WIN_NAME];
-    SimWinSize      winDefSizes[ MAX_WIN_TOGGLES ];
+    SimWinSize      winSizes[ MAX_WIN_TOGGLES ];
     
     bool            winEnabled          = false;
     int             winRadix            = 16;
@@ -1064,6 +1077,7 @@ struct SimWinTlb : SimWinScrollable {
     void setDefaults( );
     void drawBanner( );
     void drawLine( T64Word index );
+    void drawTlbEntry( T64TlbEntry *ePtr );
 
     private:
 

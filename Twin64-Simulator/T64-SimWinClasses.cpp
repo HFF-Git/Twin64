@@ -38,32 +38,6 @@
 namespace {
 
 //----------------------------------------------------------------------------------------
-// Default row and column values for the window types.
-// 
-//----------------------------------------------------------------------------------------
-const int DEF_WIN_COL_ABS_MEM   = 112;
-const int DEF_WIN_ROW_ABS_MEM   = 4;
-
-const int DEF_WIN_COL_CODE_MEM  = 80;
-const int DEF_WIN_ROW_CODE_MEM  = 8;
-
-const int DEF_WIN_COL_CPU_STATE = 96;
-const int DEF_WIN_ROW_CPU_STATE = 5;
-
-const int DEF_WIN_COL_TLB       = 88;
-const int DEF_WIN_ROW_TLB       = 4;
-
-#if 0
-const int DEF_WIN_COL_CACHE     = 112;
-const int DEF_WIN_ROW_CACHE     = 4;
-#endif
-
-const int DEF_WIN_ROW_TEXT      = 10;
-
-const int DEF_WIN_COL_CONSOLE   = 112;
-const int DEF_WIN_ROW_CONSOLE   = 24;
-
-//----------------------------------------------------------------------------------------
 // Routine for creating the page type string.
 //
 //----------------------------------------------------------------------------------------
@@ -173,13 +147,12 @@ void SimWinCpuState::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 3 );
-    setWinDefSize( 0, DEF_WIN_ROW_CPU_STATE ,DEF_WIN_COL_CPU_STATE );
-    setWinDefSize( 1, DEF_WIN_ROW_CPU_STATE + 1, DEF_WIN_COL_CPU_STATE );
-    setWinDefSize( 2, DEF_WIN_ROW_CPU_STATE, DEF_WIN_COL_CPU_STATE );
-    setRows( getWinDefSize( 0 ).row );
-    setColumns( getWinDefSize( 0 ).col );
-    setWinToggleLimit( 3 );
     setWinToggleVal( 0 );
+    setWinLimitsForToggle( 0, 5, 5, 96, 96 );
+    setWinLimitsForToggle( 1, 6, 6, 96, 96 );
+    setWinLimitsForToggle( 2, 5, 5, 96, 96 );
+    setRows( getWinSize( 0 ).actualRow );
+    setColumns( getWinSize( 0 ).actualCol );
     setEnable( true );
 }
 
@@ -221,7 +194,7 @@ void SimWinCpuState::drawBanner( ) {
     padLine( fmtDesc );
     printRadixField( fmtDesc | FMT_LAST_FIELD );
 
-    setRows( getWinDefSize( getWinToggleVal( )).row );
+    setRows( getWinSize( getWinToggleVal( )).actualRow );
 }
 
 //----------------------------------------------------------------------------------------
@@ -387,12 +360,12 @@ void SimWinAbsMem::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 4 );
-    setWinDefSize( 0, DEF_WIN_ROW_ABS_MEM, DEF_WIN_COL_ABS_MEM );
-    setWinDefSize( 1, DEF_WIN_ROW_ABS_MEM, DEF_WIN_COL_ABS_MEM );
-    setWinDefSize( 2, DEF_WIN_ROW_ABS_MEM, DEF_WIN_COL_ABS_MEM );
-    setWinDefSize( 3, DEF_WIN_ROW_ABS_MEM, DEF_WIN_COL_ABS_MEM );
-    setRows( getWinDefSize( 0 ).row );
-    setColumns( getWinDefSize( 0 ).col );
+    setWinLimitsForToggle( 0, 4, MAX_WIN_ROW_SIZE, 112, 112 );
+    setWinLimitsForToggle( 1, 4, MAX_WIN_ROW_SIZE, 112, 112 );
+    setWinLimitsForToggle( 2, 4, MAX_WIN_ROW_SIZE, 112, 112 );
+    setWinLimitsForToggle( 3, 4, MAX_WIN_ROW_SIZE, 112, 112 );
+    setRows( getWinSize( 0 ).actualRow );
+    setColumns( getWinSize( 0 ).actualCol );
     setHomeItemAdr( adr );
     setCurrentItemAdr( adr );
     setLineIncrementItemAdr( 8 * 4 );
@@ -413,7 +386,8 @@ void SimWinAbsMem::drawBanner( ) {
     if ( getWinToggleVal( ) == 2 )  setRadix( 10 ); 
     else                            setRadix( 16 ); 
 
-    T64Memory *mem = (T64Memory *) glb -> system -> lookupByAdr( getCurrentItemAdr( ));
+    T64Memory *mem = (T64Memory *) 
+            glb -> system -> lookupByAdr( getCurrentItemAdr( ));
 
     setWinCursor( 1, 1 );
     printWindowIdField( fmtDesc );
@@ -425,20 +399,20 @@ void SimWinAbsMem::drawBanner( ) {
        printTextField((char *) " ( ", fmtDesc );
        printTextField( mem -> getMemTypeString( ), fmtDesc );
        printTextField((char *) " ) ", fmtDesc );
-
     }
 
     printTextField((char *) "  Home: " );
     printNumericField( getHomeItemAdr( ), fmtDesc | FMT_HEX_2_4_4 );
     padLine( fmtDesc );
+
+    // ??? if toggleVal is ascii should say ascii...
+
     printRadixField( fmtDesc | FMT_LAST_FIELD );
 
     if ( ! isAlignedDataAdr( getCurrentItemAdr( ), 8 )) {
         
         setCurrentItemAdr( rounddown( getCurrentItemAdr( ), 8 ));
     }   
-
-    // ??? correlate toggle val with radix....
 }
 
 //----------------------------------------------------------------------------------------
@@ -459,7 +433,8 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
     uint32_t    fmtDesc     = FMT_DEF_ATTR;
     uint32_t    limit       = getLineIncrementItemAdr( ) - 1; // ??? why - 1?
 
-    T64Memory   *mem = (T64Memory *) glb -> system -> lookupByAdr( getCurrentItemAdr( ));
+    T64Memory   *mem = (T64Memory *) 
+                            glb -> system -> lookupByAdr( getCurrentItemAdr( ));
     if ( mem == nullptr ) {
 
         printTextField((char *) "Invalid address" );
@@ -481,7 +456,6 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
 
             copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
             printNumericField( val, fmtDesc | FMT_HEX_4_4 );
-
             printTextField((char *) "   " );
         }
     }
@@ -496,7 +470,6 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
                                         sizeof( val ));
 
             copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
-
             printNumericField( val, fmtDesc | FMT_HEX_4_4_4_4 );
             printTextField((char *) "   " );
         }
@@ -512,7 +485,6 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
                                         sizeof( val ));
 
             copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
-
             printNumericField( val, fmtDesc | FMT_DEC_32 );
             printTextField((char *) "   " );
         }
@@ -528,7 +500,6 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
                                         sizeof( val ));
 
             copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
-            
             printNumericField( val, fmtDesc | FMT_ASCII_4 );
             printTextField((char *) "   " );
         }
@@ -573,9 +544,9 @@ void SimWinCode::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 1 );
-    setWinDefSize( 0, DEF_WIN_ROW_CODE_MEM, DEF_WIN_COL_CODE_MEM );
-    setRows( getWinDefSize( 0 ).row );
-    setColumns( getWinDefSize( 0 ).col );
+    setWinLimitsForToggle( 0, 8, MAX_WIN_ROW_SIZE, 80, 80 );
+    setRows( getWinSize( 0 ).actualRow );
+    setColumns( getWinSize( 0 ).actualCol );
     setHomeItemAdr( adr );
     setCurrentItemAdr( adr );
     setLineIncrementItemAdr( 4 );
@@ -699,10 +670,11 @@ SimWinTlb::SimWinTlb( SimGlobals *glb,
 }
 
 //----------------------------------------------------------------------------------------
-// We have a function to set reasonable default values for the window. The default 
-// values are the initial settings when windows is brought up the first time, or for 
-// the WDEF command. The TLB window is a window where the number of lines to display 
-// can be set. However, the minimum is the default number of lines.
+// We have a function to set reasonable default values for the window. These  
+// values are the initial settings when windows is brought up the first time, 
+// or for the WDEF command. The TLB window is a window where the number of 
+// lines to display can be set. However, the minimum is the default number of
+// lines.
 //
 //----------------------------------------------------------------------------------------
 void SimWinTlb::setDefaults( ) {
@@ -710,31 +682,42 @@ void SimWinTlb::setDefaults( ) {
     setWinType( WT_TLB_WIN );
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
-    setWinToggleLimit( 1 );
-    setWinDefSize( 0, DEF_WIN_ROW_TLB, DEF_WIN_COL_TLB );
-    setRows( getWinDefSize( 0 ).row );
-    setColumns( getWinDefSize( 0 ).col );
+    setWinToggleLimit( 3 );
+    setWinLimitsForToggle( 0, 8, MAX_WIN_ROW_SIZE, 88, 88 );
+    setWinLimitsForToggle( 1, 
+                           tlb -> getITlbSize( ) + 1, 
+                           tlb -> getITlbSize( ) + 1, 
+                           88, 
+                           88 );
+
+    setWinLimitsForToggle( 2, 
+                           tlb -> getDTlbSize( ) + 1, 
+                           tlb -> getDTlbSize( ) + 1, 
+                           88, 
+                           88 );
+    
+    setRows( getWinSize( 0 ).actualRow );
+    setColumns( getWinSize( 0 ).actualCol );
+
     setCurrentItemAdr( 0 );
     setLineIncrementItemAdr( 1 );
-    setLimitItemAdr( tlb -> getTlbSize( ));
+    setLimitItemAdr( tlb -> getUTlbSize( ));
     setWinToggleVal( 0 );
     setEnable( true );
 }
 
 //----------------------------------------------------------------------------------------
 // Each window consist of a banner and a body. The banner line is always shown in 
-// inverse and contains summary or head data for the window. We also need to set 
-// the item address limit. As this can change with some commands outside the windows
-// system, better set it every time.
-//
-// Format:
-//
-//  <windId> Proc: n Tlb: n Set: n Current: 0x0000.  <rdx>
+// inverse and contains summary or head data for the window. In addition we show
+// the TLB type, which is derived from the module type. The toggle value will 
+// decide on which TLB type we are showing the entries, the UTLB, the ITLB or 
+// the DTLB.
 // 
 //----------------------------------------------------------------------------------------
 void SimWinTlb::drawBanner( ) {
     
-    uint32_t fmtDesc = FMT_BOLD | FMT_INVERSE;
+    uint32_t fmtDesc   = FMT_BOLD | FMT_INVERSE;
+    int      toggleVal = getWinToggleVal( ); 
    
     setWinCursor( 1, 1 );
     printWindowIdField( fmtDesc );
@@ -742,34 +725,38 @@ void SimWinTlb::drawBanner( ) {
     printNumericField( getWinModNum( ), ( fmtDesc | FMT_DEC ));
     printTextField((char *) " ( ", fmtDesc );
     printTextField((char *) tlb -> getTlbTypeString( ), fmtDesc );
-    printTextField((char *) " ) ", fmtDesc );
+    printTextField((char *) ":", fmtDesc );
+    printTextField((char *) tlb -> getTlbKindString( ), fmtDesc );
+    printTextField((char *) " ):", fmtDesc );
+
+    if      ( toggleVal == 0 ) printTextField((char *) "UTLB", fmtDesc );
+    else if ( toggleVal == 1 ) printTextField((char *) "ITLB", fmtDesc );
+    else if ( toggleVal == 2 ) printTextField((char *) "DTLB", fmtDesc );
+    else                       printTextField((char *) "????", fmtDesc );
+
     padLine( fmtDesc );
     printRadixField( fmtDesc | FMT_LAST_FIELD );
+
+    if      ( toggleVal == 0 ) setLimitItemAdr( tlb -> getUTlbSize( ));
+    else if ( toggleVal == 1 ) setLimitItemAdr( tlb -> getITlbSize( ));
+    else if ( toggleVal == 2 ) setLimitItemAdr( tlb -> getDTlbSize( ));
 }
 
 //----------------------------------------------------------------------------------------
-// Each window consist of a banner and a body. The body lines are displayed after
-// the banner line. The number of lines can vary. A line represents an entry in 
-// the respective TLB.
+// The body of the TLB window shows the TLB entries. We are passed a pointer
+// to the TLB entry, which we need to decode and print.
 //
-// Format:
-//
-//  (0x0000) [xxxx][xx] : va: 0x00_0000_0000_0000 pa: 0x00_0000_0000 Pid: 0x0000_0000
 //----------------------------------------------------------------------------------------
-void SimWinTlb::drawLine( T64Word index ) {
+void SimWinTlb::drawTlbEntry( T64TlbEntry *ePtr ) {
 
     uint32_t  fmtDesc = FMT_DEF_ATTR;
 
-    T64TlbEntry *ePtr = tlb -> getUTLBEntry( index );
-
-    printTextField((char *) "(", fmtDesc );
-    printNumericField( index, fmtDesc | FMT_HEX_4 );
-    printTextField((char *) "): [", fmtDesc );
+    printTextField((char *) "[", fmtDesc );
     printTextField(( ePtr -> valid ) ? (char *) "V" : (char *) "v" );
     printTextField(( ePtr -> modified ) ? (char *) "M" : (char *) "m" );
     printTextField(( ePtr -> locked ) ? (char *) "L" : (char *) "l" );
     printTextField(( ePtr -> uncached ) ? (char *) "U" : (char *) "u" );
-    printTextField((char *) "] [", fmtDesc );
+    printTextField((char *) "  ", fmtDesc );
     printTextField((char *) pageTypeStr( ePtr -> pageType ));
     printTextField((char *) ":", fmtDesc );
     printTextField(( ePtr -> pLev1 ) ? (char *) "P" : (char *) "p" );
@@ -784,15 +771,42 @@ void SimWinTlb::drawLine( T64Word index ) {
     printNumericField( ePtr -> pageSize, fmtDesc | FMT_HEX_8 );
 }
 
+//----------------------------------------------------------------------------------------
+// Each window consist of a banner and a body. The body lines are displayed after
+// the banner line. The number of lines can vary. A line represents an entry in 
+// the respective TLB. We have three TLBs, the UTLB, the ITLB and the DTLB. The
+// toggle value will decide on which TLB entries to display.
+//
+//----------------------------------------------------------------------------------------
+void SimWinTlb::drawLine( T64Word index ) {
+
+    uint32_t    fmtDesc     = FMT_DEF_ATTR;
+    int         toggleVal   = getWinToggleVal( ); 
+    T64TlbEntry *ePtr       = nullptr;
+
+    if      ( toggleVal == 0 ) ePtr = tlb -> getUTLBEntry( index );
+    else if ( toggleVal == 1 ) ePtr = tlb -> getITLBEntry( index );
+    else if ( toggleVal == 2 ) ePtr = tlb -> getDTLBEntry( index );
+
+    printTextField((char *) "(", fmtDesc );
+    printNumericField( index, fmtDesc | FMT_HEX_4 );
+    printTextField((char *) "): ", fmtDesc );
+
+    if ( ePtr != nullptr ) drawTlbEntry( ePtr );
+    else printTextField((char *) "Invalid TLB entry index", fmtDesc );
+
+    padLine( fmtDesc );
+}
+
 //****************************************************************************************
 //****************************************************************************************
 //
 // Methods for the text window class.
 //
 //----------------------------------------------------------------------------------------
-// Object constructor. We are passed the globals and the file path. All we do right
-// now is to remember the file name. The text window has a destructor method as 
-// well. We need to close a potentially opened file.
+// Object constructor. We are passed the globals and the file path. All we do 
+// right now is to remember the file name. The text window has a destructor 
+// method as well. We need to close a potentially opened file.
 //
 //----------------------------------------------------------------------------------------
 SimWinText::SimWinText( SimGlobals *glb, char *fName ) : SimWinScrollable( glb ) {
@@ -821,9 +835,9 @@ void SimWinText::setDefaults( ) {
     setWinType( WT_TEXT_WIN );
     
     setWinToggleLimit( 1 );
-    setWinDefSize( 0, DEF_WIN_ROW_TEXT, txWidth );
-    setRows( getWinDefSize( 0 ).row );
-    setColumns( getWinDefSize( 0 ).col );
+    setWinLimitsForToggle( 0, 10, MAX_WIN_ROW_SIZE, txWidth, txWidth );
+    setRows( getWinSize( 0 ).actualRow );
+    setColumns( getWinSize( 0 ).actualCol );
     setRadix( 10 );
     setCurrentItemAdr( 0 );
     setLineIncrementItemAdr( 1 );
@@ -981,9 +995,9 @@ void SimWinConsole::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 1 );
-    setWinDefSize( 0, DEF_WIN_ROW_CONSOLE, DEF_WIN_COL_CONSOLE );
-    setRows( getWinDefSize( 0 ).row );
-    setColumns( getWinDefSize( 0 ).col );
+    setWinLimitsForToggle( 0, 24, MAX_WIN_ROW_SIZE, 112, 112 );
+    setRows( getWinSize( 0 ).actualRow );
+    setColumns( getWinSize( 0 ).actualCol );
     setWinToggleVal( 0 );
     setEnable( true );
 }
