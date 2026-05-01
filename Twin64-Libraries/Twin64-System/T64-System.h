@@ -96,10 +96,13 @@ struct T64Module {
                T64Word          spaAdr,
                int              spaLen  );
 
+    virtual         ~T64Module() = default;
+
     virtual void    reset( ) = 0;
     virtual void    step( ) = 0;
 
-    // ??? each module needs to implement a handler to a bus event.
+    virtual void    start( ) = 0;
+    virtual void    stop( ) = 0;
 
     virtual bool    busOpReadEvent( int     srcModNum,
                                     T64Word pAdr, 

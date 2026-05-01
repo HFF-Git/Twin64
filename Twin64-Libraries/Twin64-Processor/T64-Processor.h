@@ -27,6 +27,8 @@
 #include "T64-Common.h"
 #include "T64-Util.h"
 #include "T64-System.h"
+#include <thread>
+#include <atomic>
 
 //----------------------------------------------------------------------------------------
 // Forwards.
@@ -42,15 +44,6 @@ struct T64Processor;
 enum T64Options : uint32_t {
 
     T64_PO_NIL = 0
-};
-
-//----------------------------------------------------------------------------------------
-// CPU. The execution unit. We could support several types. So far, we do not.
-//
-//----------------------------------------------------------------------------------------
-enum T64CpuType : int {
-
-    T64_CPU_T_NIL = 0
 };
 
 //----------------------------------------------------------------------------------------
@@ -205,6 +198,15 @@ struct T64Tlb {
 };
 
 //----------------------------------------------------------------------------------------
+// CPU. The execution unit. We could support several types. So far, we do not.
+//
+//----------------------------------------------------------------------------------------
+enum T64CpuType : int {
+
+    T64_CPU_T_NIL = 0
+};
+
+//----------------------------------------------------------------------------------------
 // The CPU is the execution unit of the processor. It provides access to the 
 // registers and executes an instruction.
 //
@@ -329,6 +331,20 @@ struct T64Cpu {
 };
 
 //----------------------------------------------------------------------------------------
+// Processor states.
+//
+//----------------------------------------------------------------------------------------
+enum T64ProcState : int {
+
+    T64_PROC_STATE_NIL          = 0,
+    T64_PROC_STATE_RESET        = 1,
+    T64_PROC_STATE_RUNNING      = 2,
+    T64_PROC_STATE_SINGLE_STEP  = 3, 
+    T64_PROC_STATE_HALTED       = 4,
+    T64_PROC_STATE_TERMINATE    = 5    
+};
+
+//----------------------------------------------------------------------------------------
 // The CPU core executes the instructions. A processor module contains the CPU 
 // core, TLBs and caches. The processor module connects to the system bus for 
 // memory and IO access. The unit is a single step, i.e. one instruction. A call
@@ -363,9 +379,17 @@ struct T64Processor : T64Module {
     
     virtual        ~ T64Processor( );
     
-    void            reset( );
-     void           run( );
-    void            step( );
+    void            reset( ); // goes away ?
+    
+    void            start( );
+    void            stop( );
+
+    void            run( );  // goes away...
+    void            step( ); // goes away...
+
+    void            processorThread( );
+
+    void            signal( T64ProcState newState );    
 
     bool            busOpRead( T64Word adr, 
                               uint8_t *data, 
@@ -392,11 +416,15 @@ private:
 
     friend struct   T64Cpu;
 
-    T64System       *sys                = nullptr;
-    T64Cpu          *cpu                = nullptr;
-    T64Tlb          *tlb                = nullptr;
+    T64System       *sys                    = nullptr;
+    T64Cpu          *cpu                    = nullptr;
+    T64Tlb          *tlb                    = nullptr;
   
-    int             modNum              = 0;
-    T64Word         instructionCount    = 0;
-    T64Word         cycleCount          = 0;
+    int             modNum                  = 0;
+    T64Word         instructionCount        = 0;
+ 
+    std::atomic<T64ProcState>   procState { T64_PROC_STATE_NIL };
+    std::mutex                  procLock;
+    std::condition_variable     procCondVar;
+    std::thread                 worker;
 };

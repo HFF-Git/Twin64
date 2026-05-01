@@ -109,23 +109,24 @@ T64Processor:: ~T64Processor( ) {
 
     delete cpu;
     delete tlb;
-   // delete iCache;
-   // delete dCache;
+
+     stop( );
 }
 
 //----------------------------------------------------------------------------------------
-// Reset the processor and its submodules.
+// Reset the processor and its submodules. 
 //
+// ???? rather remove it ? We have the start method, which should reset all
+// internal state. After that a 
 //----------------------------------------------------------------------------------------
 void T64Processor::reset( ) {
 
     this -> cpu -> reset( );
     this -> tlb -> reset( );
- //   this -> iCache -> reset( );
- //   this -> dCache -> reset( );
 
+    this -> procState = T64_PROC_STATE_HALTED;
+ 
     instructionCount    = 0;
-    cycleCount          = 0;
 }
 
 //----------------------------------------------------------------------------------------
@@ -140,6 +141,130 @@ T64Cpu *T64Processor::getCpuPtr( ) {
 T64Tlb *T64Processor::getTlbPtr( ) {
 
     return ( tlb );
+}
+
+//----------------------------------------------------------------------------------------
+// Start and stop the processor thread. The processor thread is responsible for 
+// executing instructions. The processor thread is signaled by the simulator 
+// console thread what to do next. The stop method signals the processor thread
+// to terminate and waits for it to finish.
+//
+//----------------------------------------------------------------------------------------
+void T64Processor::start( ) {
+
+    worker = std::thread( &T64Processor::processorThread, this );
+}
+
+void T64Processor::stop( ) {
+
+    procState.store( T64_PROC_STATE_TERMINATE, std::memory_order_release );
+    procCondVar.notify_one( );
+
+    if ( worker.joinable( )) worker.join();
+}
+
+//----------------------------------------------------------------------------------------
+// A process thread is signaled what to do next. The simulator console thread
+// uses this method to signal to the processor tread what to do next. 
+//
+//----------------------------------------------------------------------------------------
+void T64Processor::signal( T64ProcState newState ) {
+
+    procState.store( newState, std::memory_order_release );
+    procCondVar.notify_one( );
+}
+
+//----------------------------------------------------------------------------------------
+// The processor thread. The processor thread is responsible for executing T64
+// instructions. There is a state variable that is used to signal the processor
+// thread what to do next.
+//
+// Mental model:
+//
+//      procState           -> control register
+//      signal( )           -> writing to control register
+//      cv.notify_one( )    -> raising a wake-up signal
+//      wait( )             -> CPU entering low-power halt
+//
+//
+// ??? we start by resetting the processor, and then we wait for the next signal.
+// The processor thread is responsible for executing instructions, but it is also
+// responsible for handling signals and managing its state.
+//
+//----------------------------------------------------------------------------------------
+void T64Processor::processorThread( ) {
+
+    procState.store( T64_PROC_STATE_RESET, std::memory_order_release );
+
+    while ( true ) {
+        
+        T64ProcState s = procState.load( std::memory_order_acquire );
+
+        switch ( s ) {
+
+            case T64_PROC_STATE_RUNNING: {
+
+                while ( procState.load(std::memory_order_acquire) == 
+                                                T64_PROC_STATE_RUNNING ) {
+
+                    try {
+
+                        // ??? becomes "executeInstruction ?"
+                        cpu -> step( );
+                    }
+                     catch (const T64Trap& t) {
+
+                        // handle traps
+                    }
+                }
+
+            } break;
+
+            case T64_PROC_STATE_SINGLE_STEP: {
+
+                try {
+        
+                    cpu -> step( );
+                }
+    
+                catch ( const T64Trap t ) {
+        
+                }
+
+                procState.store( T64_PROC_STATE_HALTED, 
+                    std::memory_order_release);
+
+            } break;
+
+            case T64_PROC_STATE_HALTED: {
+
+                std::unique_lock<std::mutex> lk( procLock );
+                procCondVar.wait( lk, [ this ]{ 
+
+                    return ( procState.load( 
+                        std::memory_order_acquire ) != T64_PROC_STATE_HALTED ); 
+                });
+
+            } break;
+
+            case T64_PROC_STATE_RESET: {
+
+                cpu -> reset( );
+                tlb -> reset( );
+
+                procState.store( T64_PROC_STATE_HALTED, 
+                                 std::memory_order_release);
+
+            } break;
+
+            case T64_PROC_STATE_TERMINATE: {
+
+                return;
+            }
+
+            default: ;
+        }
+    }
 }
 
 //----------------------------------------------------------------------------------------

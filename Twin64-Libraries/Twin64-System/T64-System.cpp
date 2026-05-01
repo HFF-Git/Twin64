@@ -139,9 +139,9 @@ int T64System::getSystemState( ) {
 
 //----------------------------------------------------------------------------------------
 // Add a module. There are two tables. The first table just contains the modules.
-// The index is the module number. The second table contains on the modules which
-// have an SPA address. The entries this table are sorted by the SPA address 
-//range, which also cannot overlap. We look for the insertion position,
+// The index is the module number. The second table contains only the modules 
+// that have an SPA address. The entries this table are sorted by the SPA address 
+// range, which also cannot overlap. We look for the insertion position,
 // shift all entries up after this position and insert the new entry. A nice
 // side effect of the sorted address range, is that memory comes first and 
 // the lookup will be quick. It is by far the most used lookup.
@@ -185,13 +185,15 @@ int T64System::addToModuleMap( T64Module *module ) {
 
 //----------------------------------------------------------------------------------------
 // Remove a module from the module map. The map remains sorted by SPA address.
-// We find the module, shift all entries after it down, and decrement HWM.
+// We find the module, shift all entries after it down, and decrement HWM. The
+// module is stopped and deleted.
 //
 // Returns 0 on success, -1 if not found.
+//
 //----------------------------------------------------------------------------------------
 int T64System::removeFromModuleMap( T64Module *module ) {
 
-    T64Module *mPtr = nullptr;
+    T64Module   *mPtr = nullptr;
     int         pos = -1;
 
     for ( int i = 0; i < systemMemMapHwm; ++i ) {
@@ -214,6 +216,9 @@ int T64System::removeFromModuleMap( T64Module *module ) {
     }
 
     systemMemMapHwm--;
+
+    module -> stop( );
+    delete module;
 
     return ( 0 );
 }

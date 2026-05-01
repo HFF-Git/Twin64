@@ -71,6 +71,9 @@ public:
     
     void        reset( );
     void        step( );
+
+    void        start( );
+    void        stop( );
    
     bool        busOpReadEvent( int     reqModNum,
                                 T64Word pAdr, 

@@ -869,6 +869,9 @@ int SimCommandsWin::buildCmdPrompt( char *promptStr, int promptStrLen ) {
 //
 //  NM proc, num, TLB=xxx, ...
 //
+// Processors are threads, so we need to start them after creating them. The 
+// "start" method will create a thread for the processor and start it. 
+//
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addProcModule( ) {
 
@@ -937,6 +940,8 @@ void SimCommandsWin::addProcModule( ) {
         delete p;
         throw( SimErrMsgId( ERR_CREATE_PROC_MODULE ));
     }    
+
+    p -> start( );
 }
 
 //----------------------------------------------------------------------------------------
@@ -944,6 +949,8 @@ void SimCommandsWin::addProcModule( ) {
 // the token being the module type keyword. The routine loops over the key/value
 // pairs to get all module type info. Omitted key/value pairs are set to reasonable
 // defaults.
+//
+// Memory modules are shared memory object, not threads.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addMemModule( ) {
@@ -1661,6 +1668,10 @@ void SimCommandsWin::runCmd( ) {
 // window.
 // 
 // ??? need to pass the step to the module, not the system...
+//
+// ??? with threads, we need to send a signal....!!!!!
+// ??? and would we step all threads, or just the module ?
+// ??? and how would we do stepping n steps ?
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::stepCmd( ) {

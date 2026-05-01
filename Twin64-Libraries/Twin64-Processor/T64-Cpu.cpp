@@ -1670,6 +1670,10 @@ void T64Cpu::step( ) {
 
         // ??? we are here because we trapped at the instruction read or
         // instruction execution.
+
+        // ??? just throw it again for now.
+
+        throw( t );
         
     }
 }
