@@ -1572,16 +1572,18 @@ void T64Cpu::instrSysTrapOp( T64Instr instr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Execute an instruction. This is the key routine of the simulator. Essentially
-// a big case statement. Each instruction is encoded based on the instruction 
-// group and the opcode family. 
+// Execute an instruction at instruction address location. This is the key 
+// routine of the simulator. Essentially a big case statement. Each instruction
+// is encoded based on the instruction group and the opcode family. 
 //
 // When traps happen, the control registers are set with the trap information 
 // and execution continuous at the IVA address slot for the respective trap.
 //
 //----------------------------------------------------------------------------------------
-void T64Cpu::instrExecute( uint32_t instr ) {
-    
+void T64Cpu::executeInstr( ) {
+
+    uint32_t instr = instrRead( extractField64( psrReg, 0, 52 ));
+
     try {
         
         switch ( extractInstrOpCode( instr ) ) {
@@ -1639,41 +1641,5 @@ void T64Cpu::instrExecute( uint32_t instr ) {
 
         T64Word ivaAdr  = cRegFile[ CTL_REG_IVA ];
         psrReg          = ivaAdr + ( code * 32 );
-    }
-}
-
-//----------------------------------------------------------------------------------------
-// An external interrupt event is checked between instructions.
-//
-//----------------------------------------------------------------------------------------
-void T64Cpu::handleExtInterrupts( ) {
-
-    // ??? where do we get the external interrupts from ?
-
-}
-
-//----------------------------------------------------------------------------------------
-// The step routine is the entry point to the CPU for executing one or more 
-// instructions.
-//
-//----------------------------------------------------------------------------------------
-void T64Cpu::step( ) {
-    
-    try {
-        
-            instrReg = instrRead( extractField64( psrReg, 0, 52 ));
-            instrExecute( instrReg );
-            handleExtInterrupts( );  
-    }
-    
-    catch ( const T64Trap t ) {
-
-        // ??? we are here because we trapped at the instruction read or
-        // instruction execution.
-
-        // ??? just throw it again for now.
-
-        throw( t );
-        
     }
 }

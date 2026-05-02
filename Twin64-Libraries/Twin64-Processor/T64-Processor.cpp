@@ -98,7 +98,7 @@ T64Processor::T64Processor( T64System           *sys,
   //  iCache  = new T64Cache( this, T64_CK_INSTR_CACHE, iCacheType );
   //  dCache  = new T64Cache( this, T64_CK_DATA_CACHE, dCacheType );
 
-    this -> reset( );
+    this -> resetModule( );
 }
 
 //----------------------------------------------------------------------------------------
@@ -110,7 +110,7 @@ T64Processor:: ~T64Processor( ) {
     delete cpu;
     delete tlb;
 
-     stop( );
+     stopModule( );
 }
 
 //----------------------------------------------------------------------------------------
@@ -119,7 +119,7 @@ T64Processor:: ~T64Processor( ) {
 // ???? rather remove it ? We have the start method, which should reset all
 // internal state. After that a 
 //----------------------------------------------------------------------------------------
-void T64Processor::reset( ) {
+void T64Processor::resetModule( ) {
 
     this -> cpu -> reset( );
     this -> tlb -> reset( );
@@ -150,12 +150,17 @@ T64Tlb *T64Processor::getTlbPtr( ) {
 // to terminate and waits for it to finish.
 //
 //----------------------------------------------------------------------------------------
-void T64Processor::start( ) {
+void T64Processor::startModule( ) {
 
     worker = std::thread( &T64Processor::processorThread, this );
+
+    threadId = static_cast<uint32_t>(
+
+        std::hash<std::thread::id>{}(worker.get_id( ))
+    );
 }
 
-void T64Processor::stop( ) {
+void T64Processor::stopModule( ) {
 
     procState.store( T64_PROC_STATE_TERMINATE, std::memory_order_release );
     procCondVar.notify_one( );
@@ -209,8 +214,7 @@ void T64Processor::processorThread( ) {
 
                     try {
 
-                        // ??? becomes "executeInstruction ?"
-                        cpu -> step( );
+                        cpu -> executeInstr( );
                     }
                      catch (const T64Trap& t) {
 
@@ -224,7 +228,7 @@ void T64Processor::processorThread( ) {
 
                 try {
         
-                    cpu -> step( );
+                    cpu -> executeInstr( );
                 }
     
                 catch ( const T64Trap t ) {
@@ -316,36 +320,3 @@ bool T64Processor::busOpWriteEvent( int     reqModNum,
         
     return( true );
 }   
-
-//----------------------------------------------------------------------------------------
-// The step routine is the entry point to the processor for executing one or 
-// more instructions.
-//
-//----------------------------------------------------------------------------------------
-void T64Processor::run( ) {
-
-    try {
-
-        while ( true ) step( );
-    }
-    catch ( const T64Trap t ) {
-        
-    }
-}
-
-//----------------------------------------------------------------------------------------
-// The step routine is the entry point to the processor for executing one or 
-// more instructions.
-//
-//----------------------------------------------------------------------------------------
-void T64Processor::step( ) {
-
-    try {
-        
-        cpu -> step( );
-    }
-    
-    catch ( const T64Trap t ) {
-        
-    }
-}

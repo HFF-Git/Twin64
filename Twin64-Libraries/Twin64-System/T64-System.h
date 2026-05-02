@@ -30,6 +30,7 @@
 
 #include "T64-Common.h"
 #include "T64-Util.h"
+#include <thread>
 
 // ??? on a step, all processor modules advance.
 // ??? after that each module is give a change to do processing. I.e. check for
@@ -98,11 +99,9 @@ struct T64Module {
 
     virtual         ~T64Module() = default;
 
-    virtual void    reset( ) = 0;
-    virtual void    step( ) = 0;
-
-    virtual void    start( ) = 0;
-    virtual void    stop( ) = 0;
+    virtual void    resetModule( ) = 0;
+    virtual void    startModule( ) = 0;
+    virtual void    stopModule( )  = 0;
 
     virtual bool    busOpReadEvent( int     srcModNum,
                                     T64Word pAdr, 
@@ -117,6 +116,7 @@ struct T64Module {
     T64ModuleType   getModuleType( );
     int             getModuleNum( );
     const char      *getModuleTypeName( );
+    uint32_t        getThreadId( );
     T64Word         getHpaAdr( );
     int             getHpaLen( );
     T64Word         getSpaAdr( );
@@ -131,6 +131,7 @@ struct T64Module {
     T64Word         spaAdr      = 0;
     int             spaLen      = 0;
     T64Word         spaLimit    = 0;
+    uint32_t        threadId    = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -157,8 +158,8 @@ struct T64System {
 
     int                 getSystemState( );
 
-    int                 addToModuleMap( T64Module *module );
-    int                 removeFromModuleMap( T64Module *module );
+    int                 addModule( T64Module *module );
+    int                 removeModule( T64Module *module );
     
     T64ModuleType       getModuleType( int modNum ) const;
     T64Module           *lookupByModNum( int modNum ) const;

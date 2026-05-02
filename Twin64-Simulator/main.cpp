@@ -79,7 +79,7 @@ int main( int argc, char * argv[] ) {
                         64 * T64_PAGE_SIZE_BYTES,
                         64 * T64_PAGE_SIZE_BYTES );
 
-    if ( glb -> system -> addToModuleMap( pdc ) != 0 ) {
+    if ( glb -> system -> addModule( pdc ) != 0 ) {
 
         glb -> console -> writeChars( "Config Error: Module PDC\n" );
         return( -1 );
@@ -87,19 +87,19 @@ int main( int argc, char * argv[] ) {
 
     pdc -> setSpaReadOnly( true );
     
-    if ( glb -> system -> addToModuleMap( mem1 ) != 0 ) {
+    if ( glb -> system -> addModule( mem1 ) != 0 ) {
 
         glb -> console -> writeChars( "Config Error: Module MEM 1\n" );
         return( -1 );
     }
     
-    if ( glb -> system -> addToModuleMap( mem2 ) != 0 ) {
+    if ( glb -> system -> addModule( mem2 ) != 0 ) {
 
         glb -> console -> writeChars( "Config Error: Module MEM 2\n" );
         return( -1 );
     }
 
-    if ( glb -> system -> addToModuleMap( proc ) != 0 ) {
+    if ( glb -> system -> addModule( proc ) != 0 ) {
 
         glb -> console -> writeChars( "Config Error: Module PROC\n" );
         return( -1 );

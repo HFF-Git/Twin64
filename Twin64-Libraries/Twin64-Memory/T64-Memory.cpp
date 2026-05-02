@@ -58,7 +58,7 @@ T64Memory::T64Memory( T64System     *sys,
     this -> memData = nullptr;
     this -> memLock = false;
 
-    reset( );
+    resetModule( );
 }
 
 //----------------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ T64Memory:: ~T64Memory( ) {
 // way is to free the old memory and create a new one.
 //
 //----------------------------------------------------------------------------------------
-void T64Memory::reset( ) {
+void T64Memory::resetModule( ) {
 
     if ( memData != nullptr ) free( memData );
     this -> memData  = (uint8_t *) calloc( spaLen, sizeof( uint8_t ));
@@ -85,14 +85,8 @@ void T64Memory::reset( ) {
 //
 //
 //----------------------------------------------------------------------------------------
-void T64Memory::start( ) { }
-void T64Memory::stop( ) { }
-
-//----------------------------------------------------------------------------------------
-// Each module has a step function. Ours does nothing.
-// 
-//----------------------------------------------------------------------------------------
-void T64Memory::step( ) { }
+void T64Memory::startModule( ) { }
+void T64Memory::stopModule( ) { }
 
 //----------------------------------------------------------------------------------------
 // Read a data from memory. The address the physical address and we compute the

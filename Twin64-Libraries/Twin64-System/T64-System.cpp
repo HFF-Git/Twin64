@@ -151,7 +151,7 @@ int T64System::getSystemState( ) {
 // already used.
 //
 //----------------------------------------------------------------------------------------
-int T64System::addToModuleMap( T64Module *module ) {
+int T64System::addModule( T64Module *module ) {
 
     if (( module -> getModuleNum( ) > MAX_MOD_MAP_ENTRIES )) return ( -1 );
     if ( systemMemMapHwm >= MAX_MOD_MAP_ENTRIES ) return ( -2 );
@@ -184,40 +184,40 @@ int T64System::addToModuleMap( T64Module *module ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Remove a module from the module map. The map remains sorted by SPA address.
-// We find the module, shift all entries after it down, and decrement HWM. The
-// module is stopped and deleted.
+// Remove a module from the module map and system module map. The system map 
+// remains sorted by SPA address. We find the module, shift all entries after it
+// down, and decrement HWM. The module pointer is simply removed from the 
+// module map. Finally, the module is stopped and deleted.
 //
 // Returns 0 on success, -1 if not found.
 //
 //----------------------------------------------------------------------------------------
-int T64System::removeFromModuleMap( T64Module *module ) {
+int T64System::removeModule( T64Module *module ) {
 
-    T64Module   *mPtr = nullptr;
-    int         pos = -1;
+    int pos = -1;
 
-    for ( int i = 0; i < systemMemMapHwm; ++i ) {
+    for ( int i = 0; i < systemMemMapHwm; i++ ) {
 
         if ( systemMemMap[ i ] == module ) {
 
             pos  = i;
-            mPtr = systemMemMap[ i ];
             break;  
         }
     }
 
-    moduleMap[ mPtr -> getModuleNum( ) ] = nullptr;
+    if ( pos >= 0 ) {
 
-    if ( pos < 0 ) return ( -1 );
-    
-    for ( int i = pos; i < systemMemMapHwm - 1; ++i ) {
+        for ( int i = pos; i < systemMemMapHwm - 1; ++i ) {
 
-        systemMemMap[ i ] = systemMemMap    [ i + 1 ];
+            systemMemMap[ i ] = systemMemMap    [ i + 1 ];
+        }
+
+        systemMemMapHwm--;
     }
+    
+    moduleMap[ module -> getModuleNum( ) ] = nullptr;
 
-    systemMemMapHwm--;
-
-    module -> stop( );
+    module -> stopModule( );
     delete module;
 
     return ( 0 );
@@ -281,7 +281,7 @@ void T64System::reset( ) {
 
     for ( int i = 0; i < systemMemMapHwm; i++ ) {
 
-        if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> reset( ); 
+        if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> resetModule( ); 
     }
 }
 
@@ -299,9 +299,11 @@ void T64System::run( ) {
 // Step the system. We step all modules, or just the one specified by the module
 // number. The module number is -1 for all modules.
 //
+// ??? this will change with threads...
 //----------------------------------------------------------------------------------------
 void T64System::step( int steps, int modNum ) {
 
+    #if 0
     if ( modNum != -1 ) {
 
         T64Module *mPtr = lookupByModNum( modNum );
@@ -313,6 +315,7 @@ void T64System::step( int steps, int modNum ) {
 
         if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> step( ); 
     }
+    #endif
 }
 
 //----------------------------------------------------------------------------------------
@@ -400,6 +403,11 @@ const char *T64Module::getModuleTypeName( ) {
         case MT_NIL:
         default:            return ((char *) "NIL" );
     }
+}
+
+uint32_t T64Module::getThreadId( ) {
+
+    return ( threadId );
 }
 
 T64Word T64Module::getHpaAdr( ) {

@@ -69,11 +69,9 @@ public:
 
     virtual     ~ T64Memory( );
     
-    void        reset( );
-    void        step( );
-
-    void        start( );
-    void        stop( );
+    void        resetModule( );
+    void        startModule( );
+    void        stopModule( );
    
     bool        busOpReadEvent( int     reqModNum,
                                 T64Word pAdr, 

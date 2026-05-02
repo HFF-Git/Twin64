@@ -867,10 +867,10 @@ int SimCommandsWin::buildCmdPrompt( char *promptStr, int promptStrLen ) {
 // pairs to get all module type info. Omitted key/value pairs are set to reasonable
 // defaults.
 //
-//  NM proc, num, TLB=xxx, ...
+//  NM proc, MOD=xxx, TLB=xxx, ...
 //
 // Processors are threads, so we need to start them after creating them. The 
-// "start" method will create a thread for the processor and start it. 
+// "startModule" method will create a thread for the processor and start it. 
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addProcModule( ) {
@@ -935,13 +935,13 @@ void SimCommandsWin::addProcModule( ) {
                                         0,
                                         0 );
                     
-    if ( glb -> system -> addToModuleMap( p ) != 0 ) {
+    if ( glb -> system -> addModule( p ) != 0 ) {
 
         delete p;
         throw( SimErrMsgId( ERR_CREATE_PROC_MODULE ));
     }    
 
-    p -> start( );
+    p -> startModule( );
 }
 
 //----------------------------------------------------------------------------------------
@@ -951,6 +951,8 @@ void SimCommandsWin::addProcModule( ) {
 // defaults.
 //
 // Memory modules are shared memory object, not threads.
+//
+//  NM mem, MOD=xxx, MEM=xxx, SPA_ADR=xxx, SPA_LEN=xxx, ...
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addMemModule( ) {
@@ -1042,7 +1044,7 @@ void SimCommandsWin::addMemModule( ) {
                                   spaAdr,
                                   spaLen );
 
-    if ( glb -> system -> addToModuleMap( m ) != 0 ) {
+    if ( glb -> system -> addModule( m ) != 0 ) {
 
         delete m;
         throw( SimErrMsgId( ERR_CREATE_MEM_MODULE )); 
@@ -1494,7 +1496,7 @@ void SimCommandsWin::removeModuleCmd( ) {
 
     glb -> winDisplay -> windowKillByModNum( modNum );
     glb -> winDisplay -> setWinReFormat( );
-    glb -> system -> removeFromModuleMap( m );
+    glb -> system -> removeModule( m );
 }
 
 //----------------------------------------------------------------------------------------
@@ -1503,6 +1505,7 @@ void SimCommandsWin::removeModuleCmd( ) {
 //
 //  DM [ <mNum> ]
 //
+// ??? do formatting columns a little bit more elegant.
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::displayModuleCmd( ) {
 
@@ -1528,10 +1531,8 @@ void SimCommandsWin::displayModuleCmd( ) {
 
             if (( modNum != -1 ) && ( modNum != i )) continue;
 
-            winOut -> writeChars( "%02d   ", i  );
-
+            winOut -> writeChars( "%02d   %-7s", i  );
             winOut -> writeChars( "%-7s", mPtr -> getModuleTypeName( ));
-
             winOut -> printNumber( mPtr -> getHpaAdr( ), 
                                    FMT_PREFIX_0X | FMT_HEX_2_4_4 );
             winOut -> writeChars( "  " );
@@ -1545,6 +1546,12 @@ void SimCommandsWin::displayModuleCmd( ) {
                 winOut -> printNumber( mPtr -> getSpaLen( ), FMT_HEX_4_4 );
                 winOut -> writeChars( "  " );
             }
+            else {
+
+                winOut -> writeChars( "                           " );
+            }
+
+            winOut -> writeChars( "ThreadId: %d", mPtr -> getThreadId( ));
             
             winOut -> writeChars( "\n" );
         }

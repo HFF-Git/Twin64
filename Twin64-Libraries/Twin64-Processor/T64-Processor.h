@@ -220,7 +220,7 @@ struct T64Cpu {
     virtual         ~ T64Cpu( );
 
     void            reset( );
-    void            step( );
+    void            executeInstr( );
 
     T64Word         getGeneralReg( int index );
     void            setGeneralReg( int index, T64Word val );
@@ -379,13 +379,9 @@ struct T64Processor : T64Module {
     
     virtual        ~ T64Processor( );
     
-    void            reset( ); // goes away ?
-    
-    void            start( );
-    void            stop( );
-
-    void            run( );  // goes away...
-    void            step( ); // goes away...
+    void            resetModule( );
+    void            startModule( );
+    void            stopModule( );
 
     void            processorThread( );
 
