@@ -1477,7 +1477,7 @@ void SimCommandsWin::addModuleCmd( ) {
 // windows associated are removed, then the object itself is removed from the 
 // module map. The garbage collector does the (sad) rest.
 //
-//  RM <mNum>
+//  RM <mNum> | ALL
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::removeModuleCmd( ) {
@@ -1488,15 +1488,37 @@ void SimCommandsWin::removeModuleCmd( ) {
 
         modNum = eval -> acceptNumExpr( ERR_EXPECTED_WIN_ID, 1, MAX_MODULES );    
     }
+    else if ( tok -> isToken( TOK_ALL )) {
+
+        tok -> nextToken( );
+        modNum = -1;
+    }
+    else throw( ERR_INVALID_ARG );
 
     tok -> checkEOS( );
 
-    T64Module *m = glb -> system -> lookupByModNum( modNum );
-    if ( m == nullptr ) throw((SimErrMsgId) 9999 );
+    if ( modNum == -1 ) {
 
-    glb -> winDisplay -> windowKillByModNum( modNum );
-    glb -> winDisplay -> setWinReFormat( );
-    glb -> system -> removeModule( m );
+        for ( int i = 0; i < MAX_MODULES; i++ ) {
+
+            T64Module *m = glb -> system -> lookupByModNum( i );
+            if ( m != nullptr ) {
+
+                glb -> winDisplay -> windowKillByModNum( i );
+                glb -> winDisplay -> setWinReFormat( );
+                glb -> system -> removeModule( m );
+            }
+        }
+    }
+    else {  
+
+        T64Module *m = glb -> system -> lookupByModNum( modNum );
+        if ( m == nullptr ) throw((SimErrMsgId) ERR_INVALID_MOD_NUM );
+
+        glb -> winDisplay -> windowKillByModNum( modNum );
+        glb -> winDisplay -> setWinReFormat( );
+        glb -> system -> removeModule( m );
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -1531,7 +1553,7 @@ void SimCommandsWin::displayModuleCmd( ) {
 
             if (( modNum != -1 ) && ( modNum != i )) continue;
 
-            winOut -> writeChars( "%02d   %-7s", i  );
+            winOut -> writeChars( "%02d   ", i  );
             winOut -> writeChars( "%-7s", mPtr -> getModuleTypeName( ));
             winOut -> printNumber( mPtr -> getHpaAdr( ), 
                                    FMT_PREFIX_0X | FMT_HEX_2_4_4 );
@@ -1551,7 +1573,10 @@ void SimCommandsWin::displayModuleCmd( ) {
                 winOut -> writeChars( "                           " );
             }
 
-            winOut -> writeChars( "ThreadId: %d", mPtr -> getThreadId( ));
+            if ( mPtr -> getThreadId( ) != 0 ) {
+
+                winOut -> writeChars( "ThreadId: %d", mPtr -> getThreadId( ));
+            }
             
             winOut -> writeChars( "\n" );
         }
@@ -1663,8 +1688,8 @@ void SimCommandsWin::runCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Step command. The command will advance all processors by one instruction. Default
-// is step number is one instruction.
+// Step command. The command will advance all processors by one instruction. 
+// Default is step number is one instruction for the current processor.
 //
 //  S [ <steps> [ "," <modNum> ]]
 //
@@ -1673,12 +1698,6 @@ void SimCommandsWin::runCmd( ) {
 // window. Put the console mode into non-blocking and hand over to the CPU. On 
 // return from the CPU steps, enable blocking mode again and restore the current 
 // window.
-// 
-// ??? need to pass the step to the module, not the system...
-//
-// ??? with threads, we need to send a signal....!!!!!
-// ??? and would we step all threads, or just the module ?
-// ??? and how would we do stepping n steps ?
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::stepCmd( ) {

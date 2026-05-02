@@ -410,14 +410,17 @@ struct T64Processor : T64Module {
    
 private:
 
-    friend struct   T64Cpu;
+    bool            handleHPARead( T64Word pAdr, uint8_t *data, int len );
+    bool            handleHPAWrite( T64Word pAdr, uint8_t *data, int len );
 
-    T64System       *sys                    = nullptr;
-    T64Cpu          *cpu                    = nullptr;
-    T64Tlb          *tlb                    = nullptr;
+    friend struct               T64Cpu;
+
+    T64System                   *sys                    = nullptr;
+    T64Cpu                      *cpu                    = nullptr;
+    T64Tlb                      *tlb                    = nullptr;
   
-    int             modNum                  = 0;
-    T64Word         instructionCount        = 0;
+    int                         modNum                  = 0;
+    T64Word                     instructionCount        = 0;
  
     std::atomic<T64ProcState>   procState { T64_PROC_STATE_NIL };
     std::mutex                  procLock;

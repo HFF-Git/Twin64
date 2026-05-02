@@ -281,7 +281,7 @@ void T64Cpu::nextInstr( ) {
 // the control register with the size encoded ? This value is changed when 
 // memory is detected during reset.
 //
-// ??? compute the upperPhysMemAdr from the control reg field ?
+// ??? compute the upper physical MemAdr from the control reg field ?
 //----------------------------------------------------------------------------------------
 bool T64Cpu::isPhysMemAdr( T64Word vAdr ) {
 

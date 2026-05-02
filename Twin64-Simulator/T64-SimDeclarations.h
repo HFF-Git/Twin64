@@ -285,8 +285,9 @@ enum SimErrMsgId : int {
     ERR_INVALID_FMT_OPT             = 23,
 
     ERR_INVALID_MODULE_TYPE         = 24,
+    ERR_INVALID_MOD_NUM             = 25,
    
-    ERR_INVALID_NUM                 = 25,
+    ERR_INVALID_NUM                 = 26,
     
     // -----   
     

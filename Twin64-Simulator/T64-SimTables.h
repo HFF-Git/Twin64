@@ -310,6 +310,9 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
     { .errNum = ERR_INVALID_MODULE_TYPE,           
       .errStr = (char *) "Invalid module type" },
 
+    { .errNum = ERR_INVALID_MOD_NUM,           
+      .errStr = (char *) "Invalid module number" },
+
     { .errNum = ERR_EXPECTED_INSTR_VAL,         
       .errStr = (char *) "Expected the instruction value" },
 
@@ -612,8 +615,8 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
      {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_RM,
         .cmdNameStr     = (char *) "rm",
-        .cmdSyntaxStr   = (char *) "rm <mNum>",
-        .helpStr        = (char *) "removes a module from the system"
+        .cmdSyntaxStr   = (char *) "rm <mNum> | ALL",
+        .helpStr        = (char *) "removes modules from the system"
     },
 
     {

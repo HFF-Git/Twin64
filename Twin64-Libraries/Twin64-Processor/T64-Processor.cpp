@@ -207,6 +207,16 @@ void T64Processor::processorThread( ) {
 
         switch ( s ) {
 
+            case T64_PROC_STATE_RESET: {
+
+                cpu -> reset( );
+                tlb -> reset( );
+
+                procState.store( T64_PROC_STATE_HALTED, 
+                                 std::memory_order_release);
+
+            } break;
+
             case T64_PROC_STATE_RUNNING: {
 
                 while ( procState.load(std::memory_order_acquire) == 
@@ -216,9 +226,8 @@ void T64Processor::processorThread( ) {
 
                         cpu -> executeInstr( );
                     }
-                     catch (const T64Trap& t) {
+                    catch (const T64Trap& t) {
 
-                        // handle traps
                     }
                 }
 
@@ -251,24 +260,32 @@ void T64Processor::processorThread( ) {
 
             } break;
 
-            case T64_PROC_STATE_RESET: {
-
-                cpu -> reset( );
-                tlb -> reset( );
-
-                procState.store( T64_PROC_STATE_HALTED, 
-                                 std::memory_order_release);
-
-            } break;
-
-            case T64_PROC_STATE_TERMINATE: {
+            case T64_PROC_STATE_TERMINATE: 
+            default: {
 
                 return;
             }
-
-            default: ;
         }
     }
+}
+
+//----------------------------------------------------------------------------------------
+// We have a read request for the processor HPA address range. 
+//
+//
+//----------------------------------------------------------------------------------------
+bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
+
+
+}
+
+//----------------------------------------------------------------------------------------
+// We have a write request for the processor HPA address range.
+//
+//
+//----------------------------------------------------------------------------------------
+bool T64Processor::handleHPAWrite( T64Word pAdr, uint8_t *data, int len ) {
+
 }
 
 //----------------------------------------------------------------------------------------
@@ -299,10 +316,9 @@ bool T64Processor::busOpReadEvent( int     reqModNum,
     T64Processor *proc = (T64Processor *) sys -> lookupByAdr( pAdr );
     if ( proc == this ) {
 
-        // ??? we are responsible...
+        return( handleHPARead( pAdr, data, len ));
     }
-
-    return( true );
+    else return( false );
 }
 
 bool T64Processor::busOpWriteEvent( int     reqModNum,
@@ -315,8 +331,8 @@ bool T64Processor::busOpWriteEvent( int     reqModNum,
     T64Processor *proc = (T64Processor *) sys -> lookupByAdr( pAdr );
     if ( proc == this ) {
 
-        // ??? we are responsible...
+        return( handleHPAWrite( pAdr, data, len ));
     }
-        
-    return( true );
+    else  return( false );
 }   
+    
