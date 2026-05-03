@@ -235,14 +235,14 @@ T64Module *T64System::lookupByModNum( int modNum ) const {
 
 //----------------------------------------------------------------------------------------
 // Find the module entry that covers the address. Since we have only a small
-// number of module, we do a simple linear search. We check whether the address
-// is in the SPA or HPA address range. We return the first match, which is ok 
-// since the address ranges cannot overlap. We search the SPA range first, since
-// this is the main access path. Since physical represents the lower SPA address
-// range, a lookup of a memory address will be rather quick, which is key for
-// efficient physical memory access.
+// number of module, we do a simple linear search of the system map. We check 
+// whether the address is in the SPA or HPA address range. We return the first
+// match, which is ok since the address ranges cannot overlap. 
 //
-// ??? well, we run through the module, which are not sorted by SPA...
+// We search the SPA range first, since this is the main access path. Since 
+// physical represents the lower SPA address range, a lookup of a memory address
+// will be rather quick, which is key for efficient physical memory access.
+//
 //----------------------------------------------------------------------------------------
 T64Module *T64System::lookupByAdr ( T64Word adr ) const {
 
@@ -265,7 +265,6 @@ T64Module *T64System::lookupByAdr ( T64Word adr ) const {
 //----------------------------------------------------------------------------------------
 // Get the module type.
 //
-// ??? where used... rather encode where used ?
 //----------------------------------------------------------------------------------------
 T64ModuleType T64System::getModuleType( int modNum ) const {
 
@@ -274,14 +273,56 @@ T64ModuleType T64System::getModuleType( int modNum ) const {
 }
 
 //----------------------------------------------------------------------------------------
-// Reset the system. We just invoke the module handler for each registered module.
+// Reset modules. We just invoke the module handler for the registered module.
+// A module number of -1 will reset all modules.
 //
 //----------------------------------------------------------------------------------------
-void T64System::reset( ) {
+bool T64System::resetModule( int modNum ) {
 
-    for ( int i = 0; i < systemMemMapHwm; i++ ) {
+    if ( modNum == -1 ) {
 
-        if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> resetModule( ); 
+        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+            if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> resetModule( ); 
+        }
+
+        return( true );
+    }
+    else {
+
+        if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+
+            moduleMap[ modNum ] -> resetModule( );
+            return( true );
+        }
+        else return ( false );
+    }
+}
+
+//----------------------------------------------------------------------------------------
+// Halt modules. We just invoke the module handler for the registered module.
+// A module number of -1 will reset all modules.
+//
+//----------------------------------------------------------------------------------------
+bool T64System::haltModule( int modNum ) {
+
+    if ( modNum == -1 ) {
+
+        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+            if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> resetModule( ); 
+        }
+
+        return( true );
+    }
+    else {
+
+        if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+
+            moduleMap[ modNum ] -> resetModule( );
+            return( true );
+        }
+        else return ( false );
     }
 }
 
@@ -292,30 +333,44 @@ void T64System::reset( ) {
 //----------------------------------------------------------------------------------------
 void T64System::run( ) {
 
-    while ( true ) step( 1, -1 );
+    // ??? signal all processors 
 }
 
 //----------------------------------------------------------------------------------------
 // Step the system. We step all modules, or just the one specified by the module
 // number. The module number is -1 for all modules.
 //
-// ??? this will change with threads...
 //----------------------------------------------------------------------------------------
-void T64System::step( int steps, int modNum ) {
+bool T64System::stepModule( int steps, int modNum ) {
 
-    #if 0
-    if ( modNum != -1 ) {
-
-        T64Module *mPtr = lookupByModNum( modNum );
-        if ( mPtr != nullptr ) mPtr -> step( ); 
-    }
-    else
+    if ( modNum == -1 ) {
 
         for ( int i = 0; i < systemMemMapHwm; i++ ) {
 
-        if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> step( ); 
+            if ( moduleMap[ i ] != nullptr ) {
+
+                // set module state if a steppable module...
+
+                return ( true );
+            }    
+        }
+
+        return ( true );
     }
-    #endif
+    else {
+
+        if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+
+            if ( moduleMap[ modNum ] != nullptr ) {
+
+                // set module state if a steppable module...
+
+                return ( true );
+            } 
+        }
+        
+        return ( false );
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -352,6 +407,21 @@ bool T64System::busOpWrite( int reqModNum,
     if ( mPtr == nullptr ) return ( false );
 
     return ( mPtr -> busOpWriteEvent( reqModNum, pAdr, data, len ));
+}
+
+//----------------------------------------------------------------------------------------
+// Bus broadcast operation. We need to provide a way to signal global events
+// such as a TLB entry purge to all modules. 
+//
+// ??? under construction...
+//----------------------------------------------------------------------------------------
+bool T64System::busOpBroadcast( int reqModNum,
+                                int id,
+                                T64Word arg1, 
+                                T64Word arg2 ) {
+
+                    
+    return( true );
 }
 
 //****************************************************************************************

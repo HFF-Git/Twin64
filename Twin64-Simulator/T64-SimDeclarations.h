@@ -191,16 +191,16 @@ enum SimTokId : uint16_t {
     //------------------------------------------------------------------------------------
     TOK_IDENT,                  TOK_NUM,                    TOK_STR,
     TOK_DEF,                    TOK_ALL,                    TOK_DEC,
-    TOK_HEX,                    TOK_MEM,                    TOK_CODE,
-    TOK_STATS,                  TOK_TEXT,                   TOK_SYS,
-    TOK_PROC,                   TOK_CPU,                    TOK_IO,
-    TOK_TLB,                                    
+    TOK_HEX,                    TOK_ASCII,                  TOK_MEM,                    
+    TOK_CODE,                   TOK_STATS,                  TOK_TEXT,                   
+    TOK_SYS,                    TOK_PROC,                   TOK_CPU,                    
+    TOK_IO,                     TOK_TLB,                                    
     
     TOK_TLB_FA_16S,             TOK_TLB_FA_32S,             TOK_TLB_FA_64S,             
     TOK_TLB_FA_128S,
     
-    TOK_MEM_READ_ONLY,          TOK_MEM_READ_WRITE,         TOK_MOD_SPA_ADR,
-    TOK_MOD_SPA_LEN,
+    TOK_MEM_READ_ONLY,          TOK_MEM_READ_WRITE,         
+    TOK_MOD_SPA_ADR,            TOK_MOD_SPA_LEN,
 
     //------------------------------------------------------------------------------------
     // Line Commands.
@@ -211,9 +211,9 @@ enum SimTokId : uint16_t {
     CMD_ENV,                    CMD_XF,                     CMD_LF,
     CMD_WRITE_LINE,             CMD_DM,                     CMD_DW,
     CMD_NM,                     CMD_RM,                     CMD_RESET,
-    CMD_RUN,                    CMD_STEP,                   CMD_MR,
-    CMD_DA,                     CMD_MA,                     CMD_ITLB,
-    CMD_PTLB,                
+    CMD_RUN,                    CMD_STEP,                   CMD_HALT,
+    CMD_MR,                     CMD_DA,                     CMD_MA,                     
+    CMD_ITLB,                   CMD_PTLB,                
 
     //------------------------------------------------------------------------------------
     // Window Commands Tokens.
@@ -313,6 +313,7 @@ enum SimErrMsgId : int {
     ERR_EXPECTED_INSTR_VAL          = 117,
     ERR_EXPECTED_INSTR_OPT          = 218,
     ERR_EXPECTED_MOD_NUM            = 219,
+    ERR_EXPCTED_PROC_MODULE         = 220,
 
     ERR_INVALID_ELF_FILE            = 250,
     ERR_ELF_INVALID_ADR_RANGE       = 251,
@@ -361,8 +362,17 @@ enum SimErrMsgId : int {
     
     ERR_MEM_OP_FAILED               = 700,
 
-    ERR_CREATE_PROC_MODULE          = 701,
-    ERR_CREATE_MEM_MODULE           = 702
+    ERR_RESET_MODULE                = 701,
+    ERR_HALT_MODULE                 = 702,
+    ERR_STEP_MODULE                 = 703,
+
+    ERR_MODULE_TABLE_FULL           = 704,
+    ERR_MODULE_RANGE_OVERLAP        = 705,
+    ERR_MODULE_ALREADY_USED         = 706,
+    ERR_CREATE_MODULE               = 707,
+
+    ERR_CREATE_PROC_MODULE          = 708,
+    ERR_CREATE_MEM_MODULE           = 709
     
 };
 
@@ -1209,6 +1219,7 @@ private:
     void            resetCmd( );
     void            runCmd( );
     void            stepCmd( );
+    void            haltCmd( );
    
     void            modifyRegCmd( );
     

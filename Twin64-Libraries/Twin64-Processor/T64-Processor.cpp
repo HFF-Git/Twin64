@@ -276,7 +276,7 @@ void T64Processor::processorThread( ) {
 //----------------------------------------------------------------------------------------
 bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
 
-
+    return ( false );
 }
 
 //----------------------------------------------------------------------------------------
@@ -286,6 +286,7 @@ bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
 //----------------------------------------------------------------------------------------
 bool T64Processor::handleHPAWrite( T64Word pAdr, uint8_t *data, int len ) {
 
+    return ( false );
 }
 
 //----------------------------------------------------------------------------------------

@@ -39,9 +39,10 @@
 namespace {
 
 //----------------------------------------------------------------------------------------
-// We think outside in window numbers starting at one. Internally, there is an array
-// of windows starting at zero. When parsing a command, we map right there. A valid
-// window number from 1 to MAX is mapped, all other numbers are mapped to -1.
+// We think outside in window numbers starting at one. Internally, there is an 
+// array of windows starting at zero. When parsing a command, we map right there.
+// A valid window number from 1 to MAX is mapped, all other numbers are mapped 
+// to -1.
 // 
 //----------------------------------------------------------------------------------------
 int internalWinNum( int num ) {
@@ -81,7 +82,6 @@ bool isLeftBracketChar( int ch ) {
 
 //----------------------------------------------------------------------------------------
 // Trim trailing blanks from a string. 
-//
 //
 //----------------------------------------------------------------------------------------
 void rtrim( char *s ) {
@@ -895,7 +895,7 @@ void SimCommandsWin::addProcModule( ) {
                     modNum = eval -> acceptNumExpr( ERR_INVALID_ARG, 
                                                     0, MAX_MODULES );
                 }
-                else throw( ERR_INVALID_ARG );
+                else throw( ERR_INVALID_MOD_NUM );
 
             } break;
 
@@ -934,14 +934,42 @@ void SimCommandsWin::addProcModule( ) {
                                         cacheType,
                                         0,
                                         0 );
-                    
-    if ( glb -> system -> addModule( p ) != 0 ) {
 
-        delete p;
-        throw( SimErrMsgId( ERR_CREATE_PROC_MODULE ));
-    }    
+    int rStat = glb -> system -> addModule( p );
 
-    p -> startModule( );
+    switch ( rStat ) {
+
+        case 0: {
+
+             p -> startModule( );
+             return;
+        }
+
+        case -1: 
+        case -2: {
+
+            delete p;
+            throw( SimErrMsgId( ERR_MODULE_TABLE_FULL ));
+        }
+
+        case -3: {
+
+            delete p;
+            throw( SimErrMsgId( ERR_MODULE_RANGE_OVERLAP ));
+        }
+
+        case -4: {
+
+            delete p;
+            throw( SimErrMsgId( ERR_MODULE_ALREADY_USED ));
+        }
+
+        default: {
+
+            delete p;
+            throw( SimErrMsgId( ERR_CREATE_MODULE ));
+        }
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -1056,6 +1084,8 @@ void SimCommandsWin::addMemModule( ) {
 // token being the module type keyword. The routine loops over the key/value pairs
 // to get all module type info. Omitted key/value pairs are set to reasonable
 // defaults.
+//
+//  NM mem, MOD=xxx, SPA_ADR=xxx, SPA_LEN=xxx, ...
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addIoModule( ) {
@@ -1477,7 +1507,7 @@ void SimCommandsWin::addModuleCmd( ) {
 // windows associated are removed, then the object itself is removed from the 
 // module map. The garbage collector does the (sad) rest.
 //
-//  RM <mNum> | ALL
+//  RM <modNum> | ALL
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::removeModuleCmd( ) {
@@ -1647,32 +1677,34 @@ void SimCommandsWin::displayWindowCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Reset command.
+// Reset command. This command resets a module or the entire system.
 //
-//  RESET [ ( 'SYS' | 'STATS' ) ]
+//  RESET <modNum> | ALL
 //
-// ??? rethink what we want ... reset the SYSTEM ? all CPUs ?
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::resetCmd( ) {
-    
-    if ( tok -> isToken( TOK_EOS )) {
-        
-        glb -> system -> reset( );
-    }
-    else if ( tok -> isToken( TOK_SYS )) {
 
-        throw( ERR_NOT_SUPPORTED );
+    int modNum     = -1;
+    
+    if ( tok -> tokTyp( ) == TYP_NUM ) {
+
+        modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MOD_MAP_ENTRIES );
     }
-    else if ( tok -> isToken( TOK_STATS )) {
-     
-        throw( ERR_NOT_SUPPORTED );
+    else if ( tok -> isToken( TOK_ALL )) {
+
+        tok -> nextToken( );
+        modNum = -1;
     }
     else throw ( ERR_INVALID_ARG );
+    
+    tok -> checkEOS( );
+
+    if ( ! glb -> system -> resetModule( modNum )) 
+        throw ( ERR_RESET_MODULE );
 }
 
 //----------------------------------------------------------------------------------------
-// Run command. The command will just run the CPU until a "halt" instruction is 
-// detected.
+// Run command. The command will just run the system until a halt is detected.
 //
 //  RUN
 //
@@ -1681,6 +1713,7 @@ void SimCommandsWin::resetCmd( ) {
 // window. Put the console mode into non-blocking and hand over to the CPU. On 
 // return from the CPU steps, enable blocking mode again and restore the current 
 // window.
+//
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::runCmd( ) {
     
@@ -1688,11 +1721,48 @@ void SimCommandsWin::runCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Step command. The command will advance all processors by one instruction. 
-// Default is step number is one instruction for the current processor.
+// Halt command. The command will halt a module or the system. Note that only
+// modules which are threads, i.e. a processor or an I/O module can be halted.
+// For all other modules, this command is ignored.
+//
+//  HALT <modNum> | ALL
+//
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::haltCmd( ) {
+
+    int modNum = -1;
+    
+    if ( tok -> tokTyp( ) == TYP_NUM ) {
+
+        modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 
+                                        0, 
+                                        MAX_MOD_MAP_ENTRIES );
+
+        if ( glb -> system -> getModuleType( modNum ) != MT_PROC ) 
+            throw( ERR_EXPCTED_PROC_MODULE );
+    }
+    else if ( tok -> isToken( TOK_ALL )) {
+
+        tok -> nextToken( );
+        modNum = -1;
+    }
+    else throw ( ERR_INVALID_ARG );
+    
+    tok -> checkEOS( );
+
+    if ( ! glb -> system -> haltModule( modNum )) 
+        throw ( ERR_HALT_MODULE );
+}
+
+//----------------------------------------------------------------------------------------
+// Step command. The command will advance a module by one or more steps. A
+// step is an instruction. If the module number is omitted, we refer to the 
+// current processor window module number. Omitting all parameters advances
+// the current processor by one instruction. 
 //
 //  S [ <steps> [ "," <modNum> ]]
 //
+// 
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 
 // window. Put the console mode into non-blocking and hand over to the CPU. On 
@@ -1713,11 +1783,24 @@ void SimCommandsWin::stepCmd( ) {
         
             tok -> nextToken( );
             modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MODULES - 1 );
+
+            if ( glb -> system -> getModuleType( modNum ) != MT_PROC ) 
+                throw( ERR_EXPCTED_PROC_MODULE );
         }
     }
-    
+
     tok -> checkEOS( );
-    glb -> system -> step( numOfSteps, modNum );
+
+    if ( modNum == -1 ) {
+
+        if ( glb -> winDisplay -> getCurrentWinType( ) != WT_CPU_WIN ) 
+            throw( ERR_EXPCTED_PROC_MODULE );
+
+        modNum = glb -> winDisplay -> getCurrentWinModNum( );
+    }
+
+    if ( ! glb -> system -> stepModule( numOfSteps, modNum )) 
+        throw( ERR_STEP_MODULE );
 }
 
 //----------------------------------------------------------------------------------------
@@ -2011,6 +2094,9 @@ void SimCommandsWin::modifyRegCmd( ) {
 //
 //  ITLB <vAdr> "," <pAdr> "," <pSize> "," <acc> [ "," "L" [ "," "U" ]]
 //
+// ??? does this apply to all TLBs in all processors ? Perhaps not. This 
+// command is just for debugging and testing... one day - goes away.
+//
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::insertTLBCmd( ) {
 
@@ -2066,8 +2152,10 @@ void SimCommandsWin::insertTLBCmd( ) {
 // Purge from TLB command. We have two modes. We must be in windows mode and the 
 // current window must be a TLB window. 
 //
-//  PITLB  <vAdr>
-//  PDTLB  <vAdr>
+//  PTLB  <vAdr>
+//
+// ??? does this apply to all TLBs in all processors ? Perhaps not. This 
+// command is just for debugging and testing... one day - goes away.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::purgeTLBCmd( ) {

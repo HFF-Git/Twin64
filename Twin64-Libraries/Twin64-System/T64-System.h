@@ -160,14 +160,16 @@ struct T64System {
 
     int                 addModule( T64Module *module );
     int                 removeModule( T64Module *module );
+
+    bool                resetModule( int modNum );
+    bool                haltModule( int modNum );
+    bool                stepModule( int steps, int modNum );
     
     T64ModuleType       getModuleType( int modNum ) const;
     T64Module           *lookupByModNum( int modNum ) const;
     T64Module           *lookupByAdr( T64Word adr ) const;                
 
-    void                reset( );
     void                run( );
-    void                step( int steps, int modNum );
 
     bool                busOpRead( int reqModNum,
                                    T64Word pAdr, 
@@ -178,6 +180,11 @@ struct T64System {
                                     T64Word pAdr, 
                                     uint8_t *data, 
                                     int     len );
+
+    bool                busOpBroadcast( int reqModNum,
+                                        int id,
+                                        T64Word arg1, 
+                                        T64Word arg2 );
 
     private:
 

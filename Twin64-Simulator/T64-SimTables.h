@@ -382,6 +382,9 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
     { .errNum = ERR_EXPECTED_EXPR,              
       .errStr = (char *) "Expected an expression" },
 
+    { .errNum = ERR_EXPCTED_PROC_MODULE,              
+      .errStr = (char *) "Expected a processor module" },
+      
     { .errNum = ERR_FILE_NOT_FOUND,             
       .errStr = (char *) "File not found" },
    
@@ -487,6 +490,24 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
     { .errNum = ERR_MEM_OP_FAILED,              
       .errStr = (char *) "Memory operation error" },  
 
+    { .errNum = ERR_RESET_MODULE,              
+      .errStr = (char *) "Reset module error" }, 
+
+    { .errNum = ERR_HALT_MODULE,              
+      .errStr = (char *) "Halt module error" },
+
+    { .errNum = ERR_STEP_MODULE,              
+      .errStr = (char *) "Step module error" },
+
+    { .errNum = ERR_MODULE_TABLE_FULL,              
+      .errStr = (char *) "Module table full" },
+
+    { .errNum = ERR_MODULE_RANGE_OVERLAP,              
+      .errStr = (char *) "Module SPA range overlap" },
+
+    { .errNum = ERR_MODULE_ALREADY_USED,              
+      .errStr = (char *) "Module number already in use" },
+
     { .errNum = ERR_CREATE_PROC_MODULE,              
       .errStr = (char *) "Create processor module error" }, 
 
@@ -580,22 +601,36 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_RESET,
         .cmdNameStr     = (char *) "reset",
-        .cmdSyntaxStr   = (char *) "reset ( 'SYS' | 'STATS' )",
-        .helpStr        = (char *) "resets the system, etc."
+        .cmdSyntaxStr   = (char *) "reset ( <modNum> | 'ALL' )",
+        .helpStr        = (char *) "reset module(s)"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_HALT,
+        .cmdNameStr     = (char *) "halt",
+        .cmdSyntaxStr   = (char *) "halt ( <modNum> | 'ALL' )",
+        .helpStr        = (char *) "halt module(s)"
     },
     
     {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_RUN,
         .cmdNameStr     = (char *) "run",
         .cmdSyntaxStr   = (char *) "run",
-        .helpStr        = (char *) "run the system ( all CPUs )"
+        .helpStr        = (char *) "run the system ( all processors )"
     },
     
     {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_STEP,
         .cmdNameStr     = (char *) "step",
-        .cmdSyntaxStr   = (char *) "s [ <steps> ]",
-        .helpStr        = (char *) "single step the system"
+        .cmdSyntaxStr   = (char *) "s [ <steps>, [ <modNum>]]",
+        .helpStr        = (char *) "single step a module"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_HALT,
+        .cmdNameStr     = (char *) "halt",
+        .cmdSyntaxStr   = (char *) "halt",
+        .helpStr        = (char *) "halt the system or a processor"
     },
     
     {
