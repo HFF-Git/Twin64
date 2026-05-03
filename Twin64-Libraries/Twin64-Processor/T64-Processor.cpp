@@ -94,10 +94,7 @@ T64Processor::T64Processor( T64System           *sys,
 
     cpu     = new T64Cpu( this, cpuType );
     tlb     = new T64Tlb( this, T64_TK_UNIFIED_TLB, tlbType );
-
-  //  iCache  = new T64Cache( this, T64_CK_INSTR_CACHE, iCacheType );
-  //  dCache  = new T64Cache( this, T64_CK_DATA_CACHE, dCacheType );
-
+    
     this -> resetModule( );
 }
 

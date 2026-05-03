@@ -29,6 +29,7 @@
 #include "T64-System.h"
 #include <thread>
 #include <atomic>
+#include <condition_variable>
 
 //----------------------------------------------------------------------------------------
 // Forwards.
