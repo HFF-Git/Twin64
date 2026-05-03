@@ -310,7 +310,7 @@ bool T64System::haltModule( int modNum ) {
 
         for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
-            if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> resetModule( ); 
+            if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> haltModule( ); 
         }
 
         return( true );
@@ -319,7 +319,7 @@ bool T64System::haltModule( int modNum ) {
 
         if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
-            moduleMap[ modNum ] -> resetModule( );
+            moduleMap[ modNum ] -> haltModule( );
             return( true );
         }
         else return ( false );

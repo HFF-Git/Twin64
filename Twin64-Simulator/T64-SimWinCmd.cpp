@@ -2821,6 +2821,7 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                     case CMD_REDO:          redoCmd( );                     break;
                         
                     case CMD_RESET:         resetCmd( );                    break;
+                    case CMD_HALT:          haltCmd( );                     break;
                     case CMD_RUN:           runCmd( );                      break;
                     case CMD_STEP:          stepCmd( );                     break;
 

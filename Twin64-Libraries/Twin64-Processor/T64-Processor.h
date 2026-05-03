@@ -380,6 +380,7 @@ struct T64Processor : T64Module {
     virtual        ~ T64Processor( );
     
     void            resetModule( );
+    void            haltModule( );
     void            startModule( );
     void            stopModule( );
 

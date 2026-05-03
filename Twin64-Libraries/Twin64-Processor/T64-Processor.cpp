@@ -129,6 +129,11 @@ void T64Processor::resetModule( ) {
     instructionCount    = 0;
 }
 
+void T64Processor::haltModule( ) {
+
+    signal( T64_PROC_STATE_HALTED );
+}
+
 //----------------------------------------------------------------------------------------
 // Get the reference to the processor components.
 //

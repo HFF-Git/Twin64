@@ -100,6 +100,7 @@ struct T64Module {
     virtual         ~T64Module() = default;
 
     virtual void    resetModule( ) = 0;
+    virtual void    haltModule( )  = 0;
     virtual void    startModule( ) = 0;
     virtual void    stopModule( )  = 0;
 

@@ -70,6 +70,7 @@ public:
     virtual     ~ T64Memory( );
     
     void        resetModule( );
+    void        haltModule( );
     void        startModule( );
     void        stopModule( );
    
