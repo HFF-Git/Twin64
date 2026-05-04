@@ -403,6 +403,8 @@ struct T64Processor : T64Module {
                         
     T64Cpu          *getCpuPtr( );
     T64Tlb          *getTlbPtr( );
+
+    char            *getProcStateStr( );
    
 private:
 

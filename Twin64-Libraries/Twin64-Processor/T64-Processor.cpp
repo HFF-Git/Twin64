@@ -349,4 +349,16 @@ T64Tlb *T64Processor::getTlbPtr( ) {
 
     return ( tlb );
 }
+
+char *T64Processor::getProcStateStr( ) {
+
+    switch( procState ) {
+
+        case T64_PROC_STATE_NIL:            return ((char *) "NIL" );
+        case T64_PROC_STATE_HALTED:         return ((char *) "HALT" );
+        case T64_PROC_STATE_RUNNING:        return ((char *) "RUN" );
+        case T64_PROC_STATE_SINGLE_STEP:    return ((char *) "STEP" );
+        case T64_PROC_STATE_TERMINATE:      return ((char *) "EXIT" );
+    }
+}
     

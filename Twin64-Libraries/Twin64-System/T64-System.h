@@ -25,17 +25,10 @@
 // If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
-#ifndef T64_System_h
-#define T64_System_h
+#pragma once
 
 #include "T64-Common.h"
 #include "T64-Util.h"
-#include <thread>
-
-// ??? on a step, all processor modules advance.
-// ??? after that each module is give a change to do processing. I.e. check for
-// a key pressed, etc.
-// ??? we also need to handle interrupts too...
 
 //----------------------------------------------------------------------------------------
 // The architecture defines 64 module on the system bus so far. Typically the number
@@ -171,13 +164,13 @@ struct T64System {
     void                resetModule( int modNum );
     void                haltModule( int modNum );
     void                stepModule( int modNum, int steps );
+
+    void                run( );
     
     T64ModuleType       getModuleType( int modNum ) const;
     char                *getModuleState( int modNum ) const;
     T64Module           *lookupByModNum( int modNum ) const;
     T64Module           *lookupByAdr( T64Word adr ) const;                
-
-    void                run( );
 
     bool                busOpRead( int reqModNum,
                                    T64Word pAdr, 
@@ -202,5 +195,3 @@ struct T64System {
     T64Module           *systemMemMap[ MAX_MOD_MAP_ENTRIES ];
     int                 systemMemMapHwm = 0;
 };
-
-#endif

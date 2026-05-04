@@ -191,6 +191,9 @@ void SimWinCpuState::drawBanner( ) {
     printBitField( psw, 58, 'F', fmtDesc );
     printTextField((char *) "]", fmtDesc );
 
+    printTextField((char *) " State: ", fmtDesc );
+    printTextField(proc -> getProcStateStr( ), fmtDesc );
+
     padLine( fmtDesc );
     printRadixField( fmtDesc | FMT_LAST_FIELD );
 

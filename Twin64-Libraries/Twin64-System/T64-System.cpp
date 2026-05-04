@@ -277,7 +277,7 @@ T64ModuleType T64System::getModuleType( int modNum ) const {
     T64Module *mod = lookupByModNum( modNum );
     if ( mod != nullptr ) {
 
-        
+        return( "..." );
     }
     else return ((char *) "NIL" );
 
