@@ -101,6 +101,7 @@ T64Processor::T64Processor( T64System           *sys,
     instructionCount    = 0;
 
     this -> procState = T64_PROC_STATE_HALTED;
+
 }
 
 //----------------------------------------------------------------------------------------
