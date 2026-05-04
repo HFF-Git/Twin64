@@ -935,6 +935,8 @@ void SimCommandsWin::addProcModule( ) {
                                         0,
                                         0 );
 
+    // ??? should we put the start rather into the addModule ?
+    
     int rStat = glb -> system -> addModule( p );
 
     switch ( rStat ) {
@@ -1699,25 +1701,14 @@ void SimCommandsWin::resetCmd( ) {
     
     tok -> checkEOS( );
 
-    if ( ! glb -> system -> resetModule( modNum )) 
-        throw ( ERR_RESET_MODULE );
-}
+    if ( modNum == -1 ) {
 
-//----------------------------------------------------------------------------------------
-// Run command. The command will just run the system until a halt is detected.
-//
-//  RUN
-//
-// ??? we need to handle the console window. It should be enabled before we pass 
-// control to the CPU. Make it the current window, saving the previous current 
-// window. Put the console mode into non-blocking and hand over to the CPU. On 
-// return from the CPU steps, enable blocking mode again and restore the current 
-// window.
-//
-//----------------------------------------------------------------------------------------
-void SimCommandsWin::runCmd( ) {
-    
-    winOut -> writeChars( "RUN command to come ... \n");
+        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+            glb -> system -> resetModule( modNum );
+        }
+    }
+    else glb -> system -> resetModule( modNum );
 }
 
 //----------------------------------------------------------------------------------------
@@ -1750,8 +1741,14 @@ void SimCommandsWin::haltCmd( ) {
     
     tok -> checkEOS( );
 
-    if ( ! glb -> system -> haltModule( modNum )) 
-        throw ( ERR_HALT_MODULE );
+    if ( modNum == -1 ) {
+
+        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+            glb -> system -> haltModule( modNum );
+        }
+    }
+    else glb -> system -> haltModule( modNum );
 }
 
 //----------------------------------------------------------------------------------------
@@ -1799,8 +1796,24 @@ void SimCommandsWin::stepCmd( ) {
         modNum = glb -> winDisplay -> getCurrentWinModNum( );
     }
 
-    if ( ! glb -> system -> stepModule( numOfSteps, modNum )) 
-        throw( ERR_STEP_MODULE );
+    glb -> system -> stepModule( modNum, numOfSteps );
+}
+
+//----------------------------------------------------------------------------------------
+// Run command. The command will just run the system until a halt is detected.
+//
+//  RUN
+//
+// ??? we need to handle the console window. It should be enabled before we pass 
+// control to the CPU. Make it the current window, saving the previous current 
+// window. Put the console mode into non-blocking and hand over to the CPU. On 
+// return from the CPU steps, enable blocking mode again and restore the current 
+// window.
+//
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::runCmd( ) {
+    
+    winOut -> writeChars( "RUN command to come ... \n");
 }
 
 //----------------------------------------------------------------------------------------
@@ -2610,12 +2623,7 @@ void SimCommandsWin::winNewWinCmd( ) {
             tok -> checkEOS( );
 
             glb -> winDisplay -> windowNewCpuState( modNum );
-            glb -> winDisplay -> windowNewTlb( modNum, T64_TK_UNIFIED_TLB );  
-
-            #if 0
-            glb -> winDisplay -> windowNewCache( modNum, T64_CK_INSTR_CACHE );
-            glb -> winDisplay -> windowNewCache( modNum, T64_CK_DATA_CACHE ); 
-            #endif
+            glb -> winDisplay -> windowNewTlb( modNum );  
 
         } break;
 
@@ -2635,31 +2643,9 @@ void SimCommandsWin::winNewWinCmd( ) {
             int modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC );
             tok -> checkEOS( );
 
-            glb -> winDisplay -> windowNewTlb( modNum, T64_TK_UNIFIED_TLB );  
+            glb -> winDisplay -> windowNewTlb( modNum );  
 
         } break;
-
-        #if 0
-        case TOK_ICACHE: {
-
-            tok -> acceptComma( );
-            int modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC );
-            tok -> checkEOS( );
-
-            glb -> winDisplay -> windowNewCache( modNum, T64_CK_INSTR_CACHE );  
-
-        } break;
-
-        case TOK_DCACHE: {
-
-            tok -> acceptComma( );
-            int modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC );
-            tok -> checkEOS( );
-
-            glb -> winDisplay -> windowNewCache( modNum, T64_CK_DATA_CACHE );  
-
-        } break;
-        #endif
 
         case TOK_MEM: {
 

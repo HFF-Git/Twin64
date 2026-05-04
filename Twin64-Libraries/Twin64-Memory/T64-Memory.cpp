@@ -85,7 +85,9 @@ void T64Memory::resetModule( ) {
 //
 //
 //----------------------------------------------------------------------------------------
-void T64Memory::haltModule( ) { }
+void T64Memory::haltModule( )  { }
+void T64Memory::stepModule( )  { }
+
 void T64Memory::startModule( ) { }
 void T64Memory::stopModule( ) { }
 
@@ -169,6 +171,14 @@ bool T64Memory::busOpWriteEvent( int     reqModNum,
         memcpy( dstPtr, data, len );
         return( true );
     }
+}
+
+bool T64Memory::busOpBroadcastEvent( int     srcModNum,
+                                     int     id, 
+                                     T64Word arg1, 
+                                     T64Word arg2 ) {
+
+    return( true );
 }
 
 //----------------------------------------------------------------------------------------

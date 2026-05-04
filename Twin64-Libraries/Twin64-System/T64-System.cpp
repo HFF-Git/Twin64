@@ -272,30 +272,27 @@ T64ModuleType T64System::getModuleType( int modNum ) const {
     return (( mod != nullptr ) ? mod -> getModuleType( ) : MT_NIL );
 }
 
+ char *T64System::getModuleState( int modNum ) const {
+
+    T64Module *mod = lookupByModNum( modNum );
+    if ( mod != nullptr ) {
+
+        
+    }
+    else return ((char *) "NIL" );
+
+ }
+
 //----------------------------------------------------------------------------------------
 // Reset modules. We just invoke the module handler for the registered module.
 // A module number of -1 will reset all modules.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::resetModule( int modNum ) {
+void T64System::resetModule( int modNum ) {
 
-    if ( modNum == -1 ) {
+    if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
-        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
-
-            if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> resetModule( ); 
-        }
-
-        return( true );
-    }
-    else {
-
-        if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
-
-            moduleMap[ modNum ] -> resetModule( );
-            return( true );
-        }
-        else return ( false );
+        moduleMap[ modNum ] -> resetModule( );
     }
 }
 
@@ -304,25 +301,11 @@ bool T64System::resetModule( int modNum ) {
 // A module number of -1 will reset all modules.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::haltModule( int modNum ) {
+void T64System::haltModule( int modNum ) {
 
-    if ( modNum == -1 ) {
+    if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
-        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
-
-            if ( moduleMap[ i ] != nullptr ) moduleMap[ i ] -> haltModule( ); 
-        }
-
-        return( true );
-    }
-    else {
-
-        if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
-
-            moduleMap[ modNum ] -> haltModule( );
-            return( true );
-        }
-        else return ( false );
+        moduleMap[ modNum ] -> haltModule( );
     }
 }
 
@@ -341,35 +324,19 @@ void T64System::run( ) {
 // number. The module number is -1 for all modules.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::stepModule( int steps, int modNum ) {
+void T64System::stepModule( int steps, int modNum ) {
 
-    if ( modNum == -1 ) {
+    if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
-        for ( int i = 0; i < systemMemMapHwm; i++ ) {
+        if ( moduleMap[ modNum ] == nullptr ) return;
 
-            if ( moduleMap[ i ] != nullptr ) {
+        if (( steps >= 1 ) && ( steps < 9999 )) {
 
-                // set module state if a steppable module...
+            for ( int i = 0; i < steps; i++ ) {
 
-                return ( true );
-            }    
+                moduleMap[ modNum ]-> stepModule( );
+            }  
         }
-
-        return ( true );
-    }
-    else {
-
-        if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
-
-            if ( moduleMap[ modNum ] != nullptr ) {
-
-                // set module state if a steppable module...
-
-                return ( true );
-            } 
-        }
-        
-        return ( false );
     }
 }
 
@@ -386,7 +353,7 @@ bool T64System::busOpRead( int reqModNum,
                            int     len ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
-    if ( mPtr == nullptr ) return ( false );
+    if ( mPtr == nullptr ) return( false );
 
     return ( mPtr -> busOpReadEvent( reqModNum, pAdr, data, len ));
 }

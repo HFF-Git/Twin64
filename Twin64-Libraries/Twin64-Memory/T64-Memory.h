@@ -71,6 +71,8 @@ public:
     
     void        resetModule( );
     void        haltModule( );
+    void        stepModule( );
+    
     void        startModule( );
     void        stopModule( );
    
@@ -83,6 +85,11 @@ public:
                                  T64Word pAdr, 
                                  uint8_t *data, 
                                  int     len );
+
+    bool        busOpBroadcastEvent( int     srcModNum,
+                                     int     id, 
+                                     T64Word arg1, 
+                                     T64Word arg2 );
 
     T64MemKind  getMemKind( ) const;
     T64MemType  getMemType( ) const;

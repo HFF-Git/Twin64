@@ -346,22 +346,8 @@ enum T64ProcState : int {
 
 //----------------------------------------------------------------------------------------
 // The CPU core executes the instructions. A processor module contains the CPU 
-// core, TLBs and caches. The processor module connects to the system bus for 
-// memory and IO access. The unit is a single step, i.e. one instruction. A call
-// to step must run to completion:
-// 
-// STEP
-//      EXEC
-//          SYS.read
-//              ... cache / mem work
-//          end
-//
-//          EXEC work
-//      END
-// END
-//
-// The processor participates in the cache coherence protocol and has methods that
-// are called from the system object.
+// core, TLBs and one day caches. The processor module connects to the system bus
+// for  memory and IO access. The unit is a single step, i.e. one instruction. 
 //
 //----------------------------------------------------------------------------------------
 struct T64Processor : T64Module {
@@ -378,15 +364,17 @@ struct T64Processor : T64Module {
                   int               spaLen );
     
     virtual        ~ T64Processor( );
+
+    void            startModule( );
+    void            stopModule( );
     
     void            resetModule( );
     void            haltModule( );
-    void            startModule( );
-    void            stopModule( );
+    void            stepModule( );
 
+    void            setProcessorState( T64ProcState state );
+    
     void            processorThread( );
-
-    void            signal( T64ProcState newState );    
 
     bool            busOpRead( T64Word adr, 
                               uint8_t *data, 
@@ -405,6 +393,11 @@ struct T64Processor : T64Module {
                                      T64Word pAdr, 
                                      uint8_t *data, 
                                      int     len );  
+
+    bool            busOpBroadcastEvent( int     srcModNum,
+                                         int     id, 
+                                         T64Word arg1, 
+                                         T64Word arg2 );
                         
     T64Cpu          *getCpuPtr( );
     T64Tlb          *getTlbPtr( );

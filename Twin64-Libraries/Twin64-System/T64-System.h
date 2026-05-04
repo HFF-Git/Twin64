@@ -101,6 +101,7 @@ struct T64Module {
 
     virtual void    resetModule( ) = 0;
     virtual void    haltModule( )  = 0;
+    virtual void    stepModule( )  = 0;
     virtual void    startModule( ) = 0;
     virtual void    stopModule( )  = 0;
 
@@ -113,6 +114,11 @@ struct T64Module {
                                      T64Word pAdr, 
                                      uint8_t *data, 
                                      int     len ) = 0;
+
+    virtual bool    busOpBroadcastEvent( int     srcModNum,
+                                         int     id, 
+                                         T64Word arg1, 
+                                         T64Word arg2 ) = 0;
 
     T64ModuleType   getModuleType( );
     int             getModuleNum( );
@@ -162,11 +168,12 @@ struct T64System {
     int                 addModule( T64Module *module );
     int                 removeModule( T64Module *module );
 
-    bool                resetModule( int modNum );
-    bool                haltModule( int modNum );
-    bool                stepModule( int steps, int modNum );
+    void                resetModule( int modNum );
+    void                haltModule( int modNum );
+    void                stepModule( int modNum, int steps );
     
     T64ModuleType       getModuleType( int modNum ) const;
+    char                *getModuleState( int modNum ) const;
     T64Module           *lookupByModNum( int modNum ) const;
     T64Module           *lookupByAdr( T64Word adr ) const;                
 

@@ -843,7 +843,7 @@ void SimWinDisplay::windowNewCpuState( int modNum ) {
     currentWinNum = slot;
 }
 
-void SimWinDisplay::windowNewTlb( int modNum, T64TlbKind tKind ) {
+void SimWinDisplay::windowNewTlb( int modNum ) {
 
     int slot = getFreeWindowSlot( );
 
@@ -853,57 +853,15 @@ void SimWinDisplay::windowNewTlb( int modNum, T64TlbKind tKind ) {
     T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
     if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
 
-    if ( tKind == T64_TK_UNIFIED_TLB ) {
+    T64Tlb *tlb = proc -> getTlbPtr( );
 
-        windowList[ slot ] = 
-            (SimWin *) new SimWinTlb( glb, modNum, proc -> getTlbPtr( ));
-        windowList[ slot ] -> setWinName(( char *) "TLB" );
-    }
-    else throw( ERR_INVALID_WIN_TYPE );
-
+    windowList[ slot ] = (SimWin *) new SimWinTlb( glb, modNum, tlb );
+    windowList[ slot ] -> setWinName((char *) "TLB" );
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
     windowList[ slot ] -> setWinStack( 0 );
     windowList[ slot ] -> setEnable( true );
     currentWinNum = slot;
-}
-
-// ??? will go out ...
-void SimWinDisplay::windowNewCache( int modNum, T64CacheKind cType ) {
-
-    T64ModuleType mType = glb -> system -> getModuleType( modNum );
-    if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
-
-    T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
-    if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
-
-    #if 0 // ???
-
-    int slot = getFreeWindowSlot( );
-
-    if ( cType == T64_CK_INSTR_CACHE ) {
-
-        windowList[ slot ] = 
-            (SimWin *) new SimWinCache( glb, modNum, proc -> getICachePtr( ));
-        
-        windowList[ slot ] -> setWinName(( char *) "I-CACHE" );
-    }
-    else if ( cType == T64_CK_DATA_CACHE ) {
-        
-        windowList[ slot ] = 
-            (SimWin *) new SimWinCache( glb, modNum, proc -> getDCachePtr( ));
-        
-        windowList[ slot ] -> setWinName(( char *) "D-CACHE" );
-    }
-    else throw( ERR_INVALID_WIN_TYPE );
-
-    windowList[ slot ] -> setDefaults( );
-    windowList[ slot ] -> setWinIndex( slot );
-    windowList[ slot ] -> setWinStack( 0 );
-    windowList[ slot ] -> setEnable( true );
-    currentWinNum = slot;
-
-    #endif
 }
    
 void SimWinDisplay::windowNewText( char *pathStr ) {

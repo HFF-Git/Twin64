@@ -95,10 +95,12 @@ T64Processor::T64Processor( T64System           *sys,
     cpu     = new T64Cpu( this, cpuType );
     tlb     = new T64Tlb( this, T64_TK_UNIFIED_TLB, tlbType );
 
-  //  iCache  = new T64Cache( this, T64_CK_INSTR_CACHE, iCacheType );
-  //  dCache  = new T64Cache( this, T64_CK_DATA_CACHE, dCacheType );
+    this -> cpu -> reset( );
+    this -> tlb -> reset( );
 
-    this -> resetModule( );
+    instructionCount    = 0;
+
+    this -> procState = T64_PROC_STATE_HALTED;
 }
 
 //----------------------------------------------------------------------------------------
@@ -110,49 +112,14 @@ T64Processor:: ~T64Processor( ) {
     delete cpu;
     delete tlb;
 
-     stopModule( );
-}
-
-//----------------------------------------------------------------------------------------
-// Reset the processor and its submodules. 
-//
-// ???? rather remove it ? We have the start method, which should reset all
-// internal state. After that a 
-//----------------------------------------------------------------------------------------
-void T64Processor::resetModule( ) {
-
-    this -> cpu -> reset( );
-    this -> tlb -> reset( );
-
-    this -> procState = T64_PROC_STATE_HALTED;
- 
-    instructionCount    = 0;
-}
-
-void T64Processor::haltModule( ) {
-
-    signal( T64_PROC_STATE_HALTED );
-}
-
-//----------------------------------------------------------------------------------------
-// Get the reference to the processor components.
-//
-//----------------------------------------------------------------------------------------
-T64Cpu *T64Processor::getCpuPtr( ) {
-
-    return ( cpu );
-}
-
-T64Tlb *T64Processor::getTlbPtr( ) {
-
-    return ( tlb );
+    stopModule( );
 }
 
 //----------------------------------------------------------------------------------------
 // Start and stop the processor thread. The processor thread is responsible for 
-// executing instructions. The processor thread is signaled by the simulator 
-// console thread what to do next. The stop method signals the processor thread
-// to terminate and waits for it to finish.
+// executing instructions. The thread is created with the startModule method
+// and stopped by notifying the thread to stop. In between start and stop the
+// processor thread is signaled by the simulator console thread what to do next. T
 //
 //----------------------------------------------------------------------------------------
 void T64Processor::startModule( ) {
@@ -174,13 +141,31 @@ void T64Processor::stopModule( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// A process thread is signaled what to do next. The simulator console thread
-// uses this method to signal to the processor tread what to do next. 
+// Processor state routines. This is our way to control what the processor is 
+// doing. We provide methods for RESET, HALT and STEP.
 //
 //----------------------------------------------------------------------------------------
-void T64Processor::signal( T64ProcState newState ) {
+void T64Processor::setProcessorState( T64ProcState state ) {
 
-    procState.store( newState, std::memory_order_release );
+    this -> procState = state;
+    procCondVar.notify_one( );
+}
+
+void T64Processor::resetModule( ) {
+
+    procState = T64_PROC_STATE_RESET;
+    procCondVar.notify_one( );
+}
+
+void T64Processor::haltModule( ) {
+
+    procState = T64_PROC_STATE_HALTED;
+    procCondVar.notify_one( );
+}
+
+void T64Processor::stepModule( ) {
+
+    procState = T64_PROC_STATE_SINGLE_STEP;
     procCondVar.notify_one( );
 }
 
@@ -341,4 +326,26 @@ bool T64Processor::busOpWriteEvent( int     reqModNum,
     }
     else  return( false );
 }   
+
+bool T64Processor::busOpBroadcastEvent( int     srcModNum,
+                                         int     id, 
+                                         T64Word arg1, 
+                                         T64Word arg2 ) {
+
+    return( true );
+}
+
+//----------------------------------------------------------------------------------------
+// Get the reference to the processor components.
+//
+//----------------------------------------------------------------------------------------
+T64Cpu *T64Processor::getCpuPtr( ) {
+
+    return ( cpu );
+}
+
+T64Tlb *T64Processor::getTlbPtr( ) {
+
+    return ( tlb );
+}
     
