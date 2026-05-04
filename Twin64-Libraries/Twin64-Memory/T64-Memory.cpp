@@ -86,6 +86,7 @@ void T64Memory::resetModule( ) {
 //
 //----------------------------------------------------------------------------------------
 void T64Memory::haltModule( )  { }
+void T64Memory::runModule( ) { }
 void T64Memory::stepModule( )  { }
 
 void T64Memory::startModule( ) { }

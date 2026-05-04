@@ -94,7 +94,9 @@ struct T64Module {
 
     virtual void    resetModule( ) = 0;
     virtual void    haltModule( )  = 0;
+    virtual void    runModule( )   = 0;
     virtual void    stepModule( )  = 0;
+    
     virtual void    startModule( ) = 0;
     virtual void    stopModule( )  = 0;
 

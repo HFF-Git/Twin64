@@ -216,7 +216,7 @@ bool T64Cpu::regionIdCheck( uint32_t rId, bool wMode ) {
 
 void T64Cpu::privModeCheck( ) {
 
-    if ( ! extractPsrXbit( psrReg )) privModeOperationTrap( );
+    if ( extractPsrXbit( psrReg ) != 0 ) privModeOperationTrap( );
 }
 
 void T64Cpu::instrAlignmentCheck( T64Word adr ) {
@@ -535,6 +535,8 @@ void T64Cpu:: dataWriteRegBOfsRegX( uint32_t instr ) {
 void T64Cpu::instrAluNopOp( T64Instr instr ) {
 
     if ( instr != 0 ) illegalInstrTrap( );
+
+    nextInstr( );
 }
 
 //----------------------------------------------------------------------------------------

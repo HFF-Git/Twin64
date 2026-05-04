@@ -272,17 +272,6 @@ T64ModuleType T64System::getModuleType( int modNum ) const {
     return (( mod != nullptr ) ? mod -> getModuleType( ) : MT_NIL );
 }
 
- char *T64System::getModuleState( int modNum ) const {
-
-    T64Module *mod = lookupByModNum( modNum );
-    if ( mod != nullptr ) {
-
-        return( "..." );
-    }
-    else return ((char *) "NIL" );
-
- }
-
 //----------------------------------------------------------------------------------------
 // Reset modules. We just invoke the module handler for the registered module.
 // A module number of -1 will reset all modules.
@@ -324,7 +313,7 @@ void T64System::run( ) {
 // number. The module number is -1 for all modules.
 //
 //----------------------------------------------------------------------------------------
-void T64System::stepModule( int steps, int modNum ) {
+void T64System::stepModule( int modNum, int steps ) {
 
     if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 

@@ -71,6 +71,7 @@ public:
     
     void        resetModule( );
     void        haltModule( );
+    void        runModule( );
     void        stepModule( );
     
     void        startModule( );

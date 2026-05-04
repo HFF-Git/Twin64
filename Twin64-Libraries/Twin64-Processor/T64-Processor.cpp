@@ -143,59 +143,79 @@ void T64Processor::stopModule( ) {
 
 //----------------------------------------------------------------------------------------
 // Processor state routines. This is our way to control what the processor is 
-// doing. We provide methods for RESET, HALT and STEP.
+// doing. We provide methods for RESET, HALT and STEP. The processor state is
+// the atomic variable "procState". The mutex ensures that we do a synchronized
+// update. Finally, we wake up the thread which is waiting in the "procCondVar".
 //
 //----------------------------------------------------------------------------------------
 void T64Processor::setProcessorState( T64ProcState state ) {
 
-    this -> procState = state;
+    {
+        std::lock_guard<std::mutex> lk(procLock);
+        procState = state;
+    }
+
     procCondVar.notify_one( );
 }
 
 void T64Processor::resetModule( ) {
 
-    procState = T64_PROC_STATE_RESET;
-    procCondVar.notify_one( );
+    setProcessorState( T64_PROC_STATE_RESET );
 }
 
 void T64Processor::haltModule( ) {
 
-    procState = T64_PROC_STATE_HALTED;
-    procCondVar.notify_one( );
+    setProcessorState( T64_PROC_STATE_HALTED );
 }
 
 void T64Processor::stepModule( ) {
 
-    procState = T64_PROC_STATE_SINGLE_STEP;
-    procCondVar.notify_one( );
+    setProcessorState( T64_PROC_STATE_SINGLE_STEP );
+}
+
+void T64Processor::runModule( ) {
+
+    setProcessorState( T64_PROC_STATE_RUNNING );
 }
 
 //----------------------------------------------------------------------------------------
 // The processor thread. The processor thread is responsible for executing T64
-// instructions. There is a state variable that is used to signal the processor
-// thread what to do next.
+// instructions. If the processor is on HALT state, we wait on the "procCondVar"
+// variable. Our mutex ensures synchronized access. If the thread was awoken
+// we continue the main loop, where we get as first thing the new state, so we
+// know what we should do.
 //
-// Mental model:
+// Think of it like a CPU:
 //
-//      procState           -> control register
-//      signal( )           -> writing to control register
-//      cv.notify_one( )    -> raising a wake-up signal
-//      wait( )             -> CPU entering low-power halt
-//
-//
-// ??? we start by resetting the processor, and then we wait for the next signal.
-// The processor thread is responsible for executing instructions, but it is also
-// responsible for handling signals and managing its state.
+//      procState = control register
+//      notify_one() = interrupt
+//      wait() = halt instruction
+//      loop = fetch-decode-execute
 //
 //----------------------------------------------------------------------------------------
 void T64Processor::processorThread( ) {
-
+    
     procState.store( T64_PROC_STATE_RESET, std::memory_order_release );
 
     while ( true ) {
-        
+
         T64ProcState s = procState.load( std::memory_order_acquire );
 
+        if ( s == T64_PROC_STATE_HALTED ) {
+
+            std::unique_lock<std::mutex> lk(procLock);
+
+            procCondVar.wait(lk, [this] {
+
+                return procState.load(std::memory_order_acquire)
+
+                       != T64_PROC_STATE_HALTED;
+
+            });
+
+            continue;
+        }
+        
         switch ( s ) {
 
             case T64_PROC_STATE_RESET: {

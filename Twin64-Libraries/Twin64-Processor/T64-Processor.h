@@ -372,6 +372,7 @@ struct T64Processor : T64Module {
     
     void            resetModule( );
     void            haltModule( );
+    void            runModule( );
     void            stepModule( );
 
     void            setProcessorState( T64ProcState state );
