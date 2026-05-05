@@ -97,9 +97,6 @@ T64Processor::T64Processor( T64System           *sys,
 
     this -> cpu -> reset( );
     this -> tlb -> reset( );
-
-    instructionCount    = 0;
-
     this -> procState = T64_PROC_STATE_HALTED;
 
 }
@@ -168,14 +165,23 @@ void T64Processor::haltModule( ) {
     setProcessorState( T64_PROC_STATE_HALTED );
 }
 
-void T64Processor::stepModule( ) {
+void T64Processor::execModule( int steps ) {
 
-    setProcessorState( T64_PROC_STATE_SINGLE_STEP );
+    instrCount = steps;
+    setProcessorState( T64_PROC_STATE_EXECUTE );
 }
 
-void T64Processor::runModule( ) {
+void T64Processor::waitUntilHalted() {
 
-    setProcessorState( T64_PROC_STATE_RUNNING );
+    std::unique_lock<std::mutex> lk(procLock);
+
+    procCondVar.wait(lk, [this] {
+
+        return procState.load(std::memory_order_acquire)
+
+               == T64_PROC_STATE_HALTED;
+
+    });
 }
 
 //----------------------------------------------------------------------------------------
@@ -224,49 +230,60 @@ void T64Processor::processorThread( ) {
                 tlb -> reset( );
 
                 procState.store( T64_PROC_STATE_HALTED, 
-                                 std::memory_order_release);
+                                 std::memory_order_release );
+
+                procCondVar.notify_one( );
 
             } break;
 
-            case T64_PROC_STATE_RUNNING: {
+            case T64_PROC_STATE_EXECUTE: {
 
-                while ( procState.load(std::memory_order_acquire) == 
-                                                T64_PROC_STATE_RUNNING ) {
+                while (true) {
+
+                    if ( procState.load( std::memory_order_acquire ) != 
+                            T64_PROC_STATE_EXECUTE ) break;
+
+                    if ( instrCount == 0 ) break;
 
                     try {
 
                         cpu -> executeInstr( );
+
+                        // ??? we would get exceptions. Let's catch real
+                        // C++ exceptions inside the instruction execution, 
+                        // and map to a kind of T64Trap which the simulator 
+                        // can deal with :-).
                     }
-                    catch (const T64Trap& t) {
+                    catch ( const T64Trap ) {
 
+                        bool haltOnCpuTrap = false; // Fix, where do we get it from ?
+
+                        if ( haltOnCpuTrap ) {
+
+                            procState.store( T64_PROC_STATE_TRAP, 
+                                             std::memory_order_release);
+
+                            procCondVar.notify_one( );
+                            break;
+                        }
                     }
-                }
 
-            } break;
-
-            case T64_PROC_STATE_SINGLE_STEP: {
-
-                try {
-        
-                    cpu -> executeInstr( );
-                }
-    
-                catch ( const T64Trap t ) {
-        
+                    if ( instrCount > 0 ) instrCount --;
                 }
 
                 procState.store( T64_PROC_STATE_HALTED, 
-                    std::memory_order_release);
+                                 std::memory_order_release );
+                procCondVar.notify_one( );
 
             } break;
 
+            case T64_PROC_STATE_TRAP:
             case T64_PROC_STATE_HALTED: {
 
-                std::unique_lock<std::mutex> lk( procLock );
-                procCondVar.wait( lk, [ this ]{ 
-
-                    return ( procState.load( 
-                        std::memory_order_acquire ) != T64_PROC_STATE_HALTED ); 
+                std::unique_lock<std::mutex> lk(procLock);
+                procCondVar.wait(lk, [this] {
+                return  procState != T64_PROC_STATE_TRAP &&
+                        procState != T64_PROC_STATE_HALTED;
                 });
 
             } break;
@@ -282,7 +299,6 @@ void T64Processor::processorThread( ) {
 
 //----------------------------------------------------------------------------------------
 // We have a read request for the processor HPA address range. 
-//
 //
 //----------------------------------------------------------------------------------------
 bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
@@ -375,9 +391,10 @@ char *T64Processor::getProcStateStr( ) {
     switch( procState ) {
 
         case T64_PROC_STATE_NIL:            return ((char *) "NIL" );
+        case T64_PROC_STATE_RESET:          return ((char *) "RESET" );
+        case T64_PROC_STATE_EXECUTE:        return ((char *) "RUN");
         case T64_PROC_STATE_HALTED:         return ((char *) "HALT" );
-        case T64_PROC_STATE_RUNNING:        return ((char *) "RUN" );
-        case T64_PROC_STATE_SINGLE_STEP:    return ((char *) "STEP" );
+        case T64_PROC_STATE_TRAP:           return ((char *) "TTRAP" );
         case T64_PROC_STATE_TERMINATE:      return ((char *) "EXIT" );
     }
 }

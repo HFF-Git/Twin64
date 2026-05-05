@@ -299,21 +299,11 @@ void T64System::haltModule( int modNum ) {
 }
 
 //----------------------------------------------------------------------------------------
-// RUN. The simulator can just run the system. We just enter an endless loop which 
-// single steps all modules. 
+// Run a module for n steps. This method implements both stepping and running
+// a sequence of instructions.
 //
 //----------------------------------------------------------------------------------------
-void T64System::run( ) {
-
-    // ??? signal all processors 
-}
-
-//----------------------------------------------------------------------------------------
-// Step the system. We step all modules, or just the one specified by the module
-// number. The module number is -1 for all modules.
-//
-//----------------------------------------------------------------------------------------
-void T64System::stepModule( int modNum, int steps ) {
+void T64System::execModule( int modNum, int steps ) {
 
     if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
@@ -321,12 +311,19 @@ void T64System::stepModule( int modNum, int steps ) {
 
         if (( steps >= 1 ) && ( steps < 9999 )) {
 
-            for ( int i = 0; i < steps; i++ ) {
-
-                moduleMap[ modNum ]-> stepModule( );
-            }  
+            moduleMap[ modNum ] -> execModule( steps );
         }
     }
+}
+
+//----------------------------------------------------------------------------------------
+// RUN. The simulator can just run the system. We just enter an endless loop which 
+// single steps all modules. 
+//
+//----------------------------------------------------------------------------------------
+void T64System::run( ) {
+
+    // ??? signal all processors 
 }
 
 //----------------------------------------------------------------------------------------

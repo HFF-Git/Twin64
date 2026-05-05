@@ -1796,7 +1796,7 @@ void SimCommandsWin::stepCmd( ) {
         modNum = glb -> winDisplay -> getCurrentWinModNum( );
     }
 
-    glb -> system -> stepModule( modNum, numOfSteps );
+    glb -> system -> execModule( modNum, numOfSteps );
 }
 
 //----------------------------------------------------------------------------------------

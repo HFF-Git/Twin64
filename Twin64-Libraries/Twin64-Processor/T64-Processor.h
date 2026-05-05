@@ -340,8 +340,8 @@ enum T64ProcState : int {
 
     T64_PROC_STATE_NIL          = 0,
     T64_PROC_STATE_RESET        = 1,
-    T64_PROC_STATE_RUNNING      = 2,
-    T64_PROC_STATE_SINGLE_STEP  = 3, 
+    T64_PROC_STATE_EXECUTE      = 2,
+    T64_PROC_STATE_TRAP         = 3, 
     T64_PROC_STATE_HALTED       = 4,
     T64_PROC_STATE_TERMINATE    = 5    
 };
@@ -372,10 +372,10 @@ struct T64Processor : T64Module {
     
     void            resetModule( );
     void            haltModule( );
-    void            runModule( );
-    void            stepModule( );
+    void            execModule( int steps );
 
     void            setProcessorState( T64ProcState state );
+    void            waitUntilHalted( );
     
     void            processorThread( );
 
@@ -419,9 +419,9 @@ private:
     T64Tlb                      *tlb                    = nullptr;
   
     int                         modNum                  = 0;
-    T64Word                     instructionCount        = 0;
  
     std::atomic<T64ProcState>   procState { T64_PROC_STATE_NIL };
+    int                         instrCount = 0;
     std::mutex                  procLock;
     std::condition_variable     procCondVar;
     std::thread                 worker;

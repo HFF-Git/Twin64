@@ -82,13 +82,12 @@ void T64Memory::resetModule( ) {
 }
 
 //----------------------------------------------------------------------------------------
-//
+// Dummy functions. A memory module does not use threads. It is a shared 
+// resource.
 //
 //----------------------------------------------------------------------------------------
 void T64Memory::haltModule( )  { }
-void T64Memory::runModule( ) { }
-void T64Memory::stepModule( )  { }
-
+void T64Memory::execModule( int steps ) { }
 void T64Memory::startModule( ) { }
 void T64Memory::stopModule( ) { }
 
