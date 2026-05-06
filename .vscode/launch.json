@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
   "configurations": [
-    
+
     {
       "name": "Debug Twin64-AsmTest",
       "type": "cppdbg",
@@ -20,7 +20,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/bin/Twin64-Simulator",
-      "args": [],
+      "args": ["--configfile=${workspaceFolder}/config/T64ConfigFile"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],

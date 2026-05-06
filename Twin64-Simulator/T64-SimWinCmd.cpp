@@ -742,12 +742,14 @@ int SimCommandsWin::promptYesNoCancel( char *promptStr ) {
 void SimCommandsWin::configureT64Sim( ) {     
     
     if ( glb -> console -> isConsole( )) {
-        
-        winOut -> writeChars( "Configuring Twin-64 Simulator...\n" );
-       
-        // ??? just use execute file ... if fails write to log ?
 
-        winOut -> writeChars( "Configuration done.\n\n" );
+        if ( strlen( glb -> configFileName ) > 0 ) {
+
+            winOut -> writeChars( "Load Config File: \"%s\"\n", 
+                                  glb -> configFileName );
+                                  
+            execCmdsFromFile( glb -> configFileName );
+        }
     }
 }
 
@@ -841,8 +843,6 @@ void SimCommandsWin::printWelcome( ) {
                 winOut -> writeChars( "Log File: %s\n", glb -> logFileName );
             }
         }
-        
-        winOut -> writeChars( "\n" );
     }
 }
 
@@ -867,37 +867,22 @@ int SimCommandsWin::buildCmdPrompt( char *promptStr, int promptStrLen ) {
 // pairs to get all module type info. Omitted key/value pairs are set to reasonable
 // defaults.
 //
-//  NM proc, MOD=xxx, TLB=xxx, ...
+//  NM PROC, <modNum, TLB=xxx, ...
 //
 // Processors are threads, so we need to start them after creating them. The 
 // "startModule" method will create a thread for the processor and start it. 
 //
 //----------------------------------------------------------------------------------------
-void SimCommandsWin::addProcModule( ) {
+void SimCommandsWin::addProcModule( int modNum ) {
 
-    int          modNum     = -1;
     T64TlbType   tlbType    = T64_TT_FA_64S;  
     T64CacheType cacheType  = T64_CT_NIL;
   
-    tok -> nextToken( );
     while ( tok -> isToken( TOK_COMMA )) {
 
         tok -> nextToken( );
 
         switch ( tok -> tokId( )) {
-
-            case TOK_MOD: {
-
-                tok -> nextToken( );
-                tok -> acceptEqual( );
-                if ( tok -> tokTyp( ) == TYP_NUM ) {
-
-                    modNum = eval -> acceptNumExpr( ERR_INVALID_ARG, 
-                                                    0, MAX_MODULES );
-                }
-                else throw( ERR_INVALID_MOD_NUM );
-
-            } break;
 
             case TOK_TLB: {
 
@@ -914,12 +899,12 @@ void SimCommandsWin::addProcModule( ) {
                     tlbType = T64_TT_FA_128S;
                 else throw( ERR_INVALID_ARG );
 
+                tok -> nextToken( );
+
             } break;
 
             default: throw( ERR_INVALID_MODULE_TYPE );
         }
-
-        tok -> nextToken( );
     }
 
     tok -> checkEOS( );
@@ -934,16 +919,11 @@ void SimCommandsWin::addProcModule( ) {
                                         cacheType,
                                         0,
                                         0 );
-
-    // ??? should we put the start rather into the addModule ?
     
-    int rStat = glb -> system -> addModule( p );
-
-    switch ( rStat ) {
+    switch ( glb -> system -> addModule( p ) ) {
 
         case 0: {
 
-             p -> startModule( );
              return;
         }
 
@@ -982,50 +962,32 @@ void SimCommandsWin::addProcModule( ) {
 //
 // Memory modules are shared memory object, not threads.
 //
-//  NM mem, MOD=xxx, MEM=xxx, SPA_ADR=xxx, SPA_LEN=xxx, ...
+//  NM MEM, <modNum>, <memType>, SPA_ADR=xxx, SPA_LEN=xxx, ...
 //
 //----------------------------------------------------------------------------------------
-void SimCommandsWin::addMemModule( ) {
+void SimCommandsWin::addMemModule( int modNum ) {
 
-    int         modNum  = -1;
     T64MemType  mType   = T64_MT_RAM;   
     T64Word     spaAdr  = 0;
     T64Word     spaLen  = 0;
 
-    tok -> nextToken( );
     while ( tok -> isToken( TOK_COMMA )) {
 
         tok -> nextToken( );
 
         switch ( tok -> tokId( )) {
 
-            case TOK_MOD: {
+            case TOK_MEM_ROM: {
 
+                mType = T64_MT_ROM;
                 tok -> nextToken( );
-                tok -> acceptEqual( );
-                if ( tok -> tokTyp( ) == TYP_NUM ) {
 
-                    modNum = eval -> acceptNumExpr( ERR_INVALID_ARG, 
-                                                    0, MAX_MODULES );
-                }
-                else throw( ERR_INVALID_ARG );
-                
             } break;
 
-            case TOK_MEM: {
+            case TOK_MEM_RAM: {
 
+                mType = T64_MT_RAM;
                 tok -> nextToken( );
-                tok -> acceptEqual( );
-
-                if ( tok -> isToken( TOK_MEM_READ_ONLY )) {
-
-                    mType = T64_MT_ROM;
-                }
-                else if ( tok -> isToken( TOK_MEM_READ_WRITE )) {
-
-                    mType = T64_MT_RAM;
-                }
-                else throw( ERR_INVALID_ARG );
 
             } break;
 
@@ -1059,8 +1021,6 @@ void SimCommandsWin::addMemModule( ) {
 
             default: throw( ERR_INVALID_MODULE_TYPE );
         }
-
-        tok -> nextToken( );
     }
 
     tok -> checkEOS( );
@@ -1087,10 +1047,10 @@ void SimCommandsWin::addMemModule( ) {
 // to get all module type info. Omitted key/value pairs are set to reasonable
 // defaults.
 //
-//  NM mem, MOD=xxx, SPA_ADR=xxx, SPA_LEN=xxx, ...
+//  NM IO, <modNum>, SPA_ADR=xxx, SPA_LEN=xxx, ...
 //
 //----------------------------------------------------------------------------------------
-void SimCommandsWin::addIoModule( ) {
+void SimCommandsWin::addIoModule( int modNum ) {
 
     // ??? analog to mem...
 
@@ -1307,7 +1267,7 @@ void SimCommandsWin::execCmdsFromFile( char* fileName ) {
     }
     catch ( SimErrMsgId errNum ) {
 
-        throw(errNum);
+        throw;
     }
 }
 
@@ -1378,6 +1338,9 @@ void SimCommandsWin::helpCmd( ) {
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::exitCmd( ) {
+
+    glb -> console -> clearScrollArea( );
+    glb -> console -> clearScreen( );
     
     if ( tok -> isToken( TOK_EOS )) {
         
@@ -1489,16 +1452,24 @@ void SimCommandsWin::loadElfFileCmd( ) {
 // Add a module to the system. This command will add a module to the system. It is 
 // typically used during startup when all modules are created. 
 // 
-//  NM <mType> [ { "," <key> "=" <value> }* ]
+//  NM "TYP" = <type> [ { "," <key> "=" <value> }* ]
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addModuleCmd( ) {
 
-    switch ( tok -> tokId( )) {
+    SimTokId moduleTyp  = tok -> tokId( );
+    int      modNum     = -1;
 
-        case TOK_PROC:  addProcModule( );   break;
-        case TOK_MEM:   addMemModule( );    break;
-        case TOK_IO:    addIoModule( );     break;
+    tok -> nextToken( );
+    tok -> acceptComma( );
+
+    modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MODULES );
+    
+    switch ( moduleTyp ) {
+
+        case TOK_PROC:  addProcModule( modNum );   break;
+        case TOK_MEM:   addMemModule( modNum );    break;
+        case TOK_IO:    addIoModule( modNum );     break;
         default:        throw( ERR_INVALID_MODULE_TYPE );
     }
 }
@@ -1518,7 +1489,7 @@ void SimCommandsWin::removeModuleCmd( ) {
 
      if ( tok -> tokTyp( ) == TYP_NUM ) {
 
-        modNum = eval -> acceptNumExpr( ERR_EXPECTED_WIN_ID, 1, MAX_MODULES );    
+        modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MODULES );    
     }
     else if ( tok -> isToken( TOK_ALL )) {
 

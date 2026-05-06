@@ -42,23 +42,27 @@ namespace {
 //----------------------------------------------------------------------------------------
 int parseCmdLineOptions( int    argc, 
                          char   *argv[ ],
-                         struct SimCmdLineOptions *optionTable,
+                         const  SimCmdLineOptions *optionTable,
                          char   **optArg ) {
 
     if ( optIndex >= argc ) return ( -1 );
 
     const char *arg = argv[ optIndex ];
 
-    if ( strncmp( arg, "--", 2 ) != 0 ) return -1;
+    if ( strncmp(arg, "--", 2) != 0 ) {
+
+        optIndex++;
+        return 0;
+    }
 
     const char *name    = arg + 2;
     const char *eq      = strchr(name, '=');
-    size_t name_len     = (( eq ) ? ((size_t)( eq - name )) : ( strlen( name )));
+    size_t nameLen      = (( eq ) ? ((size_t)( eq - name )) : ( strlen( name )));
 
     for ( int i = 0; ( optionTable && optionTable[i].name ); i++ ) {
 
-        if (( strncmp( name, optionTable[i].name, name_len ) == 0 ) &&
-             ( strlen(optionTable[i].name) == name_len )) {
+        if (( strncmp( name, optionTable[i].name, nameLen ) == 0 ) &&
+             ( strlen(optionTable[i].name) == nameLen )) {
 
             if ( optionTable[i].argOpt == CL_OPT_REQUIRED_ARGUMENT) {
                 
@@ -74,7 +78,7 @@ int parseCmdLineOptions( int    argc,
                     
                     fprintf( stderr, "Option '--%s' requires an argument\n", 
                             optionTable[ i ].name);
-                    return '?';
+                    return ( -1 );
                 }
             } 
             else if ( optionTable[ i ].argOpt == CL_OPT_OPTIONAL_ARGUMENT ) {
@@ -88,7 +92,7 @@ int parseCmdLineOptions( int    argc,
         }
     }
 
-    fprintf( stderr, "Unknown option '%s'\n", arg) ;
+    fprintf( stderr, "Unknown option '%s'\n", arg ) ;
     optIndex++;
     return '?';
 }
@@ -111,7 +115,7 @@ void processCmdLineOptions( SimGlobals *glb, int argc, char *argv[ ] ) {
 
         switch ( optVal ) {
 
-            case 'h':  {
+            case CL_ARG_VAL_HELP:  {
 
                 printf( "Twin64 Simulator Version %s, PatchLevel %d\n\n", 
                         SIM_VERSION, SIM_PATCH_LEVEL );
@@ -169,15 +173,15 @@ void processCmdLineOptions( SimGlobals *glb, int argc, char *argv[ ] ) {
                     glb -> logFp = fopen(glb->logFile, "w");
                     if ( ! glb-> logFp ) {
                         
-                        perror("Failed to open log file");
-                        exit(1);
+                        perror( "Failed to open log file\n" );
+                        exit( 1 );
                     }
                     #endif
                 }
                 else {
         
-                    printf("Error: --logfile requires a filename\n");
-                    exit(1);
+                    printf( "Error: --logfile requires a filename\n" );
+                    exit( 1 );
                 }
 
             } break; 

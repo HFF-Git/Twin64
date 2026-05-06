@@ -105,14 +105,25 @@ const   int     T64_PADR_BITS               = 36;
 //----------------------------------------------------------------------------------------
 // T64 page types.
 //
-// ??? also doubles as acc mode ?
 //----------------------------------------------------------------------------------------
 enum T64PageType : uint8_t {
 
     PT_NONE        = 0,
     PT_READ_ONLY   = 1,
     PT_READ_WRITE  = 2,
-    PT_EXECUTE     = 3
+    PT_EXECUTE     = 3,
+    PT_GATEWAY     = 4
+};
+
+//----------------------------------------------------------------------------------------
+// T64 access modes..
+//
+//----------------------------------------------------------------------------------------
+enum T64AccMode : uint8_t {
+
+    ACC_MODE_READ = 1,
+    ACC_MODE_WRITE = 2,
+    ACC_MODE_EXECUTE = 3
 };
 
 //----------------------------------------------------------------------------------------
@@ -136,17 +147,18 @@ enum T64TrapCode : int {
 
     INSTR_TLB_MISS_TRAP             = 9,
     NON_ACC_INSTR_TLB_MISS_TRAP     = 10,
-    INSTR_PROTECTION_TRAP           = 11,
-    INSTR_ALIGNMENT_TRAP            = 12,
+    INSTR_ACC_RIGHTS_TRAP           = 11,
+    INSTR_PROTECTION_TRAP           = 12,
+    INSTR_ALIGNMENT_TRAP            = 13,
 
-    DATA_TLB_MISS_TRAP              = 13,
-    NON_ACC_DATA_TLB_MISS_TRAP      = 14,
-    DATA_ACC_RIGHTS_TRAP            = 15,
-    DATA_PROTECTION_TRAP            = 16,
-    DATA_ALIGNMENT_TRAP             = 17,
+    DATA_TLB_MISS_TRAP              = 14,
+    NON_ACC_DATA_TLB_MISS_TRAP      = 15,
+    DATA_ACC_RIGHTS_TRAP            = 16,
+    DATA_PROTECTION_TRAP            = 17,
+    DATA_ALIGNMENT_TRAP             = 18,
       
-    PAGE_REF_TRAP                   = 18,
-    BREAK_INSTR_TRAP                = 19,
+    PAGE_REF_TRAP                   = 19,
+    BREAK_INSTR_TRAP                = 20,
     
 };
 

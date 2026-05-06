@@ -199,7 +199,7 @@ enum SimTokId : uint16_t {
     TOK_TLB_FA_16S,             TOK_TLB_FA_32S,             TOK_TLB_FA_64S,             
     TOK_TLB_FA_128S,
     
-    TOK_MEM_READ_ONLY,          TOK_MEM_READ_WRITE,         
+    TOK_MEM_ROM,                TOK_MEM_RAM,         
     TOK_MOD_SPA_ADR,            TOK_MOD_SPA_LEN,
 
     //------------------------------------------------------------------------------------
@@ -1205,9 +1205,9 @@ private:
     void            doCmd( );
     void            redoCmd( );
     
-    void            addProcModule( );
-    void            addMemModule( );
-    void            addIoModule( );
+    void            addProcModule( int modNum );
+    void            addMemModule( int modNum );
+    void            addIoModule( int modNum );
 
     void            addModuleCmd( );
     void            removeModuleCmd( );

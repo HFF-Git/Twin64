@@ -164,22 +164,24 @@ int T64System::addModule( T64Module *module ) {
     if ( moduleMap[ module -> getModuleNum( ) ] != nullptr ) return ( -4 );
     moduleMap[ module -> getModuleNum( ) ] = module;    
 
-    if ( module -> getSpaLen( ) == 0 ) return ( 0 );
+    if ( module -> getSpaLen( ) > 0 ) {
 
-    int pos = 0;
-    while (( pos < systemMemMapHwm ) &&
-           ( systemMemMap[ pos ] -> getSpaAdr( ) < module->getSpaAdr( ))) {
-        pos++;
+        int pos = 0;
+        while (( pos < systemMemMapHwm ) &&
+            ( systemMemMap[ pos ] -> getSpaAdr( ) < module->getSpaAdr( ))) {
+            pos++;
+        }
+
+        for ( int i = systemMemMapHwm; i > pos; i-- ) {
+
+            systemMemMap[ i ] = systemMemMap[ i - 1] ;
+        }
+
+        systemMemMap[ pos ] = module;
+        systemMemMapHwm++;
     }
 
-    for ( int i = systemMemMapHwm; i > pos; i-- ) {
-
-        systemMemMap[ i ] = systemMemMap[ i - 1] ;
-    }
-
-    systemMemMap[ pos ] = module;
-    systemMemMapHwm++;
-
+    module -> startModule( );
     return ( 0 );
 }
 

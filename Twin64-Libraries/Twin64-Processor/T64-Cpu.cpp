@@ -68,8 +68,6 @@ T64Cpu:: ~T64Cpu( ) { }
 //----------------------------------------------------------------------------------------
 // CPU reset method.
 //
-// ??? get the actual physical memory size ? get from the processor...
-// ??? we need to set the corresponding fields in the CR0 register.
 //----------------------------------------------------------------------------------------
 void T64Cpu::reset( ) {
 
@@ -79,8 +77,7 @@ void T64Cpu::reset( ) {
     psrReg          = 0;
     instrReg        = 0;
     resvReg         = 0;
-    lowerPhysMemAdr = 0;
-    upperPhysMemAdr = T64_DEF_PHYS_MEM_LIMIT;
+    physMemSize     = T64_MAX_PHYS_MEM_LIMIT;
 }
 
 //----------------------------------------------------------------------------------------
@@ -148,7 +145,17 @@ void T64Cpu::setRegR( uint32_t instr, T64Word val ) {
 // Trap code helpers. Each routine fills in the trap data and raises an exception.
 //
 //----------------------------------------------------------------------------------------
-void T64Cpu::dataTlbMissTrap( T64Word adr ) {
+void T64Cpu::machineCheckTrap( T64Word adr ) {
+
+    throw( T64Trap( MACHINE_CHECK, psrReg, instrReg, adr ));
+}
+
+void T64Cpu::dataMemTlbMissTrap( T64Word adr ) {
+
+    throw( T64Trap( DATA_TLB_MISS_TRAP, psrReg, instrReg, adr ));
+}
+
+void T64Cpu::dataMemNonAccessTlbMissTrap( T64Word adr ) {
 
     throw( T64Trap( DATA_TLB_MISS_TRAP, psrReg, instrReg, adr ));
 }
@@ -158,9 +165,9 @@ void T64Cpu::instrTlbMissTrap( T64Word adr ) {
     throw( T64Trap( INSTR_TLB_MISS_TRAP, psrReg, instrReg, adr ));
 }
 
-void T64Cpu::instrAlignmentTrap( T64Word adr ) {
+void T64Cpu::instrMemAccRightsTrap( T64Word adr ) {
 
-    throw( T64Trap( INSTR_ALIGNMENT_TRAP, psrReg, instrReg, adr ));
+    throw( T64Trap( INSTR_ACC_RIGHTS_TRAP, psrReg, 0, adr ));
 }
 
 void T64Cpu::instrMemProtectionTrap( T64Word adr ) {
@@ -168,14 +175,24 @@ void T64Cpu::instrMemProtectionTrap( T64Word adr ) {
     throw( T64Trap( INSTR_PROTECTION_TRAP, psrReg, 0, adr ));
 }
 
-void T64Cpu::dataAlignmentTrap( T64Word adr ) {
+void T64Cpu::instrMemAlignmentTrap( T64Word adr ) {
 
-    throw( T64Trap( DATA_ALIGNMENT_TRAP, psrReg, instrReg, adr ));
+    throw( T64Trap( INSTR_ALIGNMENT_TRAP, psrReg, instrReg, adr ));
+}
+
+void T64Cpu::dataMemAccRightsTrap( T64Word adr ) {
+
+    throw( T64Trap( DATA_ACC_RIGHTS_TRAP, psrReg, instrReg, adr ));
 }
 
 void T64Cpu::dataMemProtectionTrap( T64Word adr ) {
 
-    throw( T64Trap( INSTR_PROTECTION_TRAP, psrReg, instrReg, adr ));
+    throw( T64Trap( DATA_PROTECTION_TRAP, psrReg, instrReg, adr ));
+}
+
+void T64Cpu::dataMemAlignmentTrap( T64Word adr ) {
+
+    throw( T64Trap( DATA_ALIGNMENT_TRAP, psrReg, instrReg, adr ));
 }
 
 void T64Cpu::privModeOperationTrap( ) {
@@ -219,29 +236,43 @@ void T64Cpu::privModeCheck( ) {
     if ( extractPsrXbit( psrReg ) != 0 ) privModeOperationTrap( );
 }
 
-void T64Cpu::instrAlignmentCheck( T64Word adr ) {
+void T64Cpu::instrReadRegionIdCheck( T64Word adr ) {
 
-    if ( ! isAlignedDataAdr( adr, 4 )) instrAlignmentTrap( adr );
-}
+    if ( extractPsrXbit( psrReg ) == 0 ) return;
 
-void T64Cpu::instrRegionIdCheck( T64Word adr ) {
+    if ( ! regionIdCheck( vAdrRegionId( adr ), false )) {
 
-    if ( extractPsrXbit( psrReg )) return;
-
-    if ( ! regionIdCheck( vAdrRegionId( adr ), false )) 
         instrMemProtectionTrap( adr );
+    }
 }
 
-void T64Cpu::instrAccessRightsCheck( T64TlbEntry *tlbPtr, uint8_t accMode ) {
+void T64Cpu::instrReadAccCheck( T64TlbEntry *tlbPtr ) {
 
-    if ( extractPsrXbit( psrReg )) return;
+    uint8_t privMode = extractPsrXbit( psrReg );
 
-    // ??? have AccMode an Enum ? or just use the T64PageType enum ?
+    if ( privMode > 0 ) {
+
+        if (( tlbPtr -> pageType != PT_EXECUTE ) && 
+            ( tlbPtr -> pageType != PT_GATEWAY )) {
+
+            instrMemAccRightsTrap( psrReg );
+        } 
+    
+        if ( ! ( privMode <= tlbPtr -> pLev1 )) {
+        
+            instrMemAccRightsTrap( psrReg );
+        }  
+    }     
+}
+
+void T64Cpu::instrReadAlignmentCheck( T64Word adr ) {
+
+    if ( ! isAlignedDataAdr( adr, 4 )) instrMemAlignmentTrap( adr );
 }
 
 void T64Cpu::dataAlignmentCheck( T64Word adr, int len ) {
 
-    if ( ! isAlignedDataAdr( adr, len )) dataAlignmentTrap( adr );
+    if ( ! isAlignedDataAdr( adr, len )) dataMemAlignmentTrap( adr );
 }
 
 void T64Cpu::dataRegionIdCheck( T64Word adr, bool wMode ) {
@@ -252,11 +283,32 @@ void T64Cpu::dataRegionIdCheck( T64Word adr, bool wMode ) {
         dataMemProtectionTrap( adr );  
 }
 
-void T64Cpu::dataAccessRightsCheck( T64TlbEntry *tlbPtr, uint8_t accMode ) {
+void T64Cpu::dataReadAccCheck( T64TlbEntry *tlbPtr ) {
 
-    if ( extractPsrXbit( psrReg )) return;
+    uint8_t privMode = extractPsrXbit( psrReg );
 
-     // ??? have AccMode an Enum ? or just use the T64PageType enum ?
+    if ( ! ( privMode <= tlbPtr -> pLev1 )) {
+
+        dataMemAccRightsTrap( psrReg );
+    }
+}
+
+void T64Cpu::dataWriteAccCheck ( T64TlbEntry *tlbPtr ) {
+
+    uint8_t privMode = extractPsrXbit( psrReg );
+
+    if ( privMode > 0 ) {
+
+        if ( tlbPtr -> pageType != PT_READ_WRITE ) {
+
+            dataMemAccRightsTrap( psrReg );
+        }
+
+        if ( ! ( privMode <= tlbPtr -> pLev2 )) {
+
+            dataMemAccRightsTrap( psrReg );
+        }
+    }
 }
 
 void T64Cpu::addOverFlowCheck( T64Word val1, T64Word val2 ) {
@@ -272,20 +324,6 @@ void T64Cpu::subUnderFlowCheck( T64Word val1, T64Word val2 ) {
 void T64Cpu::nextInstr( ) {
 
     psrReg = addAdrOfs32( psrReg, 4 );
-}
-
-//----------------------------------------------------------------------------------------
-// Check address for being in the configured physical memory address range.
-// 
-// ??? check this out. How do we get the initial values, how do we relate to 
-// the control register with the size encoded ? This value is changed when 
-// memory is detected during reset.
-//
-// ??? compute the upper physical MemAdr from the control reg field ?
-//----------------------------------------------------------------------------------------
-bool T64Cpu::isPhysMemAdr( T64Word vAdr ) {
-
-    return( isInRange( vAdr, lowerPhysMemAdr, upperPhysMemAdr ));
 }
 
 //----------------------------------------------------------------------------------------
@@ -330,13 +368,14 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
 
     uint32_t instr = 0;
 
-    instrAlignmentCheck( vAdr );
+    instrReadAlignmentCheck( vAdr );
 
     if ( isInPhysMemAdrRange( vAdr )) { 
 
         privModeCheck( );
         if ( ! proc -> busOpRead( vAdr, (uint8_t *) &instr, 4 )) {
 
+            machineCheckTrap( vAdr );
         }   
         
         copyEndianAware( ((uint8_t *) &instr ), ((uint8_t *) &instr ), 4 );  
@@ -346,13 +385,12 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
         T64TlbEntry *tlbPtr = proc -> tlb -> lookupItlb( vAdr );
         if ( tlbPtr == nullptr ) instrTlbMissTrap( vAdr );
 
-        // ??? get the access right data from the TLB entry.
-
-        instrAccessRightsCheck( tlbPtr, PT_EXECUTE );      
-        instrRegionIdCheck( vAdr );
+        instrReadAccCheck( tlbPtr );      
+        instrReadRegionIdCheck( vAdr );
        
         if ( ! proc -> busOpRead( tlbPtr -> pAdr, (uint8_t *) &instr, 4 )) {
 
+            machineCheckTrap( tlbPtr -> pAdr );
         }
 
         copyEndianAware( ((uint8_t *) &instr ), ((uint8_t *) &instr ), 4 );  
@@ -377,12 +415,13 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
 
     dataAlignmentCheck( vAdr, len );
            
-    if ( isPhysMemAdr( vAdr )) { 
+    if ( vAdr < physMemSize ) { 
         
         privModeCheck( );
 
         if ( ! proc -> busOpRead( vAdr, ((uint8_t *) &data ) + wordOfs, len )) {
 
+            machineCheckTrap( vAdr );
         }
 
         copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
@@ -392,15 +431,16 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
     else {
 
         T64TlbEntry *tlbPtr = proc -> tlb ->lookupDtlb( vAdr );
-        if ( tlbPtr == nullptr ) dataTlbMissTrap( vAdr );
+        if ( tlbPtr == nullptr ) dataMemTlbMissTrap( vAdr );
        
-        dataAccessRightsCheck( tlbPtr, PT_READ_ONLY );             
+        dataReadAccCheck( tlbPtr );             
         dataRegionIdCheck( vAdr, false );
 
         if ( ! proc -> busOpRead( tlbPtr -> pAdr, 
                           ((uint8_t *) &data ) + wordOfs, 
                           len )) {
 
+            machineCheckTrap( tlbPtr -> pAdr );
         }
 
         copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
@@ -436,7 +476,7 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
 
     dataAlignmentCheck( vAdr, len );
   
-    if ( isPhysMemAdr( vAdr )) { 
+    if ( vAdr < physMemSize ) {
         
         privModeCheck( );
 
@@ -446,14 +486,15 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
 
         if ( ! proc -> busOpWrite( vAdr, ((uint8_t *) &data ) + wordOfs, len )) {
 
+            machineCheckTrap( vAdr );
         }   
     }
     else {
 
         T64TlbEntry *tlbPtr = proc -> tlb -> lookupDtlb( vAdr );
-         if ( tlbPtr == nullptr ) dataTlbMissTrap( vAdr );
+         if ( tlbPtr == nullptr ) dataMemTlbMissTrap( vAdr );
 
-        dataAccessRightsCheck( tlbPtr, PT_READ_WRITE );
+        dataWriteAccCheck( tlbPtr );
         dataRegionIdCheck( vAdr, true );
 
         copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
@@ -464,6 +505,7 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
                                  ((uint8_t *) &data ) + wordOfs, 
                                  len )) {
 
+            machineCheckTrap( tlbPtr -> pAdr );
         }
     }
 }
@@ -1191,7 +1233,7 @@ void T64Cpu::instrBrBrOp( T64Instr instr ) {
     if ( extractInstrFieldU( instr, 19, 3 ) != 0 ) illegalInstrTrap( );
     if ( extractInstrFieldU( instr, 0, 13 ) != 0 ) illegalInstrTrap( );
 
-    instrAlignmentCheck( newIA );
+    instrReadAlignmentCheck( newIA );
     psrReg = newIA;
     setRegR( instr, rl );
 }
@@ -1210,7 +1252,7 @@ void T64Cpu::instrBrBvOp( T64Instr instr ) {
     if ( extractInstrFieldU( instr, 19, 3 ) != 0 ) illegalInstrTrap( );
     if ( extractInstrFieldU( instr, 0, 9 ) != 0 ) illegalInstrTrap( );
 
-    instrAlignmentCheck( newIA );
+    instrReadAlignmentCheck( newIA );
     psrReg = newIA;
     setRegR( instr, rl );
 }

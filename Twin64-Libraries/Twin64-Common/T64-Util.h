@@ -441,9 +441,9 @@ inline bool extractPsrMbit( T64Word psr ) {
     return( extractBit64( psr, 63 ));
 }
 
-inline bool extractPsrXbit( T64Word psr ) {
+inline uint8_t extractPsrXbit( T64Word psr ) {
 
-    return( extractBit64( psr, 61 ));
+    return((uint8_t) extractBit64( psr, 61 ));
 }
 
 // ??? more to come, align with document...

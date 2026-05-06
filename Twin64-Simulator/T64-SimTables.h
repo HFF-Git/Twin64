@@ -27,19 +27,19 @@
 #include "T64-SimDeclarations.h"
 
 //----------------------------------------------------------------------------------------
-// The simulator offers a set of command line options. Each option has a name, an 
-// argument type and a value returned when the option is found.
+// The simulator offers a set of command line options. Each option has a name, 
+// an argument type and a value returned when the option is found.
 //
 //----------------------------------------------------------------------------------------
-static struct SimCmdLineOptions optionTable[ ] = {
+const SimCmdLineOptions optionTable[ ] = {
 
-        { "help",       CL_OPT_NO_ARGUMENT,        CL_ARG_VAL_HELP },
-        { "version",    CL_OPT_NO_ARGUMENT,        CL_ARG_VAL_VERSION },
-        { "verbose",    CL_OPT_NO_ARGUMENT,        CL_ARG_VAL_VERBOSE },
-        { "configfile", CL_OPT_REQUIRED_ARGUMENT,  CL_ARG_VAL_CONFIG_FILE },
-        { "logfile",    CL_OPT_REQUIRED_ARGUMENT,  CL_ARG_VAL_LOG_FILE },
-        {0,             CL_OPT_NO_ARGUMENT,        0}
-    };
+    { "help",       CL_OPT_NO_ARGUMENT,        CL_ARG_VAL_HELP },
+    { "version",    CL_OPT_NO_ARGUMENT,        CL_ARG_VAL_VERSION },
+    { "verbose",    CL_OPT_NO_ARGUMENT,        CL_ARG_VAL_VERBOSE },
+    { "configfile", CL_OPT_REQUIRED_ARGUMENT,  CL_ARG_VAL_CONFIG_FILE },
+    { "logfile",    CL_OPT_REQUIRED_ARGUMENT,  CL_ARG_VAL_LOG_FILE },
+    { 0,            CL_OPT_NO_ARGUMENT,        0 }
+};
 
 //----------------------------------------------------------------------------------------
 // The global command interpreter token table. All reserved words are allocated
@@ -239,16 +239,16 @@ const SimToken cmdTokTab[ ] = {
     { .name = "TLB_FA_128S",                .typ = TYP_SYM, 
       .tid = TOK_TLB_FA_128S,               .u = { .val = 0 }},
 
-    { .name = "R_ONLY",                     .typ = TYP_SYM, 
-      .tid = TOK_MEM_READ_ONLY,             .u = { .val = 0 }},
+    { .name = "ROM",                        .typ = TYP_SYM, 
+      .tid = TOK_MEM_ROM,                   .u = { .val = 0 }},
 
-    { .name = "R_W",                        .typ = TYP_SYM, 
-      .tid = TOK_MEM_READ_WRITE,            .u = { .val = 0 }},
+    { .name = "RAM",                        .typ = TYP_SYM, 
+      .tid = TOK_MEM_RAM,                   .u = { .val = 0 }},
 
     { .name = "SPA_ADR",                    .typ = TYP_SYM, 
       .tid = TOK_MOD_SPA_ADR,               .u = { .val = 0 }},
 
-    { .name = "SPA_LEN",            .typ = TYP_SYM, 
+    { .name = "SPA_LEN",                    .typ = TYP_SYM, 
       .tid = TOK_MOD_SPA_LEN,               .u = { .val = 0 }}
 
 };

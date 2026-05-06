@@ -124,8 +124,8 @@ struct T64TlbEntry {
     bool            locked          = false;
     bool            modified        = false;
     T64PageType     pageType        = PT_NONE;
-    bool            pLev1           = false;
-    bool            pLev2           = false;
+    uint8_t         pLev1           = 0;
+    uint8_t         pLev2           = 0;
     uint32_t        pageSize        = 0;
     T64Word         pageMask        = 0;
     T64Word         vAdr            = 0;
@@ -235,27 +235,34 @@ struct T64Cpu {
 
     private: 
 
-    bool            isPhysMemAdr( T64Word vAdr );
     int             evalCond( int cond, T64Word val1, T64Word val2 );
 
+    void            machineCheckTrap( T64Word adr );
     void            privModeOperationTrap( );
+
     void            instrTlbMissTrap( T64Word adr );
-    void            instrAlignmentTrap( T64Word adr );
+    void            instrMemAccRightsTrap( T64Word adr );
     void            instrMemProtectionTrap( T64Word adr );
-    void            dataTlbMissTrap( T64Word adr );
-    void            dataAlignmentTrap( T64Word adr );
+    void            instrMemAlignmentTrap( T64Word adr );
+
+    void            dataMemTlbMissTrap( T64Word adr );
+    void            dataMemNonAccessTlbMissTrap( T64Word adr );
+    void            dataMemAccRightsTrap( T64Word adr );
     void            dataMemProtectionTrap( T64Word adr );
+    void            dataMemAlignmentTrap( T64Word adr );
+
     void            overFlowTrap( );
     void            illegalInstrTrap( );
 
     void            privModeCheck( );
     bool            regionIdCheck( uint32_t pId, bool wMode );
-    void            instrAlignmentCheck( T64Word vAdr );
-    void            instrRegionIdCheck( T64Word adr );
-    void            instrAccessRightsCheck( T64TlbEntry *tlbPtr, uint8_t accMode );
+    void            instrReadAlignmentCheck( T64Word vAdr );
+    void            instrReadRegionIdCheck( T64Word adr );
+    void            instrReadAccCheck( T64TlbEntry *tlbPtr );
     void            dataAlignmentCheck( T64Word vAdr, int len );
     void            dataRegionIdCheck( T64Word adr, bool wMode );
-    void            dataAccessRightsCheck( T64TlbEntry *tlbPtr, uint8_t accMode );
+    void            dataReadAccCheck( T64TlbEntry *tlbPtr );
+    void            dataWriteAccCheck( T64TlbEntry *tlbPtr );
     void            addOverFlowCheck( T64Word val1, T64Word val2 );
     void            subUnderFlowCheck( T64Word val1, T64Word val2 );
 
@@ -325,11 +332,9 @@ struct T64Cpu {
     uint32_t        instrReg;
     T64Word         resvReg;
 
-    T64CpuType      cpuType = T64_CPU_T_NIL;
-    T64Processor    *proc   = nullptr;
-   
-    T64Word         lowerPhysMemAdr = 0;
-    T64Word         upperPhysMemAdr = T64_MAX_PHYS_MEM_LIMIT;
+    T64CpuType      cpuType         = T64_CPU_T_NIL;
+    T64Word         physMemSize     = T64_MAX_PHYS_MEM_LIMIT;
+    T64Processor    *proc           = nullptr;
 };
 
 //----------------------------------------------------------------------------------------
@@ -375,8 +380,6 @@ struct T64Processor : T64Module {
     void            execModule( int steps );
 
     void            setProcessorState( T64ProcState state );
-    void            waitUntilHalted( );
-    
     void            processorThread( );
 
     bool            busOpRead( T64Word adr, 

@@ -4,7 +4,16 @@
 //
 //----------------------------------------------------------------------------------------
 // The processor object is a module for the T64 System. It consist of the CPU 
-// and the TLB subsystems.
+// and the TLB subsystems. The processor will run as a thread in the simulator.
+//
+// The processor thread interacts with the system bus, which is essentially a
+// shared resource. The system bus will route read and write request to the 
+// responsible module that is responsible for the address. A module, including
+// the processor, can also be responsible for an address range. In this case, 
+// the busOpEvent routines of the module are called to handle the bus event. 
+//
+// If there more than one processor, there needs to be a selection process for
+// the monarch, which will bring up the system. 
 //
 //----------------------------------------------------------------------------------------
 //
@@ -23,38 +32,6 @@
 //
 //----------------------------------------------------------------------------------------
 #include "T64-Processor.h"
-
-//----------------------------------------------------------------------------------------
-// Threading Notes.
-//
-// A processor could become a thread of execution implemented with C++ threads. 
-// This way we can exploit a multi-core host CPU. The processor thread would 
-// then be responsible for executing the instructions. 
-//
-// The processor thread interacts with the system bus, which is essentially a
-// shared resource. The system bus will route read and write request to the 
-// responsible module that is responsible for the address. A module, including
-// the processor, can also be responsible for an address range. In this case, 
-// the busOpEvent routines of the module are called to handle the bus event. 
-//
-// Over time the simulator will just be the launcher of the system. A processor
-// will simply just run execution. We could think however think about ways to
-// intercept traps and machine checks for analysis and display purposes.
-//
-// A processor thread is still an object that is created and managed by the 
-// simulator. The processor thread is not a thread that is created by the 
-// processor object itself, threads are created by the simulator main thread.
-// Care needs to be taken with access to these object.
-//
-// Processor states: Running, Stopped, Stepping, Halted, Resetting.
-//
-// If there more than one processor, there needs to be a selection process for
-// the monarch, which will bring up the system.  
-
-
-
-
-
 
 //----------------------------------------------------------------------------------------
 // Name space for local routines.
@@ -140,7 +117,7 @@ void T64Processor::stopModule( ) {
 
 //----------------------------------------------------------------------------------------
 // Processor state routines. This is our way to control what the processor is 
-// doing. We provide methods for RESET, HALT and STEP. The processor state is
+// doing. We provide methods for RESET, HALT and EXECUTE. The processor state is
 // the atomic variable "procState". The mutex ensures that we do a synchronized
 // update. Finally, we wake up the thread which is waiting in the "procCondVar".
 //
@@ -169,19 +146,6 @@ void T64Processor::execModule( int steps ) {
 
     instrCount = steps;
     setProcessorState( T64_PROC_STATE_EXECUTE );
-}
-
-void T64Processor::waitUntilHalted() {
-
-    std::unique_lock<std::mutex> lk(procLock);
-
-    procCondVar.wait(lk, [this] {
-
-        return procState.load(std::memory_order_acquire)
-
-               == T64_PROC_STATE_HALTED;
-
-    });
 }
 
 //----------------------------------------------------------------------------------------
@@ -248,11 +212,6 @@ void T64Processor::processorThread( ) {
                     try {
 
                         cpu -> executeInstr( );
-
-                        // ??? we would get exceptions. Let's catch real
-                        // C++ exceptions inside the instruction execution, 
-                        // and map to a kind of T64Trap which the simulator 
-                        // can deal with :-).
                     }
                     catch ( const T64Trap ) {
 
