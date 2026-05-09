@@ -1496,7 +1496,7 @@ void SimCommandsWin::removeModuleCmd( ) {
         tok -> nextToken( );
         modNum = -1;
     }
-    else throw( ERR_INVALID_ARG );
+    else throw( ERR_EXPECTED_MOD_NUM );
 
     tok -> checkEOS( );
 
@@ -1730,7 +1730,6 @@ void SimCommandsWin::haltCmd( ) {
 //
 //  S [ <steps> [ "," <modNum> ]]
 //
-// 
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 
 // window. Put the console mode into non-blocking and hand over to the CPU. On 
@@ -1773,7 +1772,7 @@ void SimCommandsWin::stepCmd( ) {
 //----------------------------------------------------------------------------------------
 // Run command. The command will just run the system until a halt is detected.
 //
-//  RUN
+//  RUN [ <modNum≤ ]
 //
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 
@@ -1784,6 +1783,20 @@ void SimCommandsWin::stepCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::runCmd( ) {
     
+    int modNum = -1;
+    
+    if ( tok -> tokTyp( ) == TYP_NUM ) {
+
+        modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MODULES - 1 );
+
+        if ( glb -> system -> getModuleType( modNum ) != MT_PROC ) {
+
+            throw( ERR_EXPCTED_PROC_MODULE );
+        }
+    }
+
+    tok -> checkEOS( );
+
     winOut -> writeChars( "RUN command to come ... \n");
 }
 
