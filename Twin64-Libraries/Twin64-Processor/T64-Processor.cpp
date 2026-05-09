@@ -328,6 +328,21 @@ bool T64Processor::busOpBroadcastEvent( int     srcModNum,
                                          T64Word arg1, 
                                          T64Word arg2 ) {
 
+    switch ( id ) {
+
+        T64_BCAST_TLB_INSERT: {
+
+            return( tlb -> insertTlb( arg1, arg2 ));
+
+        } break;
+
+        T64_BCAST_TLB_PURGE: {
+            
+            return( tlb -> purgeTlb( arg1 ));
+
+        } break;
+    }
+
     return( true );
 }
 

@@ -53,6 +53,13 @@ enum T64ModuleType {
     MT_IO           = 30   
 };
 
+enum T64BroadcastEvents {
+
+    T64_BCAST_TLB_PURGE = 1,
+    T64_BCAST_TLB_INSERT = 2,
+
+};
+
 //----------------------------------------------------------------------------------------
 // Modules have registers in their HPA.
 //

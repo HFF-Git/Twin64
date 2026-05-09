@@ -570,8 +570,9 @@ void SimWinCode::drawBanner( ) {
     uint32_t    fmtDesc         = FMT_BOLD | FMT_INVERSE;
     T64Word     currentIa       = getCurrentItemAdr( );
     T64Word     currentIaLimit  = 
-                currentIa + (( getRows( ) - 1 ) * getLineIncrementItemAdr( ));
-    T64Word     currentIaOfs    = 0;
+                currentIa + (( getRows( ) - 1 ) * getLineIncrementItemAdr( ));    
+
+    T64Word     currentIaOfs    = 0; // ??? need to get the Ofs 
     
     SimTokId    currentCmd      = glb -> winDisplay -> getCurrentCmd( );
     bool        hasIaOfsAdr     = (( currentIaOfs >= currentIa ) && 
@@ -617,7 +618,7 @@ void SimWinCode::drawLine( T64Word itemAdr ) {
     uint32_t    fmtDesc                     = FMT_DEF_ATTR;
     uint32_t    instr                       = 0x0;
     char        buf[ MAX_TEXT_LINE_SIZE ]   = { 0 };
-    T64Word     currentIa                   = 0;
+    T64Word     currentIaOfs    = 0; // ??? need to get the Ofs 
 
     if ( ! glb -> system -> busOpRead( -1,
                                        itemAdr, 
@@ -631,8 +632,8 @@ void SimWinCode::drawLine( T64Word itemAdr ) {
     
     printNumericField( itemAdr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_2_4_4, 14 );
 
-    if ( itemAdr ==  currentIa ) printTextField((char *) "    >", fmtDesc, 5 );
-    else                         printTextField((char *) "     ", fmtDesc, 5 );
+    if ( itemAdr ==  currentIaOfs ) printTextField((char *) "    >", fmtDesc, 5 );
+    else                            printTextField((char *) "     ", fmtDesc, 5 );
    
     printNumericField( instr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_8, 12 );
     

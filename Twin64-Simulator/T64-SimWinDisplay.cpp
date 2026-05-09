@@ -632,7 +632,7 @@ void SimWinDisplay::windowSetCmdWinRows( int rows ) {
 
     if ( ! winModeOn ) throw( ERR_NOT_IN_WIN_MODE );
 
-    if ( rows == 0 ) rows = cmdWin -> getRows( );
+    if ( rows == 0 ) rows = cmdWin -> getWinSize( 0 ).minRow;
     cmdWin -> setRows( rows );
 
     setWinReFormat( );
@@ -647,7 +647,7 @@ void SimWinDisplay::windowClearCmdWin( ) {
 
     if ( ! winModeOn ) throw( ERR_NOT_IN_WIN_MODE );
 
-   cmdWin -> clearCmdWin( );
+    cmdWin -> clearCmdWin( );
     setWinReFormat( );
 }
 

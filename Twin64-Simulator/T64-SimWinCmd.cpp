@@ -364,7 +364,7 @@ void SimCommandsWin::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 1 );
-    setWinLimitsForToggle( 0, 1, 24, 100, 100 );
+    setWinLimitsForToggle( 0, 10, 40, 100, 100 );
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
     setWinToggleVal( 0 );
@@ -999,7 +999,7 @@ void SimCommandsWin::addMemModule( int modNum ) {
                 if ( tok -> tokTyp( ) == TYP_NUM ) {
 
                     spaAdr = eval -> acceptNumExpr( ERR_INVALID_ARG, 
-                                                    0, UINT32_MAX );
+                                                    0, INT64_MAX );
                 }
                 else throw( ERR_INVALID_ARG );
 
@@ -1034,11 +1034,38 @@ void SimCommandsWin::addMemModule( int modNum ) {
                                   spaAdr,
                                   spaLen );
 
-    if ( glb -> system -> addModule( m ) != 0 ) {
+    switch ( glb -> system -> addModule( m ) ) {
 
-        delete m;
-        throw( SimErrMsgId( ERR_CREATE_MEM_MODULE )); 
-    }    
+        case 0: {
+
+             return;
+        }
+
+        case -1: 
+        case -2: {
+
+            delete m;
+            throw( SimErrMsgId( ERR_MODULE_TABLE_FULL ));
+        }
+
+        case -3: {
+
+            delete m;
+            throw( SimErrMsgId( ERR_MODULE_RANGE_OVERLAP ));
+        }
+
+        case -4: {
+
+            delete m;
+            throw( SimErrMsgId( ERR_MODULE_ALREADY_USED ));
+        }
+
+        default: {
+
+            delete m;
+            throw( SimErrMsgId( ERR_CREATE_MEM_MODULE ));
+        }
+    } 
 }
 
 //----------------------------------------------------------------------------------------
@@ -2131,18 +2158,10 @@ void SimCommandsWin::insertTLBCmd( ) {
 
     tok -> checkEOS( );
 
-    int modNum = glb -> winDisplay -> getCurrentWinModNum( );
-   
-    T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
-    if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
-    if ( proc -> getModuleType( ) != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
+    if ( ! glb -> system -> busOpBroadcast( -1 , T64_BCAST_TLB_INSERT, vAdr, info )) {
 
-    if ( currentCmd == CMD_ITLB ) {
-        
-        if ( ! proc -> getTlbPtr( ) -> insertTlb( vAdr, info )) 
-            throw( ERR_TLB_INSERT_OP );
+        throw ( ERR_TLB_INSERT_OP );
     }
-    else throw( ERR_TLB_INSERT_OP ); 
 }
 
 //----------------------------------------------------------------------------------------
@@ -2151,27 +2170,23 @@ void SimCommandsWin::insertTLBCmd( ) {
 //
 //  PTLB  <vAdr>
 //
-// ??? does this apply to all TLBs in all processors ? Perhaps not. This 
-// command is just for debugging and testing... one day - goes away.
-//
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::purgeTLBCmd( ) {
 
-    ensureWinModeOn( );
-    T64Word vAdr = eval -> acceptNumExpr( ERR_INVALID_NUM, 0 ); 
+    T64Word vAdr = 0;
+
+    if ( tok -> tokTyp( ) == TYP_NUM ) {
+
+        vAdr = eval -> acceptNumExpr( ERR_INVALID_NUM, 0 ); 
+    }
+    else throw ( ERR_INVALID_ARG );
+    
     tok -> checkEOS( );
 
-    if ( glb -> winDisplay -> getCurrentWinType( ) != WT_TLB_WIN ) 
-        throw( ERR_INVALID_WIN_TYPE );
+    if ( ! glb -> system -> busOpBroadcast( -1, T64_BCAST_TLB_PURGE, vAdr, 0 )) {
 
-    int modNum = glb -> winDisplay -> getCurrentWinModNum( );
-   
-    T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
-    if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
-    if ( proc -> getModuleType( ) != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
-
-    if ( currentCmd == CMD_PTLB ) proc -> getTlbPtr( ) -> purgeTlb( vAdr );
-    else ;
+        throw( ERR_TLB_PURGE_OP );
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -2468,13 +2483,20 @@ void SimCommandsWin::winSetRowsCmd( ) {
 // window. The number includes the banner line. If the "lines" argument is omitted, 
 // the window default value will be used. 
 //
-//  CWL <lines>
+//  CWL [ <lines> ]
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winSetCmdWinRowsCmd( ) {
 
-    int winLines = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, MAX_CMD_LINES );
+    int winLines = 0;
+
+    if ( tok -> isToken( TOK_NUM )) {
+
+        winLines = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, MAX_CMD_LINES );      
+    }
+
     tok -> checkEOS( );
+
     glb -> winDisplay -> windowSetCmdWinRows( winLines );
     glb -> winDisplay -> setWinReFormat( );
 }
@@ -2587,7 +2609,7 @@ void SimCommandsWin::winExchangeCmd( ) {
 //  WN  CPU     "," <mod>
 //  WN  TLB     "," <mod>
 //  WN  MEM     "," <adr>
-//  WN  CODE    "," <adr>
+//  WN  CODE    "," <adr> [ "," <modNum> ]
 //  WN  TEXT    "," <str>
 // 
 //----------------------------------------------------------------------------------------
@@ -2650,18 +2672,22 @@ void SimCommandsWin::winNewWinCmd( ) {
 
         case TOK_CODE: {  
 
+            int modNum = -1;
+
             tok -> acceptComma( );
             T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC, 
                                                  0,
                                                  T64_MAX_PHYS_MEM_LIMIT );
+            
+            if ( tok -> isToken( TOK_COMMA )) {
+
+                modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC, 
+                                                0, MAX_MODULES );
+            }
+
             tok -> checkEOS( );
 
-             T64Module *mod = glb -> system -> lookupByAdr( adr );
-            if ( mod != nullptr ) {
-
-                glb -> winDisplay -> windowNewAbsCode( mod -> getModuleNum( ), adr );
-            }
-            else throw( 9997 );
+            glb -> winDisplay -> windowNewAbsCode( modNum, adr );
 
         }  break;
 

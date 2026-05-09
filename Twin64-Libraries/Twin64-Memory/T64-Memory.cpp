@@ -167,8 +167,8 @@ bool T64Memory::busOpWriteEvent( int     reqModNum,
         }
 
         uint8_t *dstPtr = &memData[ pAdr - spaAdr ];
-
         memcpy( dstPtr, data, len );
+        lockPtr -> store( false );
         return( true );
     }
 }

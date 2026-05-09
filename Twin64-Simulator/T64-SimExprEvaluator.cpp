@@ -297,6 +297,8 @@ SimExprEvaluator::SimExprEvaluator( SimGlobals *glb, SimTokenizer *tok ) {
 //                  "~" <factor>                    |
 //                  "(" <expr> ")"
 //
+// ??? should we have a way to say "memory content of address" ?
+//
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
     
@@ -508,7 +510,7 @@ T64Word SimExprEvaluator::acceptNumExpr( SimErrMsgId errCode, T64Word low, T64Wo
      
      if ( rExpr.typ == TYP_NUM ) {
         
-        if ( !isInRange( rExpr.u.val, low, high )) throw( errCode );
+        if ( ! isInRange( rExpr.u.val, low, high )) throw( errCode );
         return ( rExpr.u.val );
      }
      else throw ( errCode );
