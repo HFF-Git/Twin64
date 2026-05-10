@@ -1601,7 +1601,8 @@ void T64Cpu::instrSysDiagOp( T64Instr instr ) {
 //----------------------------------------------------------------------------------------
 // SYS:TRAP_OP operation.
 //
-// ??? what exactly do we do here ?
+// ??? what exactly do we do here ? Can we pass arguments ? Or do we just move 
+// them to control registers scratch 1 and 2 ?
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrSysTrapOp( T64Instr instr ) {
 
@@ -1610,9 +1611,7 @@ void T64Cpu::instrSysTrapOp( T64Instr instr ) {
     int trapOpt = ( extractInstrFieldU( instr, 19, 3 ) * 4 ) + 
                     extractInstrFieldU( instr, 13, 2 );
 
-    // ??? throw the trap
-
-    nextInstr( );
+    throw( T64Trap( USER_DEFINED_TRAP, psrReg, instrReg, trapOpt ));
 }
 
 //----------------------------------------------------------------------------------------

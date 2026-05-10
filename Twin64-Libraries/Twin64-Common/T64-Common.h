@@ -159,6 +159,8 @@ enum T64TrapCode : int {
       
     PAGE_REF_TRAP                   = 19,
     BREAK_INSTR_TRAP                = 20,
+
+    USER_DEFINED_TRAP               = 21,
     
 };
 

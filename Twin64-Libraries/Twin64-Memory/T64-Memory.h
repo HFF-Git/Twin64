@@ -28,8 +28,7 @@
 // this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
-#ifndef T64_Memory_h
-#define T64_Memory_h
+#pragma once
 
 #include "T64-Util.h"
 #include "T64-Common.h"
@@ -69,12 +68,10 @@ public:
 
     virtual     ~ T64Memory( );
     
+    void        initModule( );
     void        resetModule( );
     void        haltModule( );
     void        execModule( int steps );
-    
-    void        startModule( );
-    void        stopModule( );
    
     bool        busOpReadEvent( int     reqModNum,
                                 T64Word pAdr, 
@@ -105,5 +102,3 @@ private:
     bool                spaReadOnly = false;
     std::atomic<bool>   memLock     = false;
 };
-
-#endif // T64-Memory.h

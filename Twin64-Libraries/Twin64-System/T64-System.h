@@ -121,12 +121,10 @@ struct T64Module {
 
     virtual         ~T64Module() = default;
 
+    virtual void    initModule( )            = 0;
     virtual void    resetModule( )           = 0;
     virtual void    haltModule( )            = 0;
     virtual void    execModule( int steps )  = 0;
-    
-    virtual void    startModule( ) = 0;
-    virtual void    stopModule( )  = 0;
 
     virtual bool    busOpReadEvent( int     srcModNum,
                                     T64Word pAdr, 
@@ -184,31 +182,26 @@ struct T64ThreadModule : T64Module {
     ~ T64ThreadModule( );
 
     virtual bool    executeUnit( ) = 0;
-    char      *getModuleStateStr( );
-
-    void            startModule( );
-    void            stopModule( );
+    char            *getModuleStateStr( );
 
     protected: 
 
     void            threadModuleStart( );
-    void            threadModuleStop( );
     void            threadModuleReset( );
     void            threadModuleHalt( );
     void            threadModuleExec( int units );
    
-    int             unitCount   = 0;
-    uint32_t        threadId    = 0;
-
     private: 
 
     void            setModuleState( T64ModuleThreadState state );
     void            moduleWorker( );
+    void            threadModuleStop( );
 
     std::atomic<T64ModuleThreadState>   mState { T64_MOD_STATE_NIL };
     std::mutex                          mLock;
     std::condition_variable             mCondVar;
     std::thread                         mWorker;
+    int                                 unitCount  = 0;
 };
 
 //----------------------------------------------------------------------------------------

@@ -1598,16 +1598,7 @@ void SimCommandsWin::displayModuleCmd( ) {
                 winOut -> printNumber( mPtr -> getSpaLen( ), FMT_HEX_4_4 );
                 winOut -> writeChars( "  " );
             }
-            else {
-
-                winOut -> writeChars( "                           " );
-            }
-
-            if ( mPtr -> getThreadId( ) != 0 ) {
-
-                winOut -> writeChars( "ThreadId: %d", mPtr -> getThreadId( ));
-            }
-            
+        
             winOut -> writeChars( "\n" );
         }
     }

@@ -75,21 +75,19 @@ T64Memory:: ~T64Memory( ) {
 // way is to free the old memory and create a new one.
 //
 //----------------------------------------------------------------------------------------
+void T64Memory::initModule( ) { 
+
+    resetModule( );
+}
+
 void T64Memory::resetModule( ) {
 
     if ( memData != nullptr ) free( memData );
     this -> memData  = (uint8_t *) calloc( spaLen, sizeof( uint8_t ));
 }
 
-//----------------------------------------------------------------------------------------
-// Dummy functions. A memory module does not use threads. It is a shared 
-// resource.
-//
-//----------------------------------------------------------------------------------------
-void T64Memory::haltModule( )  { }
+void T64Memory::haltModule( ) { }
 void T64Memory::execModule( int steps ) { }
-void T64Memory::startModule( ) { }
-void T64Memory::stopModule( ) { }
 
 //----------------------------------------------------------------------------------------
 // Read a data from memory. The address the physical address and we compute the

@@ -50,9 +50,6 @@ T64ThreadModule:: ~ T64ThreadModule( ) {
     threadModuleStop( );
 }
 
-void  T64ThreadModule::startModule( ) { threadModuleStart( ); }
-void T64ThreadModule::stopModule( ) { threadModuleStop( ); }
-
 //----------------------------------------------------------------------------------------
 // Start and stop the thread module. The start method is called by the system
 // "addModule" routine after creating the module object. The stop method is

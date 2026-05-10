@@ -181,7 +181,7 @@ int T64System::addModule( T64Module *module ) {
         systemMemMapHwm++;
     }
 
-    module -> startModule( );
+    module -> initModule( );
     return ( 0 );
 }
 
@@ -219,9 +219,7 @@ int T64System::removeModule( T64Module *module ) {
     
     moduleMap[ module -> getModuleNum( ) ] = nullptr;
 
-    module -> stopModule( );
     delete module;
-
     return ( 0 );
 }
 
@@ -383,78 +381,3 @@ bool T64System::busOpBroadcast( int                reqModNum,
     return( true );
 }
 
-//****************************************************************************************
-//****************************************************************************************
-//
-// Module
-//----------------------------------------------------------------------------------------
-// A module is an object plugged into the imaginary system bus. It has a type and 
-// a module number, which is the slot in that bus. Each module has a dedicated memory
-// page page in the IO HPA space. The address is easily computed from the slot 
-// number. In addition, a module can have several SPA regions. This is however module
-// specific and not stored at the common module level.
-//
-//----------------------------------------------------------------------------------------
-T64Module::T64Module( T64ModuleType    modType, 
-                      int              modNum,
-                      T64Word          spaAdr,
-                      int              spaLen ) {
-
-    this -> moduleTyp   = modType;
-    this -> moduleNum   = modNum;
-    this -> hpaAdr      =  T64_IO_HPA_MEM_START + ( modNum * T64_PAGE_SIZE_BYTES );
-    this -> hpaLen      = T64_PAGE_SIZE_BYTES;
-    this -> spaAdr      = spaAdr;
-    this -> spaLen      = spaLen;
-    this -> spaLimit    = spaAdr + spaLen - 1;
-}
-
-int T64Module::getModuleNum( ) {
-
-    return ( moduleNum );
-}
-
-T64ModuleType T64Module::getModuleType( ) {
-
-    return ( moduleTyp );
-}
-
-const char *T64Module::getModuleTypeName( ) {
-
-    switch ( moduleTyp ) {
-
-        case MT_PROC:       return ((char *) "PROC" );
-        case MT_CPU_CORE:   return ((char *) "CPU" );
-        case MT_CPU_TLB:    return ((char *) "TLB"  );
-        case MT_IO:         return ((char *) "IO" );
-        case MT_MEM:        return ((char *) "MEM" );
-
-        case MT_NIL:
-        default:            return ((char *) "NIL" );
-    }
-}
-
-uint32_t T64Module::getThreadId( ) {
-
-    return ( threadId );
-}
-
-T64Word T64Module::getHpaAdr( ) {
-
-    return ( hpaAdr );
-}
-
-int T64Module::getHpaLen( ) {
-
-    return ( hpaLen );
-}
-
-T64Word T64Module::getSpaAdr( )  {
-
-    return ( spaAdr );
-}
-
-int T64Module::getSpaLen( )  {
-
-    return ( spaLen );
-}
