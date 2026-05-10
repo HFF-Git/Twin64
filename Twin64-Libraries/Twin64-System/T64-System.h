@@ -29,6 +29,10 @@
 
 #include "T64-Common.h"
 #include "T64-Util.h"
+#include <thread>
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
 
 //----------------------------------------------------------------------------------------
 // The architecture defines 64 module on the system bus so far. Typically the number
@@ -53,11 +57,29 @@ enum T64ModuleType {
     MT_IO           = 30   
 };
 
+//----------------------------------------------------------------------------------------
+//
+//
+//----------------------------------------------------------------------------------------
 enum T64BroadcastEvents {
 
     T64_BCAST_TLB_PURGE = 1,
     T64_BCAST_TLB_INSERT = 2,
 
+};
+
+//----------------------------------------------------------------------------------------
+// Module thread states.
+//
+//----------------------------------------------------------------------------------------
+enum T64ModuleThreadState : int {
+
+    T64_MOD_STATE_NIL          = 0,
+    T64_MOD_STATE_RESET        = 1,
+    T64_MOD_STATE_EXECUTE      = 2,
+    T64_MOD_STATE_TRAP         = 3, 
+    T64_MOD_STATE_HALTED       = 4,
+    T64_MOD_STATE_TERMINATE    = 5    
 };
 
 //----------------------------------------------------------------------------------------
@@ -99,7 +121,7 @@ struct T64Module {
 
     virtual         ~T64Module() = default;
 
-    virtual void    resetModule( )          = 0;
+    virtual void    resetModule( )           = 0;
     virtual void    haltModule( )            = 0;
     virtual void    execModule( int steps )  = 0;
     
@@ -116,10 +138,10 @@ struct T64Module {
                                      uint8_t *data, 
                                      int     len ) = 0;
 
-    virtual bool    busOpBroadcastEvent( int     srcModNum,
-                                         int     id, 
-                                         T64Word arg1, 
-                                         T64Word arg2 ) = 0;
+    virtual bool    busOpBroadcastEvent( int                 srcModNum,
+                                         T64BroadcastEvents  event, 
+                                         T64Word             arg1, 
+                                         T64Word             arg2 ) = 0;
 
     T64ModuleType   getModuleType( );
     int             getModuleNum( );
@@ -134,12 +156,59 @@ struct T64Module {
 
     T64ModuleType   moduleTyp   = MT_NIL;
     int             moduleNum   = 0;
+
     T64Word         hpaAdr      = 0;
     int             hpaLen      = 0;
     T64Word         spaAdr      = 0;
     int             spaLen      = 0;
     T64Word         spaLimit    = 0;
     uint32_t        threadId    = 0;
+};
+
+//----------------------------------------------------------------------------------------
+// The thread module class implements the thread logic. The inheriting classes
+// call the "threadModuleXXX" methods to carry out the the thread specific
+// functions.
+//
+//
+//----------------------------------------------------------------------------------------
+struct T64ThreadModule : T64Module {
+
+    public:
+
+    T64ThreadModule( T64ModuleType    modType, 
+                     int              modNum,
+                     T64Word          spaAdr,
+                     int              spaLen );
+
+    ~ T64ThreadModule( );
+
+    virtual bool    executeUnit( ) = 0;
+    char      *getModuleStateStr( );
+
+    void            startModule( );
+    void            stopModule( );
+
+    protected: 
+
+    void            threadModuleStart( );
+    void            threadModuleStop( );
+    void            threadModuleReset( );
+    void            threadModuleHalt( );
+    void            threadModuleExec( int units );
+   
+    int             unitCount   = 0;
+    uint32_t        threadId    = 0;
+
+    private: 
+
+    void            setModuleState( T64ModuleThreadState state );
+    void            moduleWorker( );
+
+    std::atomic<T64ModuleThreadState>   mState { T64_MOD_STATE_NIL };
+    std::mutex                          mLock;
+    std::condition_variable             mCondVar;
+    std::thread                         mWorker;
 };
 
 //----------------------------------------------------------------------------------------
@@ -190,10 +259,10 @@ struct T64System {
                                     uint8_t *data, 
                                     int     len );
 
-    bool                busOpBroadcast( int reqModNum,
-                                        int id,
-                                        T64Word arg1, 
-                                        T64Word arg2 );
+    bool                busOpBroadcast( int                 reqModNum,
+                                        T64BroadcastEvents  event,
+                                        T64Word             arg1, 
+                                        T64Word             arg2 );
 
     private:
 

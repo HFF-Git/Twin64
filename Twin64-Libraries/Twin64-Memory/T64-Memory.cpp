@@ -124,7 +124,6 @@ bool T64Memory::busOpReadEvent( int     reqModNum,
        
         uint8_t *srcPtr = &memData[ pAdr - spaAdr ];
         memcpy( data, srcPtr, len );
-
         lockPtr -> store( false );
         return( true );
     }
@@ -173,10 +172,10 @@ bool T64Memory::busOpWriteEvent( int     reqModNum,
     }
 }
 
-bool T64Memory::busOpBroadcastEvent( int     srcModNum,
-                                     int     id, 
-                                     T64Word arg1, 
-                                     T64Word arg2 ) {
+bool T64Memory::busOpBroadcastEvent( int                srcModNum,
+                                     T64BroadcastEvents id, 
+                                     T64Word            arg1, 
+                                     T64Word            arg2 ) {
 
     return( true );
 }

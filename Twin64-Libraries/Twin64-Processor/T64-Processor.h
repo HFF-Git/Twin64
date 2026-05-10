@@ -222,7 +222,7 @@ struct T64Cpu {
     virtual         ~ T64Cpu( );
 
     void            reset( );
-    void            executeInstr( );
+    bool            executeInstr( );
 
     T64Word         getGeneralReg( int index );
     void            setGeneralReg( int index, T64Word val );
@@ -321,8 +321,8 @@ struct T64Cpu {
     void            instrSysDiagOp( T64Instr instr );
     void            instrSysTrapOp( T64Instr instr );
 
-    void            instrExecute( uint32_t instr );
-    void            handleExtInterrupts( );
+   
+    void            handleExtInterrupts( );  // ??? will go out ?
 
     T64Word         diagOpHandler( int opt, T64Word arg1, T64Word arg2 );
 
@@ -350,6 +350,10 @@ enum T64ProcState : int {
     T64_PROC_STATE_HALTED       = 4,
     T64_PROC_STATE_TERMINATE    = 5    
 };
+
+#define NEW_PROC 1
+
+#if NEW_PROC == 0
 
 //----------------------------------------------------------------------------------------
 // The CPU core executes the instructions. A processor module contains the CPU 
@@ -400,10 +404,10 @@ struct T64Processor : T64Module {
                                      uint8_t *data, 
                                      int     len );  
 
-    bool            busOpBroadcastEvent( int     srcModNum,
-                                         int     id, 
-                                         T64Word arg1, 
-                                         T64Word arg2 );
+    bool            busOpBroadcastEvent( int                srcModNum,
+                                         T64BroadcastEvents id, 
+                                         T64Word            arg1, 
+                                         T64Word            arg2 );
                         
     T64Cpu          *getCpuPtr( );
     T64Tlb          *getTlbPtr( );
@@ -421,11 +425,90 @@ private:
     T64Cpu                      *cpu                    = nullptr;
     T64Tlb                      *tlb                    = nullptr;
   
-    int                         modNum                  = 0;
- 
     std::atomic<T64ProcState>   procState { T64_PROC_STATE_NIL };
     int                         instrCount = 0;
     std::mutex                  procLock;
     std::condition_variable     procCondVar;
     std::thread                 worker;
 };
+
+#else
+
+//----------------------------------------------------------------------------------------
+// The CPU core executes the instructions. A processor module contains the CPU 
+// core, TLBs and one day caches. The processor module connects to the system bus
+// for  memory and IO access. The unit is a single step, i.e. one instruction. 
+//
+//----------------------------------------------------------------------------------------
+struct T64Processor : T64ThreadModule {
+    
+    public:
+
+    T64Processor( T64System         *sys,
+                  int               modNum,
+                  T64Options        options,  
+                  T64CpuType        cpuType,
+                  T64TlbType        tlbType,
+                  T64CacheType      cacheType,
+                  T64Word           spaAdr,
+                  int               spaLen );
+    
+    virtual         ~ T64Processor( );
+
+    bool            executeUnit( );
+
+    void            resetModule( );
+    void            haltModule( );
+    void            execModule( int steps );
+
+    void            setProcessorState( T64ProcState state );
+    void            processorThread( );
+
+    bool            busOpRead( T64Word adr, 
+                              uint8_t *data, 
+                              int len );
+
+    bool            busOpWrite( T64Word adr, 
+                               uint8_t *data, 
+                               int len );
+
+    bool            busOpReadEvent( int     reqModNum,
+                                    T64Word pAdr, 
+                                    uint8_t *data, 
+                                    int     len );
+
+    bool            busOpWriteEvent( int     reqModNum,
+                                     T64Word pAdr, 
+                                     uint8_t *data, 
+                                     int     len );  
+
+    bool            busOpBroadcastEvent( int                srcModNum,
+                                         T64BroadcastEvents id, 
+                                         T64Word            arg1, 
+                                         T64Word            arg2 );
+                        
+    T64Cpu          *getCpuPtr( );
+    T64Tlb          *getTlbPtr( );
+
+    char      *getProcStateStr( );
+   
+private:
+
+    bool            handleHPARead( T64Word pAdr, uint8_t *data, int len );
+    bool            handleHPAWrite( T64Word pAdr, uint8_t *data, int len );
+
+    friend struct               T64Cpu;
+
+    T64System                   *sys                    = nullptr;
+    T64Cpu                      *cpu                    = nullptr;
+    T64Tlb                      *tlb                    = nullptr;
+  
+    std::atomic<T64ProcState>   procState { T64_PROC_STATE_NIL };
+    int                         instrCount = 0;
+    std::mutex                  procLock;
+    std::condition_variable     procCondVar;
+    std::thread                 worker;
+};
+
+
+#endif

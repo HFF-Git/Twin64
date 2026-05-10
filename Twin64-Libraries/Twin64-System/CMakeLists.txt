@@ -8,6 +8,7 @@ add_library( ${PROJECT_NAME} STATIC
 
     T64-System.h 
     T64-System.cpp
+    T64-ThreadModule.cpp
 ) 
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC 

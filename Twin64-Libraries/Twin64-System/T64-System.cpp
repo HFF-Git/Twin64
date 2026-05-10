@@ -301,19 +301,19 @@ void T64System::haltModule( int modNum ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Run a module for n steps. This method implements both stepping and running
+// Run a module for n units. This method implements both stepping and running
 // a sequence of instructions.
 //
 //----------------------------------------------------------------------------------------
-void T64System::execModule( int modNum, int steps ) {
+void T64System::execModule( int modNum, int units ) {
 
     if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
         if ( moduleMap[ modNum ] == nullptr ) return;
 
-        if (( steps >= 1 ) && ( steps < 9999 )) {
+        if (( units >= 1 ) && ( units < 9999 )) {
 
-            moduleMap[ modNum ] -> execModule( steps );
+            moduleMap[ modNum ] -> execModule( units );
         }
     }
 }
@@ -370,12 +370,16 @@ bool T64System::busOpWrite( int reqModNum,
 //
 // ??? under construction...
 //----------------------------------------------------------------------------------------
-bool T64System::busOpBroadcast( int reqModNum,
-                                int id,
-                                T64Word arg1, 
-                                T64Word arg2 ) {
+bool T64System::busOpBroadcast( int                reqModNum,
+                                T64BroadcastEvents event,
+                                T64Word            arg1, 
+                                T64Word            arg2 ) {
 
-                    
+    for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+        moduleMap[ i ] -> busOpBroadcastEvent( reqModNum, event, arg1, arg2 );
+    }
+
     return( true );
 }
 
