@@ -108,6 +108,23 @@ void T64ThreadModule::threadModuleExec( int units ) {
 }
 
 //----------------------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------------------
+void T64ThreadModule::waitUntilHalted( ) {
+
+    std::unique_lock<std::mutex> lk(mLock);
+
+    mCondVar.wait(lk, [this] {
+
+        return mState.load() == T64_MOD_STATE_HALTED;
+
+    });
+
+}
+
+//----------------------------------------------------------------------------------------
 // A little helper to return a string version of the module state.
 //
 //----------------------------------------------------------------------------------------

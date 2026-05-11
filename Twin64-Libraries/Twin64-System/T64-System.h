@@ -123,6 +123,7 @@ struct T64Module {
     virtual void        resetModule( )          = 0;
     virtual void        haltModule( )           = 0;
     virtual void        execModule( int steps ) = 0;
+    virtual void        waitUntilHalted( )      = 0;
 
     virtual bool       
     busOpReadEvent( int srcModNum, T64Word pAdr, uint8_t *data, int len ) = 0;
@@ -203,6 +204,7 @@ struct T64ThreadModule : T64Module {
     void            threadModuleReset( );
     void            threadModuleHalt( );
     void            threadModuleExec( int units );
+    void            waitUntilHalted( );
    
     private: 
 

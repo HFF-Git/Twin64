@@ -88,6 +88,7 @@ void T64Memory::resetModule( ) {
 
 void T64Memory::haltModule( ) { }
 void T64Memory::execModule( int steps ) { }
+void T64Memory::waitUntilHalted( ) { }
 
 //----------------------------------------------------------------------------------------
 // Read a data from memory. The address the physical address and we compute the

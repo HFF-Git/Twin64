@@ -312,6 +312,7 @@ void T64System::execModule( int modNum, int units ) {
         if (( units >= 1 ) && ( units < UINT32_MAX )) {
 
             moduleMap[ modNum ] -> execModule( units );
+            moduleMap[ modNum ] -> waitUntilHalted( );
         }
     }
 }

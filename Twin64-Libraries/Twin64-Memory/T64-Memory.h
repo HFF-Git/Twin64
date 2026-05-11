@@ -72,6 +72,7 @@ public:
     void        resetModule( );
     void        haltModule( );
     void        execModule( int steps );
+    void        waitUntilHalted( );
    
     bool        busOpReadEvent( int     reqModNum,
                                 T64Word pAdr, 
