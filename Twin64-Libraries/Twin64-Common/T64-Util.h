@@ -223,9 +223,14 @@ inline int extractInstrOpGroup( T64Instr instr ) {
     return ( extractInstrFieldU( instr, 30, 2 ));
 }
 
-inline int extractInstrOpCode( T64Instr instr ) {
+inline int extractInstrOpNum( T64Instr instr ) {
     
     return ( extractInstrFieldU( instr, 26, 4 ));
+}
+
+inline int extractInstrOpCode( T64Instr instr ) {
+    
+    return ( extractInstrFieldU( instr, 26, 6 ));
 }
 
 inline int extractInstrOptField( T64Instr instr ) {

@@ -69,10 +69,10 @@ enum T64BroadcastEvents {
 };
 
 //----------------------------------------------------------------------------------------
-// Module thread states.
+// Module state.
 //
 //----------------------------------------------------------------------------------------
-enum T64ModuleThreadState : int {
+enum T64ModuleState : int {
 
     T64_MOD_STATE_NIL          = 0,
     T64_MOD_STATE_RESET        = 1,
@@ -83,26 +83,24 @@ enum T64ModuleThreadState : int {
 };
 
 //----------------------------------------------------------------------------------------
-// Modules have registers in their HPA.
+// Modules have registers in their HPA. The can be accessed via load / store 
+// instructions. 
 //
+// ??? I/O Elements also use these names ?
 //----------------------------------------------------------------------------------------
-// 0 - status
-// 1 - command
-// 2 - HPA address
-// 3 - SPA address
-// 4 - SPA len
-// 5 - number of I/O elements
-// 6 - module hardware version 
-// 7 - module software version
-// 8 - interrupt target ( when sending an interrupt -> processor + mask )
+enum T64ModuleRegs : int {
 
-// ?? the HPA also has a the IODC, a piece that describes the IO Module and 
-// code to execute module specific functions.
-
-// I/O Element. Allocated in SPA space. Up to 128 bytes in size -> 16 Regs. 
-// ??? need for a larger I/O element ?
-
-// SPA can be USER mode too and directly mapped to user segments, etc.
+    T64_MREG_STATUS     = 0,
+    T64_MREG_COMMAND    = 1,
+    T64_MREG_EIR        = 2,
+    T64_MREG_CONFIG     = 3,
+    T64_MREG_VERSION    = 4,
+    T64_MREG_SPA_ADR_1  = 5,
+    T64_MREG_SPA_LEN_1  = 6,
+    T64_MREG_SPA_ADR_2  = 7,
+    T64_MREG_SPA_LEN_2  = 8,
+   
+};
 
 //----------------------------------------------------------------------------------------
 // The T64Module object represents and an object in the system. It is the base class
@@ -119,48 +117,63 @@ struct T64Module {
                T64Word          spaAdr,
                int              spaLen  );
 
-    virtual         ~T64Module() = default;
+    virtual             ~T64Module()            = default;
 
-    virtual void    initModule( )            = 0;
-    virtual void    resetModule( )           = 0;
-    virtual void    haltModule( )            = 0;
-    virtual void    execModule( int steps )  = 0;
+    virtual void        initModule( )           = 0;
+    virtual void        resetModule( )          = 0;
+    virtual void        haltModule( )           = 0;
+    virtual void        execModule( int steps ) = 0;
 
-    virtual bool    busOpReadEvent( int     srcModNum,
-                                    T64Word pAdr, 
-                                    uint8_t *data, 
-                                    int     len ) = 0;
+    virtual bool       
+    busOpReadEvent( int srcModNum, T64Word pAdr, uint8_t *data, int len ) = 0;
 
-    virtual bool    busOpWriteEvent( int     srcModNum,
-                                     T64Word pAdr, 
-                                     uint8_t *data, 
-                                     int     len ) = 0;
+    virtual bool        
+    busOpWriteEvent( int srcModNum, T64Word pAdr, uint8_t *data, int len ) = 0;
 
-    virtual bool    busOpBroadcastEvent( int                 srcModNum,
-                                         T64BroadcastEvents  event, 
-                                         T64Word             arg1, 
-                                         T64Word             arg2 ) = 0;
+    virtual bool        
+    busOpBroadcastEvent( int srcModNum, T64BroadcastEvents event, 
+                         T64Word  arg1, T64Word arg2 ) = 0;
 
-    T64ModuleType   getModuleType( );
-    int             getModuleNum( );
-    const char      *getModuleTypeName( );
-    uint32_t        getThreadId( );
-    T64Word         getHpaAdr( );
-    int             getHpaLen( );
-    T64Word         getSpaAdr( );
-    int             getSpaLen( );
+    T64ModuleType       getModuleType( );
+    int                 getModuleNum( );
+    const char          *getModuleTypeName( );
+    
+    T64Word             getHpaAdr( );
+    int                 getHpaLen( );
+    T64Word             getSpaAdr( );
+    int                 getSpaLen( );
 
     public: 
 
-    T64ModuleType   moduleTyp   = MT_NIL;
-    int             moduleNum   = 0;
+    T64ModuleType       moduleTyp   = MT_NIL;
+    int                 moduleNum   = 0;
+    
+    protected: 
 
-    T64Word         hpaAdr      = 0;
-    int             hpaLen      = 0;
-    T64Word         spaAdr      = 0;
-    int             spaLen      = 0;
-    T64Word         spaLimit    = 0;
-    uint32_t        threadId    = 0;
+    T64Word             hpaAdr      = 0;
+    int                 hpaLen      = 0;
+
+    T64Word             spaAdr      = 0;
+    int                 spaLen      = 0;
+
+    // ??? work in progress ... how do we best represent the regs in a module ?
+    // ??? we should have the fields that are common to every module...
+
+    T64Word             mrStatus;
+    T64Word             mrCommand;
+    T64Word             mrData;
+    T64Word             mrEir;
+    T64Word             mrConfig;
+    T64Word             mrVersion;
+    T64Word             mrType;
+    T64Word             mrId;
+    T64Word             mrSpaAdr1;
+    T64Word             mrSpaLen1;
+    T64Word             mrSpaAdr2;
+    T64Word             mrSpaLen2;
+
+    // ??? entry point table ?
+    // ?? entry point code area ?
 };
 
 //----------------------------------------------------------------------------------------
@@ -193,11 +206,11 @@ struct T64ThreadModule : T64Module {
    
     private: 
 
-    void            setModuleState( T64ModuleThreadState state );
+    void            setModuleState( T64ModuleState state );
     void            moduleWorker( );
     void            threadModuleStop( );
 
-    std::atomic<T64ModuleThreadState>   mState { T64_MOD_STATE_NIL };
+    std::atomic<T64ModuleState>         mState { T64_MOD_STATE_NIL };
     std::mutex                          mLock;
     std::condition_variable             mCondVar;
     std::thread                         mWorker;

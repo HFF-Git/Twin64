@@ -59,11 +59,6 @@ T64ThreadModule:: ~ T64ThreadModule( ) {
 void T64ThreadModule::threadModuleStart( ) {
 
     mWorker = std::thread( &T64ThreadModule::moduleWorker, this );
-
-    threadId = static_cast<uint32_t>(
-
-        std::hash<std::thread::id>{ }(mWorker.get_id( ))
-    );
 }
 
 void T64ThreadModule::threadModuleStop( ) {
@@ -86,7 +81,7 @@ void T64ThreadModule::threadModuleStop( ) {
 // work.
 //
 //----------------------------------------------------------------------------------------
-void T64ThreadModule::setModuleState( T64ModuleThreadState state ) {
+void T64ThreadModule::setModuleState( T64ModuleState state ) {
 
     {
         std::lock_guard<std::mutex> lk(mLock);
@@ -118,7 +113,7 @@ void T64ThreadModule::threadModuleExec( int units ) {
 //----------------------------------------------------------------------------------------
 char *T64ThreadModule::getModuleStateStr( ) {
 
-    T64ModuleThreadState s = mState.load( std::memory_order_acquire );
+    T64ModuleState s = mState.load( std::memory_order_acquire );
 
     switch( s ) {
 
@@ -153,7 +148,7 @@ void T64ThreadModule::moduleWorker( ) {
 
     while ( true ) {
 
-        T64ModuleThreadState s = mState.load( std::memory_order_acquire );
+        T64ModuleState s = mState.load( std::memory_order_acquire );
 
         if ( s == T64_MOD_STATE_HALTED ) {
 

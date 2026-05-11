@@ -91,7 +91,7 @@ int printDwField( char *buf, uint32_t dw ) {
 //----------------------------------------------------------------------------------------
 int buildOpCodeStr( char *buf, T64Instr instr ) {
     
-    uint32_t opCode = extractInstrOpGroup( instr ) * 16 + extractInstrOpCode( instr );
+    uint32_t opCode = extractInstrOpGroup( instr ) * 16 + extractInstrOpNum( instr );
 
     switch( opCode ) {
             

@@ -165,7 +165,6 @@ void SimWinCpuState::setDefaults( ) {
 //
 //  <winId> Proc: n IA: 0x00_0000_0000 ST: [xxxxxxx] <rdx>
 //
-// ??? add a CPU state ? ( RESET, HALT, RUNNING, EXCEPTION, WAITING, ... )
 //----------------------------------------------------------------------------------------
 void SimWinCpuState::drawBanner( ) {
     

@@ -870,7 +870,7 @@ void T64Cpu::instrAluCmpOp( T64Instr instr ) {
 
     T64Word val1   = getRegB( instr );
     T64Word val2   = 0;
-    int     opCode = extractInstrOpCode( instr );
+    int     opCode = extractInstrOpNum( instr );
     
     if ( opCode == OPC_CMP_A ) {
         
@@ -893,7 +893,7 @@ void T64Cpu::instrMemCmpOp( T64Instr instr ) {
 
     T64Word val1   = getRegB( instrReg );
     T64Word val2   = 0;
-    int     opCode = extractInstrOpCode( instr );
+    int     opCode = extractInstrOpNum( instr );
     
     if ( opCode == OPC_CMP_A ) { 
         

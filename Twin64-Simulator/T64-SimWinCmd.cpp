@@ -916,9 +916,7 @@ void SimCommandsWin::addProcModule( int modNum ) {
                                         T64_PO_NIL,
                                         T64_CPU_T_NIL,
                                         tlbType,
-                                        cacheType,
-                                        0,
-                                        0 );
+                                        cacheType );
     
     switch ( glb -> system -> addModule( p ) ) {
 
@@ -1573,8 +1571,8 @@ void SimCommandsWin::displayModuleCmd( ) {
         throw ( ERR_INVALID_ARG );
     }
 
-    winOut -> writeChars( "%-5s%-7s%-16s%-16s%-8s\n", 
-                            "Mod", "Type", "HPA", "SPA", "Size" );
+    winOut -> writeChars( "%-5s%-7s%-8s%-16s%-16s%-8s\n", 
+                            "Mod", "Type", "State", "HPA", "SPA", "Size" );
 
     for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
@@ -1585,6 +1583,17 @@ void SimCommandsWin::displayModuleCmd( ) {
 
             winOut -> writeChars( "%02d   ", i  );
             winOut -> writeChars( "%-7s", mPtr -> getModuleTypeName( ));
+
+            if ( mPtr -> getModuleType( ) == MT_PROC ) {
+
+                winOut -> writeChars( "%-8s", 
+                    ((T64Processor *) mPtr ) -> getProcStateStr( ));
+            }
+            else {
+
+                winOut -> writeChars( "        " );
+            }
+
             winOut -> printNumber( mPtr -> getHpaAdr( ), 
                                    FMT_PREFIX_0X | FMT_HEX_2_4_4 );
             winOut -> writeChars( "  " );

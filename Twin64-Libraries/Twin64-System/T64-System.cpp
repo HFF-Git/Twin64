@@ -107,7 +107,7 @@ bool overlap( T64Module *a, T64Module *b ) {
     return ( ovlSpa || ovlHpa );
 }
 
-};
+}; // namespace
 
 //----------------------------------------------------------------------------------------
 // The T64System object.
@@ -309,7 +309,7 @@ void T64System::execModule( int modNum, int units ) {
 
         if ( moduleMap[ modNum ] == nullptr ) return;
 
-        if (( units >= 1 ) && ( units < 9999 )) {
+        if (( units >= 1 ) && ( units < UINT32_MAX )) {
 
             moduleMap[ modNum ] -> execModule( units );
         }

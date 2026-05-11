@@ -352,9 +352,7 @@ struct T64Processor : T64ThreadModule {
                   T64Options        options,  
                   T64CpuType        cpuType,
                   T64TlbType        tlbType,
-                  T64CacheType      cacheType,
-                  T64Word           spaAdr,
-                  int               spaLen );
+                  T64CacheType      cacheType );
     
     virtual         ~ T64Processor( );
 

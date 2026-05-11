@@ -43,7 +43,6 @@ T64Module::T64Module( T64ModuleType    modType,
     this -> hpaLen      = T64_PAGE_SIZE_BYTES;
     this -> spaAdr      = spaAdr;
     this -> spaLen      = spaLen;
-    this -> spaLimit    = spaAdr + spaLen - 1;
 }
 
 //----------------------------------------------------------------------------------------

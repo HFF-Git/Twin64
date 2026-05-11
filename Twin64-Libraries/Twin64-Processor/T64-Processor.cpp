@@ -63,14 +63,12 @@ T64Processor::T64Processor( T64System           *sys,
                             T64Options          options,  
                             T64CpuType          cpuType,
                             T64TlbType          tlbType,
-                            T64CacheType        cacheType,
-                            T64Word             spaAdr,
-                            int                 spaLen ) : 
+                            T64CacheType        cacheType ) : 
 
                             T64ThreadModule(    MT_PROC, 
                                                 modNum,
-                                                spaAdr,
-                                                spaLen ) {
+                                                0,
+                                                0 ) {
 
     cpu     = new T64Cpu( this, cpuType );
     tlb     = new T64Tlb( this, T64_TK_UNIFIED_TLB, tlbType );
