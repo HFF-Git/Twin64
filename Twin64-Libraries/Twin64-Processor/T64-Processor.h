@@ -359,6 +359,7 @@ struct T64Processor : T64ThreadModule {
     void            initModule( );
     void            resetModule( );
     void            haltModule( );
+    void            runModule( );
     void            execModule( int steps );
     bool            executeUnit( );
 

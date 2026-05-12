@@ -784,7 +784,15 @@ void SimWinDisplay::windowExchangeOrder( int winNum ) {
         windowList[ currentWindow ] -> setWinStack( winStackA );
     }
    
+    int a = windowList[ winNum ] -> getWinIndex( );
+    int b = windowList[ currentWindow ] -> getWinIndex( );
+
+    windowList[ winNum ] -> setWinIndex( b );
+    windowList[ currentWindow ] -> setWinIndex( a );
+
     std::swap( windowList[ winNum ], windowList[ currentWindow ]);
+
+    glb -> winDisplay -> setCurrentWindow( winNum ); 
 }
 
 //----------------------------------------------------------------------------------------

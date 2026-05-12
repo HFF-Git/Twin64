@@ -71,6 +71,7 @@ public:
     void        initModule( );
     void        resetModule( );
     void        haltModule( );
+    void        runModule( );
     void        execModule( int steps );
     void        waitUntilHalted( );
    

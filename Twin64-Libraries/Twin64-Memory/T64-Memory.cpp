@@ -87,6 +87,7 @@ void T64Memory::resetModule( ) {
 }
 
 void T64Memory::haltModule( ) { }
+void T64Memory::runModule( ) { }
 void T64Memory::execModule( int steps ) { }
 void T64Memory::waitUntilHalted( ) { }
 

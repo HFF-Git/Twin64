@@ -122,6 +122,7 @@ struct T64Module {
     virtual void        initModule( )           = 0;
     virtual void        resetModule( )          = 0;
     virtual void        haltModule( )           = 0;
+    virtual void        runModule( )            = 0;
     virtual void        execModule( int steps ) = 0;
     virtual void        waitUntilHalted( )      = 0;
 
@@ -248,6 +249,7 @@ struct T64System {
 
     void                resetModule( int modNum );
     void                haltModule( int modNum );
+    void                runModule( int modNum );
     void                execModule( int modNum, int steps );
 
     void                run( );

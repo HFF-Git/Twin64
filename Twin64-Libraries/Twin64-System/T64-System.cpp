@@ -286,8 +286,7 @@ void T64System::resetModule( int modNum ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Halt modules. We just invoke the module handler for the registered module.
-// A module number of -1 will reset all modules.
+// Halt module. We just invoke the module handler for the registered module.
 //
 //----------------------------------------------------------------------------------------
 void T64System::haltModule( int modNum ) {
@@ -299,8 +298,19 @@ void T64System::haltModule( int modNum ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Run a module for n units. This method implements both stepping and running
-// a sequence of instructions.
+// Run a module. We will return to the caller and the threads now run in parallel.
+//
+//----------------------------------------------------------------------------------------
+void T64System::runModule( int modNum ) {
+
+    if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+
+        moduleMap[ modNum ] -> runModule( );
+    }
+}
+
+//----------------------------------------------------------------------------------------
+// Run a module for n units. We will wait until these units have been executed.
 //
 //----------------------------------------------------------------------------------------
 void T64System::execModule( int modNum, int units ) {

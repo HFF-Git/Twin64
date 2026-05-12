@@ -113,6 +113,11 @@ void T64Processor::haltModule( ) {
     threadModuleHalt( );
 }
 
+void T64Processor::runModule( ) {
+
+    threadModuleExec( -1 );
+}
+
 void T64Processor::execModule( int units ) {
 
     threadModuleExec( units );

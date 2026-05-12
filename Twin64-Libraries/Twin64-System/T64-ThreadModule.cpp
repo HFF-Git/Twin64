@@ -108,8 +108,8 @@ void T64ThreadModule::threadModuleExec( int units ) {
 }
 
 //----------------------------------------------------------------------------------------
-//
-//
+// Wait for the thread to complete execution. When the processor goes into the
+// HALT state, the waiting thread is awoken.
 //
 //----------------------------------------------------------------------------------------
 void T64ThreadModule::waitUntilHalted( ) {
@@ -198,28 +198,34 @@ void T64ThreadModule::moduleWorker( ) {
 
                 while ( true ) {
 
-                    if ( mState.load( std::memory_order_acquire ) != 
-                            T64_MOD_STATE_EXECUTE ) break;
+                    if ( mState.load( std::memory_order_acquire )
+                            != T64_MOD_STATE_EXECUTE ) {
 
-                    if ( unitCount == 0 ) break;
-
-                    bool needAttention = executeUnit( );
-
-                    if ( needAttention ) {
-
-                        mState.store( T64_MOD_STATE_TRAP, 
-                                             std::memory_order_release);
-
-                        mCondVar.notify_one( );
                         break;
                     }
 
-                    if ( unitCount > 0 ) unitCount --;
+                    if ( unitCount == 0 ) {
+
+                        mState.store( T64_MOD_STATE_HALTED,
+                                      std::memory_order_release );
+
+                        break;
+                    }
+
+                    bool needAttention = executeUnit();
+
+                    if ( needAttention ) {
+
+                        mState.store(T64_MOD_STATE_TRAP,
+                                    std::memory_order_release);
+
+                        break;
+                    }
+
+                    if ( unitCount > 0 ) unitCount--;
                 }
 
-                mState.store( T64_MOD_STATE_HALTED, 
-                                 std::memory_order_release );
-                mCondVar.notify_one( );
+                mCondVar.notify_one();
 
             } break;
 
@@ -228,8 +234,11 @@ void T64ThreadModule::moduleWorker( ) {
 
                 std::unique_lock<std::mutex> lk(mLock);
                 mCondVar.wait(lk, [this] {
-                return  (( mState != T64_MOD_STATE_TRAP ) &&
-                         ( mState != T64_MOD_STATE_HALTED ));
+
+                    T64ModuleState s = mState.load(std::memory_order_acquire);
+
+                    return (( s != T64_MOD_STATE_TRAP ) &&
+                            ( s != T64_MOD_STATE_HALTED ));
                 });
 
             } break;
