@@ -1080,7 +1080,7 @@ void T64Cpu::instrAluLdoOp( T64Instr instr ) {
 
   
     T64Word base = getRegB( instr );
-    T64Word ofs  = extractInstrSignedScaledImm13( instr );
+    T64Word ofs  = 0;
 
     switch ( extractInstrFieldU( instr, 19, 3 )) {
 
