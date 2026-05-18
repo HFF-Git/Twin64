@@ -1088,7 +1088,7 @@ struct SimWinTlb : SimWinScrollable {
     void setDefaults( );
     void drawBanner( );
     void drawLine( T64Word index );
-    void drawTlbEntry( T64TlbEntry *ePtr );
+    void drawTlbEntry( T64TlbEntryOld *ePtr );
 
     private:
 

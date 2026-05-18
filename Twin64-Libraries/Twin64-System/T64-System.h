@@ -51,10 +51,11 @@ enum T64ModuleType {
 
     MT_NIL          = 0,
     MT_PROC         = 10,
-    MT_CPU_CORE     = 11,
-    MT_CPU_TLB      = 12, 
-    MT_MEM          = 20,
-    MT_IO           = 30   
+    MT_CPU_CORE     = 12,
+    MT_CPU_TLB      = 13, 
+    MT_GTLB         = 20,
+    MT_MEM          = 30,
+    MT_IO           = 40   
 };
 
 //----------------------------------------------------------------------------------------
@@ -257,6 +258,7 @@ struct T64System {
     T64ModuleType       getModuleType( int modNum ) const;
     char                *getModuleState( int modNum ) const;
     T64Module           *lookupByModNum( int modNum ) const;
+    T64Module           *lookupByModuleType( T64ModuleType typ );
     T64Module           *lookupByAdr( T64Word adr ) const;                
 
     bool                busOpRead( int reqModNum,

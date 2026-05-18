@@ -274,3 +274,105 @@ enum OpCodeFam : uint32_t {
     OPC_TRAP        = 14U,
     OPC_DIAG        = 15U
 };
+
+
+//----------------------------------------------------------------------------------------
+// TLBs. A translation lookaside buffer is essential. The TLB kind specifies 
+// the kind of TLB, i.e. instruction, data or unified TLB. The TLB type specifies
+// type of TLB. Currently there are fully associative TLBs defined. The TLB  
+// configuration is encoded as follows:
+//
+//  T64_TT_<type>_<sets>S
+//
+// Currently, the processor supports a unified TLB with two small sets of an
+// instruction and data translation buffer on top.
+// 
+//----------------------------------------------------------------------------------------
+enum T64TlbKind : int {
+
+    T64_TK_NIL          = 0,
+    T64_TK_INSTR_TLB    = 1,
+    T64_TK_DATA_TLB     = 2,
+    T64_TK_UNIFIED_TLB  = 3,
+    T64_TK_GLOBAL_TLB   = 4,
+};
+
+enum T64TlbType : int {
+
+    T64_TT_NIL          = 0,
+    T64_TT_FA_16S       = 1,
+    T64_TT_FA_32S       = 2,
+    T64_TT_FA_64S       = 3,
+    T64_TT_FA_128S      = 4
+};
+
+//----------------------------------------------------------------------------------------
+// A TLB entry in the a TLB table. There are the virtual starting address and
+// the corresponding physical page address. The range and alignment is encoded
+// in the info field "pSize". There is also the precomputed page mask used for 
+// masking off bits depending on the page size. The info field contains besides
+// the page size encoding, the access rights and several flags.
+//
+//
+//  TLB Info Parameter:
+//
+//        15  14  13  12  11  10  9   8   7   6   5..4    3..0
+//      :-------------------------------------------------------:
+//      : V : L : U : M : 0 : 0 : 0 : 0 : P1: P2: ACC   : PSize :
+//      :-------------------------------------------------------:
+// 
+//----------------------------------------------------------------------------------------
+struct T64TlbEntry {
+
+    T64Word     vAdr;
+    T64Word     pAdr;
+    T64Word     pageMask;
+    uint16_t    tlbInfo;
+};
+
+enum T64TbInfoFieldMask : uint16_t {
+
+    T64_TM_VALID    = 0x8000,
+    T64_TM_LOCKED   = 0x4000,
+    T64_TM_UNCACHED = 0x2000,
+    T64_TM_MODIFIED = 0x1000,
+
+    T64_TM_PRIV1    = 0x0080,
+    T64_TM_PRIV2    = 0x0040,
+    T64_TM_ACC      = 0x0030,
+    T64_TM_PSIZE    = 0x000F
+};
+
+//----------------------------------------------------------------------------------------
+// Caches. Caches are sub modules to the processor. We support a cache type of 
+// set associative caches, 2, 4, and 8-way. There is a cache line info with flags
+// and the tag and an array of bytes which holds the cache data. Cache kind 
+// specifies the kind of cache, i.e. instruction, data or unified cache. Cache 
+// configuration is encoded as follows:
+//
+//  T64_CT_<ways>W_<sets>S_<words>L
+//
+// Currently, we do not support caches. The simulator will run with a single 
+// cycle memory access. We may change this one day to learn about cache 
+// coherence and so on.
+//
+//----------------------------------------------------------------------------------------
+enum T64CacheKind : int {
+
+    T64_CK_NIL              = 0,
+    T64_CK_INSTR_CACHE      = 1,
+    T64_CK_DATA_CACHE       = 2,
+    T64_CK_UNIFIED_CACHE    = 3,
+};
+
+enum T64CacheType : int {
+
+    T64_CT_NIL              = 0,
+    T64_CT_2W_128S_4L       = 1,
+    T64_CT_4W_128S_4L       = 2,
+    T64_CT_8W_128S_4L       = 3,
+
+    T64_CT_2W_64S_8L        = 4,
+    T64_CT_4W_64S_8L        = 5,
+    T64_CT_8W_64S_8L        = 6
+};

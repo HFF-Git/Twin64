@@ -48,74 +48,16 @@ enum T64Options : uint32_t {
     T64_PO_NIL = 0
 };
 
-//----------------------------------------------------------------------------------------
-// Caches. Caches are sub modules to the processor. We support a cache type of 
-// set associative caches, 2, 4, and 8-way. There is a cache line info with flags
-// and the tag and an array of bytes which holds the cache data. Cache kind 
-// specifies the kind of cache, i.e. instruction, data or unified cache. Cache 
-// configuration is encoded as follows:
-//
-//  T64_CT_<ways>W_<sets>S_<words>L
-//
-// Currently, we do not support caches. The simulator will run with a single 
-// cycle memory access. We may change this one day to learn about cache 
-// coherence and so on.
-//
-//----------------------------------------------------------------------------------------
-enum T64CacheKind : int {
 
-    T64_CK_NIL              = 0,
-    T64_CK_INSTR_CACHE      = 1,
-    T64_CK_DATA_CACHE       = 2,
-    T64_CK_UNIFIED_CACHE    = 3,
-};
 
-enum T64CacheType : int {
 
-    T64_CT_NIL              = 0,
-    T64_CT_2W_128S_4L       = 1,
-    T64_CT_4W_128S_4L       = 2,
-    T64_CT_8W_128S_4L       = 3,
 
-    T64_CT_2W_64S_8L        = 4,
-    T64_CT_4W_64S_8L        = 5,
-    T64_CT_8W_64S_8L        = 6
-};
-
-//----------------------------------------------------------------------------------------
-// TLBs. A translation lookaside buffer is essential. The TLB kind specifies 
-// the kind of TLB, i.e. instruction, data or unified TLB. The TLB type specifies
-// type of TLB. Currently there are fully associative TLBs defined. The TLB  
-// configuration is encoded as follows:
-//
-//  T64_TT_<type>_<sets>S
-//
-// Currently, the processor supports a unified TLB with two small sets of an
-// instruction and data translation buffer on top.
-// 
-//----------------------------------------------------------------------------------------
-enum T64TlbKind : int {
-
-    T64_TK_NIL          = 0,
-    T64_TK_INSTR_TLB    = 1,
-    T64_TK_DATA_TLB     = 2,
-    T64_TK_UNIFIED_TLB  = 3
-};
-
-enum T64TlbType : int {
-
-    T64_TT_NIL          = 0,
-    T64_TT_FA_16S       = 1,
-    T64_TT_FA_32S       = 2,
-    T64_TT_FA_64S       = 3,
-    T64_TT_FA_128S      = 4
-};
-
+// ??? phase out - see common.h
 //----------------------------------------------------------------------------------------
 // TLB Entry. The TLB entry stores one translation along with several flags. 
 //
 //----------------------------------------------------------------------------------------
-struct T64TlbEntry {
+struct T64TlbEntryOld {
 
     public:
 
@@ -132,6 +74,7 @@ struct T64TlbEntry {
     T64Word         pAdr            = 0; 
 };
 
+// ??? will be replaced...
 //----------------------------------------------------------------------------------------
 // The TLB submodule. In the real worlds most processors have an ITLB and DTLB.
 // Our TLB consist of three simple arrays of entries. There are two very small
@@ -152,8 +95,8 @@ struct T64Tlb {
     
     void            reset( );
 
-    T64TlbEntry     *lookupItlb( T64Word vAdr );
-    T64TlbEntry     *lookupDtlb( T64Word vAdr );
+    T64TlbEntryOld     *lookupItlb( T64Word vAdr );
+    T64TlbEntryOld     *lookupDtlb( T64Word vAdr );
     
     bool            insertTlb( T64Word vAdr, T64Word info );
     bool            purgeTlb( T64Word vAdr );
@@ -162,9 +105,9 @@ struct T64Tlb {
     int             getITlbSize( ) const;
     int             getDTlbSize( ) const;
 
-    T64TlbEntry     *getUTLBEntry( int index ) const;
-    T64TlbEntry     *getITLBEntry( int index ) const;
-    T64TlbEntry     *getDTLBEntry( int index ) const;
+    T64TlbEntryOld     *getUTLBEntry( int index ) const;
+    T64TlbEntryOld     *getITLBEntry( int index ) const;
+    T64TlbEntryOld     *getDTLBEntry( int index ) const;
 
     T64TlbKind      getTlbKind( ) const;  
     char            *getTlbKindString( ) const;
@@ -177,9 +120,9 @@ struct T64Tlb {
 
     T64TlbKind      tlbKind             = T64_TK_NIL;
     T64TlbType      tlbType             = T64_TT_NIL;
-    T64TlbEntry     *iTlb               = nullptr;
-    T64TlbEntry     *dTlb               = nullptr;
-    T64TlbEntry     *uTlb               = nullptr;
+    T64TlbEntryOld     *iTlb               = nullptr;
+    T64TlbEntryOld     *dTlb               = nullptr;
+    T64TlbEntryOld     *uTlb               = nullptr;
 
     int             iTlbEntries         = 0;
     int             dTlbEntries         = 0;
@@ -198,6 +141,55 @@ struct T64Tlb {
     T64Word         dTlbMissUTlbHits    = 0;
     T64Word         dTlbMissUTlbMisses  = 0; 
 };
+
+//----------------------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------------------
+struct T64LocalTlb {
+
+ public:
+
+    T64LocalTlb( T64Processor *proc, T64TlbKind tlbKind, T64TlbType tlbType );
+
+    virtual         ~ T64LocalTlb( );
+    
+    void            reset( );
+
+    bool            lookupItlb( T64Word vadr, T64Word *pAdr, uint16_t *tlbInfo );
+    bool            lookupDtlb( T64Word vadr, T64Word *pAdr, uint16_t *tlbInfo );
+
+    bool            purgeTlb( T64Word vAdr );
+    
+    private:
+
+    T64Processor    *proc               = nullptr;
+
+    T64TlbKind      tlbKind             = T64_TK_NIL;
+    T64TlbType      tlbType             = T64_TT_NIL;
+
+    T64TlbEntry     *iTlb               = nullptr;
+    T64TlbEntry     *dTlb               = nullptr;
+
+    int             iTlbEntries         = 0;
+    int             dTlbEntries         = 0;
+   
+    uint32_t        iTlbRoundRobin      = 0;       
+    
+    T64Word         iTlbHits            = 0;
+    T64Word         iTlbMisses          = 0;
+    T64Word         iTlbMissUTlbHits    = 0;
+    T64Word         iTlbMissUTlbMisses  = 0;
+
+    T64Word         dTlbHits            = 0;
+    T64Word         dTlbMisses          = 0;
+    T64Word         dTlbMissUTlbHits    = 0;
+    T64Word         dTlbMissUTlbMisses  = 0; 
+
+};
+
+
 
 //----------------------------------------------------------------------------------------
 // CPU. The execution unit. We could support several types. So far, we do not.
@@ -258,11 +250,11 @@ struct T64Cpu {
     bool            regionIdCheck( uint32_t pId, bool wMode );
     void            instrReadAlignmentCheck( T64Word vAdr );
     void            instrReadRegionIdCheck( T64Word adr );
-    void            instrReadAccCheck( T64TlbEntry *tlbPtr );
+    void            instrReadAccCheck( T64TlbEntryOld *tlbPtr );
     void            dataAlignmentCheck( T64Word vAdr, int len );
     void            dataRegionIdCheck( T64Word adr, bool wMode );
-    void            dataReadAccCheck( T64TlbEntry *tlbPtr );
-    void            dataWriteAccCheck( T64TlbEntry *tlbPtr );
+    void            dataReadAccCheck( T64TlbEntryOld *tlbPtr );
+    void            dataWriteAccCheck( T64TlbEntryOld *tlbPtr );
     void            addOverFlowCheck( T64Word val1, T64Word val2 );
     void            subUnderFlowCheck( T64Word val1, T64Word val2 );
 

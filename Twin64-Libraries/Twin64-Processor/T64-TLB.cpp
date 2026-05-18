@@ -32,6 +32,13 @@
 #include "T64-System.h"
 #include "T64-Processor.h"
 
+
+// ??? rework this code to just have the I and D Tlb.
+// ??? we add a direct reference to the TLB module to be quick...
+
+
+#if 1
+
 //----------------------------------------------------------------------------------------
 // Local name space.
 //
@@ -73,7 +80,7 @@ inline T64Word pageMask( int pSize ) {
 // Clear a TLB entry.
 //
 //----------------------------------------------------------------------------------------
-void resetTlbEntry( T64TlbEntry *ptr ) {
+void resetTlbEntry( T64TlbEntryOld *ptr ) {
     
     ptr -> valid        = false;
     ptr -> locked       = false;
@@ -94,7 +101,7 @@ void resetTlbEntry( T64TlbEntry *ptr ) {
 // the page mask to compare the correct address bits.
 //
 //----------------------------------------------------------------------------------------
-T64TlbEntry* lookupL1( T64TlbEntry *tlb, uint32_t tlbEntries, T64Word  vAdr ) {
+T64TlbEntryOld* lookupL1( T64TlbEntryOld *tlb, uint32_t tlbEntries, T64Word  vAdr ) {
 
     if ( ! tlb ) return ( nullptr );
     
@@ -110,6 +117,7 @@ T64TlbEntry* lookupL1( T64TlbEntry *tlb, uint32_t tlbEntries, T64Word  vAdr ) {
     return ( nullptr );
 }
 
+// ??? goes away...
 //----------------------------------------------------------------------------------------
 // Search the unified cache. We need to scan all valid entries which to find the 
 // best match. This is because we can deliberately allow for overlapping entries,
@@ -118,13 +126,13 @@ T64TlbEntry* lookupL1( T64TlbEntry *tlb, uint32_t tlbEntries, T64Word  vAdr ) {
 // page size.
 //
 //----------------------------------------------------------------------------------------
-T64TlbEntry* lookupUnified( T64TlbEntry *tlb, uint32_t tlbEntries, T64Word vAdr ) {
+T64TlbEntryOld* lookupUnified( T64TlbEntryOld *tlb, uint32_t tlbEntries, T64Word vAdr ) {
     
-    T64TlbEntry *best = nullptr;
+    T64TlbEntryOld *best = nullptr;
 
     for ( int i = 0; i < tlbEntries; i++ ) {
         
-        T64TlbEntry *e = &tlb[ i ];
+        T64TlbEntryOld *e = &tlb[ i ];
 
         if ( ! e -> valid ) continue;
 
@@ -153,6 +161,7 @@ T64TlbEntry* lookupUnified( T64TlbEntry *tlb, uint32_t tlbEntries, T64Word vAdr 
 // structure. Right now, we only support a fully associative unified TLB of
 // different sizes.
 //
+// ??? remove the UTLB...
 //----------------------------------------------------------------------------------------
 T64Tlb::T64Tlb( T64Processor *proc, T64TlbKind tlbKind, T64TlbType tlbType ) {
 
@@ -172,9 +181,9 @@ T64Tlb::T64Tlb( T64Processor *proc, T64TlbKind tlbKind, T64TlbType tlbType ) {
         default:                uTlbEntries = 64;
     }
 
-    iTlb = (T64TlbEntry *) calloc( iTlbEntries, sizeof( T64TlbEntry ));
-    dTlb = (T64TlbEntry *) calloc( dTlbEntries, sizeof( T64TlbEntry ));
-    uTlb = (T64TlbEntry *) calloc( uTlbEntries, sizeof( T64TlbEntry ));
+    iTlb = (T64TlbEntryOld *) calloc( iTlbEntries, sizeof( T64TlbEntryOld ));
+    dTlb = (T64TlbEntryOld *) calloc( dTlbEntries, sizeof( T64TlbEntryOld ));
+    uTlb = (T64TlbEntryOld *) calloc( uTlbEntries, sizeof( T64TlbEntryOld ));
 
     reset( );
 }
@@ -221,9 +230,9 @@ void T64Tlb::reset( ) {
 // fetch tends to be rather serial in contrast to a data TLB.
 //  
 //----------------------------------------------------------------------------------------
-T64TlbEntry *T64Tlb::lookupItlb( T64Word vAdr ) {
+T64TlbEntryOld *T64Tlb::lookupItlb( T64Word vAdr ) {
     
-    T64TlbEntry *e = lookupL1( iTlb, iTlbEntries, canonicalizeVa( vAdr ));
+    T64TlbEntryOld *e = lookupL1( iTlb, iTlbEntries, canonicalizeVa( vAdr ));
     if ( e != nullptr ) {
         
         iTlbHits ++;
@@ -256,15 +265,15 @@ T64TlbEntry *T64Tlb::lookupItlb( T64Word vAdr ) {
 // found, the L1 buffer is updated.
 // 
 //----------------------------------------------------------------------------------------
-T64TlbEntry *T64Tlb::lookupDtlb( T64Word vAdr ) {
+T64TlbEntryOld *T64Tlb::lookupDtlb( T64Word vAdr ) {
                         
-    T64TlbEntry *e = lookupL1( dTlb, dTlbEntries, canonicalizeVa( vAdr ));
+    T64TlbEntryOld *e = lookupL1( dTlb, dTlbEntries, canonicalizeVa( vAdr ));
     if ( e != nullptr ) {
 
         dTlbHits ++;
 
         int         idx = e - dTlb;
-        T64TlbEntry hit = *e;
+        T64TlbEntryOld hit = *e;
 
         for ( int i = idx; i > 0; i-- ) dTlb[ i ] = dTlb[ i - 1 ];
         dTlb[0] = hit;
@@ -304,7 +313,7 @@ bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
 
     int         pSize   = tlbPageSize( extractField64( info, 36, 4 ) );
     T64Word     pAdr    = extractField64( info, 12, 24 ) << T64_PAGE_OFS_BITS;
-    T64TlbEntry entry;
+    T64TlbEntryOld entry;
 
     if ( isInIoAdrRange( vAdr )) return ( true );
     if ( ! isAlignedPageAdr( vAdr, pSize )) return ( false );
@@ -324,7 +333,7 @@ bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
    
     for ( int i = 0; i < uTlbEntries; i++ ) {
 
-        T64TlbEntry *e = &uTlb[ i ];
+        T64TlbEntryOld *e = &uTlb[ i ];
 
         if ( ! e -> valid ) continue;
 
@@ -369,7 +378,7 @@ bool T64Tlb::insertTlb( T64Word vAdr, T64Word info ) {
 //----------------------------------------------------------------------------------------
 bool T64Tlb::purgeTlb( T64Word vAdr ) {
 
-    T64TlbEntry *e = lookupL1( iTlb, iTlbEntries, vAdr );
+    T64TlbEntryOld *e = lookupL1( iTlb, iTlbEntries, vAdr );
     if ( e != nullptr ) {   
 
         e -> valid = false;
@@ -396,19 +405,19 @@ bool T64Tlb::purgeTlb( T64Word vAdr ) {
 // Utility routines used by the Simulator.
 // 
 //----------------------------------------------------------------------------------------
-T64TlbEntry *T64Tlb::getUTLBEntry( int index ) const {
+T64TlbEntryOld *T64Tlb::getUTLBEntry( int index ) const {
     
   if ( isInRange( index, 0, uTlbEntries - 1 )) return( &uTlb[ index ] );
   else                                         return( nullptr );
 }
 
-T64TlbEntry *T64Tlb::getITLBEntry( int index ) const {
+T64TlbEntryOld *T64Tlb::getITLBEntry( int index ) const {
     
   if ( isInRange( index, 0, iTlbEntries - 1 )) return( &iTlb[ index ] );
   else                                         return( nullptr );
 }
 
-T64TlbEntry *T64Tlb::getDTLBEntry( int index ) const {
+T64TlbEntryOld *T64Tlb::getDTLBEntry( int index ) const {
     
   if ( isInRange( index, 0, dTlbEntries - 1 )) return( &dTlb[ index ] );
   else                                         return( nullptr );
@@ -461,4 +470,225 @@ char *T64Tlb::getTlbTypeString( ) const {
         default:                return ( (char *) "Unknown TLB Type" );
     }
 }
+
+#else 
+
+
+
+//----------------------------------------------------------------------------------------
+// Local name space.
+//
+//----------------------------------------------------------------------------------------
+namespace {
+
+//----------------------------------------------------------------------------------------
+// "canonicalizeVa" clears the page offset part of a virtual address.
+//
+//----------------------------------------------------------------------------------------
+inline T64Word canonicalizeVa( T64Word vAdr ) {
+
+    return vAdr & (( 1ULL << T64_VADR_BITS ) - 1);
+}
+
+//----------------------------------------------------------------------------------------
+// Clear a TLB entry.
+//
+//----------------------------------------------------------------------------------------
+void resetTlbEntry( T64TlbEntry *ptr ) {
+    
+    ptr -> tlbInfo      = 0;
+    ptr -> vAdr         = 0;
+    ptr -> pAdr         = 0;
+    ptr -> pageMask     = 0;
+}
+
+//----------------------------------------------------------------------------------------
+// Search the TLB. Instruction and data path have a small buffer or their 
+// translation. It is a simple serial search. The comparison use the page mask
+// to compare the correct address bits.
+//
+//----------------------------------------------------------------------------------------
+T64TlbEntry* lookup( T64TlbEntry *tlb, uint32_t tlbSize, T64Word  vAdr ) {
+
+    if ( ! tlb ) return ( nullptr );
+    
+    for ( int i = 0; i < tlbSize; i++ ) {
+        
+        if (( tlb[ i ].tlbInfo & T64_TM_VALID ) && 
+            (( vAdr & tlb[ i ].pageMask ) == tlb[ i ].vAdr )) {
+
+            return ( &tlb[ i ] );
+        }
+            
+    }
+    
+    return ( nullptr );
+}
+
+} // namespace
+
+
+//****************************************************************************************
+//****************************************************************************************
+//
+// TLB
+//
+//----------------------------------------------------------------------------------------
+// Object creator. Based on kind and type of TLB, we allocate the local TLB data
+// structure. 
+//
+//----------------------------------------------------------------------------------------
+T64LocalTlb::T64LocalTlb( T64Processor *proc, T64TlbKind tlbKind, T64TlbType tlbType ) {
+
+    this -> proc    = proc;
+    this -> tlbKind = tlbKind;
+    this -> tlbType = tlbType;
+
+    iTlbEntries = 4;
+    dTlbEntries = 4;
+
+    iTlb = (T64TlbEntry *) calloc( iTlbEntries, sizeof( T64TlbEntry ));
+    dTlb = (T64TlbEntry *) calloc( dTlbEntries, sizeof( T64TlbEntry ));
+
+    reset( );
+}
+
+//----------------------------------------------------------------------------------------
+// Destructor.  
+//
+//----------------------------------------------------------------------------------------
+T64LocalTlb::~T64LocalTlb( ) {
+
+    free( iTlb );
+    free( dTlb );
+}
+
+//----------------------------------------------------------------------------------------
+// Reset the local TLB.
+//
+//----------------------------------------------------------------------------------------
+void T64LocalTlb::reset( ) {
+    
+    for ( int i = 0; i < iTlbEntries; i++ ) resetTlbEntry( &iTlb[ i ] );
+    for ( int i = 0; i < dTlbEntries; i++ ) resetTlbEntry( &dTlb[ i ] );
+     
+    iTlbRoundRobin      = 0;            
+    
+    iTlbHits            = 0;
+    iTlbMisses          = 0;
+    iTlbMissUTlbHits    = 0;
+    iTlbMissUTlbMisses  = 0;
+
+    dTlbHits            = 0;
+    dTlbMisses          = 0;
+    dTlbMissUTlbHits    = 0;
+    dTlbMissUTlbMisses  = 0;
+}
+
+//----------------------------------------------------------------------------------------
+// Lookup a Instruction TLB. If we do not find the entry in the L1, we consult 
+// the unified TLB buffer and if a translation is found, the L1 buffer is updated.
+// The entry to update is found via a simple round robin selection. Instruction
+// fetch tends to be rather serial in contrast to a data TLB.
+//  
+//----------------------------------------------------------------------------------------
+bool T64LocalTlb::lookupItlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
+    
+    T64TlbEntry *e = lookup( iTlb, iTlbEntries, canonicalizeVa( vAdr ));
+    if ( e != nullptr ) {
+        
+        iTlbHits ++;
+        return ( true );
+    }
+    else iTlbMisses ++;
+
+    // ??? here comes the global TLB lookup ...
+   
+    #if 0
+    e = lookupUnified( uTlb, uTlbEntries, canonicalizeVa( vAdr ));
+    if ( e == nullptr ) {
+        
+        iTlbMissUTlbMisses ++;
+        return ( nullptr );
+    }
+    else {
+        
+        iTlbMissUTlbHits ++;
+
+        iTlb[ iTlbRoundRobin & ( iTlbEntries - 1 ) ] = *e;
+        iTlbRoundRobin ++;
+    
+        return ( e );
+    }
+    #endif
+
+    return( false ); // for now ...
+}
+
+//----------------------------------------------------------------------------------------
+// Lookup a Data TLB. If we find the entry in the L1 buffer, we return it and 
+// also place it in the slot 0, so that the next lookup has a higher chance of
+// finding it. All other entries are shifted by one. If we do not find the entry
+// in the L1 buffer, we consult the unified TLB buffer and if a translation is 
+// found, the L1 buffer is updated.
+// 
+//----------------------------------------------------------------------------------------
+bool T64LocalTlb::lookupDtlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
+                        
+    T64TlbEntry *e = lookup( dTlb, dTlbEntries, canonicalizeVa( vAdr ));
+    if ( e != nullptr ) {
+
+        dTlbHits ++;
+
+        int         idx = e - dTlb;
+        T64TlbEntry hit = *e;
+
+        for ( int i = idx; i > 0; i-- ) dTlb[ i ] = dTlb[ i - 1 ];
+        dTlb[0] = hit;
+
+        *pAdr    = hit.pAdr;
+        *tlbInfo = hit.tlbInfo;
+        return ( true );
+    }
+    else dTlbMisses ++;
+
+    // ??? hookup to global TLB...
+
+    #if 0
+    e = lookupUnified( uTlb, uTlbEntries, canonicalizeVa( vAdr ));
+    if ( e == nullptr ) {
+
+        dTlbMissUTlbMisses ++;
+        return ( nullptr );
+    }
+    else {
+
+        dTlbMissUTlbHits ++;
+
+        for ( int i = dTlbEntries - 1; i > 0; i-- ) dTlb[i] = dTlb[i - 1];
+        dTlb[0] = *e;
+        return ( e );
+    }
+    #endif
+
+    return ( false );  // for now ...
+}
+
+//----------------------------------------------------------------------------------------
+// Remove the TLB entry that contains the virtual address from both TLBs. The 
+// entry is removed regardless if it is locked or not. 
+// 
+//----------------------------------------------------------------------------------------
+bool T64LocalTlb::purgeTlb( T64Word vAdr ) {
+
+    T64TlbEntry *e = lookup( iTlb, iTlbEntries, vAdr );
+    if ( e != nullptr ) e -> tlbInfo &= ~ T64_TM_VALID;
+
+    e = lookup( dTlb, dTlbEntries, vAdr );
+    if ( e != nullptr ) e -> tlbInfo &= ~ T64_TM_VALID;
+        
+    return( true );
+}
+
+#endif
 

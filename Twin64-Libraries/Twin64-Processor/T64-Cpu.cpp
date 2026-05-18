@@ -246,7 +246,7 @@ void T64Cpu::instrReadRegionIdCheck( T64Word adr ) {
     }
 }
 
-void T64Cpu::instrReadAccCheck( T64TlbEntry *tlbPtr ) {
+void T64Cpu::instrReadAccCheck( T64TlbEntryOld *tlbPtr ) {
 
     uint8_t privMode = extractPsrXbit( psrReg );
 
@@ -283,7 +283,7 @@ void T64Cpu::dataRegionIdCheck( T64Word adr, bool wMode ) {
         dataMemProtectionTrap( adr );  
 }
 
-void T64Cpu::dataReadAccCheck( T64TlbEntry *tlbPtr ) {
+void T64Cpu::dataReadAccCheck( T64TlbEntryOld *tlbPtr ) {
 
     uint8_t privMode = extractPsrXbit( psrReg );
 
@@ -293,7 +293,7 @@ void T64Cpu::dataReadAccCheck( T64TlbEntry *tlbPtr ) {
     }
 }
 
-void T64Cpu::dataWriteAccCheck ( T64TlbEntry *tlbPtr ) {
+void T64Cpu::dataWriteAccCheck ( T64TlbEntryOld *tlbPtr ) {
 
     uint8_t privMode = extractPsrXbit( psrReg );
 
@@ -382,7 +382,7 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
     }
     else {
 
-        T64TlbEntry *tlbPtr = proc -> tlb -> lookupItlb( vAdr );
+        T64TlbEntryOld *tlbPtr = proc -> tlb -> lookupItlb( vAdr );
         if ( tlbPtr == nullptr ) instrTlbMissTrap( vAdr );
 
         instrReadAccCheck( tlbPtr );      
@@ -430,7 +430,7 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
     }
     else {
 
-        T64TlbEntry *tlbPtr = proc -> tlb ->lookupDtlb( vAdr );
+        T64TlbEntryOld *tlbPtr = proc -> tlb ->lookupDtlb( vAdr );
         if ( tlbPtr == nullptr ) dataMemTlbMissTrap( vAdr );
        
         dataReadAccCheck( tlbPtr );             
@@ -491,7 +491,7 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
     }
     else {
 
-        T64TlbEntry *tlbPtr = proc -> tlb -> lookupDtlb( vAdr );
+        T64TlbEntryOld *tlbPtr = proc -> tlb -> lookupDtlb( vAdr );
          if ( tlbPtr == nullptr ) dataMemTlbMissTrap( vAdr );
 
         dataWriteAccCheck( tlbPtr );
@@ -1423,7 +1423,7 @@ void T64Cpu::instrSysLpaOp( T64Instr instr ) {
     if ( extractInstrFieldU( instr, 19, 3 ) != 0 ) illegalInstrTrap( );
     if ( extractInstrFieldU( instr, 0, 9 ) != 0 ) illegalInstrTrap( );
 
-    T64TlbEntry *e = proc -> tlb -> lookupDtlb( vAdr );
+    T64TlbEntryOld *e = proc -> tlb -> lookupDtlb( vAdr );
     if ( e == nullptr ) e = proc -> tlb -> lookupItlb( vAdr );
         
     if ( e == nullptr ) setRegR( instr, 0 );
@@ -1447,7 +1447,7 @@ void T64Cpu::instrSysPrbOp( T64Instr instr ) {
 
     if ( mode == 3 ) mode = extractField64( getRegA( instr ), 0, 2 );
    
-    T64TlbEntry *e = proc -> tlb -> lookupDtlb( vAdr );
+    T64TlbEntryOld *e = proc -> tlb -> lookupDtlb( vAdr );
     if ( e == nullptr ) e = proc -> tlb -> lookupItlb( vAdr );
     
     if ( e == nullptr ) {

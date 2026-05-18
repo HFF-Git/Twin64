@@ -2,20 +2,17 @@
 #
 #  Copyright (C) 2020 - 2026  Helmut Fieres
 # ----------------------------------------------------------------------------------------
-project( Twin64-System C CXX ASM )
+project( Twin64-Tlb C CXX ASM )
 
 add_library( ${PROJECT_NAME} STATIC  
 
-    T64-System.h 
-    T64-System.cpp
-    T64-Module.cpp
-    T64-ThreadModule.cpp
+    T64-Tlb.h 
+    T64-Tlb.cpp
 ) 
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC 
 
     Twin64-Processor 
-    Twin64-Tlb
     Twin64-Memory 
     Twin64-Common 
 )

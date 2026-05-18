@@ -1763,6 +1763,10 @@ void SimCommandsWin::haltCmd( ) {
 // return from the CPU steps, enable blocking mode again and restore the current 
 // window.
 //
+// ??? rethink the step semantics. It should halt all processors and advance all 
+// with this command. This implies, that if one processor halts, all others 
+// should halt too ?
+//
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::stepCmd( ) {
     
@@ -2622,6 +2626,8 @@ void SimCommandsWin::winNewWinCmd( ) {
  
     switch ( winType ) {
 
+        // ??? collapse PROC and CPU ...
+
         case TOK_PROC: {
 
             tok -> acceptComma( );
@@ -2642,6 +2648,8 @@ void SimCommandsWin::winNewWinCmd( ) {
             glb -> winDisplay -> windowNewCpuState( modNum );  
 
         } break;
+
+        // ??? this may go away, if we map TLBs to HPA ranges...
 
         case TOK_TLB: {
 

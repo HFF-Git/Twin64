@@ -234,6 +234,20 @@ T64Module *T64System::lookupByModNum( int modNum ) const {
 }
 
 //----------------------------------------------------------------------------------------
+// Find the fist module with a matching type.
+//
+//----------------------------------------------------------------------------------------
+T64Module *T64System::lookupByModuleType( T64ModuleType typ ) {
+
+    for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+        if ( moduleMap[ i ]-> moduleTyp == typ ) return ( moduleMap[ i ] );
+    }
+
+    return ( nullptr );
+}
+
+//----------------------------------------------------------------------------------------
 // Find the module entry that covers the address. Since we have only a small
 // number of module, we do a simple linear search of the system map. We check 
 // whether the address is in the SPA or HPA address range. We return the first

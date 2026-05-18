@@ -750,7 +750,7 @@ void SimWinTlb::drawBanner( ) {
 // to the TLB entry, which we need to decode and print.
 //
 //----------------------------------------------------------------------------------------
-void SimWinTlb::drawTlbEntry( T64TlbEntry *ePtr ) {
+void SimWinTlb::drawTlbEntry( T64TlbEntryOld *ePtr ) {
 
     uint32_t  fmtDesc = FMT_DEF_ATTR;
 
@@ -785,7 +785,7 @@ void SimWinTlb::drawLine( T64Word index ) {
 
     uint32_t    fmtDesc     = FMT_DEF_ATTR;
     int         toggleVal   = getWinToggleVal( ); 
-    T64TlbEntry *ePtr       = nullptr;
+    T64TlbEntryOld *ePtr       = nullptr;
 
     if      ( toggleVal == 0 ) ePtr = tlb -> getUTLBEntry( index );
     else if ( toggleVal == 1 ) ePtr = tlb -> getITLBEntry( index );
