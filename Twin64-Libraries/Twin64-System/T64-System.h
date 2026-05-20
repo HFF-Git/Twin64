@@ -170,12 +170,7 @@ struct T64Module {
     T64Word             mrVersion;
     T64Word             mrType;
     T64Word             mrId;
-    T64Word             mrSpaAdr1;
-    T64Word             mrSpaLen1;
-    T64Word             mrSpaAdr2;
-    T64Word             mrSpaLen2;
-
-    // ??? entry point table ?
+    
     // ?? entry point code area ?
 };
 
@@ -232,9 +227,9 @@ struct T64ModuleMapEntry {
 };
 
 //----------------------------------------------------------------------------------------
-// A T64 system is a bus where you plug in modules. A module represents an entity such
-// as a processor, a memory module, an I/O module and so on. At program start we create
-// the module objects and add them to the systemMap and moduleMap. 
+// A T64 system is a bus where you plug in modules. A module represents an entity
+// such as a processor, a memory module, an I/O module and so on. At program start
+// we create the module objects and add them to the respective maps. 
 //
 //----------------------------------------------------------------------------------------
 struct T64System {
@@ -281,6 +276,10 @@ struct T64System {
     void                initModuleMap( );
                             
     T64Module           *moduleMap[ MAX_MOD_MAP_ENTRIES ];
-    T64Module           *systemMemMap[ MAX_MOD_MAP_ENTRIES ];
+
+    T64Module           *systemMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];
     int                 systemMemMapHwm = 0;
+
+    T64Module           *systemIoMap[ MAX_MOD_MAP_ENTRIES * 2 ];
+    int                 systemIoMapHwm = 0;
 };

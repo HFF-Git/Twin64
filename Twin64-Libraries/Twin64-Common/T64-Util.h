@@ -478,6 +478,11 @@ inline bool isInIoAdrRange( T64Word adr ) {
     return(( adr >= T64_IO_MEM_START ) && ( adr <= T64_IO_MEM_LIMIT ));
 }
 
+inline bool isInIoHpaRange( T64Word adr ) {
+
+    return(( adr >= T64_IO_HPA_MEM_START ) && ( adr <= T64_IO_HPA_MEM_LIMIT ));
+}
+
 inline bool isInPhysMemAdrRange( T64Word adr ) {
 
     return(( adr >= 0 ) && ( adr <= T64_MAX_PHYS_MEM_LIMIT ));

@@ -107,6 +107,64 @@ bool overlap( T64Module *a, T64Module *b ) {
     return ( ovlSpa || ovlHpa );
 }
 
+//----------------------------------------------------------------------------------------
+// Insert an SPA address range into one of the address range maps.
+//
+//----------------------------------------------------------------------------------------
+int insertIntoMap( T64Module **map, T64Module *module, int *hwm, int maxEntries ) {
+
+    if ( *hwm >= maxEntries ) return -1;
+
+    int pos = 0;
+
+    while (( pos < *hwm ) &&
+           ( map[ pos ] -> getSpaAdr( ) < module -> getSpaAdr( ))) {
+
+        pos++;
+    }
+
+    for ( int i = *hwm; i > pos; --i ) {
+
+        map[i] = map[i - 1];
+    }
+
+    map[ pos ] = module;
+
+    (*hwm) ++;
+
+    return ( 0 );
+}
+
+//----------------------------------------------------------------------------------------
+// Remove a module from one of the memory maps. We locate the module and maintain
+// the sorted. If found the HWM is decremented.
+//----------------------------------------------------------------------------------------
+void removeFromMap( T64Module **map, T64Module *module, int *hwm ) {
+
+    int pos = -1;
+
+    for ( int i = 0; i < *hwm; i++ ) {
+
+        if ( map[ i ] == module ) {
+
+            pos  = i;
+            break;  
+        }
+    }
+
+    if ( pos >= 0 ) {
+
+        for ( int i = pos; i < *hwm - 1; ++i ) {
+
+            map[ i ] = map[ i + 1 ];
+        }
+
+        (*hwm) --;
+
+        map[ *hwm ] = nullptr;
+    }
+}
+
 }; // namespace
 
 //----------------------------------------------------------------------------------------
@@ -118,6 +176,12 @@ T64System::T64System( ) {
    initModuleMap( );
 }
 
+//----------------------------------------------------------------------------------------
+// Init the data structures. There are twice as many entries in the system and 
+// IO map as there are modules, simply because each module can have two SPA
+// ranges.
+//
+//----------------------------------------------------------------------------------------
 void T64System::initModuleMap( ) {
 
     for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
@@ -125,98 +189,100 @@ void T64System::initModuleMap( ) {
         moduleMap[ i ] = nullptr;
     }
 
+    for ( int i = 0; i < MAX_MOD_MAP_ENTRIES * 2; i++ ) {
+
+        systemMemMap[ i ] = nullptr;
+        systemIoMap[ i ] = nullptr;
+    }
+
     systemMemMapHwm = 0;
+    systemIoMapHwm  = 0;
 }
 
 //----------------------------------------------------------------------------------------
 //
-// ??? under construction...
+// ??? under construction... what should it report ?
 //----------------------------------------------------------------------------------------
 int T64System::getSystemState( ) {
 
     return( 0 );
 }
 
+
+
 //----------------------------------------------------------------------------------------
-// Add a module. There are two tables. The first table just contains the modules.
-// The index is the module number. The second table contains only the modules 
-// that have an SPA address. The entries this table are sorted by the SPA address 
-// range, which also cannot overlap. We look for the insertion position,
-// shift all entries up after this position and insert the new entry. A nice
-// side effect of the sorted address range, is that memory comes first and 
-// the lookup will be quick. It is by far the most used lookup.
+// Add a module. There are three tables. The first table just contains the 
+// modules, indexed by module number. The second and third table contain only 
+// the modules  that have an SPA address. The entries these table are sorted by
+// the SPA address range, which also cannot overlap. A nice side effect of the 
+// sorted address range and the separation of memory and SPA address ranges, is
+// that memory comes first and the lookup will be quick. It is by far the most
+// used lookup.
 //
-// Returns 0 on success, -1 on an invalid module number, -2 when the table is
-// full, a -3 on address range overlap, and a -4 when the module number is
-// already used.
+// The function returns 0 on success, -1 on an invalid module number, -2 when 
+// the table is full, a -3 on address range overlap, and a -4 when the module 
+// number is already used.
 //
 //----------------------------------------------------------------------------------------
 int T64System::addModule( T64Module *module ) {
 
     if (( module -> getModuleNum( ) > MAX_MOD_MAP_ENTRIES )) return ( -1 );
-    if ( systemMemMapHwm >= MAX_MOD_MAP_ENTRIES ) return ( -2 );
-    
-    for ( int i = 0; i < systemMemMapHwm; ++i ) {
+    if (moduleMap[ module -> getModuleNum( ) ] != nullptr ) return -4;
 
-        if ( overlap( moduleMap[ i ], module )) return ( -3 );
-    }
-
-    if ( moduleMap[ module -> getModuleNum( ) ] != nullptr ) return ( -4 );
-    moduleMap[ module -> getModuleNum( ) ] = module;    
+    bool isIo = isInRange( module->getSpaAdr(),
+                           T64_IO_SPA_MEM_START,
+                           T64_IO_SPA_MEM_LIMIT);
 
     if ( module -> getSpaLen( ) > 0 ) {
 
-        int pos = 0;
-        while (( pos < systemMemMapHwm ) &&
-            ( systemMemMap[ pos ] -> getSpaAdr( ) < module->getSpaAdr( ))) {
-            pos++;
+        for ( int i = 0; i < systemMemMapHwm; ++i ) {
+
+            if ( overlap( moduleMap[ i ], module )) return ( -3 );
         }
 
-        for ( int i = systemMemMapHwm; i > pos; i-- ) {
+        for ( int i = 0; i < systemIoMapHwm; ++i ) {
 
-            systemMemMap[ i ] = systemMemMap[ i - 1] ;
+            if ( overlap( moduleMap[ i ], module )) return ( -3 );
         }
 
-        systemMemMap[ pos ] = module;
-        systemMemMapHwm++;
+        int rStat;
+
+        if ( isIo ) {
+
+            rStat = insertIntoMap( systemIoMap,
+                                   module,
+                                   &systemIoMapHwm,
+                                   MAX_MOD_MAP_ENTRIES);
+        } 
+        else {
+
+            rStat = insertIntoMap( systemMemMap,
+                                   module,
+                                   &systemMemMapHwm,
+                                   MAX_MOD_MAP_ENTRIES);
+        }
+    
+        if ( rStat != 0 ) return( -2 );
     }
 
+    moduleMap[ module -> getModuleNum( ) ] = module;    
     module -> initModule( );
     return ( 0 );
 }
 
 //----------------------------------------------------------------------------------------
-// Remove a module from the module map and system module map. The system map 
-// remains sorted by SPA address. We find the module, shift all entries after it
-// down, and decrement HWM. The module pointer is simply removed from the 
-// module map. Finally, the module is stopped and deleted.
+// Remove a module from the module map and system memory and IO module maps. Both
+// maps remain sorted by SPA address. The module pointer is simply removed from
+// the module map. Finally, the module is stopped and deleted.
 //
-// Returns 0 on success, -1 if not found.
+// The function returns 0 on success, -1 if not found.
 //
 //----------------------------------------------------------------------------------------
 int T64System::removeModule( T64Module *module ) {
 
-    int pos = -1;
+    removeFromMap( systemMemMap, module, &systemMemMapHwm );
+    removeFromMap( systemIoMap, module, &systemIoMapHwm );
 
-    for ( int i = 0; i < systemMemMapHwm; i++ ) {
-
-        if ( systemMemMap[ i ] == module ) {
-
-            pos  = i;
-            break;  
-        }
-    }
-
-    if ( pos >= 0 ) {
-
-        for ( int i = pos; i < systemMemMapHwm - 1; ++i ) {
-
-            systemMemMap[ i ] = systemMemMap    [ i + 1 ];
-        }
-
-        systemMemMapHwm--;
-    }
-    
     moduleMap[ module -> getModuleNum( ) ] = nullptr;
 
     delete module;
@@ -234,7 +300,7 @@ T64Module *T64System::lookupByModNum( int modNum ) const {
 }
 
 //----------------------------------------------------------------------------------------
-// Find the fist module with a matching type.
+// Find the first module with a matching type.
 //
 //----------------------------------------------------------------------------------------
 T64Module *T64System::lookupByModuleType( T64ModuleType typ ) {
@@ -250,30 +316,48 @@ T64Module *T64System::lookupByModuleType( T64ModuleType typ ) {
 //----------------------------------------------------------------------------------------
 // Find the module entry that covers the address. Since we have only a small
 // number of module, we do a simple linear search of the system map. We check 
-// whether the address is in the SPA or HPA address range. We return the first
-// match, which is ok since the address ranges cannot overlap. 
+// whether the address is in the MEM or IO SPA or HPA address range. We return
+// the first match, which is ok since the address ranges cannot overlap. 
 //
-// We search the SPA range first, since this is the main access path. Since 
-// physical represents the lower SPA address range, a lookup of a memory address
-// will be rather quick, which is key for efficient physical memory access.
+// For performance reasons there is a certain order how we search. We will 
+// first check with a simple HPA range comparison whether we look at an HPA 
+// address range. Next, we will look at the MEM SPA range followed by the IO
+// SPA range. Access to the MEM SPA range, which holds the physical memory, is
+// by far the most performed access.
 //
 //----------------------------------------------------------------------------------------
 T64Module *T64System::lookupByAdr ( T64Word adr ) const {
 
-    for ( int i = 0; i < systemMemMapHwm; i++ ) {
+    if (( adr >= T64_IO_HPA_MEM_START ) && ( adr < T64_IO_HPA_MEM_LIMIT )) {
 
-        T64Module *mPtr = systemMemMap[ i ];
+        int modNum = extractField64( adr, 12, 6 );
 
-        if (( adr >= mPtr -> getSpaAdr( )) && 
-            ( adr <  mPtr -> getSpaAdr( ) + mPtr -> getSpaLen( ))) 
-            return ( mPtr ); 
+        if ( modNum > MAX_MOD_MAP_ENTRIES - 1 ) return( nullptr );
 
-        if (( adr >= mPtr -> getHpaAdr( )) && 
-            ( adr <  mPtr -> getHpaAdr( ) + mPtr -> getHpaLen( ))) 
-            return ( mPtr );
+        return( moduleMap[ modNum ] );
     }
+    else {
 
-    return nullptr;
+        for ( int i = 0; i < systemMemMapHwm; i++ ) {
+
+            T64Module *mPtr = systemMemMap[ i ];
+
+            if (( adr >= mPtr -> getSpaAdr( )) && 
+                ( adr <  mPtr -> getSpaAdr( ) + mPtr -> getSpaLen( ))) 
+                return ( mPtr ); 
+        }
+
+        for ( int i = 0; i < systemIoMapHwm; i++ ) {
+
+            T64Module *mPtr = systemIoMap[ i ];
+
+            if (( adr >= mPtr -> getSpaAdr( )) && 
+                ( adr <  mPtr -> getSpaAdr( ) + mPtr -> getSpaLen( ))) 
+                return ( mPtr ); 
+        }
+
+        return nullptr;
+    }
 } 
 
 //----------------------------------------------------------------------------------------
@@ -325,7 +409,11 @@ void T64System::runModule( int modNum ) {
 
 //----------------------------------------------------------------------------------------
 // Run a module for n units. We will wait until these units have been executed.
+// If the module number is a -1, we will start all modules and wait for all to 
+// complete.
 //
+// 
+// ??? may have to rethink when we know what STEP and RUN will actually do...
 //----------------------------------------------------------------------------------------
 void T64System::execModule( int modNum, int units ) {
 
@@ -337,6 +425,20 @@ void T64System::execModule( int modNum, int units ) {
 
             moduleMap[ modNum ] -> execModule( units );
             moduleMap[ modNum ] -> waitUntilHalted( );
+        }
+    }
+    else if ( modNum == -1 ) {
+
+        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+            if ( moduleMap[ i ] != nullptr )
+                moduleMap[ i ] -> execModule( units );
+        }
+
+         for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+            if ( moduleMap[ i ] != nullptr )
+                moduleMap[ i ] -> waitUntilHalted( );
         }
     }
 }
@@ -391,7 +493,6 @@ bool T64System::busOpWrite( int reqModNum,
 // Bus broadcast operation. We need to provide a way to signal global events
 // such as a TLB entry purge to all modules. 
 //
-// ??? under construction...
 //----------------------------------------------------------------------------------------
 bool T64System::busOpBroadcast( int                reqModNum,
                                 T64BroadcastEvents event,

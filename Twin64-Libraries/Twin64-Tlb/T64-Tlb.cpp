@@ -135,7 +135,7 @@ T64GlobalTlb::T64GlobalTlb( T64ModuleType    modType,
 }
 
 //----------------------------------------------------------------------------------------
-// 
+// Destructor. We just return the allocated memory.
 //
 //----------------------------------------------------------------------------------------
 T64GlobalTlb:: ~ T64GlobalTlb( ) {
@@ -167,7 +167,7 @@ bool T64GlobalTlb::lookupTlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
 }
 
 //----------------------------------------------------------------------------------------
-//
+// Insert a new translation.
 //
 //----------------------------------------------------------------------------------------
 bool T64GlobalTlb::insertTlbEntry( T64Word vAdr, T64Word pAdr, uint16_t tlbInfo ) {
@@ -269,7 +269,7 @@ void T64GlobalTlb::resetModule( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Dummy functions, we are a shared state module and not a thread..
+// Dummy functions, we are a shared state module and not a thread.
 //
 //----------------------------------------------------------------------------------------
 void T64GlobalTlb::haltModule( ) { }
@@ -278,25 +278,37 @@ void T64GlobalTlb::execModule( int steps ) { }
 bool T64GlobalTlb::executeUnit( ) { return( false ); }
 
 //----------------------------------------------------------------------------------------
-// A bus read event that concerns us.
+// A bus read event that concerns us. We only listen to our HPA address range.
 //
 //----------------------------------------------------------------------------------------
 bool 
 T64GlobalTlb::busOpReadEvent( int reqModNum, T64Word pAdr, uint8_t *data, int len )  {
 
-    if ( ! isInIoAdrRange( pAdr )) return( false );
-    if ( ! isAlignedPageAdr( pAdr, 8 )) return ( false );
-   
-    // for now ... we would need to compute which data item to return.
+    if ( ! isInIoHpaRange( pAdr )) return( false );
+    if ( ! isAlignedPageAdr( pAdr, sizeof( T64Word) )) return ( false );
+
+    int wordIndex = ( pAdr - T64_IO_HPA_MEM_START ) >> 3;
+
+    switch ( wordIndex ) {
+
+        // ??? simple cases are the variables such miss or hot count.
+
+        // ??? complex cases are the words from the TLB entry. We may 
+        // not do it in the switch statement.
+
+        // ??? need to build the second word from TÖB pAdr and info field.
+
+        default: ;
+    }
 
     *data = 0;
-    return ( false );
+    return ( true );
 }
 
 //----------------------------------------------------------------------------------------
-// A bus write event that concerns us.
+// A bus write event that concerns us. Right now, there is no write operation
+// defined for the TLB.
 //
-// ??? would we even allow t modify TLB data ?
 //----------------------------------------------------------------------------------------
 bool 
 T64GlobalTlb::busOpWriteEvent( int reqModNum, T64Word pAdr, uint8_t *data, int len )  {
@@ -310,9 +322,9 @@ T64GlobalTlb::busOpWriteEvent( int reqModNum, T64Word pAdr, uint8_t *data, int l
 //
 //----------------------------------------------------------------------------------------
 bool T64GlobalTlb::busOpBroadcastEvent( int srcModNum,
-                                 T64BroadcastEvents id, 
-                                 T64Word            arg1, 
-                                 T64Word            arg2 )  {
+                                        T64BroadcastEvents id, 
+                                        T64Word            arg1, 
+                                        T64Word            arg2 )  {
 
     // ??? need to implement this ....
 

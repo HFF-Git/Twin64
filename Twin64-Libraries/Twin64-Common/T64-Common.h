@@ -82,9 +82,9 @@ const   T64Word T64_PDC_MEM_START           = 0xF0000000;
 const   T64Word T64_PDC_MEM_LIMIT           = 0xF0FFFFFF;  
 
 const   T64Word T64_IO_SPA_MEM_START        = 0xF1000000;
-const   T64Word T64_IO_SPA_MEM_LIMIT        = 0xFEFFFFFF;
+const   T64Word T64_IO_SPA_MEM_LIMIT        = 0xFFFBFFFF;
 
-const   T64Word T64_IO_HPA_MEM_START        = 0xFF000000;
+const   T64Word T64_IO_HPA_MEM_START        = 0xFFFC0000;
 const   T64Word T64_IO_HPA_MEM_LIMIT        = 0xFFFFFFFF;
 
 const   T64Word T64_IO_BCAST_MEM_START      = 0xFFFFF000;
@@ -274,7 +274,6 @@ enum OpCodeFam : uint32_t {
     OPC_TRAP        = 14U,
     OPC_DIAG        = 15U
 };
-
 
 //----------------------------------------------------------------------------------------
 // TLBs. A translation lookaside buffer is essential. The TLB kind specifies 

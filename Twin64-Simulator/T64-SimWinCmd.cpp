@@ -1767,6 +1767,11 @@ void SimCommandsWin::haltCmd( ) {
 // with this command. This implies, that if one processor halts, all others 
 // should halt too ?
 //
+// ??? we need to decide how we want to handle a step. Is it explicitly for just
+// the HALTED processor, or will all processors halt ? It seems that the step 
+// command should rather just handle one processor or I/O module, while RUN will 
+// just run all processors not halted.
+//
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::stepCmd( ) {
     
@@ -1789,21 +1794,16 @@ void SimCommandsWin::stepCmd( ) {
 
     tok -> checkEOS( );
 
-    if ( modNum == -1 ) {
-
-        if ( glb -> winDisplay -> getCurrentWinType( ) != WT_CPU_WIN ) 
-            throw( ERR_EXPCTED_PROC_MODULE );
-
-        modNum = glb -> winDisplay -> getCurrentWinModNum( );
-    }
-
     glb -> system -> execModule( modNum, numOfSteps );
 }
 
 //----------------------------------------------------------------------------------------
 // Run command. The command will just run the system until a halt is detected.
 //
-//  RUN [ <modNum≤ ]
+//  RUN [ <modNum> ]
+//
+// ??? the RUN command should actually run all modules. If a module halted, it
+// can be stepped and put into run mode with the RUN command too...
 //
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 
@@ -2065,12 +2065,11 @@ void SimCommandsWin::modifyAbsMemCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::modifyRegCmd( ) {
    
+    int             modNum      = -1;
     SimTokTypeId    regSetId    = TYP_GREG;
     int             regNum      = 0;
     T64Word         val         = 0;
    
-    ensureWinModeOn( );
-    
     if (( tok -> tokTyp( ) == TYP_GREG ) ||
         ( tok -> tokTyp( ) == TYP_CREG ) ||
         ( tok -> tokTyp( ) == TYP_PREG )) {
@@ -2081,16 +2080,26 @@ void SimCommandsWin::modifyRegCmd( ) {
     }
     else throw ( ERR_INVALID_REG_ID );
 
+    if ( tok -> isToken( TOK_COLON )) {
+
+        tok -> nextToken( );
+        modNum = eval -> acceptNumExpr( ERR_INVALID_NUM );
+    }
+    else {
+
+        ensureWinModeOn( );
+
+        modNum = glb -> winDisplay -> getCurrentWinModNum( );
+
+        if ( glb -> winDisplay -> getCurrentWinType( ) != WT_CPU_WIN ) 
+        throw( ERR_INVALID_WIN_TYPE );
+    }
+
     tok -> acceptComma( );
 
     val = eval -> acceptNumExpr( ERR_INVALID_NUM );
 
     tok -> checkEOS( );
-
-    if ( glb -> winDisplay -> getCurrentWinType( ) != WT_CPU_WIN ) 
-        throw( ERR_INVALID_WIN_TYPE );
-
-    int modNum = glb -> winDisplay -> getCurrentWinModNum( );
 
     T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
     if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
@@ -2610,8 +2619,6 @@ void SimCommandsWin::winExchangeCmd( ) {
 //  WN <winType> [ "," <arg1> [ "," <arg2> ]]
 //
 //  WN  PROC    "," <mod>
-//  WN  CPU     "," <mod>
-//  WN  TLB     "," <mod>
 //  WN  MEM     "," <adr>
 //  WN  CODE    "," <adr> [ "," <modNum> ]
 //  WN  TEXT    "," <str>
@@ -2626,29 +2633,18 @@ void SimCommandsWin::winNewWinCmd( ) {
  
     switch ( winType ) {
 
-        // ??? collapse PROC and CPU ...
-
-        case TOK_PROC: {
+        case TOK_PROC: 
+        case TOK_CPU:{
 
             tok -> acceptComma( );
             int modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC );
             tok -> checkEOS( );
 
             glb -> winDisplay -> windowNewCpuState( modNum );
-            glb -> winDisplay -> windowNewTlb( modNum );  
 
         } break;
 
-        case TOK_CPU: {
-
-            tok -> acceptComma( );
-            int modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC );
-            tok -> checkEOS( );
-
-            glb -> winDisplay -> windowNewCpuState( modNum );  
-
-        } break;
-
+       
         // ??? this may go away, if we map TLBs to HPA ranges...
 
         case TOK_TLB: {

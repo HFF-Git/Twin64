@@ -496,7 +496,7 @@ void SimTokenizer::parseIdent( ) {
             else throw ( ERR_INVALID_CHAR_IN_IDENT );
         }
     }
-    else if (( currentChar == 'S' ) || ( currentChar == 's' )) {
+    else if (( currentChar == 'M' ) || ( currentChar == 'm' )) {
         
         addChar( identBuf, sizeof( identBuf ), currentChar );
         nextChar( );

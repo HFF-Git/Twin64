@@ -83,6 +83,12 @@
         "markdown",
         "latex",
         "plaintext",
-        "cpp"
-    ]
+        "cpp",
+        "Log"
+    ],
+    "spellright.parserByClass": {
+        "Log": {
+            "parser": "plain"
+        }
+    }
 }
