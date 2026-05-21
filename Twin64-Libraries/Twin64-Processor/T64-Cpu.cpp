@@ -246,10 +246,11 @@ void T64Cpu::instrReadRegionIdCheck( T64Word adr ) {
     }
 }
 
-void T64Cpu::instrReadAccCheck( T64TlbEntryOld *tlbPtr ) {
+void T64Cpu::instrReadAccCheck( uint16_t tlbInfo ) {
 
     uint8_t privMode = extractPsrXbit( psrReg );
 
+    #if 0 // ??? to fix ....
     if ( privMode > 0 ) {
 
         if (( tlbPtr -> pageType != PT_EXECUTE ) && 
@@ -262,7 +263,8 @@ void T64Cpu::instrReadAccCheck( T64TlbEntryOld *tlbPtr ) {
         
             instrMemAccRightsTrap( psrReg );
         }  
-    }     
+    }    
+    #endif 
 }
 
 void T64Cpu::instrReadAlignmentCheck( T64Word adr ) {
@@ -283,20 +285,23 @@ void T64Cpu::dataRegionIdCheck( T64Word adr, bool wMode ) {
         dataMemProtectionTrap( adr );  
 }
 
-void T64Cpu::dataReadAccCheck( T64TlbEntryOld *tlbPtr ) {
+void T64Cpu::dataReadAccCheck( uint16_t tlbInfo ) {
 
     uint8_t privMode = extractPsrXbit( psrReg );
 
+    #if 0 // ??? fix ....
     if ( ! ( privMode <= tlbPtr -> pLev1 )) {
 
         dataMemAccRightsTrap( psrReg );
     }
+    #endif
 }
 
-void T64Cpu::dataWriteAccCheck ( T64TlbEntryOld *tlbPtr ) {
+void T64Cpu::dataWriteAccCheck ( uint16_t tlbInfo ) {
 
     uint8_t privMode = extractPsrXbit( psrReg );
 
+    #if 0 // ??? fix ...
     if ( privMode > 0 ) {
 
         if ( tlbPtr -> pageType != PT_READ_WRITE ) {
@@ -309,6 +314,7 @@ void T64Cpu::dataWriteAccCheck ( T64TlbEntryOld *tlbPtr ) {
             dataMemAccRightsTrap( psrReg );
         }
     }
+    #endif
 }
 
 void T64Cpu::addOverFlowCheck( T64Word val1, T64Word val2 ) {
@@ -382,15 +388,18 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
     }
     else {
 
-        T64TlbEntryOld *tlbPtr = proc -> tlb -> lookupItlb( vAdr );
-        if ( tlbPtr == nullptr ) instrTlbMissTrap( vAdr );
+        uint16_t tlbInfo;
+        T64Word  pAdr;
 
-        instrReadAccCheck( tlbPtr );      
+        if ( ! proc -> tlb -> lookupItlb( vAdr, &pAdr, &tlbInfo )) 
+            instrTlbMissTrap( vAdr );
+
+        instrReadAccCheck( tlbInfo );      
         instrReadRegionIdCheck( vAdr );
        
-        if ( ! proc -> busOpRead( tlbPtr -> pAdr, (uint8_t *) &instr, 4 )) {
+        if ( ! proc -> busOpRead( pAdr, (uint8_t *) &instr, 4 )) {
 
-            machineCheckTrap( tlbPtr -> pAdr );
+            machineCheckTrap( pAdr );
         }
 
         copyEndianAware( ((uint8_t *) &instr ), ((uint8_t *) &instr ), 4 );  
@@ -430,17 +439,18 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
     }
     else {
 
-        T64TlbEntryOld *tlbPtr = proc -> tlb ->lookupDtlb( vAdr );
-        if ( tlbPtr == nullptr ) dataMemTlbMissTrap( vAdr );
+        uint16_t tlbInfo;
+        T64Word  pAdr;
+
+        if ( ! proc -> tlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) 
+            dataMemTlbMissTrap( vAdr );
        
-        dataReadAccCheck( tlbPtr );             
+        dataReadAccCheck( tlbInfo );             
         dataRegionIdCheck( vAdr, false );
 
-        if ( ! proc -> busOpRead( tlbPtr -> pAdr, 
-                          ((uint8_t *) &data ) + wordOfs, 
-                          len )) {
+        if ( ! proc -> busOpRead( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
 
-            machineCheckTrap( tlbPtr -> pAdr );
+            machineCheckTrap( pAdr );
         }
 
         copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
@@ -491,21 +501,22 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
     }
     else {
 
-        T64TlbEntryOld *tlbPtr = proc -> tlb -> lookupDtlb( vAdr );
-         if ( tlbPtr == nullptr ) dataMemTlbMissTrap( vAdr );
+        uint16_t tlbInfo;
+        T64Word  pAdr;
 
-        dataWriteAccCheck( tlbPtr );
+        if ( ! proc -> tlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) 
+            dataMemTlbMissTrap( vAdr );
+       
+        dataWriteAccCheck( tlbInfo );             
         dataRegionIdCheck( vAdr, true );
 
         copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
                          ((uint8_t *) &data ) + wordOfs, 
                          len );
         
-        if ( ! proc -> busOpWrite( tlbPtr -> pAdr, 
-                                 ((uint8_t *) &data ) + wordOfs, 
-                                 len )) {
+        if ( ! proc -> busOpWrite( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
 
-            machineCheckTrap( tlbPtr -> pAdr );
+            machineCheckTrap( pAdr );
         }
     }
 }
@@ -1423,12 +1434,14 @@ void T64Cpu::instrSysLpaOp( T64Instr instr ) {
     if ( extractInstrFieldU( instr, 19, 3 ) != 0 ) illegalInstrTrap( );
     if ( extractInstrFieldU( instr, 0, 9 ) != 0 ) illegalInstrTrap( );
 
+    #if 0 // ??? fix ....
     T64TlbEntryOld *e = proc -> tlb -> lookupDtlb( vAdr );
     if ( e == nullptr ) e = proc -> tlb -> lookupItlb( vAdr );
         
     if ( e == nullptr ) setRegR( instr, 0 );
     else                setRegR( instr, e ->pAdr );
-   
+    #endif 
+
     nextInstr( );
 }
 
@@ -1447,6 +1460,7 @@ void T64Cpu::instrSysPrbOp( T64Instr instr ) {
 
     if ( mode == 3 ) mode = extractField64( getRegA( instr ), 0, 2 );
    
+    #if 0 // ??? fix ....
     T64TlbEntryOld *e = proc -> tlb -> lookupDtlb( vAdr );
     if ( e == nullptr ) e = proc -> tlb -> lookupItlb( vAdr );
     
@@ -1460,6 +1474,7 @@ void T64Cpu::instrSysPrbOp( T64Instr instr ) {
         setRegR( instr, (( e -> pageType == mode ) ? 1 : 0 ));
     }
     else setRegR( instr, 1 );
+    #endif
 
     nextInstr( );
 }
@@ -1485,8 +1500,10 @@ void T64Cpu::instrSysTlbOp( T64Instr instr ) {
         case 0: 
         case 1: {
 
+            #if 0 // ??? fix ....
             proc -> tlb -> insertTlb( getRegB( instr ), getRegA( instr ));
             setRegR( instr, 1 );
+            #endif
 
         } break;
 

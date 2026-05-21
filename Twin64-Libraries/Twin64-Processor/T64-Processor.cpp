@@ -70,12 +70,13 @@ T64Processor::T64Processor( T64System           *sys,
                                                 0,
                                                 0 ) {
 
-    cpu     = new T64Cpu( this, cpuType );
-    tlb     = new T64Tlb( this, T64_TK_UNIFIED_TLB, tlbType );
-
     this -> sys = sys;
-    this -> cpu -> reset( );
-    this -> tlb -> reset( );
+
+    cpu     = new T64Cpu( this, cpuType );
+    tlb     = new T64LocalTlb( this, T64_TK_UNIFIED_TLB, tlbType );
+    
+    cpu -> reset( );
+    tlb -> reset( );
 }
 
 //----------------------------------------------------------------------------------------
@@ -153,7 +154,7 @@ T64Cpu *T64Processor::getCpuPtr( ) {
     return ( cpu );
 }
 
-T64Tlb *T64Processor::getTlbPtr( ) {
+T64LocalTlb *T64Processor::getTlbPtr( ) {
 
     return ( tlb );
 }
@@ -239,17 +240,15 @@ bool T64Processor::busOpBroadcastEvent( int                 srcModNum,
 
     switch ( event ) {
 
-        case T64_BCAST_TLB_INSERT: {
-
-            return( tlb -> insertTlb( arg1, arg2 ));
-
-        } break;
-
         case T64_BCAST_TLB_PURGE: {
             
             return( tlb -> purgeTlb( arg1 ));
 
         } break;
+
+        // ??? need the LDR/STC mechanism ...
+
+        default: ;
     }
 
     return( true );

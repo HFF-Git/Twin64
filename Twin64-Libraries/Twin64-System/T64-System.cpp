@@ -501,7 +501,8 @@ bool T64System::busOpBroadcast( int                reqModNum,
 
     for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
-        moduleMap[ i ] -> busOpBroadcastEvent( reqModNum, event, arg1, arg2 );
+        if ( moduleMap[ i ] != nullptr )
+            moduleMap[ i ] -> busOpBroadcastEvent( reqModNum, event, arg1, arg2 );
     }
 
     return( true );

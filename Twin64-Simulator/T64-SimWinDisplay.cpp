@@ -850,27 +850,6 @@ void SimWinDisplay::windowNewCpuState( int modNum ) {
     windowList[ slot ] -> setEnable( true );
     currentWinNum = slot;
 }
-
-void SimWinDisplay::windowNewTlb( int modNum ) {
-
-    int slot = getFreeWindowSlot( );
-
-     T64ModuleType mType = glb -> system -> getModuleType( modNum );
-    if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
-
-    T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
-    if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
-
-    T64Tlb *tlb = proc -> getTlbPtr( );
-
-    windowList[ slot ] = (SimWin *) new SimWinTlb( glb, modNum, tlb );
-    windowList[ slot ] -> setWinName((char *) "TLB" );
-    windowList[ slot ] -> setDefaults( );
-    windowList[ slot ] -> setWinIndex( slot );
-    windowList[ slot ] -> setWinStack( 0 );
-    windowList[ slot ] -> setEnable( true );
-    currentWinNum = slot;
-}
    
 void SimWinDisplay::windowNewText( char *pathStr ) {
 

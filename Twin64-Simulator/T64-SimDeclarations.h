@@ -1075,6 +1075,7 @@ struct SimWinCode : SimWinScrollable {
     T64DisAssemble  *disAsm = nullptr;
 };
 
+#if 0
 //----------------------------------------------------------------------------------------
 // TLB Window. The TLB data window displays the TLB entries.
 //
@@ -1094,6 +1095,7 @@ struct SimWinTlb : SimWinScrollable {
 
     T64Tlb *tlb = nullptr;
 };
+#endif
 
 //----------------------------------------------------------------------------------------
 // Text Window. It may be handy to also display an ordinary ASCII text file. One day

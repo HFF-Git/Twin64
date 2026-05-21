@@ -3,13 +3,12 @@
 // T64 - A 64-bit Processor - TLB
 //
 //----------------------------------------------------------------------------------------
-// The T64 CPU Simulator has a unified TLB with two small TLB cache structures.
-// It is a fully associative TLB with a LRU mechanism to select replacements.
-// Our TLB is a unified TLB with two small TLB buffers for instruction and data 
-// translation. The TLB supports multiple page sizes. A miss in the the small
-// instruction or data TLB will trigger a search in the unified TLB. A miss in
-// the unified TLB will trigger a TLB miss trap. The TLB supports a locked entry,
-// which is not replaced by the LRU mechanism. 
+// The T64 CPU Simulator has a unified TLB with two small TLB cache structures
+// in each processor. It is a fully associative TLB with a LRU mechanism to 
+// select replacements. The TLB supports multiple page sizes. A miss in the the
+// small instruction or data TLB will trigger a search in the unified TLB. A miss 
+// in the unified TLB will trigger a TLB miss trap. The TLB supports a locked
+// entry, which is not replaced by the LRU mechanism. 
 //
 //----------------------------------------------------------------------------------------
 //
@@ -37,7 +36,8 @@
 // ??? we add a direct reference to the TLB module to be quick...
 
 
-#if 1
+#if 0
+
 
 //----------------------------------------------------------------------------------------
 // Local name space.
@@ -596,7 +596,9 @@ bool T64LocalTlb::lookupItlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
     
     T64TlbEntry *e = lookup( iTlb, iTlbEntries, canonicalizeVa( vAdr ));
     if ( e != nullptr ) {
-        
+
+        *pAdr    = e -> pAdr;  // ??? add offset ?
+        *tlbInfo = e -> tlbInfo;
         iTlbHits ++;
         return ( true );
     }
@@ -646,7 +648,7 @@ bool T64LocalTlb::lookupDtlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
         for ( int i = idx; i > 0; i-- ) dTlb[ i ] = dTlb[ i - 1 ];
         dTlb[0] = hit;
 
-        *pAdr    = hit.pAdr;
+        *pAdr    = hit.pAdr;  // ??? add offset ...
         *tlbInfo = hit.tlbInfo;
         return ( true );
     }

@@ -2644,19 +2644,6 @@ void SimCommandsWin::winNewWinCmd( ) {
 
         } break;
 
-       
-        // ??? this may go away, if we map TLBs to HPA ranges...
-
-        case TOK_TLB: {
-
-            tok -> acceptComma( );
-            int modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC );
-            tok -> checkEOS( );
-
-            glb -> winDisplay -> windowNewTlb( modNum );  
-
-        } break;
-
         case TOK_MEM: {
 
             tok -> acceptComma( );

@@ -49,102 +49,9 @@ enum T64Options : uint32_t {
 };
 
 
-
-
-
-// ??? phase out - see common.h
 //----------------------------------------------------------------------------------------
-// TLB Entry. The TLB entry stores one translation along with several flags. 
-//
-//----------------------------------------------------------------------------------------
-struct T64TlbEntryOld {
-
-    public:
-
-    bool            valid           = false;
-    bool            uncached        = false;
-    bool            locked          = false;
-    bool            modified        = false;
-    T64PageType     pageType        = PT_NONE;
-    uint8_t         pLev1           = 0;
-    uint8_t         pLev2           = 0;
-    uint32_t        pageSize        = 0;
-    T64Word         pageMask        = 0;
-    T64Word         vAdr            = 0;
-    T64Word         pAdr            = 0; 
-};
-
-// ??? will be replaced...
-//----------------------------------------------------------------------------------------
-// The TLB submodule. In the real worlds most processors have an ITLB and DTLB.
-// Our TLB consist of three simple arrays of entries. There are two very small
-// arrays, the ITLB and DTLB L1 structure. Both are loaded from the unified 
-// UTLB. The CPU uses dedicated methods for instruction and data address lookup.
-// The insert and purge method apply to the UTLB. The simulator uses these 
-// methods for display and directly inserting or removing an UTLB entry. Note
-// that ITLB and DTLB are indirectly manipulated by operations on the UTLB.
-//
-//----------------------------------------------------------------------------------------
-struct T64Tlb {
-    
-    public:
-
-    T64Tlb( T64Processor *proc, T64TlbKind tlbKind, T64TlbType tlbType );
-
-    virtual         ~ T64Tlb( );
-    
-    void            reset( );
-
-    T64TlbEntryOld     *lookupItlb( T64Word vAdr );
-    T64TlbEntryOld     *lookupDtlb( T64Word vAdr );
-    
-    bool            insertTlb( T64Word vAdr, T64Word info );
-    bool            purgeTlb( T64Word vAdr );
-
-    int             getUTlbSize( ) const;
-    int             getITlbSize( ) const;
-    int             getDTlbSize( ) const;
-
-    T64TlbEntryOld     *getUTLBEntry( int index ) const;
-    T64TlbEntryOld     *getITLBEntry( int index ) const;
-    T64TlbEntryOld     *getDTLBEntry( int index ) const;
-
-    T64TlbKind      getTlbKind( ) const;  
-    char            *getTlbKindString( ) const;
-    T64TlbType      getTlbType( ) const;
-    char            *getTlbTypeString( ) const;
-
-    private:
-
-    T64Processor    *proc               = nullptr;
-
-    T64TlbKind      tlbKind             = T64_TK_NIL;
-    T64TlbType      tlbType             = T64_TT_NIL;
-    T64TlbEntryOld     *iTlb               = nullptr;
-    T64TlbEntryOld     *dTlb               = nullptr;
-    T64TlbEntryOld     *uTlb               = nullptr;
-
-    int             iTlbEntries         = 0;
-    int             dTlbEntries         = 0;
-    int             uTlbEntries         = 0;
-
-    uint32_t        uTlbRoundRobin      = 0;       
-    uint32_t        iTlbRoundRobin      = 0;       
-    
-    T64Word         iTlbHits            = 0;
-    T64Word         iTlbMisses          = 0;
-    T64Word         iTlbMissUTlbHits    = 0;
-    T64Word         iTlbMissUTlbMisses  = 0;
-
-    T64Word         dTlbHits            = 0;
-    T64Word         dTlbMisses          = 0;
-    T64Word         dTlbMissUTlbHits    = 0;
-    T64Word         dTlbMissUTlbMisses  = 0; 
-};
-
-//----------------------------------------------------------------------------------------
-//
-//
+// A processor maintains a local ITLB and DTLB. These are small sets of TLB
+// entries to consult for each access.
 //
 //----------------------------------------------------------------------------------------
 struct T64LocalTlb {
@@ -250,11 +157,11 @@ struct T64Cpu {
     bool            regionIdCheck( uint32_t pId, bool wMode );
     void            instrReadAlignmentCheck( T64Word vAdr );
     void            instrReadRegionIdCheck( T64Word adr );
-    void            instrReadAccCheck( T64TlbEntryOld *tlbPtr );
+    void            instrReadAccCheck( uint16_t tlbInfo );
     void            dataAlignmentCheck( T64Word vAdr, int len );
     void            dataRegionIdCheck( T64Word adr, bool wMode );
-    void            dataReadAccCheck( T64TlbEntryOld *tlbPtr );
-    void            dataWriteAccCheck( T64TlbEntryOld *tlbPtr );
+    void            dataReadAccCheck( uint16_t tlbInfo );
+    void            dataWriteAccCheck( uint16_t tlbInfo );
     void            addOverFlowCheck( T64Word val1, T64Word val2 );
     void            subUnderFlowCheck( T64Word val1, T64Word val2 );
 
@@ -379,7 +286,7 @@ struct T64Processor : T64ThreadModule {
                                          T64Word            arg2 );
                         
     T64Cpu          *getCpuPtr( );
-    T64Tlb          *getTlbPtr( );
+    T64LocalTlb     *getTlbPtr( );
     char            *getProcStateStr( );
    
 private:
@@ -391,5 +298,5 @@ private:
 
     T64System       *sys                    = nullptr;
     T64Cpu          *cpu                    = nullptr;
-    T64Tlb          *tlb                    = nullptr;
+    T64LocalTlb     *tlb                    = nullptr;
 };
