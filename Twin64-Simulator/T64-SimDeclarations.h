@@ -1209,6 +1209,7 @@ private:
     
     void            addProcModule( int modNum );
     void            addMemModule( int modNum );
+    void            addTlbModule( int modNum );
     void            addIoModule( int modNum );
 
     void            addModuleCmd( );
@@ -1328,7 +1329,7 @@ public:
     void            windowSetStack( int winStack, int winNumStart, int winNumEnd );
     
     int             getCurrentWindow( );
-    void            setCurrentWindow( int winNum );
+    void            setCurrentWindow( int winNum );    
     bool            isCurrentWin( int winNum );
     SimWinType      getCurrentWinType( );
     int             getCurrentWinModNum( );

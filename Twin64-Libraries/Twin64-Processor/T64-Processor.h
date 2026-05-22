@@ -27,6 +27,7 @@
 #include "T64-Common.h"
 #include "T64-Util.h"
 #include "T64-System.h"
+#include "T64-Tlb.h"
 #include <thread>
 #include <atomic>
 #include <mutex>
@@ -47,7 +48,6 @@ enum T64Options : uint32_t {
 
     T64_PO_NIL = 0
 };
-
 
 //----------------------------------------------------------------------------------------
 // A processor maintains a local ITLB and DTLB. These are small sets of TLB
@@ -95,8 +95,6 @@ struct T64LocalTlb {
     T64Word         dTlbMissUTlbMisses  = 0; 
 
 };
-
-
 
 //----------------------------------------------------------------------------------------
 // CPU. The execution unit. We could support several types. So far, we do not.
@@ -270,6 +268,10 @@ struct T64Processor : T64ThreadModule {
                                uint8_t *data, 
                                int len );
 
+    bool            busOpBroadCast( T64BroadcastEvents id, 
+                                    T64Word            arg1, 
+                                    T64Word            arg2 );
+
     bool            busOpReadEvent( int     reqModNum,
                                     T64Word pAdr, 
                                     uint8_t *data, 
@@ -286,9 +288,10 @@ struct T64Processor : T64ThreadModule {
                                          T64Word            arg2 );
                         
     T64Cpu          *getCpuPtr( );
-    T64LocalTlb     *getTlbPtr( );
+    T64LocalTlb     *getLocalTlbPtr( );
     char            *getProcStateStr( );
-   
+    T64GlobalTlb    *getGlobalTlbPtr( );
+
 private:
 
     bool            handleHPARead( T64Word pAdr, uint8_t *data, int len );
@@ -298,5 +301,6 @@ private:
 
     T64System       *sys                    = nullptr;
     T64Cpu          *cpu                    = nullptr;
-    T64LocalTlb     *tlb                    = nullptr;
+    T64LocalTlb     *localTlb               = nullptr;
+    T64GlobalTlb    *globalTlb              = nullptr;
 };

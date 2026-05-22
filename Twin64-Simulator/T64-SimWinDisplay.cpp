@@ -763,7 +763,8 @@ void SimWinDisplay::windowToggle( int winNum, int toggleVal ) {
 // The display order of the windows is determined by the window index. It would 
 // however be convenient to modify the display order. The window exchange command
 // will exchange the current window with the window specified by the index of
-// another window. If the windows are from different window stacks, we also 
+// another window. As we swap the window entries, we need to patch up the window
+// index too. Finally, if the windows are from different window stacks, we also 
 // exchange the winStack.
 //
 //----------------------------------------------------------------------------------------

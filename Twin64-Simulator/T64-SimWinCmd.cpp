@@ -867,7 +867,7 @@ int SimCommandsWin::buildCmdPrompt( char *promptStr, int promptStrLen ) {
 // pairs to get all module type info. Omitted key/value pairs are set to reasonable
 // defaults.
 //
-//  NM PROC, <modNum, TLB=xxx, ...
+//  NM PROC, <modNum>
 //
 // Processors are threads, so we need to start them after creating them. The 
 // "startModule" method will create a thread for the processor and start it. 
@@ -1065,6 +1065,69 @@ void SimCommandsWin::addMemModule( int modNum ) {
         }
     } 
 }
+
+//----------------------------------------------------------------------------------------
+// "AddTlbModule" will add our global TLB module.
+//
+//  NM TLB, <modNum>, <tlbType>
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::addTlbModule( int modNum ) {
+
+    T64TlbType tlbType = T64_TT_FA_64S;  
+
+    if ( tok -> isToken( TOK_COMMA )) {
+
+         tok -> nextToken( );
+
+         if ( tok -> isToken( TOK_TLB_FA_16S )) 
+            tlbType = T64_TT_FA_16S;
+        else if ( tok -> isToken( TOK_TLB_FA_32S )) 
+            tlbType = T64_TT_FA_32S;
+        else if ( tok -> isToken( TOK_TLB_FA_64S )) 
+            tlbType = T64_TT_FA_64S;
+        else if ( tok -> isToken( TOK_TLB_FA_128S )) 
+            tlbType = T64_TT_FA_128S;
+        else throw( ERR_INVALID_ARG );
+    }
+
+    tok -> checkEOS( );
+
+    T64GlobalTlb *t = new T64GlobalTlb( MT_GTLB, modNum, T64_TK_GLOBAL_TLB, tlbType );
+    
+    switch ( glb -> system -> addModule( t )) {
+
+        case 0: {
+
+             return;
+        }
+
+        case -1: 
+        case -2: {
+
+            delete t;
+            throw( SimErrMsgId( ERR_MODULE_TABLE_FULL ));
+        }
+
+        case -3: {
+
+            delete t;
+            throw( SimErrMsgId( ERR_MODULE_RANGE_OVERLAP ));
+        }
+
+        case -4: {
+
+            delete t;
+            throw( SimErrMsgId( ERR_MODULE_ALREADY_USED ));
+        }
+
+        default: {
+
+            delete t;
+            throw( SimErrMsgId( ERR_CREATE_MODULE ));
+        }
+    }
+}
+
 
 //----------------------------------------------------------------------------------------
 // "addIoModule" parses the parameters for an IO module. We are entered with the
@@ -1492,9 +1555,10 @@ void SimCommandsWin::addModuleCmd( ) {
     
     switch ( moduleTyp ) {
 
-        case TOK_PROC:  addProcModule( modNum );   break;
-        case TOK_MEM:   addMemModule( modNum );    break;
-        case TOK_IO:    addIoModule( modNum );     break;
+        case TOK_PROC:  addProcModule( modNum );    break;
+        case TOK_MEM:   addMemModule( modNum );     break;
+        case TOK_TLB:   addTlbModule( modNum );     break;
+        case TOK_IO:    addIoModule( modNum );      break;
         default:        throw( ERR_INVALID_MODULE_TYPE );
     }
 }

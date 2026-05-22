@@ -59,7 +59,7 @@ inline T64Word canonicalizeVa( T64Word vAdr ) {
 // corresponding to the page size.
 //
 //----------------------------------------------------------------------------------------
-inline T64Word pageMask( int pSize ) {
+inline T64Word tlbPageMask( int pSize ) {
     
     int shift = T64_PAGE_OFS_BITS + ( pSize * 4 );
     return ~(( 1ULL << shift ) - 1 );
@@ -148,20 +148,19 @@ T64GlobalTlb:: ~ T64GlobalTlb( ) {
 // all valid entries which to find the best match, because we can deliberately 
 // allow for overlapping entries, which can be used to deploy a large page and 
 // overlap another smaller range. The best match is the entry with the largest
-// page mask, which is the smallest page size. If we found a match, we return
-// the physical address and the tlb info data.
+// page mask, which is the smallest page size. If we found a match, we copy the 
+// entry to the passed parameter.
 // 
 //----------------------------------------------------------------------------------------
-bool T64GlobalTlb::lookupTlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
+bool T64GlobalTlb::lookupTlb( T64Word vAdr, T64TlbEntry *e ) {
 
     std::shared_lock lock( tLock );
 
-    T64TlbEntry *e = lookupTlbEntry( tlbTable, tlbSize, vAdr );
-    if ( e == nullptr ) return( false );
-    
-    *pAdr    = e -> pAdr | ( vAdr & ~ e ->  pageMask ); 
-    *tlbInfo = e -> tlbInfo;
+    T64TlbEntry *entry = lookupTlbEntry( tlbTable, tlbSize, vAdr );
+    if ( entry == nullptr ) return( false );
 
+    *e = *entry;
+    
     tlbHitCount ++;
     return( true );
 }
@@ -170,22 +169,22 @@ bool T64GlobalTlb::lookupTlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
 // Insert a new translation.
 //
 //----------------------------------------------------------------------------------------
-bool T64GlobalTlb::insertTlbEntry( T64Word vAdr, T64Word pAdr, uint16_t tlbInfo ) {
+bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
 
     std::unique_lock lock( tLock );
 
-    int pSize   = tlbPageSize( tlbInfo & T64_TM_PSIZE );
+    int pSize   = tlbPageSize(( arg2 >> 48 ) & T64_TM_PSIZE );
 
-    if ( isInIoAdrRange( vAdr )) return ( true );
-    if ( ! isAlignedPageAdr( vAdr, pSize )) return ( false );
-    if ( ! isAlignedPageAdr( pAdr, pSize )) return ( false );
+    if ( isInIoAdrRange( arg1 )) return ( true );
+    if ( ! isAlignedPageAdr( arg1, pSize )) return ( false );
+    if ( ! isAlignedPageAdr( arg2, pSize )) return ( false );
 
     T64TlbEntry entry;
 
-    entry.pageMask  = pageMask( pSize );
-    entry.vAdr      = vAdr & entry.pageMask;
-    entry.pAdr      = pAdr & entry.pageMask;
-    entry.tlbInfo   = tlbInfo;
+    entry.pageMask  = tlbPageMask( pSize );
+    entry.vAdr      = arg1 & entry.pageMask;
+    entry.pAdr      = arg2 & entry.pageMask;
+    entry.tlbInfo   = arg2 >> 48;
 
     for ( int i = 0; i < tlbSize; i++ ) {
 
@@ -276,6 +275,7 @@ void T64GlobalTlb::haltModule( ) { }
 void T64GlobalTlb::runModule( ) { };
 void T64GlobalTlb::execModule( int steps ) { }
 bool T64GlobalTlb::executeUnit( ) { return( false ); }
+void T64GlobalTlb::waitUntilHalted( ) { }
 
 //----------------------------------------------------------------------------------------
 // A bus read event that concerns us. We only listen to our HPA address range.

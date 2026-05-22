@@ -56,6 +56,11 @@ namespace {
 // T64ThreadModule class. We need to implement the abstract methods of a module
 // in which we do our processor specific work and invoke the protected methods
 // of the thread class.
+//
+// Interaction with other modules is typically performed via the T64System object.
+// However, there is one exception. A reference to the global TLB is directly 
+// obtained for performance reasons. It is expected that there is only one global
+// TLB and that is created before we create processors.
 // 
 //----------------------------------------------------------------------------------------
 T64Processor::T64Processor( T64System           *sys,
@@ -73,10 +78,12 @@ T64Processor::T64Processor( T64System           *sys,
     this -> sys = sys;
 
     cpu     = new T64Cpu( this, cpuType );
-    tlb     = new T64LocalTlb( this, T64_TK_UNIFIED_TLB, tlbType );
+    localTlb     = new T64LocalTlb( this, T64_TK_UNIFIED_TLB, tlbType );
+
+    globalTlb = dynamic_cast<T64GlobalTlb*>( sys -> lookupByModuleType( MT_GTLB ));
     
     cpu -> reset( );
-    tlb -> reset( );
+    localTlb -> reset( );
 }
 
 //----------------------------------------------------------------------------------------
@@ -86,7 +93,7 @@ T64Processor::T64Processor( T64System           *sys,
 T64Processor:: ~T64Processor( ) {
 
     delete cpu;
-    delete tlb;
+    delete localTlb;
 }
 
 //----------------------------------------------------------------------------------------
@@ -96,7 +103,7 @@ T64Processor:: ~T64Processor( ) {
 void T64Processor::initModule( ) {
 
     cpu -> reset( );
-    tlb -> reset( );
+    localTlb -> reset( );
     
     threadModuleStart( );
 }
@@ -104,7 +111,7 @@ void T64Processor::initModule( ) {
 void T64Processor::resetModule( ) {
 
     cpu -> reset( );
-    tlb -> reset( );
+    localTlb -> reset( );
 
     threadModuleReset( );
 }
@@ -154,9 +161,14 @@ T64Cpu *T64Processor::getCpuPtr( ) {
     return ( cpu );
 }
 
-T64LocalTlb *T64Processor::getTlbPtr( ) {
+T64LocalTlb *T64Processor::getLocalTlbPtr( ) {
 
-    return ( tlb );
+    return ( localTlb );
+}
+
+T64GlobalTlb *T64Processor::getGlobalTlbPtr( ) {
+
+    return( globalTlb );
 }
 
 //----------------------------------------------------------------------------------------
@@ -203,6 +215,13 @@ bool T64Processor::busOpWrite( T64Word adr,
     return( sys -> busOpWrite( moduleNum, adr, data, len ));
 }
 
+bool T64Processor::busOpBroadCast( T64BroadcastEvents id, 
+                                   T64Word            arg1, 
+                                   T64Word            arg2 ) {
+
+    return( sys -> busOpBroadcast( moduleNum, id, arg1, arg2 ));
+}
+
 bool T64Processor::busOpReadEvent( int     reqModNum,
                                    T64Word pAdr, 
                                    uint8_t *data, 
@@ -242,7 +261,7 @@ bool T64Processor::busOpBroadcastEvent( int                 srcModNum,
 
         case T64_BCAST_TLB_PURGE: {
             
-            return( tlb -> purgeTlb( arg1 ));
+            return( localTlb -> purgeTlb( arg1 ));
 
         } break;
 

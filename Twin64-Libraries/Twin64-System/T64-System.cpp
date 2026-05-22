@@ -307,7 +307,8 @@ T64Module *T64System::lookupByModuleType( T64ModuleType typ ) {
 
     for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
-        if ( moduleMap[ i ]-> moduleTyp == typ ) return ( moduleMap[ i ] );
+        if (( moduleMap[ i ] != nullptr ) &&
+            ( moduleMap[ i ]-> moduleTyp == typ )) return ( moduleMap[ i ] );
     }
 
     return ( nullptr );

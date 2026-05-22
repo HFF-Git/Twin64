@@ -54,9 +54,9 @@ struct T64GlobalTlb : T64Module {
 
     virtual ~T64GlobalTlb( );
 
-    bool        lookupTlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo );
+    bool        lookupTlb( T64Word vAdr, T64TlbEntry *e );
 
-    bool        insertTlbEntry( T64Word vAdr, T64Word pAdr, uint16_t tlbInfo );
+    bool        insertTlbEntry( T64Word arg1, T64Word arg2 );
     bool        removeTlbEntry( T64Word vAdr );
 
     void        initModule( );
@@ -65,6 +65,7 @@ struct T64GlobalTlb : T64Module {
     void        runModule( );
     void        execModule( int steps );
     bool        executeUnit( );
+    void        waitUntilHalted( );
 
     bool        busOpReadEvent( int reqModNum, T64Word pAdr, uint8_t *data, int len );
     bool        busOpWriteEvent( int reqModNum, T64Word pAdr, uint8_t *data, int len );  
@@ -78,9 +79,6 @@ struct T64GlobalTlb : T64Module {
 
     T64TlbKind          tlbKind;
     T64TlbType          tlbType;
-    T64Word             pageMask( uint16_t tlbInfo );
-    T64Word             pageSize( uint16_t tlbInfo );
-
     int                 tlbSize;
     T64TlbEntry         *tlbTable;
     int                 tlbRoundRobin;

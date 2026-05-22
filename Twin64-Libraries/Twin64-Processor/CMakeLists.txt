@@ -12,5 +12,10 @@ add_library( ${PROJECT_NAME} STATIC
     T64-Tlb.cpp 
 ) 
 
-target_link_libraries( ${PROJECT_NAME} PUBLIC Twin64-Common Twin64-System )
+target_link_libraries( ${PROJECT_NAME} PUBLIC 
+
+    Twin64-Common 
+    Twin64-System 
+    Twin64-Tlb )
+    
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} )

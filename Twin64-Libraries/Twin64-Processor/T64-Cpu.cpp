@@ -249,22 +249,22 @@ void T64Cpu::instrReadRegionIdCheck( T64Word adr ) {
 void T64Cpu::instrReadAccCheck( uint16_t tlbInfo ) {
 
     uint8_t privMode = extractPsrXbit( psrReg );
+    uint8_t pageType = ( tlbInfo >> 4 ) & 0x3; 
+    uint8_t pLevel   = ( tlbInfo >> 5 ) & 0x1;
 
-    #if 0 // ??? to fix ....
     if ( privMode > 0 ) {
 
-        if (( tlbPtr -> pageType != PT_EXECUTE ) && 
-            ( tlbPtr -> pageType != PT_GATEWAY )) {
+        if (( pageType != PT_EXECUTE ) && 
+            ( pageType != PT_GATEWAY )) {
 
             instrMemAccRightsTrap( psrReg );
         } 
     
-        if ( ! ( privMode <= tlbPtr -> pLev1 )) {
+        if ( ! ( privMode <= pLevel )) {
         
             instrMemAccRightsTrap( psrReg );
         }  
     }    
-    #endif 
 }
 
 void T64Cpu::instrReadAlignmentCheck( T64Word adr ) {
@@ -281,40 +281,41 @@ void T64Cpu::dataRegionIdCheck( T64Word adr, bool wMode ) {
 
     if ( extractPsrXbit( psrReg )) return;
 
-    if ( ! regionIdCheck( vAdrRegionId( adr ), wMode )) 
+    if ( ! regionIdCheck( vAdrRegionId( adr ), wMode )) {
+
         dataMemProtectionTrap( adr );  
+    }
 }
 
 void T64Cpu::dataReadAccCheck( uint16_t tlbInfo ) {
 
     uint8_t privMode = extractPsrXbit( psrReg );
+    uint8_t pLevel   = ( tlbInfo >> 6 ) & 0x1;
 
-    #if 0 // ??? fix ....
-    if ( ! ( privMode <= tlbPtr -> pLev1 )) {
-
+    if ( ! ( privMode <= pLevel )) { 
+        
         dataMemAccRightsTrap( psrReg );
     }
-    #endif
 }
 
 void T64Cpu::dataWriteAccCheck ( uint16_t tlbInfo ) {
 
     uint8_t privMode = extractPsrXbit( psrReg );
+    uint8_t pageType  = ( tlbInfo >> 4 ) & 0x3; 
+    uint8_t pLevel2   = ( tlbInfo >> 7 ) & 0x1;
 
-    #if 0 // ??? fix ...
     if ( privMode > 0 ) {
 
-        if ( tlbPtr -> pageType != PT_READ_WRITE ) {
+        if ( pageType != PT_READ_WRITE ) {
 
             dataMemAccRightsTrap( psrReg );
         }
 
-        if ( ! ( privMode <= tlbPtr -> pLev2 )) {
+        if ( ! ( privMode <= pLevel2 )) {
 
             dataMemAccRightsTrap( psrReg );
         }
     }
-    #endif
 }
 
 void T64Cpu::addOverFlowCheck( T64Word val1, T64Word val2 ) {
@@ -391,7 +392,7 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
         uint16_t tlbInfo;
         T64Word  pAdr;
 
-        if ( ! proc -> tlb -> lookupItlb( vAdr, &pAdr, &tlbInfo )) 
+        if ( ! proc -> localTlb -> lookupItlb( vAdr, &pAdr, &tlbInfo )) 
             instrTlbMissTrap( vAdr );
 
         instrReadAccCheck( tlbInfo );      
@@ -442,7 +443,7 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
         uint16_t tlbInfo;
         T64Word  pAdr;
 
-        if ( ! proc -> tlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) 
+        if ( ! proc -> localTlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) 
             dataMemTlbMissTrap( vAdr );
        
         dataReadAccCheck( tlbInfo );             
@@ -504,7 +505,7 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
         uint16_t tlbInfo;
         T64Word  pAdr;
 
-        if ( ! proc -> tlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) 
+        if ( ! proc -> localTlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) 
             dataMemTlbMissTrap( vAdr );
        
         dataWriteAccCheck( tlbInfo );             
@@ -1360,7 +1361,6 @@ void T64Cpu::instrBrMbrOp( T64Instr instr ) {
 //  6       -> MFIA: psrReg.[ 51..32 ] 
 //  7       -> MFIA: psrReg.[ 63..52 ] 
 //
-// ??? rework...
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrSysMrOp( T64Instr instr ) {
 
@@ -1434,13 +1434,18 @@ void T64Cpu::instrSysLpaOp( T64Instr instr ) {
     if ( extractInstrFieldU( instr, 19, 3 ) != 0 ) illegalInstrTrap( );
     if ( extractInstrFieldU( instr, 0, 9 ) != 0 ) illegalInstrTrap( );
 
-    #if 0 // ??? fix ....
-    T64TlbEntryOld *e = proc -> tlb -> lookupDtlb( vAdr );
-    if ( e == nullptr ) e = proc -> tlb -> lookupItlb( vAdr );
-        
-    if ( e == nullptr ) setRegR( instr, 0 );
-    else                setRegR( instr, e ->pAdr );
-    #endif 
+    T64Word     pAdr    = 0;
+    uint16_t    tlbInfo = 0;
+
+    if ( proc -> getLocalTlbPtr( ) -> lookupDtlb( vAdr, &pAdr, &tlbInfo  )) {
+
+        setRegR( instr, pAdr );
+    }
+    else if ( proc -> getLocalTlbPtr( ) -> lookupItlb( vAdr, &pAdr, &tlbInfo  )) {
+
+        setRegR( instr, pAdr );
+    }
+    else setRegR( instr, 0 );
 
     nextInstr( );
 }
@@ -1459,22 +1464,26 @@ void T64Cpu::instrSysPrbOp( T64Instr instr ) {
     if ( extractInstrFieldU( instr, 0, 9 ) != 0 ) illegalInstrTrap( );
 
     if ( mode == 3 ) mode = extractField64( getRegA( instr ), 0, 2 );
-   
-    #if 0 // ??? fix ....
-    T64TlbEntryOld *e = proc -> tlb -> lookupDtlb( vAdr );
-    if ( e == nullptr ) e = proc -> tlb -> lookupItlb( vAdr );
-    
-    if ( e == nullptr ) {
+
+    T64Word     pAdr    = 0;
+    uint16_t    tlbInfo = 0;
+
+    if ( proc -> getLocalTlbPtr( ) -> lookupDtlb( vAdr, &pAdr, &tlbInfo  )) {
 
         // ??? non-access trap ?
-    }  
+    }
+    else if ( proc -> getLocalTlbPtr( ) -> lookupItlb( vAdr, &pAdr, &tlbInfo  )) {
+
+        // ??? non-access trap ?
+    }
+    else setRegR( instr, 0 );
 
     if ( privLevel == 1 ) {
 
-        setRegR( instr, (( e -> pageType == mode ) ? 1 : 0 ));
+        // ??? compare the ACC field with mode...
+
     }
     else setRegR( instr, 1 );
-    #endif
 
     nextInstr( );
 }
@@ -1500,10 +1509,8 @@ void T64Cpu::instrSysTlbOp( T64Instr instr ) {
         case 0: 
         case 1: {
 
-            #if 0 // ??? fix ....
-            proc -> tlb -> insertTlb( getRegB( instr ), getRegA( instr ));
+            proc -> globalTlb -> insertTlbEntry( getRegB( instr ), getRegA( instr ));
             setRegR( instr, 1 );
-            #endif
 
         } break;
 
@@ -1511,7 +1518,10 @@ void T64Cpu::instrSysTlbOp( T64Instr instr ) {
         case 3: {
 
             T64Word vAdr = addAdrOfs32( getRegB( instr ), getRegA( instr ));
-            proc -> tlb -> purgeTlb( vAdr );
+            proc -> localTlb -> purgeTlb( vAdr );
+            
+            proc -> busOpBroadCast( T64_BCAST_TLB_PURGE, vAdr, 0 ); 
+
             setRegR( instr, 1 );
 
         } break;
@@ -1618,8 +1628,8 @@ void T64Cpu::instrSysDiagOp( T64Instr instr ) {
 //----------------------------------------------------------------------------------------
 // SYS:TRAP_OP operation.
 //
-// ??? what exactly do we do here ? Can we pass arguments ? Or do we just move 
-// them to control registers scratch 1 and 2 ?
+//  what exactly do we do here ? Can we pass arguments ? Or do we just move 
+// them to control registers scratch 1 and 2 ????
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrSysTrapOp( T64Instr instr ) {
 
