@@ -55,7 +55,6 @@ struct T64GlobalTlb : T64Module {
     virtual ~T64GlobalTlb( );
 
     bool        lookupTlb( T64Word vAdr, T64TlbEntry *e );
-
     bool        insertTlbEntry( T64Word arg1, T64Word arg2 );
     bool        removeTlbEntry( T64Word vAdr );
 

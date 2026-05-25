@@ -153,12 +153,13 @@ bool T64LocalTlb::lookupItlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
     T64TlbEntry *e = lookup( iTlb, iTlbEntries, canonicalizeVa( vAdr ));
     if ( e != nullptr ) {
 
-        *pAdr    = e -> pAdr;  // ??? add offset ?
+        *pAdr    = e -> pAdr | ( vAdr & ~ tlbEntry.pageMask );  
         *tlbInfo = e -> tlbInfo;
         iTlbHits ++;
         return ( true );
     }
-    else iTlbMisses ++;
+    
+    iTlbMisses ++;
 
     T64GlobalTlb *gTlb = proc -> getGlobalTlbPtr( );
     if ( gTlb == nullptr ) return ( false );
@@ -201,13 +202,14 @@ bool T64LocalTlb::lookupDtlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
         T64TlbEntry hit = *e;
 
         for ( int i = idx; i > 0; i-- ) dTlb[ i ] = dTlb[ i - 1 ];
-        dTlb[0] = hit;
+        dTlb[ 0 ] = hit;
 
-        *pAdr    = hit.pAdr;  // ??? add offset ...
+        *pAdr    = hit.pAdr | ( vAdr & ~ hit.pageMask ); 
         *tlbInfo = hit.tlbInfo;
         return ( true );
     }
-    else dTlbMisses ++;
+   
+    dTlbMisses ++;
 
     T64GlobalTlb *gTlb = proc -> getGlobalTlbPtr( );
     if ( gTlb == nullptr ) return ( false );

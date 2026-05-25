@@ -289,19 +289,27 @@ T64GlobalTlb::busOpReadEvent( int reqModNum, T64Word pAdr, uint8_t *data, int le
 
     int wordIndex = ( pAdr - T64_IO_HPA_MEM_START ) >> 3;
 
-    switch ( wordIndex ) {
+    if ( wordIndex < 32 ) { // ??? come up wth named constant ... 
 
-        // ??? simple cases are the variables such miss or hot count.
+        switch ( wordIndex ) {  
 
-        // ??? complex cases are the words from the TLB entry. We may 
-        // not do it in the switch statement.
+            // ??? simple cases are the variables such miss or hot count.
 
-        // ??? need to build the second word from TÖB pAdr and info field.
+            // ??? complex cases are the words from the TLB entry. We may 
+            // not do it in the switch statement.
 
-        default: ;
+            // ??? need to build the second word from TÖB pAdr and info field.
+
+            default: ;
+        }
+    }
+    else {
+
+        // ??? TLB array access in the reg sets 1 ... 8
+
     }
 
-    *data = 0;
+    *data = 0; // ??? for now ...
     return ( true );
 }
 
