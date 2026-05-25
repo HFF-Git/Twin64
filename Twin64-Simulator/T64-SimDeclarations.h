@@ -178,7 +178,8 @@ enum SimTokId : uint16_t {
     //------------------------------------------------------------------------------------
     TOK_NIL,                    TOK_ERR,                    TOK_EOS,
     TOK_COMMA,                  TOK_PERIOD,                 TOK_COLON,
-    TOK_LPAREN,                 TOK_RPAREN,                 TOK_QUOTE,
+    TOK_LPAREN,                 TOK_RPAREN,                 TOK_LBRACK,
+    TOK_RBRACK,                 TOK_QUOTE,
     TOK_EQUAL,                  TOK_PLUS,                   TOK_MINUS,
     TOK_MULT,                   TOK_DIV,                    TOK_MOD,
     TOK_REM,                    TOK_NEG,                    TOK_AND,
@@ -295,16 +296,19 @@ enum SimErrMsgId : int {
     ERR_EXPECTED_COLON              = 101,
     ERR_EXPECTED_LPAREN             = 102,
     ERR_EXPECTED_RPAREN             = 103,
-    ERR_EXPECTED_CLOSING_QUOTE      = 104,
-    ERR_EXPECTED_NUMERIC            = 105,
-    ERR_EXPECTED_EXT_ADR            = 106,
-    ERR_EXPECTED_FILE_NAME          = 107,
-    ERR_EXPECTED_WIN_ID             = 108,
-    ERR_EXPECTED_WIN_TYPE           = 109,
-    ERR_EXPECTED_STACK_ID           = 110,
-    ERR_EXPECTED_REG_OR_SET         = 111,
-    ERR_EXPECTED_REG_SET            = 112,
-    ERR_EXPECTED_GENERAL_REG        = 113,
+    ERR_EXPECTED_LBRACK             = 104,
+    ERR_EXPECTED_RBRACK             = 105,
+    ERR_EXPECTED_CLOSING_QUOTE      = 106,
+    ERR_EXPECTED_NUMERIC            = 107,
+    ERR_EXPECTED_EXT_ADR            = 108,
+    ERR_EXPECTED_FILE_NAME          = 109,
+    ERR_EXPECTED_WIN_ID             = 110,
+    ERR_EXPECTED_WIN_TYPE           = 111,
+    ERR_EXPECTED_STACK_ID           = 112,
+    ERR_EXPECTED_REG_OR_SET         = 113,
+    ERR_EXPECTED_REG_SET            = 114,
+    ERR_EXPECTED_GENERAL_REG        = 115,
+    ERR_EXPECTED_REL_OP             = 116,
   
     ERR_EXPECTED_OFS                = 213,
     ERR_EXPECTED_START_OFS          = 214,
@@ -625,6 +629,7 @@ struct SimExprEvaluator {
     
     private:
     
+    void            parseSimpleExpr( SimExpr *rExpr );
     void            parseTerm( SimExpr *rExpr );
     void            parseFactor( SimExpr *rExpr );
 

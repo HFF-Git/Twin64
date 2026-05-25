@@ -592,10 +592,51 @@ void SimTokenizer::nextToken( ) {
         nextChar( );
     }
     else if ( currentChar == '=' ) {
-        
-        currentToken.typ   = TYP_SYM;
-        currentToken.tid   = TOK_EQUAL;
+
         nextChar( );
+        if ( currentChar == '=' ) {
+
+            currentToken.typ   = TYP_SYM;
+            currentToken.tid   = TOK_EQ;
+            nextChar( );
+        }
+        else {
+        
+            currentToken.typ   = TYP_SYM;
+            currentToken.tid   = TOK_EQUAL;
+
+        }
+    }
+    else if ( currentChar == '<' ) {
+
+        nextChar( );
+        if ( currentChar == '=' ) {
+
+            currentToken.typ   = TYP_SYM;
+            currentToken.tid   = TOK_LE;
+            nextChar( );
+        }
+        else {
+        
+            currentToken.typ   = TYP_SYM;
+            currentToken.tid   = TOK_LT;
+
+        }
+    }
+    else if ( currentChar == '>' ) {
+
+        nextChar( );
+        if ( currentChar == '=' ) {
+
+            currentToken.typ   = TYP_SYM;
+            currentToken.tid   = TOK_GE;
+            nextChar( );
+        }
+        else {
+        
+            currentToken.typ   = TYP_SYM;
+            currentToken.tid   = TOK_GT;
+        }
     }
     else if ( currentChar == '+' ) {
         
@@ -660,6 +701,18 @@ void SimTokenizer::nextToken( ) {
         
         currentToken.typ    = TYP_SYM;
         currentToken.tid    = TOK_RPAREN;
+        nextChar( );
+    }
+    else if ( currentChar == '[' ) {
+        
+        currentToken.typ    = TYP_SYM;
+        currentToken.tid    = TOK_LBRACK;
+        nextChar( );
+    }
+    else if ( currentChar == ']' ) {
+        
+        currentToken.typ    = TYP_SYM;
+        currentToken.tid    = TOK_RBRACK;
         nextChar( );
     }
     else if ( currentChar == ',' ) {

@@ -38,22 +38,6 @@
 namespace {
 
 //----------------------------------------------------------------------------------------
-// Routine for creating the page type string.
-//
-//----------------------------------------------------------------------------------------
-const char *pageTypeStr( uint8_t pTyp ) {
-
-    switch ( pTyp ) {
-
-        case 0: return( "R" );
-        case 1: return( "W" );
-        case 2: return( "X" );
-        case 3: return( "G" );
-        default: return( "*" );
-    }
-}
-
-//----------------------------------------------------------------------------------------
 // Line sanitizing. We cannot just print out whatever is in the line buffer, since 
 // it may contains dangerous escape sequences, which would garble our terminal 
 // screen layout. In the command window we just allow "safe" escape sequences, 

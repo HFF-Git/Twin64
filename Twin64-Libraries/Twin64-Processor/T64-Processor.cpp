@@ -254,14 +254,21 @@ bool T64Processor::busOpWriteEvent( int     reqModNum,
 
 bool T64Processor::busOpBroadcastEvent( int                 srcModNum,
                                         T64BroadcastEvents  event, 
-                                         T64Word            arg1, 
-                                         T64Word            arg2 ) {
+                                        T64Word            arg1, 
+                                        T64Word            arg2 ) {
 
     switch ( event ) {
 
         case T64_BCAST_TLB_PURGE: {
             
             return( localTlb -> purgeTlb( arg1 ));
+
+        } break;
+
+        case T64_BCAST_MODULE_PURGE: {
+
+            // ??? i get the module number...
+            // ??? has the global TLB been purged ?
 
         } break;
 

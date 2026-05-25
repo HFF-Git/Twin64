@@ -294,10 +294,9 @@ SimExprEvaluator::SimExprEvaluator( SimGlobals *glb, SimTokenizer *tok ) {
 //                  <pswRegId>  [ ":" <proc> ]      |
 //                  <gRegId>    [ ":" <proc> ]      |
 //                  <cRegId>    [ ":" <proc> ]      |
+//                  "[" <expr "]"                   |
 //                  "~" <factor>                    |
 //                  "(" <expr> ")"
-//
-// ??? should we have a way to say "memory content of address" ?
 //
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
@@ -367,6 +366,28 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
             else if ( regId == 2 ) rExpr -> u.val = extractField64( tmp, 52, 12 );  
             rExpr -> typ = TYP_NUM;
         }
+    }
+    else if ( tok -> isToken( TOK_LBRACK )) {
+
+        tok -> nextToken( );
+
+        parseExpr( rExpr );
+        if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUMERIC );
+
+        T64Word data;
+        if ( glb -> system -> busOpRead( -1, 
+                                         rExpr -> u.val, 
+                                         (uint8_t *) &data, 
+                                         sizeof( T64Word ))) {
+
+            copyEndianAware((uint8_t *) &data, (uint8_t *) &data, sizeof( data ));
+            
+            rExpr -> typ = TYP_NUM;
+            rExpr -> u.val = data;
+        }
+                                                 
+        if ( tok -> isToken( TOK_RBRACK )) tok -> nextToken( );
+        else throw ( ERR_EXPECTED_RBRACK );
     }
     else if ( tok -> isToken( TOK_NEG )) {
         
@@ -448,15 +469,14 @@ void SimExprEvaluator::parseTerm( SimExpr *rExpr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseExpr" parses the expression syntax. The one line assembler parser routines use
-// this call in many places where a numeric expression or an address is needed.
+// "parseExpr" parses the expression syntax. 
 //
-//      <expr>      ->  [ ( "+" | "-" ) ] <term> { <exprOp> <term> }
-//      <exprOp>    ->  "+" | "-" | "|" | "^"
+//      <simpleExpr>    ->  [ ( "+" | "-" ) ] <term> { <exprOp> <term> }
+//      <exprOp>        ->  "+" | "-" | "|" | "^"
 //
 // ??? type mix options ?
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parseExpr( SimExpr *rExpr ) {
+void SimExprEvaluator::parseSimpleExpr( SimExpr *rExpr ) {
     
     SimExpr lExpr;
     
@@ -495,6 +515,87 @@ void SimExprEvaluator::parseExpr( SimExpr *rExpr ) {
             case TOK_MINUS:  subOp( rExpr, &lExpr );                break;
             case TOK_OR:     logicalOp( rExpr, &lExpr, OR_OP );     break;
             case TOK_XOR:    logicalOp( rExpr, &lExpr, XOR_OP );    break;
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------
+// "parseExpr" parses the expression syntax. 
+//
+//      <expr>      ->  <simpleExpr> <relOp> <simpleExpr>
+//      <relOp>    ->  "==" | "!=" | "<" | "<=" | ">" | ">=" 
+//
+//----------------------------------------------------------------------------------------
+void SimExprEvaluator::parseExpr( SimExpr *rExpr ) {
+    
+    SimExpr     lExpr;
+    SimTokId    relOp;
+
+    parseSimpleExpr( rExpr );
+
+    relOp = tok -> tokId( );
+
+    if (( relOp != TOK_EQ ) && 
+        ( relOp != TOK_NE ) && 
+        ( relOp != TOK_LT ) && 
+        ( relOp != TOK_LE ) && 
+        ( relOp != TOK_GT ) && 
+        ( relOp != TOK_GE )) return;
+
+    tok -> nextToken( );
+    parseSimpleExpr( &lExpr );
+
+    if ( rExpr -> typ != lExpr.typ ) throw ( ERR_EXPR_TYPE_MATCH );
+   
+    switch ( relOp ) {
+
+        case TOK_EQ: { 
+            
+            rExpr -> typ    = TYP_BOOL;
+            rExpr -> u.bVal = ( rExpr -> u.val == lExpr.u.val );
+
+        } break;
+
+        case TOK_NE: { 
+            
+            rExpr -> typ    = TYP_BOOL;
+            rExpr -> u.bVal = ( rExpr -> u.val != lExpr.u.val );
+
+        } break;
+
+        case TOK_LT: { 
+            
+            rExpr -> typ    = TYP_BOOL;
+            rExpr -> u.bVal = ( rExpr -> u.val < lExpr.u.val );
+
+        } break;
+
+        case TOK_LE: { 
+            
+            rExpr -> typ    = TYP_BOOL;
+            rExpr -> u.bVal = ( rExpr -> u.val >= lExpr.u.val );
+
+        } break;
+
+        case TOK_GT: { 
+            
+            rExpr -> typ    = TYP_BOOL;
+            rExpr -> u.bVal = ( rExpr -> u.val > lExpr.u.val );
+
+        } break;
+
+        case TOK_GE: { 
+            
+            rExpr -> typ    = TYP_BOOL;
+            rExpr -> u.bVal = ( rExpr -> u.val >= lExpr.u.val );
+
+        } break;
+
+        default: {
+            
+            rExpr -> typ    = TYP_NIL;
+            rExpr -> u.val  = 0;
+            throw ( ERR_EXPECTED_REL_OP );
         }
     }
 }

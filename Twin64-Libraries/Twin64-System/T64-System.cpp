@@ -275,17 +275,24 @@ int T64System::addModule( T64Module *module ) {
 // maps remain sorted by SPA address. The module pointer is simply removed from
 // the module map. Finally, the module is stopped and deleted.
 //
+// However, before we can delete the module, we need to inform all others about
+// the upcoming purge. There might be modules, such as the processor module, that
+// kept a direct pointer to the module. 
+//
 // The function returns 0 on success, -1 if not found.
 //
 //----------------------------------------------------------------------------------------
 int T64System::removeModule( T64Module *module ) {
 
+    int modNum = module -> getModuleNum( );
+
+    busOpBroadcast( -1, T64_BCAST_MODULE_PURGE, modNum, 0 );
+
     removeFromMap( systemMemMap, module, &systemMemMapHwm );
     removeFromMap( systemIoMap, module, &systemIoMapHwm );
-
-    moduleMap[ module -> getModuleNum( ) ] = nullptr;
-
+    moduleMap[ modNum ] = nullptr;
     delete module;
+
     return ( 0 );
 }
 
@@ -409,12 +416,9 @@ void T64System::runModule( int modNum ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Run a module for n units. We will wait until these units have been executed.
-// If the module number is a -1, we will start all modules and wait for all to 
-// complete.
+// Run a module for n execution units. We will wait until these units have been 
+// executed. 
 //
-// 
-// ??? may have to rethink when we know what STEP and RUN will actually do...
 //----------------------------------------------------------------------------------------
 void T64System::execModule( int modNum, int units ) {
 
@@ -426,20 +430,6 @@ void T64System::execModule( int modNum, int units ) {
 
             moduleMap[ modNum ] -> execModule( units );
             moduleMap[ modNum ] -> waitUntilHalted( );
-        }
-    }
-    else if ( modNum == -1 ) {
-
-        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
-
-            if ( moduleMap[ i ] != nullptr )
-                moduleMap[ i ] -> execModule( units );
-        }
-
-         for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
-
-            if ( moduleMap[ i ] != nullptr )
-                moduleMap[ i ] -> waitUntilHalted( );
         }
     }
 }

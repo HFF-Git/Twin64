@@ -65,6 +65,10 @@ const SimToken cmdTokTab[ ] = {
     { .name = "IO",         .typ = TYP_SYM,     .tid = TOK_IO                       },
     { .name = "TEXT",       .typ = TYP_SYM,     .tid = TOK_TEXT                     },
 
+    { .name = "AND",        .typ = TYP_SYM,     .tid = TOK_AND                      },
+    { .name = "OR",         .typ = TYP_SYM,     .tid = TOK_OR                       },
+    { .name = "XOR",        .typ = TYP_SYM,     .tid = TOK_XOR                      },
+
     { .name = "DEC",        .typ = TYP_SYM,     .tid = TOK_DEC,   .u = { .val = 10 }},
     { .name = "HEX",        .typ = TYP_SYM,     .tid = TOK_HEX,   .u = { .val = 16 }},
     { .name = "CODE",       .typ = TYP_SYM,     .tid = TOK_CODE                     },
@@ -72,6 +76,8 @@ const SimToken cmdTokTab[ ] = {
     { .name = "COMMANDS",   .typ = TYP_CMD,     .tid = CMD_SET                      },
     { .name = "WCOMMANDS",  .typ = TYP_WCMD,    .tid = WCMD_SET                     },
     { .name = "PREDEFINED", .typ = TYP_P_FUNC,  .tid = PF_SET                       },
+
+
     
     //------------------------------------------------------------------------------------
     // Command Line tokens.
@@ -332,6 +338,12 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
     { .errNum = ERR_EXPECTED_RPAREN,            
       .errStr = (char *) "Expected a right paren" },
 
+    { .errNum = ERR_EXPECTED_LBRACK,            
+      .errStr = (char *) "Expected a left bracket" },
+
+    { .errNum = ERR_EXPECTED_RBRACK,            
+      .errStr = (char *) "Expected a right bracket" },
+
     { .errNum = ERR_EXPECTED_COMMA,             
       .errStr = (char *) "Expected a comma" },
 
@@ -346,6 +358,9 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
 
     { .errNum = ERR_EXPECTED_NUMERIC,           
       .errStr = (char *) "Expected a numeric value" },
+
+    { .errNum = ERR_EXPECTED_REL_OP,           
+      .errStr = (char *) "Expected a relational operator" },
 
     { .errNum = ERR_EXPECTED_EXT_ADR,           
       .errStr = (char *) "Expected a virtual address" },

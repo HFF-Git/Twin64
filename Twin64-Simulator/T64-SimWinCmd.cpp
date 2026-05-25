@@ -1815,26 +1815,19 @@ void SimCommandsWin::haltCmd( ) {
 
 //----------------------------------------------------------------------------------------
 // Step command. The command will advance a module by one or more steps. A
-// step is an instruction. If the module number is omitted, we refer to the 
-// current processor window module number. Omitting all parameters advances
-// the current processor by one instruction. 
+// step is an execution unit. If the module number is omitted, we refer to the 
+// current processor window module number. The default number of steps is one.
 //
 //  S [ <steps> [ "," <modNum> ]]
+//
+// ??? a step should only concern halted processors. We explicitly only deal 
+// with one processor.
 //
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 
 // window. Put the console mode into non-blocking and hand over to the CPU. On 
 // return from the CPU steps, enable blocking mode again and restore the current 
 // window.
-//
-// ??? rethink the step semantics. It should halt all processors and advance all 
-// with this command. This implies, that if one processor halts, all others 
-// should halt too ?
-//
-// ??? we need to decide how we want to handle a step. Is it explicitly for just
-// the HALTED processor, or will all processors halt ? It seems that the step 
-// command should rather just handle one processor or I/O module, while RUN will 
-// just run all processors not halted.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::stepCmd( ) {
@@ -1844,19 +1837,21 @@ void SimCommandsWin::stepCmd( ) {
     
     if ( tok -> tokTyp( ) == TYP_NUM ) {
 
-        numOfSteps = eval -> acceptNumExpr( ERR_EXPECTED_STEPS, 0, UINT32_MAX );
-    
-         if ( tok -> isToken( TOK_COMMA )) {
+        numOfSteps = eval -> acceptNumExpr( ERR_EXPECTED_STEPS, 0, UINT32_MAX );    
+    }
+
+    if ( tok -> isToken( TOK_COMMA )) {
         
             tok -> nextToken( );
             modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MODULES - 1 );
 
             if ( glb -> system -> getModuleType( modNum ) != MT_PROC ) 
                 throw( ERR_EXPCTED_PROC_MODULE );
-        }
     }
 
     tok -> checkEOS( );
+
+    if ( modNum == -1 ) modNum = glb -> winDisplay -> getCurrentWinModNum( );
 
     glb -> system -> execModule( modNum, numOfSteps );
 }
@@ -2193,10 +2188,7 @@ void SimCommandsWin::modifyRegCmd( ) {
 // Insert into TLB command. We have two modes. We must be in windows mode and the 
 // current window must be a TLB window. 
 //
-//  ITLB <vAdr> "," <pAdr> "," <pSize> "," <acc> [ "," "L" [ "," "U" ]]
-//
-// ??? does this apply to all TLBs in all processors ? Perhaps not. This 
-// command is just for debugging and testing... one day - goes away.
+//  ITLB <vAdr> "," <info>
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::insertTLBCmd( ) {
@@ -2204,35 +2196,7 @@ void SimCommandsWin::insertTLBCmd( ) {
     ensureWinModeOn( );
     T64Word vAdr = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, T64_MAX_VIRT_MEM_LIMIT ); 
     tok -> acceptComma( );
-    T64Word pAdr = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, T64_MAX_PHYS_MEM_LIMIT ); 
-    tok -> acceptComma( );
-    T64Word size = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, 15 );
-    tok -> acceptComma( );
-    T64Word acc = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, 15 );
-
-    T64Word info = 0;    
-    info = depositField( info, 40, 4, acc );
-    info = depositField( info, 36, 4, size );
-    info = depositField( info, 12, 24, pAdr >> T64_PAGE_OFS_BITS );
-
-    while ( tok -> isToken( TOK_COMMA )) {
-
-        tok -> nextToken( );
-
-        if (( tok -> isTokenIdent((char *) "L" )) ||
-            ( tok -> isTokenIdent((char *) "l" ))) {
-
-            info = depositField( info, 63, 1, 1 );
-        }
-        else if (( tok -> isTokenIdent((char *) "U" )) ||
-                 ( tok -> isTokenIdent((char *) "u" ))) {
-
-            info = depositField( info, 62, 1, 1 );
-        }
-        else throw( ERR_INVALID_TLB_ACC_FLAG );
-        tok -> nextToken( );
-    }
-
+    T64Word info = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, UINT64_MAX ); 
     tok -> checkEOS( );
 
     if ( ! glb -> system -> busOpBroadcast( -1 , T64_BCAST_TLB_INSERT, vAdr, info )) {
@@ -2522,9 +2486,9 @@ void SimCommandsWin::winJumpCmd( ) {
 
 //----------------------------------------------------------------------------------------
 // Set window lines. This command sets the the number of rows for a window. The 
-// number includes the banner line. If the "lines" argument is omitted, the window
-// default value will be used. The window number is optional, used for user definable
-// windows.
+// number includes the banner line. If the "lines" argument is omitted, the 
+// window default value will be used. An omitted window number refers to the
+// current module.
 //
 //  WL [ <lines> [ "," <winNum> ]]
 //
@@ -2537,7 +2501,7 @@ void SimCommandsWin::winSetRowsCmd( ) {
     }
     else {
 
-        int winLines = eval -> acceptNumExpr( ERR_INVALID_NUM );
+        int winLines = eval -> acceptNumExpr( ERR_INVALID_NUM ) + 1;
         int winNum   = -1;
     
         if ( tok -> isToken( TOK_COMMA )) {
@@ -2569,7 +2533,7 @@ void SimCommandsWin::winSetCmdWinRowsCmd( ) {
 
     if ( tok -> isToken( TOK_NUM )) {
 
-        winLines = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, MAX_CMD_LINES );      
+        winLines = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, MAX_CMD_LINES ) + 1;      
     }
 
     tok -> checkEOS( );
