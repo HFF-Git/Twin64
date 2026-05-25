@@ -2036,6 +2036,63 @@ void SimCommandsWin::redoCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
+// The "assert" command is primarily intended for writing tests scripts. It will
+// evaluate a boolean expression and of it fails, report an error.
+//
+//  ASSERT <boolExpr> [ "," <msg> ]
+//
+// ??? what is the next action ?
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::assertCmd( ) {
+
+    char *msgStr = nullptr;
+    bool bVal = eval -> acceptBoolExpr( ERR_EXPECTED_BOOL_VALUE );
+
+    if ( tok -> isToken( TOK_COMMA )) {
+
+        tok -> nextToken( );
+        msgStr = eval -> acceptStringExpr( ERR_EXPECTED_STRING_VALUE );
+    }
+
+    tok -> checkEOS( );
+
+    if ( ! bVal ) {
+
+        if ( msgStr != nullptr ) winOut -> writeChars( "\"%s\" : ", msgStr );
+        winOut -> writeChars( "FAIL\n" );
+
+        // ??? what is the next action ?
+    }
+}
+
+//----------------------------------------------------------------------------------------
+// The "check" command is similar to the assert command. It will evaluate a 
+// boolean expression and report the outcome. In contrast to "assert" execution
+// continues after reporting the outcome.
+//
+//   CHECK <boolExpr> [ "," <msg> ]
+//
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::checkCmd( ) {
+
+    char *msgStr = nullptr;
+    bool bVal = eval -> acceptBoolExpr( ERR_EXPECTED_BOOL_VALUE );
+
+    if ( tok -> isToken( TOK_COMMA )) {
+
+        tok -> nextToken( );
+        msgStr = eval -> acceptStringExpr( ERR_EXPECTED_STRING_VALUE );
+    }
+
+    tok -> checkEOS( );
+    
+    if ( msgStr != nullptr ) winOut -> writeChars( "\"%s\":", msgStr );
+
+    if ( bVal ) winOut -> writeChars( "PASS\n" );
+    else        winOut -> writeChars( "FAIL\n" ); 
+}
+
+//----------------------------------------------------------------------------------------
 // Display absolute memory command. The offset address is a byte address, the 
 // length is measured in bytes, rounded up to the a word size. We accept any 
 // address and length and only check that the offset plus length does not exceed
@@ -2665,7 +2722,7 @@ void SimCommandsWin::winNewWinCmd( ) {
         case TOK_CPU:{
 
             tok -> acceptComma( );
-            int modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC );
+            int modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE );
             tok -> checkEOS( );
 
             glb -> winDisplay -> windowNewCpuState( modNum );
@@ -2675,7 +2732,7 @@ void SimCommandsWin::winNewWinCmd( ) {
         case TOK_MEM: {
 
             tok -> acceptComma( );
-            T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC, 
+            T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE, 
                                                  0,
                                                  T64_MAX_PHYS_MEM_LIMIT );
             tok -> checkEOS( );
@@ -2694,13 +2751,13 @@ void SimCommandsWin::winNewWinCmd( ) {
             int modNum = -1;
 
             tok -> acceptComma( );
-            T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC, 
+            T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE, 
                                                  0,
                                                  T64_MAX_PHYS_MEM_LIMIT );
             
             if ( tok -> isToken( TOK_COMMA )) {
 
-                modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUMERIC, 
+                modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE, 
                                                 0, MAX_MODULES );
             }
 
@@ -2834,6 +2891,9 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                     case CMD_HIST:          histCmd( );                     break;
                     case CMD_DO:            doCmd( );                       break;
                     case CMD_REDO:          redoCmd( );                     break;
+
+                    case CMD_ASSERT:        assertCmd( );                   break;
+                    case CMD_CHECK:         checkCmd( );                    break;
                         
                     case CMD_RESET:         resetCmd( );                    break;
                     case CMD_HALT:          haltCmd( );                     break;

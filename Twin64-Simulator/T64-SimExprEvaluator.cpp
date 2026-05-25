@@ -338,7 +338,7 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
 
             tok -> nextToken( );
             if ( tok -> isTokenTyp( TYP_NUM )) modNum = tok -> tokVal( );
-            else throw( ERR_EXPECTED_NUMERIC ); 
+            else throw( ERR_EXPECTED_NUM_VALUE ); 
 
             tok -> nextToken( );
         }
@@ -372,7 +372,7 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
         tok -> nextToken( );
 
         parseExpr( rExpr );
-        if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUMERIC );
+        if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
 
         T64Word data;
         if ( glb -> system -> busOpRead( -1, 
@@ -485,7 +485,7 @@ void SimExprEvaluator::parseSimpleExpr( SimExpr *rExpr ) {
         tok -> nextToken( );
         parseTerm( rExpr );
         
-        if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUMERIC );
+        if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
     }
     else if ( tok -> isToken( TOK_MINUS )) {
         
@@ -493,7 +493,7 @@ void SimExprEvaluator::parseSimpleExpr( SimExpr *rExpr ) {
         parseTerm( rExpr );
         
         if ( rExpr -> typ == TYP_NUM ) rExpr -> u.val = - (int32_t) rExpr -> u.val;
-        else throw ( ERR_EXPECTED_NUMERIC );
+        else throw ( ERR_EXPECTED_NUM_VALUE );
     }
     else parseTerm( rExpr );
     
@@ -601,7 +601,7 @@ void SimExprEvaluator::parseExpr( SimExpr *rExpr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// We often expect a numeric value. A little helper function.
+// We often expect expressions of a certain type. Little helper functions.
 //
 //----------------------------------------------------------------------------------------
 T64Word SimExprEvaluator::acceptNumExpr( SimErrMsgId errCode, T64Word low, T64Word high ) {
@@ -616,3 +616,27 @@ T64Word SimExprEvaluator::acceptNumExpr( SimErrMsgId errCode, T64Word low, T64Wo
      }
      else throw ( errCode );
 }
+
+bool SimExprEvaluator::acceptBoolExpr( SimErrMsgId errCode ) {
+
+    SimExpr rExpr;
+    parseExpr( &rExpr );
+
+    if ( rExpr.typ == TYP_BOOL ) {
+
+        return( rExpr.u.bVal );
+    }
+    else throw ( errCode );
+ }
+
+char *SimExprEvaluator::acceptStringExpr( SimErrMsgId errCode ) {
+
+    SimExpr rExpr;
+    parseExpr( &rExpr );
+
+    if ( rExpr.typ == TYP_STR ) {
+
+        return( rExpr.u.str );
+    }
+    else throw ( errCode );
+ }

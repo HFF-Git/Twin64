@@ -113,6 +113,9 @@ const SimToken cmdTokTab[ ] = {
     
     { .name = "ITLB",       .typ = TYP_CMD,     .tid = CMD_ITLB                     },
     { .name = "PTLB",       .typ = TYP_CMD,     .tid = CMD_PTLB                     },
+
+    { .name = "ASSERT",     .typ = TYP_CMD,     .tid = CMD_ASSERT                   },
+    { .name = "CHECK",      .typ = TYP_CMD,     .tid = CMD_CHECK                    },
     
     //------------------------------------------------------------------------------------
     // Window command tokens.
@@ -356,8 +359,14 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
     { .errNum = ERR_EXPECTED_REG_OR_SET,        
       .errStr = (char *) "Expected a register or register set" },
 
-    { .errNum = ERR_EXPECTED_NUMERIC,           
+    { .errNum = ERR_EXPECTED_NUM_VALUE,           
       .errStr = (char *) "Expected a numeric value" },
+
+    { .errNum = ERR_EXPECTED_BOOL_VALUE,           
+      .errStr = (char *) "Expected a bolean value" },
+
+    { .errNum = ERR_EXPECTED_STRING_VALUE,           
+      .errStr = (char *) "Expected a string value" },
 
     { .errNum = ERR_EXPECTED_REL_OP,           
       .errStr = (char *) "Expected a relational operator" },

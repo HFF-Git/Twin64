@@ -214,7 +214,8 @@ enum SimTokId : uint16_t {
     CMD_NM,                     CMD_RM,                     CMD_RESET,
     CMD_RUN,                    CMD_STEP,                   CMD_HALT,
     CMD_MR,                     CMD_DA,                     CMD_MA,                     
-    CMD_ITLB,                   CMD_PTLB,                
+    CMD_ITLB,                   CMD_PTLB,                   CMD_ASSERT,
+    CMD_CHECK,         
 
     //------------------------------------------------------------------------------------
     // Window Commands Tokens.
@@ -299,16 +300,18 @@ enum SimErrMsgId : int {
     ERR_EXPECTED_LBRACK             = 104,
     ERR_EXPECTED_RBRACK             = 105,
     ERR_EXPECTED_CLOSING_QUOTE      = 106,
-    ERR_EXPECTED_NUMERIC            = 107,
-    ERR_EXPECTED_EXT_ADR            = 108,
-    ERR_EXPECTED_FILE_NAME          = 109,
-    ERR_EXPECTED_WIN_ID             = 110,
-    ERR_EXPECTED_WIN_TYPE           = 111,
-    ERR_EXPECTED_STACK_ID           = 112,
-    ERR_EXPECTED_REG_OR_SET         = 113,
-    ERR_EXPECTED_REG_SET            = 114,
-    ERR_EXPECTED_GENERAL_REG        = 115,
-    ERR_EXPECTED_REL_OP             = 116,
+    ERR_EXPECTED_EXT_ADR            = 107,
+    ERR_EXPECTED_FILE_NAME          = 108,
+    ERR_EXPECTED_WIN_ID             = 109,
+    ERR_EXPECTED_WIN_TYPE           = 110,
+    ERR_EXPECTED_STACK_ID           = 111,
+    ERR_EXPECTED_REG_OR_SET         = 112,
+    ERR_EXPECTED_REG_SET            = 113,
+    ERR_EXPECTED_GENERAL_REG        = 114,
+    ERR_EXPECTED_REL_OP             = 115,
+    ERR_EXPECTED_NUM_VALUE          = 116,
+    ERR_EXPECTED_BOOL_VALUE         = 117,
+    ERR_EXPECTED_STRING_VALUE       = 118,
   
     ERR_EXPECTED_OFS                = 213,
     ERR_EXPECTED_START_OFS          = 214,
@@ -626,6 +629,9 @@ struct SimExprEvaluator {
     T64Word         acceptNumExpr( SimErrMsgId errCode, 
                                    T64Word low = INT64_MIN, 
                                    T64Word high = INT64_MAX );
+
+    bool            acceptBoolExpr( SimErrMsgId errCode );
+    char            *acceptStringExpr( SimErrMsgId errCode );
     
     private:
     
@@ -1211,6 +1217,9 @@ private:
     void            histCmd( );
     void            doCmd( );
     void            redoCmd( );
+
+    void            assertCmd( );
+    void            checkCmd( );
     
     void            addProcModule( int modNum );
     void            addMemModule( int modNum );
