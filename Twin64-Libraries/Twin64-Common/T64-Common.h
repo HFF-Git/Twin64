@@ -102,6 +102,8 @@ const   int     T64_PAGE_OFS_BITS           = 12;
 const   int     T64_VADR_BITS               = 52;
 const   int     T64_PADR_BITS               = 36;
 
+const   int     T64_REG_SET_SIZE            = 32;
+
 //----------------------------------------------------------------------------------------
 // T64 page types.
 //
@@ -273,6 +275,49 @@ enum OpCodeFam : uint32_t {
     OPC_RFI         = 7U,
     OPC_TRAP        = 14U,
     OPC_DIAG        = 15U
+};
+
+//----------------------------------------------------------------------------------------
+// IO Module register set definitions. A hard physical page consists of several
+// register sets, where only the first one is partially architected. The following
+// constants represent the index into the register sets of the HPA page. Note 
+// that the constants are just offsets into the HPA page and used to select a
+// register. The implementation of the actual hardware, etc. is entirely up to
+// the module. 
+//
+//----------------------------------------------------------------------------------------
+enum T64IoRegSetIndex : int {
+
+    T64_IO_REG_SET_0_OFS    =  0 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_1_OFS    =  1 * T64_REG_SET_SIZE, 
+    T64_IO_REG_SET_2_OFS    =  2 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_3_OFS    =  3 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_4_OFS    =  4 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_5_OFS    =  5 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_6_OFS    =  6 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_7_OFS    =  7 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_8_OFS    =  8 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_9_OFS    =  9 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_10_OFS   = 10 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_11_OFS   = 11 * T64_REG_SET_SIZE, 
+    T64_IO_REG_SET_12_OFS   = 12 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_13_OFS   = 13 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_14_OFS   = 14 * T64_REG_SET_SIZE,
+    T64_IO_REG_SET_15_OFS   = 15 * T64_REG_SET_SIZE
+};
+
+//----------------------------------------------------------------------------------------
+// Within a regs set, registers defined. Register set zero has architected 
+// registers.
+//
+//----------------------------------------------------------------------------------------
+enum T64IoRegIndex : int {
+
+    T64_IO_STATUS_REG_OFS   = 0,
+    T64_IO_COMMAND_REG_OFS  = 1,
+    T64_IO_CONFIG_REG_OFS   = 2,
+    T64_IO_SPA_ADR_REG_OFS  = 3
+
 };
 
 //----------------------------------------------------------------------------------------

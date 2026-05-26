@@ -177,7 +177,103 @@ T64GlobalTlb *T64Processor::getGlobalTlbPtr( ) {
 //----------------------------------------------------------------------------------------
 bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
 
-    return ( false );
+    int wordIndex = ( pAdr - T64_IO_HPA_MEM_START ) >> 3;
+
+    if (( wordIndex < T64_IO_REG_SET_1_OFS )) {
+
+        switch ( wordIndex ) {
+
+            case T64_IO_STATUS_REG_OFS: {
+
+                return ( false );
+
+            } break;
+
+            case T64_IO_COMMAND_REG_OFS: {
+
+                return ( false );
+
+            } break;
+
+            case T64_IO_CONFIG_REG_OFS: {
+
+                return ( false );
+
+            } break;
+
+            case T64_IO_SPA_ADR_REG_OFS: {
+
+                memcpy( data, (uint8_t *) &hpaAdr, sizeof( T64Word ));
+                return ( true );
+
+            } break;
+
+            case T64_IO_TLB_STATUS_REG_OFS: {
+                    
+            } break;
+                
+            case T64_IO_TLB_CONFIG_REG_OFS: {
+
+            } break;
+
+            case T64_IO_ITLB_HITS_OFS: {
+
+            } break;        
+
+            case T64_IO_ITLB_MISSES_OFS: {
+
+            } break;
+
+            case T64_IO_ITLB_GTLB_HITS_OFS: {
+
+            } break;
+
+            case T64_IO_ITLB_GTLB_MISSES_OFS: {
+
+            } break;
+
+            case T64_IO_DTLB_HITS_OFS: {
+
+            } break;        
+
+            case T64_IO_DTLB_MISSES_OFS: {
+
+            } break;
+
+            case T64_IO_DTLB_GTLB_HITS_OFS: {
+
+            } break;
+
+            case T64_IO_DTLB_GTLB_MISSES_OFS: {
+
+            } break;
+
+
+            default: {
+
+                memset( data, 0, len );
+                return ( false );
+            }
+
+        }
+    }
+    else if ( wordIndex < T64_IO_REG_SET_2_OFS ) {
+
+        // tlb data...
+
+        wordIndex = wordIndex - T64_IO_REG_SET_1_OFS;
+
+        // tlb data - two arrays of 8 entries.
+        return ( false );
+    }
+    else if ( wordIndex < T64_IO_REG_SET_3_OFS) {
+
+        wordIndex = wordIndex - T64_IO_REG_SET_2_OFS;
+
+        // dcache - not used yet.
+        return ( false );
+    }
+    else return ( false );
 }
 
 //----------------------------------------------------------------------------------------
@@ -186,7 +282,38 @@ bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
 //----------------------------------------------------------------------------------------
 bool T64Processor::handleHPAWrite( T64Word pAdr, uint8_t *data, int len ) {
 
+    int wordIndex = ( pAdr - T64_IO_HPA_MEM_START ) >> 3;
+
+    // ??? what do we cover here ?
+
     return ( false );
+}
+
+bool T64Processor::handleHPABroadcast( T64BroadcastEvents event, 
+                                       T64Word arg1, 
+                                       T64Word arg2 ) {
+
+    switch ( event ) {
+
+        case T64_BCAST_TLB_PURGE: {
+            
+            return( localTlb -> purgeTlb( arg1 ));
+
+        } break;
+
+        case T64_BCAST_MODULE_PURGE: {
+
+            // ??? i get the module number...
+            // ??? has the global TLB been purged ?
+
+        } break;
+
+        // ??? need the LDR/STC mechanism ...
+
+        default: ;
+    }
+
+    return( true );
 }
 
 //----------------------------------------------------------------------------------------
@@ -229,12 +356,11 @@ bool T64Processor::busOpReadEvent( int     reqModNum,
 
     if ( reqModNum == moduleNum ) return( false );
 
-    T64Processor *proc = (T64Processor *) sys -> lookupByAdr( pAdr );
-    if ( proc == this ) {
+    // ??? check what system dispatch already does ... redundant ?
 
-        return( handleHPARead( pAdr, data, len ));
-    }
-    else return( false );
+    T64Processor *proc = (T64Processor *) sys -> lookupByAdr( pAdr );
+    if ( proc != this ) return( handleHPARead( pAdr, data, len ));
+    return( false );
 }
 
 bool T64Processor::busOpWriteEvent( int     reqModNum,
@@ -244,38 +370,19 @@ bool T64Processor::busOpWriteEvent( int     reqModNum,
 
     if ( reqModNum == moduleNum ) return( false );
 
-    T64Processor *proc = (T64Processor *) sys -> lookupByAdr( pAdr );
-    if ( proc == this ) {
+     // ??? check what system dispatch already does ... redundant ?
 
-        return( handleHPAWrite( pAdr, data, len ));
-    }
-    else  return( false );
+    T64Processor *proc = (T64Processor *) sys -> lookupByAdr( pAdr );
+    if ( proc != this ) return( handleHPAWrite( pAdr, data, len ));
+    return( false );
 }   
 
-bool T64Processor::busOpBroadcastEvent( int                 srcModNum,
+bool T64Processor::busOpBroadcastEvent( int                 reqModNum,
                                         T64BroadcastEvents  event, 
-                                        T64Word            arg1, 
-                                        T64Word            arg2 ) {
+                                        T64Word             arg1, 
+                                        T64Word             arg2 ) {
 
-    switch ( event ) {
+    if ( reqModNum == moduleNum ) return( false );
 
-        case T64_BCAST_TLB_PURGE: {
-            
-            return( localTlb -> purgeTlb( arg1 ));
-
-        } break;
-
-        case T64_BCAST_MODULE_PURGE: {
-
-            // ??? i get the module number...
-            // ??? has the global TLB been purged ?
-
-        } break;
-
-        // ??? need the LDR/STC mechanism ...
-
-        default: ;
-    }
-
-    return( true );
+    return( handleHPABroadcast( event, arg1, arg2 ));
 }

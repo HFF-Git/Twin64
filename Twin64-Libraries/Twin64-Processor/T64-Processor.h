@@ -50,6 +50,35 @@ enum T64Options : uint32_t {
 };
 
 //----------------------------------------------------------------------------------------
+// The processor HPA page definitions. There are a couple of register sets. Reg
+// set zero is the processor reg set itself. It contains the module relevant 
+// definitions, such as configuration options. 
+//
+// Reg Set 1 and 2, describe the TLB elements. There are status, configuration 
+// and statistics registers. Additionally, the simulator places the TLB content
+// in registers for easy examination.
+//
+// Reg Set 3 and 4 are reserved for cache elements. Right now, we do not implement
+// any caches.
+//
+//----------------------------------------------------------------------------------------
+enum T64ProcRegSetOfs : int {
+
+    T64_IO_TLB_STATUS_REG_OFS   = 8,
+    T64_IO_TLB_CONFIG_REG_OFS   = 9,
+
+    T64_IO_ITLB_HITS_OFS        = 12,
+    T64_IO_ITLB_MISSES_OFS      = 13,
+    T64_IO_ITLB_GTLB_HITS_OFS   = 14,
+    T64_IO_ITLB_GTLB_MISSES_OFS = 15,
+
+    T64_IO_DTLB_HITS_OFS        = 16,
+    T64_IO_DTLB_MISSES_OFS      = 17,
+    T64_IO_DTLB_GTLB_HITS_OFS   = 18,
+    T64_IO_DTLB_GTLB_MISSES_OFS = 19
+};
+
+//----------------------------------------------------------------------------------------
 // A processor maintains a local ITLB and DTLB. These are small sets of TLB
 // entries to consult for each access.
 //
@@ -68,8 +97,6 @@ struct T64LocalTlb {
     bool            lookupDtlb( T64Word vadr, T64Word *pAdr, uint16_t *tlbInfo );
 
     bool            purgeTlb( T64Word vAdr );
-    
-    private:
 
     T64Processor    *proc               = nullptr;
 
@@ -297,6 +324,10 @@ private:
 
     bool            handleHPARead( T64Word pAdr, uint8_t *data, int len );
     bool            handleHPAWrite( T64Word pAdr, uint8_t *data, int len );
+
+    bool            handleHPABroadcast( T64BroadcastEvents  event, 
+                                        T64Word             arg1, 
+                                        T64Word             arg2);
 
     friend struct   T64Cpu;
 
