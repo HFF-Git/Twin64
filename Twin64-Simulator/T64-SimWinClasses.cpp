@@ -366,6 +366,10 @@ void SimWinAbsMem::setDefaults( ) {
 //
 //----------------------------------------------------------------------------------------
 void SimWinAbsMem::drawBanner( ) {
+
+    // ??? how about we add the option for translating the address ?
+    // ??? if we have a TLB module, then we could also manage virtual 
+    // addresses.
     
     uint32_t fmtDesc = FMT_BOLD | FMT_INVERSE;
 
@@ -433,6 +437,10 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
     if ( getWinToggleVal( ) == 0 ) {
 
         for ( int i = 0; i < limit; i = i + 4 ) {
+
+            // ??? how about we add the option for translating the address ?
+            // ??? if we have a TLB module, then we could also manage virtual 
+            // addresses.
         
             uint32_t val = 0;
             glb -> system -> busOpRead( -1, 
@@ -549,6 +557,19 @@ void SimWinCode::setDefaults( ) {
 //
 //----------------------------------------------------------------------------------------
 void SimWinCode::drawBanner( ) {
+
+    
+    // ??? how about we add the option for translating the address ?
+    // ??? if we have a TLB module, then we could also manage virtual 
+    // addresses.
+
+    // ??? what do we do about the indicator if the IA is in this window ?
+    // ??? we could check all halted processors for their IA. The first that
+    // matches could placed before the arrow ( "nn>" ). 
+
+    // ??? we could also check if we have a current processor window and just
+    // show this processor in the arrow...
+
     
     uint32_t    fmtDesc         = FMT_BOLD | FMT_INVERSE;
     T64Word     currentIa       = getCurrentItemAdr( );

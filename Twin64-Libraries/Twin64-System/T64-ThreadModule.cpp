@@ -124,6 +124,11 @@ void T64ThreadModule::waitUntilHalted( ) {
 
 }
 
+
+// ??? we would need a way to report in the module state ?
+// ??? should we add a "SHARED" state for the non-thread modules ?
+
+
 //----------------------------------------------------------------------------------------
 // A little helper to return a string version of the module state.
 //

@@ -153,7 +153,7 @@ bool T64LocalTlb::lookupItlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
     T64TlbEntry *e = lookup( iTlb, iTlbEntries, canonicalizeVa( vAdr ));
     if ( e != nullptr ) {
 
-        *pAdr    = e -> pAdr | ( vAdr & ~ tlbEntry.pageMask );  
+        *pAdr    = e -> pAdr | ( vAdr & ~ e -> pageMask );  
         *tlbInfo = e -> tlbInfo;
         iTlbHits ++;
         return ( true );

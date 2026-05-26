@@ -1157,6 +1157,9 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
     T64Word limit        = roundup(( index + len ), sizeof( T64Word ));
     int     wordsPerLine = 4;
 
+    // ??? test if we have a global TLB module ?
+    // ?? if so, get a pointer to it...
+
     while ( index < limit ) {
 
         winOut -> printNumber( index, FMT_HEX_2_4_4 );
@@ -1165,6 +1168,12 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
         for ( uint32_t i = 0; i < wordsPerLine; i++ ) {
             
             if ( index < limit ) {
+
+
+                // ??? how about we add the option for translating the address ?
+                // ??? if we have a TLB module, then we could also manage virtual 
+                // addresses.
+
 
                 T64Word val = 0;
                 if ( glb -> system -> busOpRead( -1,
@@ -1205,17 +1214,24 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
 // word per line.
 //
 //----------------------------------------------------------------------------------------
-void  SimCommandsWin::displayAbsMemContentAsCode( T64Word adr, T64Word len ) {
+void SimCommandsWin::displayAbsMemContentAsCode( T64Word adr, T64Word len ) {
     
     T64Word  index  = rounddown( adr, 4 );
     T64Word  limit  = roundup(( index + len ), 4 );
     T64Word  instr  = 0;
     char     buf[ MAX_TEXT_FIELD_LEN ];
 
+     // ??? test if we have a global TLB module ?
+    // ?? if so, get a pointer to it...
+
     while ( index < limit ) {
 
         winOut -> printNumber( index, FMT_HEX_2_4_4 );
         winOut -> writeChars( ": " );
+
+        // ??? how about we add the option for translating the address ?
+        // ??? if we have a TLB module, then we could also manage virtual 
+        // addresses.
 
         if ( glb -> system -> busOpRead( -1, 
                                          index, 
@@ -1852,6 +1868,7 @@ void SimCommandsWin::stepCmd( ) {
     tok -> checkEOS( );
 
     if ( modNum == -1 ) modNum = glb -> winDisplay -> getCurrentWinModNum( );
+    if ( modNum == -1 ) throw( ERR_EXPCTED_PROC_MODULE );
 
     glb -> system -> execModule( modNum, numOfSteps );
 }
@@ -1883,11 +1900,19 @@ void SimCommandsWin::runCmd( ) {
 
             throw( ERR_EXPCTED_PROC_MODULE );
         }
+
+        // ??? if halted, put into RUN state.
+
+        winOut -> writeChars( "Put module %d into RUN state\n", modNum );
+    }
+    else {
+
+        // ??? put all modules into run state
+
+        winOut -> writeChars( "Put all modules into RUN state\n", modNum );
     }
 
     tok -> checkEOS( );
-
-    winOut -> writeChars( "RUN command to come ... \n");
 }
 
 //----------------------------------------------------------------------------------------

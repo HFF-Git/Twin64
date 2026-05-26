@@ -291,6 +291,7 @@ struct T64Processor : T64ThreadModule {
     T64LocalTlb     *getLocalTlbPtr( );
     char            *getProcStateStr( );
     T64GlobalTlb    *getGlobalTlbPtr( );
+    bool            isHalted( );
 
 private:
 
