@@ -96,11 +96,12 @@ const SimToken cmdTokTab[ ] = {
     { .name = "XF",         .typ = TYP_CMD,     .tid = CMD_XF                       },
     { .name = "LF",         .typ = TYP_CMD,     .tid = CMD_LF                       },
     { .name = "W",          .typ = TYP_CMD,     .tid = CMD_WRITE_LINE               },
+    { .name = "WLIST",      .typ = TYP_CMD,     .tid = CMD_WLIST                    },
+
+    { .name = "DMOD",       .typ = TYP_CMD,     .tid = CMD_DMOD                     },
+    { .name = "NMOD",       .typ = TYP_CMD,     .tid = CMD_NMOD                     },
+    { .name = "RMOD",       .typ = TYP_CMD,     .tid = CMD_RMOD                     },
     
-    { .name = "DM",         .typ = TYP_CMD,     .tid = CMD_DM                       },
-    { .name = "DW",         .typ = TYP_CMD,     .tid = CMD_DW                       },
-    { .name = "NM",         .typ = TYP_CMD,     .tid = CMD_NM                       },
-    { .name = "RM",         .typ = TYP_CMD,     .tid = CMD_RM                       },
     { .name = "RESET",      .typ = TYP_CMD,     .tid = CMD_RESET                    },
     { .name = "HALT",       .typ = TYP_CMD,     .tid = CMD_HALT                     },
     { .name = "RUN",        .typ = TYP_CMD,     .tid = CMD_RUN                      },
@@ -108,9 +109,12 @@ const SimToken cmdTokTab[ ] = {
     { .name = "S",          .typ = TYP_CMD,     .tid = CMD_STEP                     },
     
     { .name = "MR",         .typ = TYP_CMD,     .tid = CMD_MR                       },
-    { .name = "DA",         .typ = TYP_CMD,     .tid = CMD_DA                       },
-    { .name = "MA",         .typ = TYP_CMD,     .tid = CMD_MA                       },
-    
+    { .name = "DM",         .typ = TYP_CMD,     .tid = CMD_DM                       },
+    { .name = "MB",         .typ = TYP_CMD,     .tid = CMD_MB                       },
+    { .name = "MS",         .typ = TYP_CMD,     .tid = CMD_MS                       },
+    { .name = "MW",         .typ = TYP_CMD,     .tid = CMD_MW                       },
+    { .name = "MD",         .typ = TYP_CMD,     .tid = CMD_MD                       },
+
     { .name = "ITLB",       .typ = TYP_CMD,     .tid = CMD_ITLB                     },
     { .name = "PTLB",       .typ = TYP_CMD,     .tid = CMD_PTLB                     },
 
@@ -363,7 +367,7 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
       .errStr = (char *) "Expected a numeric value" },
 
     { .errNum = ERR_EXPECTED_BOOL_VALUE,           
-      .errStr = (char *) "Expected a bolean value" },
+      .errStr = (char *) "Expected a boolean value" },
 
     { .errNum = ERR_EXPECTED_STRING_VALUE,           
       .errStr = (char *) "Expected a string value" },
@@ -666,30 +670,30 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_NM,
-        .cmdNameStr     = (char *) "nm",
-        .cmdSyntaxStr   = (char *) "nm <mType> , [ <key> = <val> { , <key> = <val> } ]",
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_NMOD,
+        .cmdNameStr     = (char *) "nmod",
+        .cmdSyntaxStr   = (char *) "nmod <mType> , [ <key> = <val> { , <key> = <val> } ]",
         .helpStr        = (char *) "adds a module to the system"
     },
 
      {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_RM,
-        .cmdNameStr     = (char *) "rm",
-        .cmdSyntaxStr   = (char *) "rm <mNum> | ALL",
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_RMOD,
+        .cmdNameStr     = (char *) "rmod",
+        .cmdSyntaxStr   = (char *) "rmod <mNum> | ALL",
         .helpStr        = (char *) "removes modules from the system"
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_DM,
-        .cmdNameStr     = (char *) "dm",
-        .cmdSyntaxStr   = (char *) "dm [ <mNum>]",
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_DMOD,
+        .cmdNameStr     = (char *) "dmod",
+        .cmdSyntaxStr   = (char *) "dmod [ <mNum>]",
         .helpStr        = (char *) "display module info"
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_DW,
-        .cmdNameStr     = (char *) "dw",
-        .cmdSyntaxStr   = (char *) "dw [ <sNum>]",
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_WLIST,
+        .cmdNameStr     = (char *) "wlist",
+        .cmdSyntaxStr   = (char *) "wlist [ <sNum>]",
         .helpStr        = (char *) "display window list info"
     },
     
@@ -701,17 +705,38 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     },
     
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_DA,
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_DM,
         .cmdNameStr     = (char *) "da",
         .cmdSyntaxStr   = (char *) "da <adr> [ , <len> ] [ , <fmt> ]",
         .helpStr        = (char *) "display absolute memory"
     },
     
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_MA,
-        .cmdNameStr     = (char *) "ma",
-        .cmdSyntaxStr   = (char *) "ma <adr> , <val>",
-        .helpStr        = (char *) "modify absolute memory"
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_MB,
+        .cmdNameStr     = (char *) "mb",
+        .cmdSyntaxStr   = (char *) "mb <adr> , <val>",
+        .helpStr        = (char *) "modify memory byte"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_MS,
+        .cmdNameStr     = (char *) "ms",
+        .cmdSyntaxStr   = (char *) "ms <adr> , <val>",
+        .helpStr        = (char *) "modify memory short"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_MW,
+        .cmdNameStr     = (char *) "mw",
+        .cmdSyntaxStr   = (char *) "mw <adr> , <val>",
+        .helpStr        = (char *) "modify memory word"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_MD,
+        .cmdNameStr     = (char *) "md",
+        .cmdSyntaxStr   = (char *) "md <adr> , <val>",
+        .helpStr        = (char *) "modify memory double"
     },
      
     {

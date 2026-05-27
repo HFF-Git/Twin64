@@ -89,6 +89,11 @@
 //  WDEF            -> window defaults, show initial screen.
 //  WSE, WSD        -> winStackEnable/Disable
 //
+//  Command Window commands:
+//
+//  CWL             -> command window lines
+//  CWC             -> command window clear
+//
 //  Window commands:
 //
 //  enable, disable -> winEnable        -> E, D
@@ -100,6 +105,8 @@
 //  kill            -> winUserKill      -> K
 //  current         -> currentUserWin   -> C
 //  toggle          -> winToggle        -> T
+//  stack           -> winStack         -> S
+//  exchange        -> winExchange      -> X
 //
 //  Windows:
 //
@@ -210,13 +217,13 @@ enum SimTokId : uint16_t {
     CMD_SET,                    CMD_EXIT,                   CMD_HELP,
     CMD_DO,                     CMD_REDO,                   CMD_HIST,
     CMD_ENV,                    CMD_XF,                     CMD_LF,
-    CMD_WRITE_LINE,             CMD_DM,                     CMD_DW,
-    CMD_NM,                     CMD_RM,                     CMD_RESET,
-    CMD_RUN,                    CMD_STEP,                   CMD_HALT,
-    CMD_MR,                     CMD_DA,                     CMD_MA,                     
-    CMD_ITLB,                   CMD_PTLB,                   CMD_ASSERT,
-    CMD_CHECK,         
-
+    CMD_WRITE_LINE,             CMD_ASSERT,                 CMD_CHECK,   
+    CMD_DMOD,                   CMD_NMOD,                   CMD_RMOD,       
+    CMD_RESET,                  CMD_RUN,                    CMD_STEP,                                             
+    CMD_HALT,                   CMD_ITLB,                   CMD_PTLB, 
+    CMD_MR,                     CMD_DM,                     CMD_MB,             
+    CMD_MS,                     CMD_MW,                     CMD_MD,                   
+    
     //------------------------------------------------------------------------------------
     // Window Commands Tokens.
     //
@@ -228,7 +235,7 @@ enum SimTokId : uint16_t {
     CMD_WF,                     CMD_WB,                     CMD_WH,
     CMD_WJ,                     CMD_WL,                     CMD_WN,
     CMD_WK,                     CMD_WS,                     CMD_WC,
-    CMD_WT,                     CMD_WX,
+    CMD_WT,                     CMD_WX,                     CMD_WLIST, 
 
     //------------------------------------------------------------------------------------
     // Predefined Function Tokens.
@@ -1353,8 +1360,8 @@ public:
     bool            validWindowStackNum( int winNum );
 
     char            *getWinName( int winNum );
-    int             getWinStackNum( int winNum );
     char            *getWinTypeName( int winNum );  
+    int             getWinStackNum( int winNum );
     int             getWinModNum( int winNum );
 
     private:
@@ -1376,7 +1383,6 @@ public:
     public: 
 
     SimCommandsWin  *cmdWin                         = nullptr;
-    
 };
 
 //----------------------------------------------------------------------------------------

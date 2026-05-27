@@ -373,6 +373,12 @@ bool T64GlobalTlb::busOpBroadcastEvent( int srcModNum,
               
         } break;
 
+        case T64_BCAST_TLB_PURGE: {
+
+            return( removeTlbEntry( arg1 ));
+              
+        } break;
+
         default: return( false );
     }
 }

@@ -369,6 +369,11 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
     }
     else if ( tok -> isToken( TOK_LBRACK )) {
 
+        // ??? we need to introduce a type to select a byte, short, 
+        // word and double at the address...
+        //
+        // e.g. "[" [ <type> ] <val> "]"
+
         tok -> nextToken( );
 
         parseExpr( rExpr );

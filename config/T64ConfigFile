@@ -1,8 +1,8 @@
 # A simple configuration file
 #
-nm tlb,  0
-nm mem,  1, ROM, SPA_ADR=0xf000_0000, SPA_LEN=0x4000
-nm mem,  2, RAM, SPA_ADR=0x0000_0000, SPA_LEN=0x40000
-nm mem,  3, RAM, SPA_ADR=0x0004_0000, SPA_LEN=0x40000
-nm proc, 4
+nmod tlb,  0
+nmod mem,  1, ROM, SPA_ADR=0xf000_0000, SPA_LEN=0x4000
+nmod mem,  2, RAM, SPA_ADR=0x0000_0000, SPA_LEN=0x40000
+nmod mem,  3, RAM, SPA_ADR=0x0004_0000, SPA_LEN=0x40000
+nmod proc, 4
 #

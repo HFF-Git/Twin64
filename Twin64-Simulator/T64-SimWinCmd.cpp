@@ -2176,11 +2176,13 @@ void SimCommandsWin::displayAbsMemCmd( ) {
 //
 //  MA <ofs> <val>
 //
+// ??? revise to handle the four commands for modifying bytes, shorts, words
+// and double.
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::modifyAbsMemCmd( ) {
     
     T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_OFS, 0, INT64_MAX );
-
+    
     tok -> acceptComma( );
     
     T64Word val = eval -> acceptNumExpr( ERR_INVALID_NUM );
@@ -2936,16 +2938,20 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                     case CMD_RUN:           runCmd( );                      break;
                     case CMD_STEP:          stepCmd( );                     break;
 
-                    case CMD_NM:            addModuleCmd( );                break;
-                    case CMD_RM:            removeModuleCmd( );             break;
-                    case CMD_DM:            displayModuleCmd( );            break;   
+                    case CMD_NMOD:          addModuleCmd( );                break;
+                    case CMD_RMOD:          removeModuleCmd( );             break;
+                    case CMD_DMOD:          displayModuleCmd( );            break;   
 
-                    case CMD_DW:            displayWindowCmd( );            break;  
+                    case CMD_WLIST:         displayWindowCmd( );            break;  
 
                     case CMD_MR:            modifyRegCmd( );                break;
                         
-                    case CMD_DA:            displayAbsMemCmd( );            break;
-                    case CMD_MA:            modifyAbsMemCmd( );             break;
+                    case CMD_DM:            displayAbsMemCmd( );            break;
+
+                    case CMD_MB:
+                    case CMD_MS:
+                    case CMD_MW:
+                    case CMD_MD:            modifyAbsMemCmd( );             break;
                         
                     case CMD_ITLB:          insertTLBCmd( );                break;
                     case CMD_PTLB:          purgeTLBCmd( );                 break;
