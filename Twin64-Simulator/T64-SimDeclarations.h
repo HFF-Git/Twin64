@@ -1037,8 +1037,27 @@ struct SimWinCpuState : SimWin {
 
     private:
 
-    int          modNum  = 0;
-    T64Processor *proc   = nullptr;
+    T64Processor *proc = nullptr;
+};
+
+//----------------------------------------------------------------------------------------
+// TLB Window. The TLB data window displays the TLB entries.
+//
+//----------------------------------------------------------------------------------------
+struct SimWinTlb : SimWinScrollable {
+    
+    public:
+    
+    SimWinTlb( SimGlobals *glb, int modNum );
+    
+    void setDefaults( );
+    void drawBanner( );
+    void drawLine( T64Word index );
+    void drawTlbEntry( T64TlbEntry *ePtr );
+
+    private:
+
+    T64GlobalTlb *tlb = nullptr;
 };
 
 //----------------------------------------------------------------------------------------
@@ -1085,28 +1104,6 @@ struct SimWinCode : SimWinScrollable {
     T64Word         adr     = 0;
     T64DisAssemble  *disAsm = nullptr;
 };
-
-#if 0
-//----------------------------------------------------------------------------------------
-// TLB Window. The TLB data window displays the TLB entries.
-//
-//----------------------------------------------------------------------------------------
-struct SimWinTlb : SimWinScrollable {
-    
-    public:
-    
-    SimWinTlb( SimGlobals *glb, int modNum, T64Tlb *tlb );
-    
-    void setDefaults( );
-    void drawBanner( );
-    void drawLine( T64Word index );
-    void drawTlbEntry( T64TlbEntryOld *ePtr );
-
-    private:
-
-    T64Tlb *tlb = nullptr;
-};
-#endif
 
 //----------------------------------------------------------------------------------------
 // Text Window. It may be handy to also display an ordinary ASCII text file. One day

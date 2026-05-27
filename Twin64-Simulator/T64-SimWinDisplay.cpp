@@ -851,6 +851,20 @@ void SimWinDisplay::windowNewCpuState( int modNum ) {
     windowList[ slot ] -> setEnable( true );
     currentWinNum = slot;
 }
+
+void SimWinDisplay::windowNewTlb( int modNum ) {
+
+    int slot = getFreeWindowSlot( );
+
+    windowList[ slot ] = (SimWin *) new SimWinTlb( glb, modNum );
+    windowList[ slot ] -> setWinName(( char *) "TLB" );
+    windowList[ slot ] -> setWinModNum( modNum );
+    windowList[ slot ] -> setDefaults( );
+    windowList[ slot ] -> setWinIndex( slot );
+    windowList[ slot ] -> setWinStack( 0 );
+    windowList[ slot ] -> setEnable( true );
+    currentWinNum = slot;
+}
    
 void SimWinDisplay::windowNewText( char *pathStr ) {
 

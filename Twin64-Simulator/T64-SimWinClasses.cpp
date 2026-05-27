@@ -108,8 +108,7 @@ void sanitizeLine( const char *inputStr, char *outputStr ) {
 //----------------------------------------------------------------------------------------
 SimWinCpuState::SimWinCpuState( SimGlobals *glb, int modNum ) : SimWin( glb ) { 
 
-    this -> modNum = modNum;
-    this -> glb    = glb;
+    this -> glb = glb;
 
     T64ModuleType mType = glb -> system -> getModuleType( modNum );
     if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
@@ -117,6 +116,7 @@ SimWinCpuState::SimWinCpuState( SimGlobals *glb, int modNum ) : SimWin( glb ) {
     this -> proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
     if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
 
+    setWinModNum( modNum );
     setDefaults( );
 }
 
@@ -158,7 +158,7 @@ void SimWinCpuState::drawBanner( ) {
     printWindowIdField( fmtDesc );
 
     printTextField((char *) "Mod:", fmtDesc );
-    printNumericField( modNum, fmtDesc | FMT_DEC );
+    printNumericField( getWinModNum( ), fmtDesc | FMT_DEC );
 
     T64Word psw = proc -> getCpuPtr( ) -> getPsrReg( );
 
@@ -314,6 +314,124 @@ void SimWinCpuState::drawBody( ) {
 
         padLine( fmtDesc );
     }
+}
+
+//****************************************************************************************
+//****************************************************************************************
+//
+// Methods for the TLB class.
+//
+//----------------------------------------------------------------------------------------
+// Object constructor. All we do is to remember the reference to the TLB object.
+//
+//----------------------------------------------------------------------------------------
+SimWinTlb::SimWinTlb( SimGlobals    *glb, 
+                      int           modNum ) : SimWinScrollable( glb ) { 
+
+    this -> glb = glb;
+
+    T64ModuleType mType = glb -> system -> getModuleType( modNum );
+    if ( mType != MT_GTLB ) throw ( ERR_INVALID_MODULE_TYPE );
+
+    this -> tlb = (T64GlobalTlb *) glb -> system -> lookupByModNum( modNum );
+    if ( tlb == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
+
+    setWinModNum( modNum );
+    setDefaults( );
+}
+
+//----------------------------------------------------------------------------------------
+// We have a function to set reasonable default values for the window. These  
+// values are the initial settings when windows is brought up the first time, 
+// or for the WDEF command. The TLB window is a window where the number of 
+// lines to display can be set. However, the minimum is the default number of
+// lines.
+//
+//----------------------------------------------------------------------------------------
+void SimWinTlb::setDefaults( ) {
+    
+    setWinType( WT_TLB_WIN );
+    setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
+
+    setWinToggleLimit( 1 );
+    setWinLimitsForToggle( 0, 8, tlb -> getTlbSize( ), 88, 88 );
+    
+    setRows( getWinSize( 0 ).actualRow );
+    setColumns( getWinSize( 0 ).actualCol );
+
+    setCurrentItemAdr( 0 );
+    setLineIncrementItemAdr( 1 );
+    setLimitItemAdr( tlb -> getTlbSize( ));
+    setWinToggleVal( 0 );
+    setEnable( true );
+}
+
+//----------------------------------------------------------------------------------------
+// Each window consist of a banner and a body. The banner line is always shown in 
+// inverse and contains summary or head data for the window. In addition we show
+// the TLB type, which is derived from the module type. The toggle value will 
+// decide on which TLB type we are showing the entries, the UTLB, the ITLB or 
+// the DTLB.
+// 
+//----------------------------------------------------------------------------------------
+void SimWinTlb::drawBanner( ) {
+    
+    uint32_t fmtDesc   = FMT_BOLD | FMT_INVERSE;
+   
+    setWinCursor( 1, 1 );
+    printWindowIdField( fmtDesc );
+    printTextField((char *) "Mod:" );
+    printNumericField( getWinModNum( ), ( fmtDesc | FMT_DEC ));
+    printTextField((char *) " ( ", fmtDesc );
+    printTextField((char *) tlb -> getTlbTypeStr( ), fmtDesc );
+    printTextField((char *) " ):", fmtDesc );
+
+    padLine( fmtDesc );
+    printRadixField( fmtDesc | FMT_LAST_FIELD );
+}
+
+//----------------------------------------------------------------------------------------
+// The body of the TLB window shows the TLB entries. We are passed a pointer
+// to the TLB entry, which we need to decode and print.
+//
+//----------------------------------------------------------------------------------------
+void SimWinTlb::drawTlbEntry( T64TlbEntry *ePtr ) {
+
+    uint32_t  fmtDesc = FMT_DEF_ATTR;
+
+    printTextField((char *) "vAdr: ", fmtDesc );
+    printNumericField( ePtr -> vAdr, fmtDesc | FMT_HEX_2_4_4_4 );
+
+    printTextField((char *) "  pAdr: ", fmtDesc );
+    printNumericField( ePtr -> pAdr, fmtDesc | FMT_HEX_2_4_4 );
+
+    printTextField((char *) "  info: ", fmtDesc );
+    printNumericField( ePtr -> tlbInfo, fmtDesc | FMT_HEX_4 );
+
+    printTextField((char *) "  pMask: ", fmtDesc );
+    printNumericField( ePtr -> pageMask, fmtDesc | FMT_HEX_4_4_4_4 );
+
+    // ??? we may refine TlbInfo Field for readability.
+}
+
+//----------------------------------------------------------------------------------------
+// Each window consist of a banner and a body. The body lines are displayed after
+// the banner line. The number of lines can vary. A line represents an entry in 
+// the respective TLB. We have three TLBs, the UTLB, the ITLB and the DTLB. The
+// toggle value will decide on which TLB entries to display.
+//
+//----------------------------------------------------------------------------------------
+void SimWinTlb::drawLine( T64Word index ) {
+
+    uint32_t    fmtDesc     = FMT_DEF_ATTR;
+    T64TlbEntry *ePtr       = tlb -> getTlbEntry( index );
+
+    printTextField((char *) "(", fmtDesc );
+    printNumericField( index, fmtDesc | FMT_HEX_4 );
+    printTextField((char *) "): ", fmtDesc );
+
+    if ( ePtr != nullptr ) drawTlbEntry( ePtr );
+    padLine( fmtDesc );
 }
 
 //****************************************************************************************

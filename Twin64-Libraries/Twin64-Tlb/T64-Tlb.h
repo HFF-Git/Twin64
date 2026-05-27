@@ -58,6 +58,10 @@ struct T64GlobalTlb : T64Module {
     bool        insertTlbEntry( T64Word arg1, T64Word arg2 );
     bool        removeTlbEntry( T64Word vAdr );
 
+    int         getTlbSize( );
+    char        *getTlbTypeStr( );
+    T64TlbEntry *getTlbEntry( int index );
+
     void        initModule( );
     void        resetModule( );
     void        haltModule( );

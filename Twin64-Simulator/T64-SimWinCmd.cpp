@@ -2278,7 +2278,7 @@ void SimCommandsWin::insertTLBCmd( ) {
     ensureWinModeOn( );
     T64Word vAdr = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, T64_MAX_VIRT_MEM_LIMIT ); 
     tok -> acceptComma( );
-    T64Word info = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, UINT64_MAX ); 
+    T64Word info = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, INT64_MAX ); 
     tok -> checkEOS( );
 
     if ( ! glb -> system -> busOpBroadcast( -1 , T64_BCAST_TLB_INSERT, vAdr, info )) {
@@ -2729,6 +2729,7 @@ void SimCommandsWin::winExchangeCmd( ) {
 //  WN <winType> [ "," <arg1> [ "," <arg2> ]]
 //
 //  WN  PROC    "," <mod>
+//  WN  TLB     "," <mod>
 //  WN  MEM     "," <adr>
 //  WN  CODE    "," <adr> [ "," <modNum> ]
 //  WN  TEXT    "," <str>
@@ -2747,10 +2748,20 @@ void SimCommandsWin::winNewWinCmd( ) {
         case TOK_CPU:{
 
             tok -> acceptComma( );
-            int modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE );
+            int modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM );
             tok -> checkEOS( );
 
             glb -> winDisplay -> windowNewCpuState( modNum );
+
+        } break;
+
+        case TOK_TLB: {
+
+            tok -> acceptComma( );
+            int modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM );
+            tok -> checkEOS( );
+
+            glb -> winDisplay -> windowNewTlb( modNum );  
 
         } break;
 

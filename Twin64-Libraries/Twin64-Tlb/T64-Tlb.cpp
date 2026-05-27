@@ -245,6 +245,36 @@ bool T64GlobalTlb::removeTlbEntry( T64Word vAdr ) {
 }
 
 //----------------------------------------------------------------------------------------
+// Return the number of TLB entries.
+//
+//
+//----------------------------------------------------------------------------------------
+int T64GlobalTlb::getTlbSize( ) {
+
+    return( tlbSize );
+}
+
+ char *T64GlobalTlb::getTlbTypeStr( ) {
+
+    switch ( tlbType ) {
+
+        case T64_TT_FA_16S:     return ( "FA_16S" ); break;
+        case T64_TT_FA_32S:     return ( "FA_32S" ); break;
+        case T64_TT_FA_64S:     return ( "FA_64S" ); break;
+        case T64_TT_FA_128S:    return ( "FA_128S" ); break;
+        default:                return ( "TLB_**" ); break;
+    }
+ }
+
+ T64TlbEntry *T64GlobalTlb::getTlbEntry( int index ) {
+
+    if (( index < 0 ) || ( index > tlbSize - 1 )) return ( nullptr );
+    if ( tlbTable == nullptr ) return ( nullptr );
+
+    return( &tlbTable[ index ] );
+ }
+
+//----------------------------------------------------------------------------------------
 // Module interface. Although we are not really a module such as processors and
 // I/O, it is convenient to implement the global TLB as a module in our simulator.
 // The key benefit is that all TLB data can nicely be mapped into the HPA address
@@ -334,7 +364,13 @@ bool T64GlobalTlb::busOpBroadcastEvent( int srcModNum,
                                         T64Word            arg1, 
                                         T64Word            arg2 )  {
 
-    // ??? need to implement this ....
+    switch ( id ) {
 
-    return ( false );
+        case T64_BCAST_TLB_INSERT: {
+
+            return( insertTlbEntry( arg1, arg2));    
+        } break;
+
+        default: return( false );
+    }
 }

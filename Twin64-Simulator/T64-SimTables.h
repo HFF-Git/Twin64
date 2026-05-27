@@ -717,8 +717,7 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ITLB,
         .cmdNameStr     = (char *) "itlb",
-        .cmdSyntaxStr   = (char *) "itlb <vAdr> , <pAdr> , <size> , "
-                                   "<acc> , [ , L [ , U ]]",
+        .cmdSyntaxStr   = (char *) "itlb <arg1> , <arg2>",
         .helpStr        = (char *) "inserts an entry into the unified TLB"
     },
 
