@@ -185,6 +185,7 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
     entry.vAdr      = arg1 & entry.pageMask;
     entry.pAdr      = arg2 & entry.pageMask;
     entry.tlbInfo   = arg2 >> 48;
+    entry.tlbInfo   = entry.tlbInfo | 0x8000;
 
     for ( int i = 0; i < tlbSize; i++ ) {
 
@@ -368,7 +369,8 @@ bool T64GlobalTlb::busOpBroadcastEvent( int srcModNum,
 
         case T64_BCAST_TLB_INSERT: {
 
-            return( insertTlbEntry( arg1, arg2));    
+            return( insertTlbEntry( arg1, arg2));  
+              
         } break;
 
         default: return( false );
