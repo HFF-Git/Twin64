@@ -855,20 +855,25 @@ void SimWinText::drawBanner( ) {
 // we actually figure out how many lines are on the file so that we can set the 
 // limitItemAdr field of the window object.
 //
+// ??? we still may have a bug in that tabs fool the padLine execution.
 //----------------------------------------------------------------------------------------
 void SimWinText::drawLine( T64Word index ) {
     
     uint32_t    fmtDesc = FMT_DEF_ATTR;
     char        lineBuf[ MAX_TEXT_LINE_SIZE ];
     int         lineSize = 0;
-  
+
     if ( openTextFile( )) {
 
         printNumericField( index + 1, ( fmtDesc | FMT_DEC ));
         printTextField((char *) ": " );
+        setWinCursor( 0, 8 );
   
         lineSize = readTextFileLine( index + 1, lineBuf, sizeof( lineBuf ));
         if ( lineSize > 0 ) {
+           
+            if ( lineSize > getWinSize( 0 ).actualCol )
+                lineSize = getWinSize( 0 ).actualCol;
             
             printTextField( lineBuf, fmtDesc, lineSize );
             padLine( fmtDesc );

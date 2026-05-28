@@ -350,6 +350,7 @@ void SimWin::printNumericField( T64Word     val,
 // print the data in the field, the data will be printed left or right justified
 // in the field. If the data is larger than the field, it will be truncated.
 //
+// ??? add a check that we do not go past the window column size ?
 //----------------------------------------------------------------------------------------
 void SimWin::printTextField( char       *text, 
                              uint32_t   fmtDesc, 
@@ -363,12 +364,7 @@ void SimWin::printTextField( char       *text,
     int dLen = (int) strlen( text );
     if ( dLen > MAX_TEXT_FIELD_LEN ) dLen = MAX_TEXT_FIELD_LEN;
     
-    if ( fLen == 0 ) {
-        
-        if ( dLen > MAX_TEXT_FIELD_LEN ) dLen = MAX_TEXT_FIELD_LEN;
-        fLen = dLen;
-    }
-    
+    if ( fLen == 0 ) fLen = dLen;
     if ( fmtDesc & FMT_LAST_FIELD ) col = getColumns( ) - fLen;
 
     setWinCursor( row, col );
@@ -505,12 +501,7 @@ void SimWin::clearField( int len, uint32_t fmtDesc ) {
     
     int pos = lastColPos;
     
-    #if 0
-    if ( pos + len > winToggleSizes[ winToggleVal ].col ) 
-        len = winToggleSizes[ winToggleVal ].col - pos;
-    #else
-        if ( pos + len > getColumns( )) len = getColumns( ) - pos;     
-    #endif
+    if ( pos + len > getColumns( )) len = getColumns( ) - pos;     
 
     glb -> console -> setFmtAttributes( fmtDesc );
     padField( lastColPos, lastColPos + len );

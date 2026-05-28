@@ -452,8 +452,8 @@ int SimFormatter::printBlanks( int len ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Routine for putting out simple text. We make sure that the string length is in the
-// range of what the text size could be.
+// Routine for putting out simple text. We make sure that the string length is 
+// in the range of what the text size could be.
 //
 //----------------------------------------------------------------------------------------
 int SimFormatter::printText( char *text, int maxLen ) {
