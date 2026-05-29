@@ -1157,8 +1157,24 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
     T64Word limit        = roundup(( index + len ), sizeof( T64Word ));
     int     wordsPerLine = 4;
 
-    // ??? test if we have a global TLB module ?
-    // ?? if so, get a pointer to it...
+    if (( index > T64_MAX_PHYS_MEM_LIMIT ) ||
+        ( limit > T64_MAX_PHYS_MEM_LIMIT )) {
+
+        T64GlobalTlb *tlbModule = 
+            (T64GlobalTlb *)glb -> system -> lookupByModuleType( MT_GTLB );
+        
+        if ( tlbModule == nullptr ) {
+
+        }
+
+        if ( tlbModule -> translateAdr( index, &index )) {
+
+        }
+
+        if ( tlbModule -> translateAdr( limit, &limit )) {
+
+        }
+    }
 
     while ( index < limit ) {
 
@@ -1168,12 +1184,6 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
         for ( uint32_t i = 0; i < wordsPerLine; i++ ) {
             
             if ( index < limit ) {
-
-
-                // ??? how about we add the option for translating the address ?
-                // ??? if we have a TLB module, then we could also manage virtual 
-                // addresses.
-
 
                 T64Word val = 0;
                 if ( glb -> system -> busOpRead( -1,
@@ -1221,8 +1231,24 @@ void SimCommandsWin::displayAbsMemContentAsCode( T64Word adr, T64Word len ) {
     T64Word  instr  = 0;
     char     buf[ MAX_TEXT_FIELD_LEN ];
 
-     // ??? test if we have a global TLB module ?
-    // ?? if so, get a pointer to it...
+    if (( index > T64_MAX_PHYS_MEM_LIMIT ) ||
+        ( limit > T64_MAX_PHYS_MEM_LIMIT )) {
+
+        T64GlobalTlb *tlbModule = 
+            (T64GlobalTlb *)glb -> system -> lookupByModuleType( MT_GTLB );
+        
+        if ( tlbModule == nullptr ) {
+
+        }
+
+        if ( tlbModule -> translateAdr( index, &index )) {
+
+        }
+
+        if ( tlbModule -> translateAdr( limit, &limit )) {
+
+        }
+    }
 
     while ( index < limit ) {
 
@@ -2213,6 +2239,20 @@ void SimCommandsWin::modifyAbsMemCmd( ) {
     uint8_t *ptr = (uint8_t *) &val;
     copyEndianAware((uint8_t *) &val, ptr, len );
 
+    if ( adr > T64_MAX_PHYS_MEM_LIMIT ) {
+
+        T64GlobalTlb *tlbModule = 
+            (T64GlobalTlb *)glb -> system -> lookupByModuleType( MT_GTLB );
+        
+        if ( tlbModule == nullptr ) {
+
+        }
+
+        if ( tlbModule -> translateAdr( adr, &adr )) {
+
+        }
+    }
+
     if ( ! glb -> system -> busOpWrite( -1, adr, ptr, len )) {
 
         throw( ERR_MEM_OP_FAILED );
@@ -2789,10 +2829,13 @@ void SimCommandsWin::winNewWinCmd( ) {
 
         case TOK_MEM: {
 
+            // ??? we need to translate the virtual address, since the
+            // window is representing a physical memory window. We may
+            // have to change it for accepting any address and just 
+            // create the window...
+
             tok -> acceptComma( );
-            T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE, 
-                                                 0,
-                                                 T64_MAX_PHYS_MEM_LIMIT );
+            T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE );
             tok -> checkEOS( );
 
             T64Module *mod = glb -> system -> lookupByAdr( adr );

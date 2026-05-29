@@ -61,6 +61,7 @@ struct T64GlobalTlb : T64Module {
     int         getTlbSize( );
     char        *getTlbTypeStr( );
     T64TlbEntry *getTlbEntry( int index );
+    bool        translateAdr( T64Word vAdr, T64Word *pAdr );
 
     void        initModule( );
     void        resetModule( );

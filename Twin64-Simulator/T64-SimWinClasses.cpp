@@ -464,10 +464,10 @@ void SimWinAbsMem::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 4 );
-    setWinLimitsForToggle( 0, 4, MAX_WIN_ROW_SIZE, 112, 112 );
-    setWinLimitsForToggle( 1, 4, MAX_WIN_ROW_SIZE, 112, 112 );
-    setWinLimitsForToggle( 2, 4, MAX_WIN_ROW_SIZE, 112, 112 );
-    setWinLimitsForToggle( 3, 4, MAX_WIN_ROW_SIZE, 112, 112 );
+    setWinLimitsForToggle( 0, 5, MAX_WIN_ROW_SIZE, 112, 112 );
+    setWinLimitsForToggle( 1, 5, MAX_WIN_ROW_SIZE, 112, 112 );
+    setWinLimitsForToggle( 2, 5, MAX_WIN_ROW_SIZE, 112, 112 );
+    setWinLimitsForToggle( 3, 5, MAX_WIN_ROW_SIZE, 112, 112 );
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
     setHomeItemAdr( adr );
@@ -484,10 +484,6 @@ void SimWinAbsMem::setDefaults( ) {
 //
 //----------------------------------------------------------------------------------------
 void SimWinAbsMem::drawBanner( ) {
-
-    // ??? how about we add the option for translating the address ?
-    // ??? if we have a TLB module, then we could also manage virtual 
-    // addresses.
     
     uint32_t fmtDesc = FMT_BOLD | FMT_INVERSE;
 
@@ -540,6 +536,20 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
 
     uint32_t    fmtDesc     = FMT_DEF_ATTR;
     uint32_t    limit       = getLineIncrementItemAdr( ) - 1; // ??? why - 1?
+
+    if ( itemAdr > T64_MAX_PHYS_MEM_LIMIT ) {
+
+        T64GlobalTlb *tlbModule = 
+            (T64GlobalTlb *)glb -> system -> lookupByModuleType( MT_GTLB );
+        
+        if ( tlbModule == nullptr ) {
+
+        }
+
+        if ( tlbModule -> translateAdr( itemAdr, &itemAdr )) {
+
+        }
+    }
 
     T64Memory   *mem = (T64Memory *) 
                             glb -> system -> lookupByAdr( getCurrentItemAdr( ));

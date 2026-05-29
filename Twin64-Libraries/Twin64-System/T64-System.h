@@ -248,14 +248,17 @@ struct T64System {
     void                haltModule( int modNum );
     void                runModule( int modNum );
     void                execModule( int modNum, int steps );
-
+    bool                isModuleHalted( int modNum );   
+    
     void                run( );
     
     T64ModuleType       getModuleType( int modNum ) const;
     char                *getModuleState( int modNum ) const;
     T64Module           *lookupByModNum( int modNum ) const;
     T64Module           *lookupByModuleType( T64ModuleType typ );
-    T64Module           *lookupByAdr( T64Word adr ) const;                
+    T64Module           *lookupByAdr( T64Word adr ) const;  
+    
+    bool                translateAdr( T64Word vAdr, T64Word *pAdr );
 
     bool                busOpRead( int reqModNum,
                                    T64Word pAdr, 

@@ -246,8 +246,7 @@ bool T64GlobalTlb::removeTlbEntry( T64Word vAdr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Return the number of TLB entries.
-//
+// Routines for the simulator concerning the global TLB:
 //
 //----------------------------------------------------------------------------------------
 int T64GlobalTlb::getTlbSize( ) {
@@ -255,7 +254,7 @@ int T64GlobalTlb::getTlbSize( ) {
     return( tlbSize );
 }
 
- char *T64GlobalTlb::getTlbTypeStr( ) {
+char *T64GlobalTlb::getTlbTypeStr( ) {
 
     switch ( tlbType ) {
 
@@ -265,15 +264,26 @@ int T64GlobalTlb::getTlbSize( ) {
         case T64_TT_FA_128S:    return ( "FA_128S" ); break;
         default:                return ( "TLB_**" ); break;
     }
- }
+}
 
- T64TlbEntry *T64GlobalTlb::getTlbEntry( int index ) {
+T64TlbEntry *T64GlobalTlb::getTlbEntry( int index ) {
 
     if (( index < 0 ) || ( index > tlbSize - 1 )) return ( nullptr );
     if ( tlbTable == nullptr ) return ( nullptr );
 
     return( &tlbTable[ index ] );
  }
+
+
+bool T64GlobalTlb::translateAdr( T64Word vAdr, T64Word *pAdr ) {
+
+    T64TlbEntry e;
+    
+    if ( ! lookupTlb( vAdr, &e )) return( false );
+    
+    *pAdr = ( vAdr & ~ e.pageMask ) | e.pAdr;
+    return( true );
+}
 
 //----------------------------------------------------------------------------------------
 // Module interface. Although we are not really a module such as processors and
