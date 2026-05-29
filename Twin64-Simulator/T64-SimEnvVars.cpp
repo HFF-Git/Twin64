@@ -119,10 +119,15 @@ int SimEnv::getEnvHwm( ) {
 int SimEnv::lookupEntry( char *name ) {
     
     SimEnvTabEntry *entry = table;
+
+    char tmp[ MAX_ENV_NAME_SIZE ];
+    strncpy( tmp, name, MAX_ENV_NAME_SIZE );
+
+    upshiftStr( tmp );
     
     while ( entry < hwm ) {
         
-        if (( entry -> valid ) && ( strcmp( entry -> name, name ) == 0 )) 
+        if (( entry -> valid ) && ( strcmp( entry -> name, tmp ) == 0 )) 
             return((int) ( entry - table ));
         else entry ++;
     }

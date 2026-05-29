@@ -241,9 +241,9 @@ void SimWin::toggleWin( int toggleVal ) {
 
 //----------------------------------------------------------------------------------------
 // "setWinOrigin" sets the absolute cursor position for the terminal screen. We 
-// maintain absolute positions, which only may change when the terminal screen is 
-// redrawn with different window sizes. The window relative rows and column cursor 
-// position are set at (1,1).
+// maintain absolute positions, which only may change when the terminal screen 
+// is redrawn with different window sizes. The window relative rows and column 
+// cursor position are set at (1,1).
 //
 //----------------------------------------------------------------------------------------
 void SimWin::setWinOrigin( int row, int col ) {
@@ -261,6 +261,7 @@ void SimWin::setWinOrigin( int row, int col ) {
 // the terminal screen plus the window relative row and column. Rows and numbers 
 // are values starting with 1.
 //
+// ??? add a check that we do not go past the window column size ?
 //----------------------------------------------------------------------------------------
 void SimWin::setWinCursor( int row, int col ) {
     
@@ -270,7 +271,8 @@ void SimWin::setWinCursor( int row, int col ) {
     if ( row > MAX_WIN_ROW_SIZE ) row = MAX_WIN_ROW_SIZE;
     if ( col > MAX_WIN_COL_SIZE ) col = MAX_WIN_COL_SIZE;
 
-    glb -> console -> setAbsCursor( winAbsCursorRow + row - 1, winAbsCursorCol + col );
+    glb -> console -> setAbsCursor( winAbsCursorRow + row - 1, 
+                                    winAbsCursorCol + col );
     
     lastRowPos = row;
     lastColPos = col;
@@ -291,6 +293,7 @@ int SimWin::getWinCursorCol( ) {
 // need to be padded left or right. This routine is just a simple loop emitting 
 // blanks in the current format set.
 //
+// ??? add a check that we do not go past the window column size ?
 //----------------------------------------------------------------------------------------
 void SimWin::padField( int dLen, int fLen ) {
     
@@ -302,11 +305,11 @@ void SimWin::padField( int dLen, int fLen ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Print out a numeric field. Each call will set the format options passed via the 
-// format descriptor. If the field length is larger than the positions needed to 
-// print the data in the field, the data will be printed left or right justified 
-// in the field.
+// Print out a numeric field. Each call will set the format options passed via 
+// the format descriptor. If the field length is larger than the the data in the
+// field, the data will be printed left or right justified in the field.
 //
+// ??? add a check that we do not go past the window column size ?
 //----------------------------------------------------------------------------------------
 void SimWin::printNumericField( T64Word     val, 
                                 uint32_t    fmtDesc, 
@@ -350,6 +353,7 @@ void SimWin::printNumericField( T64Word     val,
 // print the data in the field, the data will be printed left or right justified
 // in the field. If the data is larger than the field, it will be truncated.
 //
+// ??? add a check that we do not go past the window column size ?
 //----------------------------------------------------------------------------------------
 void SimWin::printTextField( char       *text, 
                              uint32_t   fmtDesc, 
@@ -363,12 +367,7 @@ void SimWin::printTextField( char       *text,
     int dLen = (int) strlen( text );
     if ( dLen > MAX_TEXT_FIELD_LEN ) dLen = MAX_TEXT_FIELD_LEN;
     
-    if ( fLen == 0 ) {
-        
-        if ( dLen > MAX_TEXT_FIELD_LEN ) dLen = MAX_TEXT_FIELD_LEN;
-        fLen = dLen;
-    }
-    
+    if ( fLen == 0 ) fLen = dLen;
     if ( fmtDesc & FMT_LAST_FIELD ) col = getColumns( ) - fLen;
 
     setWinCursor( row, col );
@@ -409,7 +408,6 @@ void SimWin::printTextField( char       *text,
 //----------------------------------------------------------------------------------------
 // Print out a bit character. When the bit in the word is set, it is upper case, 
 // else lower case.
-//
 //
 //----------------------------------------------------------------------------------------
 void SimWin::printBitField( T64Word val, 
@@ -505,12 +503,7 @@ void SimWin::clearField( int len, uint32_t fmtDesc ) {
     
     int pos = lastColPos;
     
-    #if 0
-    if ( pos + len > winToggleSizes[ winToggleVal ].col ) 
-        len = winToggleSizes[ winToggleVal ].col - pos;
-    #else
-        if ( pos + len > getColumns( )) len = getColumns( ) - pos;     
-    #endif
+    if ( pos + len > getColumns( )) len = getColumns( ) - pos;     
 
     glb -> console -> setFmtAttributes( fmtDesc );
     padField( lastColPos, lastColPos + len );
