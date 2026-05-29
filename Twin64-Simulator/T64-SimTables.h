@@ -72,13 +72,16 @@ const SimToken cmdTokTab[ ] = {
     { .name = "DEC",        .typ = TYP_SYM,     .tid = TOK_DEC,   .u = { .val = 10 }},
     { .name = "HEX",        .typ = TYP_SYM,     .tid = TOK_HEX,   .u = { .val = 16 }},
     { .name = "CODE",       .typ = TYP_SYM,     .tid = TOK_CODE                     },
-    
+
+    { .name = "BYTE",       .typ = TYP_SYM,     .tid = TOK_BYTE,   .u = { .val = 1  }},
+    { .name = "SHORT",      .typ = TYP_SYM,     .tid = TOK_SHORT,  .u = { .val = 2  }},
+    { .name = "WORD",       .typ = TYP_SYM,     .tid = TOK_WORD,   .u = { .val = 4  }},
+    { .name = "DOUBLE",     .typ = TYP_SYM,     .tid = TOK_DOUBLE, .u = { .val = 8  }},
+   
     { .name = "COMMANDS",   .typ = TYP_CMD,     .tid = CMD_SET                      },
     { .name = "WCOMMANDS",  .typ = TYP_WCMD,    .tid = WCMD_SET                     },
     { .name = "PREDEFINED", .typ = TYP_P_FUNC,  .tid = PF_SET                       },
 
-
-    
     //------------------------------------------------------------------------------------
     // Command Line tokens.
     //
@@ -314,6 +317,9 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
 
     { .errNum = ERR_INVALID_NUM,
       .errStr = (char *) "Invalid number" },
+
+    { .errNum = ERR_UNALIGNED_ADDR,             
+      .errStr = (char *) "Unaligned address" },
 
     { .errNum = ERR_INVALID_FMT_OPT,            
       .errStr = (char *) "Invalid format option" },

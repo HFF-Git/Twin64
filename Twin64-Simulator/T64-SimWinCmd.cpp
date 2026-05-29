@@ -2174,26 +2174,46 @@ void SimCommandsWin::displayAbsMemCmd( ) {
 //----------------------------------------------------------------------------------------
 // Modify absolute memory command. 
 //
-//  MA <ofs> <val>
+//  MB <ofs> <val>
+//  MS <ofs> <val>
+//  MW <ofs> <val>
+//  MD <ofs> <val>
 //
-// ??? revise to handle the four commands for modifying bytes, shorts, words
-// and double.
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::modifyAbsMemCmd( ) {
     
     T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_OFS, 0, INT64_MAX );
-    
+  
     tok -> acceptComma( );
     
     T64Word val = eval -> acceptNumExpr( ERR_INVALID_NUM );
     tok -> checkEOS( );
 
-    copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
+    if (( currentCmd == CMD_MB ) && ( adr % 1 != 0 )) throw( ERR_UNALIGNED_ADDR );
+    if (( currentCmd == CMD_MS ) && ( adr % 2 != 0 )) throw( ERR_UNALIGNED_ADDR );
+    if (( currentCmd == CMD_MW ) && ( adr % 4 != 0 )) throw( ERR_UNALIGNED_ADDR );   
+    if (( currentCmd == CMD_MD ) && ( adr % 8 != 0 )) throw( ERR_UNALIGNED_ADDR );  
+    
+    if (( currentCmd == CMD_MB ) && ( val > UINT8_MAX )) throw( ERR_NUMERIC_RANGE );
+    if (( currentCmd == CMD_MS ) && ( val > UINT16_MAX )) throw( ERR_NUMERIC_RANGE );
+    if (( currentCmd == CMD_MW ) && ( val > UINT32_MAX )) throw( ERR_NUMERIC_RANGE );
+    if (( currentCmd == CMD_MD ) && ( val > UINT64_MAX )) throw( ERR_NUMERIC_RANGE );
 
-    if ( ! glb -> system -> busOpWrite( -1,
-                                        adr, 
-                                        (uint8_t *) &val, 
-                                        sizeof( T64Word ))) {
+    if ( currentCmd == CMD_MB ) val = val & 0xFF;
+    if ( currentCmd == CMD_MS ) val = val & 0xFFFF;
+    if ( currentCmd == CMD_MW ) val = val & 0xFFFFFFFF;     
+
+    int len = sizeof( T64Word );
+    
+    if ( currentCmd == CMD_MB ) len = 1;
+    else if ( currentCmd == CMD_MS ) len = 2;
+    else if ( currentCmd == CMD_MW ) len = 4;
+    else if ( currentCmd == CMD_MD ) len = 8;
+
+    uint8_t *ptr = (uint8_t *) &val;
+    copyEndianAware((uint8_t *) &val, ptr, len );
+
+    if ( ! glb -> system -> busOpWrite( -1, adr, ptr, len )) {
 
         throw( ERR_MEM_OP_FAILED );
     }

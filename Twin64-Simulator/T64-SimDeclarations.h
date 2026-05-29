@@ -202,7 +202,10 @@ enum SimTokId : uint16_t {
     TOK_HEX,                    TOK_ASCII,                  TOK_MEM,                    
     TOK_CODE,                   TOK_STATS,                  TOK_TEXT,                   
     TOK_SYS,                    TOK_PROC,                   TOK_CPU,                    
-    TOK_IO,                     TOK_TLB,                                    
+    TOK_IO,                     TOK_TLB,       
+    
+    TOK_BYTE,                   TOK_SHORT,                  TOK_WORD,               
+    TOK_DOUBLE,   
     
     TOK_TLB_FA_16S,             TOK_TLB_FA_32S,             TOK_TLB_FA_64S,             
     TOK_TLB_FA_128S,
@@ -297,6 +300,7 @@ enum SimErrMsgId : int {
     ERR_INVALID_MOD_NUM             = 25,
    
     ERR_INVALID_NUM                 = 26,
+    ERR_UNALIGNED_ADDR              = 27,
     
     // -----   
     
