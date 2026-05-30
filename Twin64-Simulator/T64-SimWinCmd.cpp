@@ -508,8 +508,8 @@ void SimCommandsWin::clearCmdWin( ) {
 // lines. After the final carriage return, we are done reading the input line. 
 //
 // The prompt and the command string along with a carriage return are appended to
-// the command output buffer. Before returning to the caller, the last thing to do
-// is to remove any comment from the line.
+// the command output buffer. Before returning to the caller, the last thing to 
+// do is to remove any comment from the line.
 //
 // The left and right arrows move the cursor in the command line. Backspacing and
 // inserting will then take place at the current cursor position shifting any 
@@ -2211,7 +2211,6 @@ void SimCommandsWin::modifyRegCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::insertTLBCmd( ) {
 
-    ensureWinModeOn( );
     T64Word vAdr = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, T64_MAX_VIRT_MEM_LIMIT ); 
     tok -> acceptComma( );
     T64Word info = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, INT64_MAX ); 

@@ -173,7 +173,7 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
 
     std::unique_lock lock( tLock );
 
-    int pSize   = tlbPageSize(( arg2 >> 48 ) & T64_TM_PSIZE );
+    int pSize   = tlbPageSize( tlbInfoPageSize( arg2 >> 48 ));
 
     if ( isInIoAdrRange( arg1 )) return ( true );
     if ( ! isAlignedPageAdr( arg1, pSize )) return ( false );

@@ -517,8 +517,8 @@ int SimFormatter::printNumber( T64Word val, uint32_t fmtDesc ) {
                 if ( fmtDesc & FMT_INVALID_NUM ) 
                     len += writeChars((char *) "**" );          
                 else                             
-                    len += writeChars((char *) "%x", val );
-
+                    len += writeChars((char *) "%#" PRIx64 "\n", val );
+                    
                 return ( len );
 
             } break;

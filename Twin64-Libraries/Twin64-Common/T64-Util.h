@@ -453,6 +453,51 @@ inline uint8_t extractPsrXbit( T64Word psr ) {
 
 // ??? more to come, align with document...
 
+
+//----------------------------------------------------------------------------------------
+// TLB info field extract routines.
+//
+//----------------------------------------------------------------------------------------
+inline bool tlbInfoIsValid( T64Word tlbInfo ) {
+
+    return( ( tlbInfo & 0x8000 ) != 0 );
+}
+
+inline bool tlbInfoIsLocked( T64Word tlbInfo ) {
+
+    return( ( tlbInfo & 0x4000 ) != 0 );
+}
+
+inline bool tlbInfoIsUncached( T64Word tlbInfo ) {
+
+    return( ( tlbInfo & 0x2000 ) != 0 );
+}
+
+inline bool tlbInfoIsModified( T64Word tlbInfo ) {
+
+    return( ( tlbInfo & 0x1000 ) != 0 );
+}
+
+inline uint8_t tlbInfoPrivLevel1( T64Word tlbInfo ) {
+
+    return( ( tlbInfo >> 4 ) & 0x1 );
+}
+
+inline uint8_t tlbInfoPrivLevel2( T64Word tlbInfo ) {
+
+    return( ( tlbInfo >> 5 ) & 0x1 );
+}
+
+inline uint8_t tlbInfoPageType( T64Word tlbInfo ) {
+
+    return( ( tlbInfo >> 6 ) & 0x3 );
+}
+
+inline uint8_t tlbInfoPageSize( T64Word tlbInfo ) {
+
+    return( tlbInfo & 0xF );
+}
+
 //----------------------------------------------------------------------------------------
 // Address arithmetic. Address are computed using an unsigned 32-bit arithmetic.
 // The address "adr" is a 64 bit address to which we will add in the offset portion
