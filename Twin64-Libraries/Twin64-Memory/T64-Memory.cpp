@@ -117,7 +117,7 @@ bool T64Memory::busOpReadEvent( int     reqModNum,
             return( false );
         }
 
-        if ( ! isAlignedDataAdr( pAdr, len )) {
+        if ( ! isAlignedAdr( pAdr, len )) {
             lockPtr -> store( false );
             return( false );
         }
@@ -155,7 +155,7 @@ bool T64Memory::busOpWriteEvent( int     reqModNum,
             lockPtr -> store( false );
             return( false );
         }
-        if ( ! isAlignedDataAdr( pAdr, len )) {
+        if ( ! isAlignedAdr( pAdr, len )) {
             lockPtr -> store( false );
             return( false );
         }

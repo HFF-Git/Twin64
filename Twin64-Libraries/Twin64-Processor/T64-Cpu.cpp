@@ -269,12 +269,12 @@ void T64Cpu::instrReadAccCheck( uint16_t tlbInfo ) {
 
 void T64Cpu::instrReadAlignmentCheck( T64Word adr ) {
 
-    if ( ! isAlignedDataAdr( adr, 4 )) instrMemAlignmentTrap( adr );
+    if ( ! isAlignedAdr( adr, 4 )) instrMemAlignmentTrap( adr );
 }
 
 void T64Cpu::dataAlignmentCheck( T64Word adr, int len ) {
 
-    if ( ! isAlignedDataAdr( adr, len )) dataMemAlignmentTrap( adr );
+    if ( ! isAlignedAdr( adr, len )) dataMemAlignmentTrap( adr );
 }
 
 void T64Cpu::dataRegionIdCheck( T64Word adr, bool wMode ) {

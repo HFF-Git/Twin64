@@ -31,6 +31,15 @@
 //----------------------------------------------------------------------------------------
 namespace {
 
+    void upshiftStr( char *s ) {
+
+    while ( *s ) {
+
+        *s = toupper((unsigned char) *s );
+        s++;
+    }
+}
+
 }; // namespace
 
 
@@ -444,4 +453,5 @@ void SimEnv::setupPredefined( ) {
     
     enterVar((char *) ENV_WIN_MIN_ROWS, (T64Word) 24, true, false );
     enterVar((char *) ENV_WIN_TEXT_LINE_WIDTH, (T64Word) 90, true, false );
+    enterVar((char *) ENV_WIN_TEXT_TAB_SIZE, (T64Word) 4, true, false );
 }

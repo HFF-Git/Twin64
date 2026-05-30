@@ -94,6 +94,54 @@ void sanitizeLine( const char *inputStr, char *outputStr ) {
     *dst = '\0';
 }
 
+//----------------------------------------------------------------------------------------
+// "calculateStrLen" calculates the length of a string, taking into account that
+// tabs are not just one character, but they move the cursor to the next tab stop.
+// The tab stops are every "tabWidth" columns. So if we are at column 3 and we 
+// encounter a tab, we move to column 8, which means that the tab has a length 
+// of 5 in this case.
+//
+//----------------------------------------------------------------------------------------
+size_t calculateStrLen( const char *s, int tabWidth  ) {
+
+    size_t col = 0;
+
+    while ( *s ) {
+
+        if ( *s == '\t' ) col += tabWidth - ( col % tabWidth );
+        else              col++;    
+
+        s++;
+    }
+
+    return col;
+}
+
+//----------------------------------------------------------------------------------------
+// "translateAdr" is a little helper function to translate a virtual address to
+// a physical address. It first checks if the address is in the physical memory
+// range. If so, it is already a physical address and we can return it. If not, 
+// we look for the global TLB module and ask it to translate the address. If 
+// there is no global TLB module, we cannot translate the address. Also, if the
+// global TLB module cannot translate the address, we return false.
+//
+//----------------------------------------------------------------------------------------
+bool translateAdr( T64System *sys, T64Word virtAdr, T64Word *physAdr ) {
+
+    if ( isInPhysMemAdrRange( virtAdr )) {
+
+        *physAdr = virtAdr;
+        return ( true );
+    }
+    else {
+
+        T64GlobalTlb *tlbModule = (T64GlobalTlb *)sys -> lookupByModuleType( MT_GTLB );
+        if ( tlbModule == nullptr ) return ( false );
+
+        return ( tlbModule -> translateAdr( virtAdr, physAdr ));
+    }
+}
+
 }; // namespace
 
 
@@ -354,7 +402,7 @@ void SimWinTlb::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 1 );
-    setWinLimitsForToggle( 0, 8, tlb -> getTlbSize( ), 88, 88 );
+    setWinLimitsForToggle( 0, 8, tlb -> getTlbSize( ), 96, 96 );
     
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
@@ -513,7 +561,7 @@ void SimWinAbsMem::drawBanner( ) {
 
     printRadixField( fmtDesc | FMT_LAST_FIELD );
 
-    if ( ! isAlignedDataAdr( getCurrentItemAdr( ), 8 )) {
+    if ( ! isAlignedAdr( getCurrentItemAdr( ), 8 )) {
         
         setCurrentItemAdr( rounddown( getCurrentItemAdr( ), 8 ));
     }   
@@ -537,19 +585,6 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
     uint32_t    fmtDesc     = FMT_DEF_ATTR;
     uint32_t    limit       = getLineIncrementItemAdr( ) - 1; // ??? why - 1?
 
-    if ( itemAdr > T64_MAX_PHYS_MEM_LIMIT ) {
-
-        T64GlobalTlb *tlbModule = 
-            (T64GlobalTlb *)glb -> system -> lookupByModuleType( MT_GTLB );
-        
-        if ( tlbModule == nullptr ) {
-
-        }
-
-        if ( tlbModule -> translateAdr( itemAdr, &itemAdr )) {
-
-        }
-    }
 
     T64Memory   *mem = (T64Memory *) 
                             glb -> system -> lookupByAdr( getCurrentItemAdr( ));
@@ -566,64 +601,76 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
 
         for ( int i = 0; i < limit; i = i + 4 ) {
 
-            // ??? how about we add the option for translating the address ?
-            // ??? if we have a TLB module, then we could also manage virtual 
-            // addresses.
-        
-            uint32_t val = 0;
-            glb -> system -> busOpRead( -1, 
+            if ( translateAdr( glb -> system, itemAdr, &itemAdr )) {
+
+                uint32_t val = 0;
+                if ( glb -> system -> busOpRead( -1, 
                                         itemAdr + i, 
                                         (uint8_t *)&val, 
-                                        sizeof( val ));
+                                        sizeof( val ))) {
 
-            copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
-            printNumericField( val, fmtDesc | FMT_HEX_4_4 );
-            printTextField((char *) "   " );
+                    copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
+                    printNumericField( val, fmtDesc | FMT_HEX_4_4 );
+                    printTextField((char *) "   " );
+                }
+            }
         }
     }
     else if ( getWinToggleVal( ) == 1 ) {
 
         for ( int i = 0; i < limit; i = i + 8 ) {
-        
-            T64Word val = 0;
-            glb -> system -> busOpRead( -1, 
+
+            if ( translateAdr( glb -> system, itemAdr, &itemAdr )) {
+
+                T64Word val = 0;
+                if ( glb -> system -> busOpRead( -1, 
                                         itemAdr + i, 
                                         (uint8_t *)&val, 
-                                        sizeof( val ));
+                                        sizeof( val ))) {
 
-            copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
-            printNumericField( val, fmtDesc | FMT_HEX_4_4_4_4 );
-            printTextField((char *) "   " );
+                    copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
+                    printNumericField( val, fmtDesc | FMT_HEX_4_4_4_4 );
+                    printTextField((char *) "   " );
+                }
+            }
         }
     }
     else if ( getWinToggleVal( ) == 2 ) {
 
         for ( int i = 0; i < limit; i = i + 4 ) {
-        
-            uint32_t val = 0;
-            glb -> system -> busOpRead( -1, 
+
+            if ( translateAdr( glb -> system, itemAdr, &itemAdr )) {
+
+                uint32_t val = 0;
+                if ( glb -> system -> busOpRead( -1, 
                                         itemAdr + i, 
                                         (uint8_t *)&val, 
-                                        sizeof( val ));
+                                        sizeof( val ))) {
 
-            copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
-            printNumericField( val, fmtDesc | FMT_DEC_32 );
-            printTextField((char *) "   " );
+                    copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
+                    printNumericField( val, fmtDesc | FMT_DEC_32 );
+                    printTextField((char *) "   " );
+                }
+            }
         }
     }
     else if ( getWinToggleVal( ) == 3 ) {
 
         for ( int i = 0; i < limit; i = i + 4 ) {
-        
-            uint32_t val = 0;
-            glb -> system -> busOpRead( -1,
+
+            if ( translateAdr( glb -> system, itemAdr, &itemAdr )) {
+
+                uint32_t val = 0;
+                if ( glb -> system -> busOpRead( -1, 
                                         itemAdr + i, 
                                         (uint8_t *)&val, 
-                                        sizeof( val ));
+                                        sizeof( val ))) {
 
-            copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
-            printNumericField( val, fmtDesc | FMT_ASCII_4 );
-            printTextField((char *) "   " );
+                    copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
+                    printNumericField( val, fmtDesc | FMT_ASCII_4 );
+                    printTextField((char *) "   " );
+                }
+            }
         }
     }
 }
@@ -861,15 +908,22 @@ void SimWinText::drawBanner( ) {
 // The draw line method for the text file window. We print the file content line 
 // by line. A line consists of the line number followed by the text. This routine
 // will first check whether the file is already open. If we cannot open the file, 
-// we would now print an error message into the screen. This is also the time where
-// we actually figure out how many lines are on the file so that we can set the 
-// limitItemAdr field of the window object.
+// we would now print an error message into the screen. This is also the time 
+// where we actually figure out how many lines are on the file so that we can set
+// the limitItemAdr field of the window object.
 //
-// ??? we still may have a bug in that tabs fool the padLine execution.
+// A final twist is the problems with tabs in a text file. We have no idea what
+// the actual size of a line is until we read it. We need to read the line, 
+// expand the tabs and calculate the actual line size. If the line size is larger 
+// than the window width, we need to truncate the line.  There are two global
+// ENV variables that control the tab size and the text line width. We need to
+// take these into account when calculating the line size and truncating the line.
+//
 //----------------------------------------------------------------------------------------
 void SimWinText::drawLine( T64Word index ) {
     
     uint32_t    fmtDesc = FMT_DEF_ATTR;
+    int         tabSize = glb -> env -> getEnvVarInt((char *) ENV_WIN_TEXT_TAB_SIZE );
     char        lineBuf[ MAX_TEXT_LINE_SIZE ];
     int         lineSize = 0;
 
@@ -881,6 +935,8 @@ void SimWinText::drawLine( T64Word index ) {
   
         lineSize = readTextFileLine( index + 1, lineBuf, sizeof( lineBuf ));
         if ( lineSize > 0 ) {
+
+            lineSize = calculateStrLen( lineBuf, tabSize ); 
            
             if ( lineSize > getWinSize( 0 ).actualCol )
                 lineSize = getWinSize( 0 ).actualCol;
@@ -894,9 +950,9 @@ void SimWinText::drawLine( T64Word index ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "openTextFile" is called every time we want to print a line. If the file is not
-// opened yet, it will be opened now and while we are at it, we will also count the
-// source lines for setting the limit in the scrollable window.
+// "openTextFile" is called every time we want to print a line. If the file is 
+// not opened yet, it will be opened now and while we are at it, we will also 
+// count the source lines for setting the limit in the scrollable window.
 //
 //----------------------------------------------------------------------------------------
 bool SimWinText::openTextFile( ) {
@@ -907,8 +963,10 @@ bool SimWinText::openTextFile( ) {
         if ( textFile != nullptr ) {
            
             while( ! feof( textFile )) {
+
+                int c = fgetc( textFile );
                 
-                if( fgetc( textFile ) == '\n' ) fileSizeLines++;
+                if(( c == '\n' ) || ( c == '\r' )) fileSizeLines++;
             }
             
             lastLinePos = 0;
@@ -920,13 +978,16 @@ bool SimWinText::openTextFile( ) {
     return( textFile != nullptr );
 }
 
+
+
 //----------------------------------------------------------------------------------------
-// "readTextFileLine" will get a line from the text file. Unfortunately, we do not 
-// have a line concept in a text file. In the worst case, we read from the beginning
-// of the file, counting the lines read. To speed up a little, we remember the last
-// line position read. If the requested line position is larger than the last position,
-// we just read ahead. If it is smaller, no luck, we start to read from zero until we
-// match. If equal, we just re-read the current line.
+// "readTextFileLine" will get a line from the text file. Unfortunately, we do 
+// not have a line concept in a text file. In the worst case, we read from the 
+// beginning of the file, counting the lines read. To speed up a little, we 
+// remember the last line position read. If the requested line position is larger
+// than the last position, we just read ahead. If it is smaller, no luck, we 
+// start to read from zero until we match. If equal, we just re-read the current
+// line.
 //
 //----------------------------------------------------------------------------------------
 int SimWinText::readTextFileLine( int linePos, char *lineBuf, int bufLen  ) {

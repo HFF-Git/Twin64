@@ -452,6 +452,7 @@ void SimWinDisplay::reDraw( ) {
         }
     }
     
+    cmdWin -> setColumns( maxColumnsNeeded );
     cmdWin -> reDraw( );
     glb -> console -> setAbsCursor( maxRowsNeeded, 1 );
     winReFormatPending = false;
@@ -812,7 +813,7 @@ int SimWinDisplay::getFreeWindowSlot( ) {
     throw( ERR_OUT_OF_WINDOWS );
 }
 
-void SimWinDisplay::windowNewAbsMem( int modNum, T64Word adr ) {
+void SimWinDisplay::windowNewMemData( int modNum, T64Word adr ) {
 
     int slot = getFreeWindowSlot( );
 
@@ -825,7 +826,7 @@ void SimWinDisplay::windowNewAbsMem( int modNum, T64Word adr ) {
     currentWinNum = slot;
 }
 
-void SimWinDisplay::windowNewAbsCode( int modNum, T64Word adr ){
+void SimWinDisplay::windowNewMemCode( int modNum, T64Word adr ){
 
     int slot = getFreeWindowSlot( );
 

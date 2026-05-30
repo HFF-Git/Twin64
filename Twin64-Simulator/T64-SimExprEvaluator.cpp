@@ -270,6 +270,31 @@ void logicalOp( SimExpr *rExpr, SimExpr *lExpr, logicalOpId op ) {
     }
 }
 
+//----------------------------------------------------------------------------------------
+// "translateAdr" is a little helper function to translate a virtual address to
+// a physical address. It first checks if the address is in the physical memory
+// range. If so, it is already a physical address and we can return it. If not, 
+// we look for the global TLB module and ask it to translate the address. If 
+// there is no global TLB module, we cannot translate the address. Also, if the
+// global TLB module cannot translate the address, we return false.
+//
+//----------------------------------------------------------------------------------------
+bool translateAdr( T64System *sys, T64Word virtAdr, T64Word *physAdr ) {
+
+    if ( isInPhysMemAdrRange( virtAdr )) {
+
+        *physAdr = virtAdr;
+        return ( true );
+    }
+    else {
+
+        T64GlobalTlb *tlbModule = (T64GlobalTlb *)sys -> lookupByModuleType( MT_GTLB );
+        if ( tlbModule == nullptr ) return ( false );
+
+        return ( tlbModule -> translateAdr( virtAdr, physAdr ));
+    }
+}
+
 }; // namespace
 
 
@@ -384,7 +409,12 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
         
         parseExpr( rExpr );
         if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
-        
+
+        if ( ! translateAdr( glb -> system, rExpr -> u.val, &rExpr -> u.val )) 
+            throw ( ERR_INVALID_ADDR );
+
+        if ( ! isAlignedAdr( rExpr -> u.val, len )) throw ( ERR_UNALIGNED_ADDR );
+
         T64Word data;
         if ( glb -> system -> busOpRead( -1, 
                                          rExpr -> u.val, 
@@ -396,6 +426,7 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
             rExpr -> typ = TYP_NUM;
             rExpr -> u.val = data;
         }
+        else throw ( ERR_MEM_OP_FAILED );
                                                  
         if ( tok -> isToken( TOK_RBRACK )) tok -> nextToken( );
         else throw ( ERR_EXPECTED_RBRACK );

@@ -1387,9 +1387,9 @@ void checkOfsAlignment( int ofs, uint32_t instrFlags ) {
 
     if ( ! ( instrFlags & IF_B )) { 
 
-        if ( ! ((( instrFlags & IF_H ) && ( isAlignedDataAdr( ofs, 2 ))) ||
-            (( instrFlags & IF_W ) && ( isAlignedDataAdr( ofs, 4 ))) ||
-            (( instrFlags & IF_D ) && ( isAlignedDataAdr( ofs, 8 ))))) 
+        if ( ! ((( instrFlags & IF_H ) && ( isAlignedAdr( ofs, 2 ))) ||
+            (( instrFlags & IF_W ) && ( isAlignedAdr( ofs, 4 ))) ||
+            (( instrFlags & IF_D ) && ( isAlignedAdr( ofs, 8 ))))) 
             throw( ERR_INVALID_OFS );
     }
 }

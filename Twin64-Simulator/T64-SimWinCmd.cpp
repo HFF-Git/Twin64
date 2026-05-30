@@ -173,14 +173,14 @@ void insertChar( char *buf, int ch, int *strSize, int *pos ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Line sanitizing. We cannot just print out whatever is in the line buffer, since 
-// it may contains dangerous escape sequences, which would garble our terminal 
-// screen layout. In the command window we just allow "safe" escape sequences, 
-// such as changing the font color and so on. When we encounter an escape character
-// followed by a "[" character we scan the escape sequence until the final character,
-// which lies between 0x40 and 0x7E. Based on the last character, we distinguish 
-// between "safe" and "unsafe" escape sequences. In the other cases, we just copy
-// input to output.
+// Line input sanitizing. We cannot just print out whatever is in the line buffer, 
+// since it may contains dangerous escape sequences, which would garble our 
+// terminal screen layout. In the command window we just allow "safe" escape 
+// sequences, such as changing the font color and so on. When we encounter an 
+// escape character followed by a "[" character we scan the escape sequence until
+// the final character, which lies between 0x40 and 0x7E. Based on the last 
+// character, we distinguish between "safe" and "unsafe" escape sequences. In 
+// the other cases, we just copy input to output.
 //
 //----------------------------------------------------------------------------------------
 bool isSafeFinalByte( char finalByte ) {
@@ -227,6 +227,54 @@ void sanitizeLine( const char *inputStr, char *outputStr ) {
     }
     
     *dst = '\0';
+}
+
+//----------------------------------------------------------------------------------------
+// When adding a module, we have a number of error conditions that can occur. 
+// This little helper function maps the error number to an error message and 
+// throws an exception.
+//
+//----------------------------------------------------------------------------------------
+void throwAddModuleErr( int errNum ) {
+
+    switch ( errNum ) {
+
+        case  0: return;
+
+        case -1: 
+        case -2: throw( SimErrMsgId( ERR_MODULE_TABLE_FULL ));
+
+        case -3: throw( SimErrMsgId( ERR_MODULE_RANGE_OVERLAP ));
+
+        case -4: throw( SimErrMsgId( ERR_MODULE_ALREADY_USED ));
+        
+        default: throw( SimErrMsgId( ERR_CREATE_MODULE ));
+    }
+}
+
+//----------------------------------------------------------------------------------------
+// "translateAdr" is a little helper function to translate a virtual address to
+// a physical address. It first checks if the address is in the physical memory
+// range. If so, it is already a physical address and we can return it. If not, 
+// we look for the global TLB module and ask it to translate the address. If 
+// there is no global TLB module, we cannot translate the address. Also, if the
+// global TLB module cannot translate the address, we return false.
+//
+//----------------------------------------------------------------------------------------
+bool translateAdr( T64System *sys, T64Word virtAdr, T64Word *physAdr ) {
+
+    if ( isInPhysMemAdrRange( virtAdr )) {
+
+        *physAdr = virtAdr;
+        return ( true );
+    }
+    else {
+
+        T64GlobalTlb *tlbModule = (T64GlobalTlb *)sys -> lookupByModuleType( MT_GTLB );
+        if ( tlbModule == nullptr ) return ( false );
+
+        return ( tlbModule -> translateAdr( virtAdr, physAdr ));
+    }
 }
 
 }; // namespace
@@ -317,7 +365,8 @@ char *SimCmdHistory::getCmdLine( int cmdRef, int *cmdId ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The command history maintains a command counter and number, which we return here.
+// The command history maintains a command counter and number, which we return 
+//here.
 //
 //----------------------------------------------------------------------------------------
 int SimCmdHistory::getCmdNum( ) {
@@ -343,7 +392,7 @@ SimCommandsWin::SimCommandsWin( SimGlobals *glb ) : SimWin( glb ) {
     
     this -> glb = glb;
     
-    tok        = new SimTokenizerFromString( );
+    tok         = new SimTokenizerFromString( );
     eval        = new SimExprEvaluator( glb, tok );
     hist        = new SimCmdHistory( );
     winOut      = new SimWinOutBuffer( );
@@ -354,8 +403,8 @@ SimCommandsWin::SimCommandsWin( SimGlobals *glb ) : SimWin( glb ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The default values are the initial settings when windows is brought up the first
-// time, or for the WDEF command.
+// The default values are the initial settings when windows is brought up the 
+// first time, or for the WDEF command.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::setDefaults( ) {
@@ -364,7 +413,7 @@ void SimCommandsWin::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 1 );
-    setWinLimitsForToggle( 0, 10, 40, 100, 100 );
+    setWinLimitsForToggle( 0, 10, MAX_WIN_ROW_SIZE, 100, MAX_WIN_COL_SIZE );
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
     setWinToggleVal( 0 );
@@ -372,8 +421,8 @@ void SimCommandsWin::setDefaults( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The banner line for command window. For now, we just label the banner line and 
-// show the system state plus the WIN mode stack info.
+// The banner line for command window. For now, we just label the banner line 
+// and show the system state plus the WIN mode stack info.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::drawBanner( ) {
@@ -439,9 +488,9 @@ void SimCommandsWin::clearCmdWin( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "readCmdLine" is used by the command line interpreter to get the command. Since 
-// we run in raw mode, the basic handling of backspace, carriage return, relevant
-// escape sequences, etc. needs to be processed in this routine directly. 
+// "readCmdLine" is used by the command line interpreter to get the command. 
+// Since we run in raw mode, the basic handling of backspace, carriage return, 
+// relevant escape sequences, etc. needs to be processed in this routine directly. 
 // Characters other than the special characters are piled up in a local buffer 
 // until we read in a carriage return. The core is a state machine that examines 
 // a character read to analyze whether this is a special character or sequence. 
@@ -460,25 +509,25 @@ void SimCommandsWin::clearCmdWin( ) {
 //
 // The prompt and the command string along with a carriage return are appended to
 // the command output buffer. Before returning to the caller, the last thing to do
-//is to remove any comment from the line.
+// is to remove any comment from the line.
 //
 // The left and right arrows move the cursor in the command line. Backspacing and
 // inserting will then take place at the current cursor position shifting any 
 // content to the right of the cursor when inserting and shifting to the left 
 // when deleting.
 //
-// On MS windows a special character indicates the start of a special button pressed. 
-// We currently recognize only the cursor keys.
+// On MS windows a special character indicates the start of a special button 
+// pressed. We currently recognize only the cursor keys.
 //
-// We also have the option of a prefilled command buffer for editing a command line 
-// before hitting return. This option is used by the REDO command which lists a 
-// previously entered command presented for editing.
+// We also have the option of a prefilled command buffer for editing a command 
+// line before hitting return. This option is used by the REDO command which 
+// lists a previously entered command presented for editing.
 //
-// Finally, there is the cursor up and down key. These keys are used to scroll the 
-// command line window. This is the case where we need to get lines from the output 
-// buffer to fill from top or bottom of the command window display. We also need 
-// to ensure that when a new command line is read in, we are with our cursor at 
-// the input line, right after the prompt string.
+// Finally, there is the cursor up and down key. These keys are used to scroll 
+// the command line window. This is the case where we need to get lines from the
+// output buffer to fill from top or bottom of the command window display. We 
+// also need to ensure that when a new command line is read in, we are with our 
+// cursor at the input line, right after the prompt string.
 //
 //----------------------------------------------------------------------------------------
 int SimCommandsWin::readCmdLine( char *cmdBuf, int initialCmdBufLen, char *promptBuf ) {
@@ -711,9 +760,9 @@ void SimCommandsWin::cmdLineError( SimErrMsgId errNum, char *argStr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "promptYesNoCancel" is a simple function to print a prompt string with a decision
-// question. The answer can be yes/no or cancel. A positive result is a "yes" a 
-// negative result a "no", anything else a "cancel".
+// "promptYesNoCancel" is a simple function to print a prompt string along with
+// a decision question. The answer can be yes/no or cancel. A positive result is
+// a "yes" a negative result a "no", anything else a "cancel".
 //
 //----------------------------------------------------------------------------------------
 int SimCommandsWin::promptYesNoCancel( char *promptStr ) {
@@ -772,8 +821,8 @@ SimTokId SimCommandsWin::getCurrentCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Print the stack info data. In the command window line, we will have a field to
-// the very right, which is on when we are in windows mode. It will show which 
+// Print the stack info data. In the command window line, we will have a field 
+// to the very right, which is on when we are in windows mode. It will show which 
 // stacks are current used, regardless whether they a visible or not.
 //
 //----------------------------------------------------------------------------------------
@@ -813,9 +862,9 @@ void SimCommandsWin::printStackInfoField( uint32_t fmtDesc, int row, int col ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Our friendly welcome message with the actual program version. We also set some of the
-// environment variables to an initial value. Especially string variables need to be set 
-// as they are not initialized from the environment variable table.
+// Our friendly welcome message with the actual program version. We also set some
+// of the environment variables to an initial value. Especially string variables 
+// need to be set as they are not initialized from the environment variable table.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::printWelcome( ) {
@@ -861,13 +910,15 @@ int SimCommandsWin::buildCmdPrompt( char *promptStr, int promptStrLen ) {
     else return ( snprintf( promptStr, promptStrLen, "->" ));
 }
 
+
+
 //----------------------------------------------------------------------------------------
 // "addProcModule" parses the parameters for a PROC module. We are entered with 
 // the token being the module type keyword. The routine loops over the key/value
 // pairs to get all module type info. Omitted key/value pairs are set to reasonable
 // defaults.
 //
-//  NM PROC, <modNum>
+//  NMOD PROC, <modNum>
 //
 // Processors are threads, so we need to start them after creating them. The 
 // "startModule" method will create a thread for the processor and start it. 
@@ -917,38 +968,13 @@ void SimCommandsWin::addProcModule( int modNum ) {
                                         T64_CPU_T_NIL,
                                         tlbType,
                                         cacheType );
-    
-    switch ( glb -> system -> addModule( p ) ) {
 
-        case 0: {
+    int rStat = glb -> system -> addModule( p );   
 
-             return;
-        }
+    if ( rStat != 0 ) {
 
-        case -1: 
-        case -2: {
-
-            delete p;
-            throw( SimErrMsgId( ERR_MODULE_TABLE_FULL ));
-        }
-
-        case -3: {
-
-            delete p;
-            throw( SimErrMsgId( ERR_MODULE_RANGE_OVERLAP ));
-        }
-
-        case -4: {
-
-            delete p;
-            throw( SimErrMsgId( ERR_MODULE_ALREADY_USED ));
-        }
-
-        default: {
-
-            delete p;
-            throw( SimErrMsgId( ERR_CREATE_MODULE ));
-        }
+        delete p;
+        throwAddModuleErr( rStat );
     }
 }
 
@@ -960,7 +986,7 @@ void SimCommandsWin::addProcModule( int modNum ) {
 //
 // Memory modules are shared memory object, not threads.
 //
-//  NM MEM, <modNum>, <memType>, SPA_ADR=xxx, SPA_LEN=xxx, ...
+//  NMOD MEM, <modNum>, <memType>, SPA_ADR=xxx, SPA_LEN=xxx, ...
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addMemModule( int modNum ) {
@@ -1032,44 +1058,19 @@ void SimCommandsWin::addMemModule( int modNum ) {
                                   spaAdr,
                                   spaLen );
 
-    switch ( glb -> system -> addModule( m ) ) {
+    int rStat = glb -> system -> addModule( m );   
 
-        case 0: {
+    if ( rStat != 0 ) {
 
-             return;
-        }
-
-        case -1: 
-        case -2: {
-
-            delete m;
-            throw( SimErrMsgId( ERR_MODULE_TABLE_FULL ));
-        }
-
-        case -3: {
-
-            delete m;
-            throw( SimErrMsgId( ERR_MODULE_RANGE_OVERLAP ));
-        }
-
-        case -4: {
-
-            delete m;
-            throw( SimErrMsgId( ERR_MODULE_ALREADY_USED ));
-        }
-
-        default: {
-
-            delete m;
-            throw( SimErrMsgId( ERR_CREATE_MEM_MODULE ));
-        }
-    } 
+        delete m;
+        throwAddModuleErr( rStat );
+    }
 }
 
 //----------------------------------------------------------------------------------------
 // "AddTlbModule" will add our global TLB module.
 //
-//  NM TLB, <modNum>, <tlbType>
+//  NMOD TLB, <modNum>, <tlbType>
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addTlbModule( int modNum ) {
 
@@ -1093,54 +1094,29 @@ void SimCommandsWin::addTlbModule( int modNum ) {
     tok -> checkEOS( );
 
     T64GlobalTlb *t = new T64GlobalTlb( MT_GTLB, modNum, T64_TK_GLOBAL_TLB, tlbType );
-    
-    switch ( glb -> system -> addModule( t )) {
 
-        case 0: {
+    int rStat = glb -> system -> addModule( t );   
 
-             return;
-        }
+    if ( rStat != 0 ) {
 
-        case -1: 
-        case -2: {
-
-            delete t;
-            throw( SimErrMsgId( ERR_MODULE_TABLE_FULL ));
-        }
-
-        case -3: {
-
-            delete t;
-            throw( SimErrMsgId( ERR_MODULE_RANGE_OVERLAP ));
-        }
-
-        case -4: {
-
-            delete t;
-            throw( SimErrMsgId( ERR_MODULE_ALREADY_USED ));
-        }
-
-        default: {
-
-            delete t;
-            throw( SimErrMsgId( ERR_CREATE_MODULE ));
-        }
+        delete t;
+        throwAddModuleErr( rStat );
     }
 }
 
 
 //----------------------------------------------------------------------------------------
 // "addIoModule" parses the parameters for an IO module. We are entered with the
-// token being the module type keyword. The routine loops over the key/value pairs
-// to get all module type info. Omitted key/value pairs are set to reasonable
-// defaults.
+// token being the module type keyword. The routine loops over the key/value 
+// pairs to get all module type info. Omitted key/value pairs are set to their
+// reasonable defaults.
 //
 //  NM IO, <modNum>, SPA_ADR=xxx, SPA_LEN=xxx, ...
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addIoModule( int modNum ) {
 
-    // ??? analog to mem...
+    // ??? analog to proc...
 
 }
 
@@ -1157,25 +1133,6 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
     T64Word limit        = roundup(( index + len ), sizeof( T64Word ));
     int     wordsPerLine = 4;
 
-    if (( index > T64_MAX_PHYS_MEM_LIMIT ) ||
-        ( limit > T64_MAX_PHYS_MEM_LIMIT )) {
-
-        T64GlobalTlb *tlbModule = 
-            (T64GlobalTlb *)glb -> system -> lookupByModuleType( MT_GTLB );
-        
-        if ( tlbModule == nullptr ) {
-
-        }
-
-        if ( tlbModule -> translateAdr( index, &index )) {
-
-        }
-
-        if ( tlbModule -> translateAdr( limit, &limit )) {
-
-        }
-    }
-
     while ( index < limit ) {
 
         winOut -> printNumber( index, FMT_HEX_2_4_4 );
@@ -1185,11 +1142,19 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
             
             if ( index < limit ) {
 
-                T64Word val = 0;
-                if ( glb -> system -> busOpRead( -1,
-                                                 index, 
-                                                 (uint8_t *) &val, 
-                                                 sizeof( val ))) {
+                bool    rStat = translateAdr( glb -> system, index, &index );
+                T64Word val   = 0;
+
+                if ( rStat ) {
+                
+                    rStat = glb -> system -> busOpRead( -1,
+                                                        index, 
+                                                        (uint8_t *) &val, 
+                                                        sizeof( val ));
+                                                    
+                }
+
+                if ( rStat ) {
 
                     copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
 
@@ -1200,13 +1165,13 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
                     else 
                         winOut -> printNumber( val, FMT_INVALID_NUM | FMT_HEX_4_4_4_4 );
 
-                    winOut -> writeChars( " " );   
+                    winOut -> writeChars( " " ); 
                 }
                 else {
 
                     winOut -> printNumber( val, FMT_INVALID_NUM | FMT_HEX_4_4_4_4 );
                     winOut -> writeChars( " " );  
-                }           
+                }
             }
             
             winOut -> writeChars( " " );
@@ -1220,8 +1185,8 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
 }
 
 //----------------------------------------------------------------------------------------
-// Display absolute memory content as code shown in assembler syntax. There is one
-// word per line.
+// Display absolute memory content as code shown in assembler syntax. There is 
+// one word per line.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::displayAbsMemContentAsCode( T64Word adr, T64Word len ) {
@@ -1231,38 +1196,22 @@ void SimCommandsWin::displayAbsMemContentAsCode( T64Word adr, T64Word len ) {
     T64Word  instr  = 0;
     char     buf[ MAX_TEXT_FIELD_LEN ];
 
-    if (( index > T64_MAX_PHYS_MEM_LIMIT ) ||
-        ( limit > T64_MAX_PHYS_MEM_LIMIT )) {
-
-        T64GlobalTlb *tlbModule = 
-            (T64GlobalTlb *)glb -> system -> lookupByModuleType( MT_GTLB );
-        
-        if ( tlbModule == nullptr ) {
-
-        }
-
-        if ( tlbModule -> translateAdr( index, &index )) {
-
-        }
-
-        if ( tlbModule -> translateAdr( limit, &limit )) {
-
-        }
-    }
-
     while ( index < limit ) {
 
         winOut -> printNumber( index, FMT_HEX_2_4_4 );
         winOut -> writeChars( ": " );
 
-        // ??? how about we add the option for translating the address ?
-        // ??? if we have a TLB module, then we could also manage virtual 
-        // addresses.
+        bool rStat = translateAdr( glb -> system, index, &index );
 
-        if ( glb -> system -> busOpRead( -1, 
-                                         index, 
-                                         (uint8_t *) &instr, 
-                                         sizeof( uint32_t))) {
+        if ( rStat ) {
+
+            rStat = glb -> system -> busOpRead( -1,
+                                                    index, 
+                                                    (uint8_t *) &instr, 
+                                                    sizeof( uint32_t));
+        }
+
+        if ( rStat ) {
 
             copyEndianAware((uint8_t *) &instr, (uint8_t *) &instr, sizeof( instr ));
 
@@ -1278,8 +1227,8 @@ void SimCommandsWin::displayAbsMemContentAsCode( T64Word adr, T64Word len ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseWinNumRange" will parse a window number or a range of window numbers. It
-// is entered with the token being either "ALL" or a number. The result is the
+// "parseWinNumRange" will parse a window number or a range of window numbers. 
+// It is entered with the token being either "ALL" or a number. The result is the
 // start and end window numbers in the range. Used by quite a few window commands.
 //
 //----------------------------------------------------------------------------------------
@@ -1332,8 +1281,8 @@ void SimCommandsWin::parseWinNumRange( int *winNumStart, int *winNumEnd ) {
 
 //----------------------------------------------------------------------------------------
 // "execCmdsFromFile" will open a text file and interpret each line as a command. 
-// This routine is used by the "XF" command and also as the handler for the program
-// argument option to execute a file before entering the command loop.
+// This routine is used by the "XF" command and also as the handler for the 
+// program argument option to execute a file before entering the command loop.
 //
 // XF "<file-path>"
 //
@@ -1530,7 +1479,9 @@ void SimCommandsWin::envCmd( ) {
             } 
             else throw ( ERR_ENV_VAR_NOT_FOUND );
         }
-        else {
+        else if ( tok -> isToken( TOK_COMMA )) {
+
+            tok -> nextToken( );
 
             if ( tok -> isToken( TOK_MINUS )) {
 
@@ -1548,7 +1499,10 @@ void SimCommandsWin::envCmd( ) {
                 else if ( rExpr.typ == TYP_STR )  
                     env -> setEnvVar( envName, rExpr.u.str );
             }
+
+            tok -> checkEOS( );
         }
+        else throw ( ERR_EXPECTED_COMMA );
     }
 }
 
@@ -1569,7 +1523,7 @@ void SimCommandsWin::execFileCmd( ) {
 // we just call a loader routine which places the segments in physical memory.
 // One day, we may have more structure to the command and what it is loading.
 //
-// LF "<filepath>"
+// LOADELF "<filepath>"
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::loadElfFileCmd( ) {
@@ -1582,7 +1536,7 @@ void SimCommandsWin::loadElfFileCmd( ) {
 // Add a module to the system. This command will add a module to the system. It is 
 // typically used during startup when all modules are created. 
 // 
-//  NM "TYP" = <type> [ { "," <key> "=" <value> }* ]
+//  NMOD "TYP" = <type> [ { "," <key> "=" <value> }* ]
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addModuleCmd( ) {
@@ -1611,7 +1565,7 @@ void SimCommandsWin::addModuleCmd( ) {
 // windows associated are removed, then the object itself is removed from the 
 // module map. The garbage collector does the (sad) rest.
 //
-//  RM <modNum> | ALL
+//  RMOD <modNum> | ALL
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::removeModuleCmd( ) {
@@ -1659,7 +1613,7 @@ void SimCommandsWin::removeModuleCmd( ) {
 // Display Module Table command. The simulator features a system bus to which the 
 // modules are plugged in. This command shows all known modules.
 //
-//  DM [ <mNum> ]
+//  DMOD [ <mNum> ]
 //
 // ??? do formatting columns a little bit more elegant.
 //----------------------------------------------------------------------------------------
@@ -1720,69 +1674,6 @@ void SimCommandsWin::displayModuleCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Display Window Stack Table command. It is quite handy to find out about all 
-// windows, especially the ones we disabled.
-//
-//  DW [ <sNum> ]
-//
-//----------------------------------------------------------------------------------------
-void SimCommandsWin::displayWindowCmd( ) {
-
-    int sNum = -1;
-    
-    if ( tok -> tokTyp( ) == TYP_NUM ) {
-
-        sNum = eval -> acceptNumExpr( ERR_EXPECTED_WIN_ID, 1, MAX_WIN_STACKS );
-        sNum --;
-
-        tok -> checkEOS( );
-    }
-    else if ( ! tok -> isToken( TOK_EOS )) {
-        
-        throw ( ERR_INVALID_ARG );
-    }
-
-    winOut -> writeChars( "%-10s%-10s%-10s%-10s%-10s%-10s\n", 
-                            "Name", "Stack", "Id", "WType", "Mod", "MType" );
-
-    for ( int i = 0; i < MAX_WINDOWS; i++ ) {
-
-            if ( glb -> winDisplay -> validWindowNum( i )) {
-
-                if (( sNum == -1 ) || 
-                    ( glb -> winDisplay -> getWinStackNum( i ) == sNum )) {
-
-                    winOut -> writeChars( "%-10s", 
-                                          glb -> winDisplay -> getWinName( i ));
-                    winOut -> writeChars( "%-10d", 
-                                          glb -> winDisplay -> getWinStackNum( i ) + 1 );
-                    
-                    winOut -> writeChars( "%-10d", i + 1);
-
-                    winOut -> writeChars( "%-10s", 
-                                          glb -> winDisplay -> getWinTypeName( i ));
-
-                    int modNum = glb -> winDisplay -> getWinModNum( i );
-                    
-                    T64Module *mPtr = glb -> system -> lookupByModNum( modNum);
-                    if ( mPtr != nullptr ) {
-
-                        winOut -> writeChars( "%-10d", modNum );
-                        winOut -> writeChars( "%-10s", mPtr -> getModuleTypeName( ));
-                    }
-                    else {
-
-                        winOut -> writeChars( "%-10s", "N/A" );
-                        winOut -> writeChars( "%-10s", "N/A" );
-                    }
-                
-                    winOut -> writeChars( "\n" );
-                }
-            }
-        } 
-}
-
-//----------------------------------------------------------------------------------------
 // Reset command. This command resets a module or the entire system.
 //
 //  RESET <modNum> | ALL
@@ -1790,7 +1681,7 @@ void SimCommandsWin::displayWindowCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::resetCmd( ) {
 
-    int modNum     = -1;
+    int modNum = -1;
     
     if ( tok -> tokTyp( ) == TYP_NUM ) {
 
@@ -1809,7 +1700,7 @@ void SimCommandsWin::resetCmd( ) {
 
         for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
-            glb -> system -> resetModule( modNum );
+            glb -> system -> resetModule( i );
         }
     }
     else glb -> system -> resetModule( modNum );
@@ -1832,9 +1723,6 @@ void SimCommandsWin::haltCmd( ) {
         modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 
                                         0, 
                                         MAX_MOD_MAP_ENTRIES );
-
-        if ( glb -> system -> getModuleType( modNum ) != MT_PROC ) 
-            throw( ERR_EXPCTED_PROC_MODULE );
     }
     else if ( tok -> isToken( TOK_ALL )) {
 
@@ -1849,7 +1737,7 @@ void SimCommandsWin::haltCmd( ) {
 
         for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
-            glb -> system -> haltModule( modNum );
+            glb -> system -> haltModule( i );
         }
     }
     else glb -> system -> haltModule( modNum );
@@ -1861,9 +1749,6 @@ void SimCommandsWin::haltCmd( ) {
 // current processor window module number. The default number of steps is one.
 //
 //  S [ <steps> [ "," <modNum> ]]
-//
-// ??? a step should only concern halted processors. We explicitly only deal 
-// with one processor.
 //
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 
@@ -1886,16 +1771,10 @@ void SimCommandsWin::stepCmd( ) {
         
             tok -> nextToken( );
             modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MODULES - 1 );
-
-            if ( glb -> system -> getModuleType( modNum ) != MT_PROC ) 
-                throw( ERR_EXPCTED_PROC_MODULE );
     }
+    else modNum = glb -> winDisplay -> getCurrentWinModNum( );
 
     tok -> checkEOS( );
-
-    if ( modNum == -1 ) modNum = glb -> winDisplay -> getCurrentWinModNum( );
-    if ( modNum == -1 ) throw( ERR_EXPCTED_PROC_MODULE );
-
     glb -> system -> execModule( modNum, numOfSteps );
 }
 
@@ -1927,15 +1806,15 @@ void SimCommandsWin::runCmd( ) {
             throw( ERR_EXPCTED_PROC_MODULE );
         }
 
-        // ??? if halted, put into RUN state.
-
-        winOut -> writeChars( "Put module %d into RUN state\n", modNum );
+        // ??? check if halted then put into RUN state.
+        glb -> system -> runModule( modNum );
     }
     else {
 
-        // ??? put all modules into run state
+         for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
-        winOut -> writeChars( "Put all modules into RUN state\n", modNum );
+            glb -> system -> runModule( i );
+        }
     }
 
     tok -> checkEOS( );
@@ -2001,8 +1880,8 @@ void SimCommandsWin::writeLineCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The HIST command displays the command history. Optional, we can only report to
-// a certain depth from the top.
+// The HIST command displays the command history. Optional, we can only report 
+// to a certain depth from the top.
 //
 //  HIST [ depth ]
 //
@@ -2054,12 +1933,12 @@ void SimCommandsWin::doCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// REDO is almost like DO, except that we retrieve the selected command and put it
-// already into the input command line string for the readCmdLine routine. We also 
-// print it without a carriage return. The idea is that it can now be edited. The 
-// edited command is added to the history buffer and then executed. The REDO command
-// itself is not added to the command history stack. If the cmdNum is omitted, REDO 
-// will take the last command entered.
+// REDO is almost like DO, except that we retrieve the selected command and put
+// it already into the input command line string for the readCmdLine routine. We
+// also print it without a carriage return. The idea is that it can now be edited.
+// The edited command is added to the history buffer and then executed. The REDO 
+// command itself is not added to the command history stack. If the cmdNum is 
+// omitted, REDO will take the last command entered.
 //
 //  REDO <cmdNum>
 //
@@ -2092,7 +1971,6 @@ void SimCommandsWin::redoCmd( ) {
 //
 //  ASSERT <boolExpr> [ "," <msg> ]
 //
-// ??? what is the next action ?
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::assertCmd( ) {
 
@@ -2144,14 +2022,14 @@ void SimCommandsWin::checkCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Display absolute memory command. The offset address is a byte address, the 
-// length is measured in bytes, rounded up to the a word size. We accept any 
-// address and length and only check that the offset plus length does not exceed
-// the physical address space. The format specifier will allow for HEX, DECIMAL
-// and CODE. In the case of the code option, the default number format option is
-// used for showing the offset value.
+// Display memory command. The offset address is a byte address, the length is 
+// measured in bytes, rounded up to the a word size. We accept any address and 
+// length and only check that the offset plus length does not exceed the entire 
+// address space. The format specifier will allow for HEX, DECIMAL and CODE. In
+// the case of the code option, the default number format option is used for 
+//showing the offset value.
 //
-//  DA <ofs> [ "," <len> [ "," <fmt> ]]
+//  DM <ofs> [ "," <len> [ "," <fmt> ]]
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::displayAbsMemCmd( ) {
@@ -2200,10 +2078,15 @@ void SimCommandsWin::displayAbsMemCmd( ) {
 //----------------------------------------------------------------------------------------
 // Modify absolute memory command. 
 //
-//  MB <ofs> <val>
-//  MS <ofs> <val>
-//  MW <ofs> <val>
-//  MD <ofs> <val>
+//  MB <ofs>, <val>
+//  MS <ofs>, <val>
+//  MW <ofs>, <val>
+//  MD <ofs>, <val>
+//
+// The offset address is a byte address. We accept any address and check that the
+// address is properly aligned for the access type. We also check that the value
+// fits into the access type. The value is masked to the access type size and 
+// then written to the memory.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::modifyAbsMemCmd( ) {
@@ -2239,29 +2122,20 @@ void SimCommandsWin::modifyAbsMemCmd( ) {
     uint8_t *ptr = (uint8_t *) &val;
     copyEndianAware((uint8_t *) &val, ptr, len );
 
-    if ( adr > T64_MAX_PHYS_MEM_LIMIT ) {
+    if ( translateAdr( glb -> system, adr, &adr )) {
+ 
+        if ( ! glb -> system -> busOpWrite( -1, adr, ptr, len )) {
 
-        T64GlobalTlb *tlbModule = 
-            (T64GlobalTlb *)glb -> system -> lookupByModuleType( MT_GTLB );
-        
-        if ( tlbModule == nullptr ) {
-
-        }
-
-        if ( tlbModule -> translateAdr( adr, &adr )) {
-
+            throw( ERR_MEM_OP_FAILED );
         }
     }
-
-    if ( ! glb -> system -> busOpWrite( -1, adr, ptr, len )) {
-
-        throw( ERR_MEM_OP_FAILED );
-    }
+    else throw( ERR_INVALID_ADDR );
 }
 
 //----------------------------------------------------------------------------------------
-// Modify register command. This command modifies a register within a register set.
-// We must be in windows mode and the current window must be a CPU type window.
+// Modify register command. This command modifies a register within a register 
+// set. We must be in windows mode and the current window must be a CPU type 
+// window.
 //
 //  MR <reg> "," <val>
 //
@@ -2390,6 +2264,70 @@ void SimCommandsWin::winOffCmd( ) {
   
     glb -> winDisplay -> windowsOff( );
 }
+
+//----------------------------------------------------------------------------------------
+// Display Window Stack Table command. It is quite handy to find out about all 
+// windows, especially the ones we disabled.
+//
+//  WLIST [ <sNum> ]
+//
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::displayWindowCmd( ) {
+
+    int sNum = -1;
+    
+    if ( tok -> tokTyp( ) == TYP_NUM ) {
+
+        sNum = eval -> acceptNumExpr( ERR_EXPECTED_WIN_ID, 1, MAX_WIN_STACKS );
+        sNum --;
+
+        tok -> checkEOS( );
+    }
+    else if ( ! tok -> isToken( TOK_EOS )) {
+        
+        throw ( ERR_INVALID_ARG );
+    }
+
+    winOut -> writeChars( "%-10s%-10s%-10s%-10s%-10s%-10s\n", 
+                            "Name", "Stack", "Id", "WType", "Mod", "MType" );
+
+    for ( int i = 0; i < MAX_WINDOWS; i++ ) {
+
+        if ( glb -> winDisplay -> validWindowNum( i )) {
+
+            if (( sNum == -1 ) || 
+                ( glb -> winDisplay -> getWinStackNum( i ) == sNum )) {
+
+                winOut -> writeChars( "%-10s", 
+                                        glb -> winDisplay -> getWinName( i ));
+                winOut -> writeChars( "%-10d", 
+                                        glb -> winDisplay -> getWinStackNum( i ) + 1 );
+                
+                winOut -> writeChars( "%-10d", i + 1);
+
+                winOut -> writeChars( "%-10s", 
+                                        glb -> winDisplay -> getWinTypeName( i ));
+
+                int modNum = glb -> winDisplay -> getWinModNum( i );
+                
+                T64Module *mPtr = glb -> system -> lookupByModNum( modNum);
+                if ( mPtr != nullptr ) {
+
+                    winOut -> writeChars( "%-10d", modNum );
+                    winOut -> writeChars( "%-10s", mPtr -> getModuleTypeName( ));
+                }
+                else {
+
+                    winOut -> writeChars( "%-10s", "N/A" );
+                    winOut -> writeChars( "%-10s", "N/A" );
+                }
+            
+                winOut -> writeChars( "\n" );
+            }
+        }
+    } 
+}
+
 
 //----------------------------------------------------------------------------------------
 // Enable/disable a window stack. If there is no parameter, all stacks are selected, 
@@ -2568,10 +2506,11 @@ void SimCommandsWin::winBackwardCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Window home. Each window has a home item address, which was set at window creation
-// or trough a non-zero value previously passed to this command. The command sets the
-// window item address to this value. The meaning of the item address is window 
-// dependent. The window number is optional, used for user definable windows.
+// Window home. Each window has a home item address, which was set at window 
+// creation or trough a non-zero value previously passed to this command. The 
+// command sets the window item address to this value. The meaning of the item 
+// address is window dependent. The window number is optional, used for user 
+//definable windows.
 //
 //  WH [ <pos> [ "," <winNum> ]]
 //
@@ -2597,9 +2536,9 @@ void SimCommandsWin::winHomeCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Window jump. The window jump command sets the item address to the position argument.
-// The meaning of the item address is window dependent. The window number is optional,
-// used for user definable windows.
+// Window jump. The window jump command sets the item address to the position 
+// argument. The meaning of the item address is window dependent. The window 
+// number is optional, used for user definable windows.
 //
 //  WJ [ <pos> [ "," <winNum> ]]
 //
@@ -2664,9 +2603,9 @@ void SimCommandsWin::winSetRowsCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Set command window lines. The command sets the the number of rows for the command
-// window. The number includes the banner line. If the "lines" argument is omitted, 
-// the window default value will be used. 
+// Set command window lines. The command sets the the number of rows for the 
+// command window. The number includes the banner line. If the "lines" argument 
+// is omitted, the window default value will be used. 
 //
 //  CWL [ <lines> ]
 //
@@ -2720,9 +2659,9 @@ void SimCommandsWin::winCurrentCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// This command toggles through alternate window content, if supported by the window.
-// An example is the cache sets in a two-way associative cache. The toggle command 
-// will just flip through the sets or set a specific set.
+// This command toggles through alternate window content, if supported by the 
+// window. An example is the cache sets in a two-way associative cache. The toggle
+// command will just flip through the sets or set a specific set.
 //
 //  WT [ <winNum> [ "," <toggleVal> ]]
 //
@@ -2757,8 +2696,8 @@ void  SimCommandsWin::winToggleCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// This command exchanges the current user window with the user window specified. It 
-// allows to change the order of the user windows in a stacks.
+// This command exchanges the current user window with the user window specified.
+// It allows to change the order of the user windows in a stacks.
 //
 //  WX <winNum>
 //
@@ -2829,11 +2768,6 @@ void SimCommandsWin::winNewWinCmd( ) {
 
         case TOK_MEM: {
 
-            // ??? we need to translate the virtual address, since the
-            // window is representing a physical memory window. We may
-            // have to change it for accepting any address and just 
-            // create the window...
-
             tok -> acceptComma( );
             T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE );
             tok -> checkEOS( );
@@ -2841,9 +2775,9 @@ void SimCommandsWin::winNewWinCmd( ) {
             T64Module *mod = glb -> system -> lookupByAdr( adr );
             if ( mod != nullptr ) {
 
-                glb -> winDisplay -> windowNewAbsMem( mod -> getModuleNum( ), adr );
+                glb -> winDisplay -> windowNewMemData( mod -> getModuleNum( ), adr );
             }
-            else throw( 9997 );
+            else throw( ERR_INVALID_MOD_NUM );
 
         }  break;
 
@@ -2863,8 +2797,7 @@ void SimCommandsWin::winNewWinCmd( ) {
             }
 
             tok -> checkEOS( );
-
-            glb -> winDisplay -> windowNewAbsCode( modNum, adr );
+            glb -> winDisplay -> windowNewMemCode( modNum, adr );
 
         }  break;
 
@@ -2910,9 +2843,10 @@ void SimCommandsWin::winKillWinCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// This command assigns a user window to a stack. User windows can be displayed in a
-// separate stack of windows. The first stack is always the main stack, where the 
-// predefined and command window can be found. Stacks are numbered from 1 to MAX.
+// This command assigns a user window to a stack. User windows can be displayed 
+// in a separate stack of windows. The first stack is always the main stack, 
+// where the predefined and command window can be found. Stacks are numbered 
+// from 1 to MAX.
 //
 //  WS <stackNum> [ , <winNumStart> [ , <winNumEnd ]]
 //
@@ -2948,10 +2882,10 @@ void SimCommandsWin::winSetStackCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Evaluate input line. There are commands, functions, expressions and so on. This 
-// routine sets up the tokenizer and dispatches based on the first token in the input
-// line. The commands are also added to the command history, with the exception of 
-// the HITS, DO and REDOP commands.
+// Evaluate input line. There are commands, functions, expressions and so on. 
+// This routine sets up the tokenizer and dispatches based on the first token in
+// the input line. The commands are also added to the command history, with the 
+// exception of the HITS, DO and REDOP commands.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::evalInputLine( char *cmdBuf ) {
@@ -3063,9 +2997,9 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "cmdLoop" is the command line input interpreter. The basic loop is to prompt for
-// the next input, read the input and evaluates it. If we are in windows mode, we also
-// redraw the screen.
+// "cmdLoop" is the command line input interpreter. The basic loop is to prompt 
+// for the next input, read the input and evaluates it. If we are in windows mode,
+// we also redraw the screen.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::cmdInterpreterLoop( ) {

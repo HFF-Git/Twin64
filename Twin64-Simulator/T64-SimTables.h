@@ -321,6 +321,9 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
     { .errNum = ERR_UNALIGNED_ADDR,             
       .errStr = (char *) "Unaligned address" },
 
+    { .errNum = ERR_INVALID_ADDR,           
+      .errStr = (char *) "Invalid address" },
+
     { .errNum = ERR_INVALID_FMT_OPT,            
       .errStr = (char *) "Invalid format option" },
 

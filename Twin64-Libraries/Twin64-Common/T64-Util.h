@@ -84,7 +84,7 @@ inline T64Word rounddown( T64Word arg, int round ) {
     return (arg / round) * round;
 }
 
-inline bool isAlignedDataAdr( T64Word adr, int align ) {
+inline bool isAlignedAdr( T64Word adr, int align ) {
 
     if (( align == 1 ) || ( align == 2 ) || 
         ( align == 4 ) || ( align == 8 )) {
@@ -473,6 +473,16 @@ inline T64Word addAdrOfs32( T64Word adr, T64Word ofs ) {
 // Virtual address range check.
 //
 //----------------------------------------------------------------------------------------
+inline bool isInPhysMemAdrRange( T64Word adr ) {
+
+    return(( adr >= 0 ) && ( adr <= T64_MAX_PHYS_MEM_LIMIT ));
+}
+
+inline bool isInVirtMemAdrRange( T64Word adr ) {
+
+    return(( adr >= T64_VIRT_MEM_START ) && ( adr <= T64_MAX_VIRT_MEM_LIMIT ));
+}
+
 inline bool isInIoAdrRange( T64Word adr ) {
 
     return(( adr >= T64_IO_MEM_START ) && ( adr <= T64_IO_MEM_LIMIT ));
@@ -482,14 +492,3 @@ inline bool isInIoHpaRange( T64Word adr ) {
 
     return(( adr >= T64_IO_HPA_MEM_START ) && ( adr <= T64_IO_HPA_MEM_LIMIT ));
 }
-
-inline bool isInPhysMemAdrRange( T64Word adr ) {
-
-    return(( adr >= 0 ) && ( adr <= T64_MAX_PHYS_MEM_LIMIT ));
-}
-
-
-//----------------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------------
-void upshiftStr(char *s);

@@ -128,9 +128,9 @@ const int MAX_TEXT_FIELD_LEN        = 132;
 const int MAX_TEXT_LINE_SIZE        = 256;
 
 const int MAX_WINDOWS               = 32;
-const int MAX_WIN_STACKS            = 8;
+const int MAX_WIN_STACKS            = 4;
 const int MAX_WIN_ROW_SIZE          = 64;
-const int MAX_WIN_COL_SIZE          = 256;
+const int MAX_WIN_COL_SIZE          = 1024;
 const int MAX_WIN_OUT_LINES         = 256;
 const int MAX_WIN_OUT_LINE_SIZE     = 256;
 const int MAX_WIN_NAME              = 8;
@@ -301,7 +301,8 @@ enum SimErrMsgId : int {
    
     ERR_INVALID_NUM                 = 26,
     ERR_UNALIGNED_ADDR              = 27,
-    
+    ERR_INVALID_ADDR                = 28,
+
     // -----   
     
     ERR_EXPECTED_COMMA              = 100,
@@ -416,6 +417,7 @@ const char ENV_RDX_DEFAULT [ ]          = "RDX_DEFAULT";
 const char ENV_WORDS_PER_LINE [ ]       = "WORDS_PER_LINE";
 const char ENV_WIN_MIN_ROWS[ ]          = "WIN_MIN_ROWS";
 const char ENV_WIN_TEXT_LINE_WIDTH[ ]   = "WIN_TEXT_WIDTH";
+const char ENV_WIN_TEXT_TAB_SIZE[ ]     = "WIN_TEXT_TAB_SIZE";
 
 //----------------------------------------------------------------------------------------
 // Forward declaration of the globals structure. Every object will have access to 
@@ -1191,7 +1193,7 @@ public:
     void            clearCmdWin( );
     SimTokId        getCurrentCmd( );
     void            cmdInterpreterLoop( );
-    
+
 private:
     
     void            printWelcome( );
@@ -1340,8 +1342,8 @@ public:
     void            windowToggle( int winNum, int toggleVal );
     void            windowExchangeOrder( int winNum );
     
-    void            windowNewAbsMem( int modNum, T64Word adr );
-    void            windowNewAbsCode( int modNum, T64Word adr );
+    void            windowNewMemData( int modNum, T64Word adr );
+    void            windowNewMemCode( int modNum, T64Word adr );
     void            windowNewCpuState( int modNum );
     void            windowNewTlb( int modNum );
     void            windowNewText( char *pathStr );
