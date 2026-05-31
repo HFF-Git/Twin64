@@ -262,10 +262,6 @@ int SimConsoleIO::readChar( ) {
 // stability. In Windows this does not seems to be an issue, we send a single char
 // at a time.
 //
-// I still get from time time garbled screens, which disappear on a redraw. Perhaps
-// the single character write logic is too much for the terminal driver. So, let's
-// accumulate larger sequences and only use "writeChars" for printing.
-//
 //----------------------------------------------------------------------------------------
 int SimConsoleIO::writeChars( const char *format, ... ) {
 

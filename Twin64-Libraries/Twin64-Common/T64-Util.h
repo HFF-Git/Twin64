@@ -451,9 +451,6 @@ inline uint8_t extractPsrXbit( T64Word psr ) {
     return((uint8_t) extractBit64( psr, 61 ));
 }
 
-// ??? more to come, align with document...
-
-
 //----------------------------------------------------------------------------------------
 // TLB info field extract routines.
 //

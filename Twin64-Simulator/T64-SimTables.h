@@ -235,10 +235,6 @@ const SimToken cmdTokTab[ ] = {
     { .name = "DISASM",     .typ = TYP_P_FUNC, .tid = PF_DIS_ASM,  .u = { .val = 0 }},
     { .name = "HASH",       .typ = TYP_P_FUNC, .tid = PF_HASH,     .u = { .val = 0 }},
 
-    // ??? tons of more predefines....
-
-    { .name = "S32",        .typ = TYP_P_FUNC, .tid = PF_S32,      .u = { .val = 0 }},
-
     //------------------------------------------------------------------------------------
     // TLB and Cache configuration types.
     //
@@ -931,8 +927,6 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
         .cmdSyntaxStr   = (char *) "disasm ( <instr> )",
         .helpStr        = (char *) "returns the assemble string for an instruction value"
     },
-
-    // ??? a ton of functions for processor attributes ....
    
 };
 

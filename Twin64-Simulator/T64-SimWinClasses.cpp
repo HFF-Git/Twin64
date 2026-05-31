@@ -458,8 +458,6 @@ void SimWinTlb::drawTlbEntry( T64TlbEntry *ePtr ) {
 
     printTextField((char *) "  pMask: ", fmtDesc );
     printNumericField( ePtr -> pageMask, fmtDesc | FMT_HEX_4_4_4_4 );
-
-    // ??? we may refine TlbInfo Field for readability.
 }
 
 //----------------------------------------------------------------------------------------
@@ -584,7 +582,6 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
 
     uint32_t    fmtDesc     = FMT_DEF_ATTR;
     uint32_t    limit       = getLineIncrementItemAdr( ) - 1; // ??? why - 1?
-
 
     T64Memory   *mem = (T64Memory *) 
                             glb -> system -> lookupByAdr( getCurrentItemAdr( ));
@@ -797,7 +794,25 @@ void SimWinCode::drawLine( T64Word itemAdr ) {
     uint32_t    fmtDesc                     = FMT_DEF_ATTR;
     uint32_t    instr                       = 0x0;
     char        buf[ MAX_TEXT_LINE_SIZE ]   = { 0 };
+    
     T64Word     currentIaOfs    = 0; // ??? need to get the Ofs 
+
+    #if 0
+    if ( translateAdr( glb -> system, itemAdr, &itemAdr )) {
+
+        uint32_t val = 0;
+        if ( glb -> system -> busOpRead( -1, 
+                                itemAdr, 
+                                (uint8_t *)&val, 
+                                sizeof( val ))) {
+
+            copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
+            printNumericField( val, fmtDesc | FMT_HEX_4_4 );
+            printTextField((char *) "   " );
+        }
+    }
+    #endif
+
 
     if ( ! glb -> system -> busOpRead( -1,
                                        itemAdr, 

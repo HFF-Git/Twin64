@@ -261,7 +261,6 @@ void SimWin::setWinOrigin( int row, int col ) {
 // the terminal screen plus the window relative row and column. Rows and numbers 
 // are values starting with 1.
 //
-// ??? add a check that we do not go past the window column size ?
 //----------------------------------------------------------------------------------------
 void SimWin::setWinCursor( int row, int col ) {
     
@@ -293,7 +292,6 @@ int SimWin::getWinCursorCol( ) {
 // need to be padded left or right. This routine is just a simple loop emitting 
 // blanks in the current format set.
 //
-// ??? add a check that we do not go past the window column size ?
 //----------------------------------------------------------------------------------------
 void SimWin::padField( int dLen, int fLen ) {
     
