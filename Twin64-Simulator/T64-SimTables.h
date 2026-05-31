@@ -97,7 +97,7 @@ const SimToken cmdTokTab[ ] = {
     { .name = "REDO",       .typ = TYP_CMD,     .tid = CMD_REDO                     },
     { .name = "ENV",        .typ = TYP_CMD,     .tid = CMD_ENV                      },
     { .name = "XF",         .typ = TYP_CMD,     .tid = CMD_XF                       },
-    { .name = "LF",         .typ = TYP_CMD,     .tid = CMD_LF                       },
+    { .name = "LOADELF",    .typ = TYP_CMD,     .tid = CMD_LOADELF                  },
     { .name = "W",          .typ = TYP_CMD,     .tid = CMD_WRITE_LINE               },
     { .name = "DWIN",       .typ = TYP_CMD,     .tid = CMD_DWIN                     },
 
@@ -630,9 +630,9 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_LF,
-        .cmdNameStr     = (char *) "lf",
-        .cmdSyntaxStr   = (char *) "lf \"<filePath>\"",
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_LOADELF,
+        .cmdNameStr     = (char *) "loadelf",
+        .cmdSyntaxStr   = (char *) "loadelf \"<filePath>\"",
         .helpStr        = (char *) "loads an ELF file"
     },
 

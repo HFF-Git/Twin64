@@ -51,15 +51,12 @@ enum T64Options : uint32_t {
 
 //----------------------------------------------------------------------------------------
 // The processor HPA page definitions. There are a couple of register sets. Reg
-// set zero is the processor reg set itself. It contains the module relevant 
+// set 0 is the processor reg set itself. It contains the module relevant 
 // definitions, such as configuration options. 
 //
-// Reg Set 1 and 2, describe the TLB elements. There are status, configuration 
-// and statistics registers. Additionally, the simulator places the TLB content
-// in registers for easy examination.
-//
-// Reg Set 3 and 4 are reserved for cache elements. Right now, we do not implement
-// any caches.
+// Reg Set 1 contains the TLB data elements. Each TLB entry is represented by
+// two 64-bit words. The first word contains the virtual address and the second
+// word contains the physical address and tlb information.
 //
 //----------------------------------------------------------------------------------------
 enum T64ProcRegSetOfs : int {
@@ -101,6 +98,21 @@ struct T64LocalTlb {
     T64TlbEntry     *getITlbEntry( int index );
     T64TlbEntry     *getDTlbEntry( int index );
 
+    T64Word         getTlbStatus( );
+    T64Word         getTlbConfig( );
+    
+    T64Word         getItlbHits( );
+    T64Word         getItlbMisses( );
+    T64Word         getItlbMissGTlbHits( );
+    T64Word         getItlbMissGTlbMisses( );
+
+    T64Word         getDtlbHits( );
+    T64Word         getDtlbMisses( );
+    T64Word         getDtlbMissGTlbHits( );
+    T64Word         getDtlbMissGTlbMisses( ); 
+
+    private:
+
     T64Processor    *proc               = nullptr;
 
     T64TlbKind      tlbKind             = T64_TK_NIL;
@@ -113,17 +125,19 @@ struct T64LocalTlb {
     int             dTlbEntries         = 0;
    
     uint32_t        iTlbRoundRobin      = 0;       
+
+    T64Word         tlbStatus           = 0;
+    T64Word         tlbConfig           = 0;
     
     T64Word         iTlbHits            = 0;
     T64Word         iTlbMisses          = 0;
-    T64Word         iTlbMissUTlbHits    = 0;
-    T64Word         iTlbMissUTlbMisses  = 0;
+    T64Word         iTlbMissGTlbHits    = 0;
+    T64Word         iTlbMissGTlbMisses  = 0;
 
     T64Word         dTlbHits            = 0;
     T64Word         dTlbMisses          = 0;
-    T64Word         dTlbMissUTlbHits    = 0;
-    T64Word         dTlbMissUTlbMisses  = 0; 
-
+    T64Word         dTlbMissGTlbHits    = 0;
+    T64Word         dTlbMissGTlbMisses  = 0; 
 };
 
 //----------------------------------------------------------------------------------------

@@ -106,6 +106,8 @@ T64LocalTlb::T64LocalTlb( T64Processor *proc,
     iTlb = (T64TlbEntry *) calloc( iTlbEntries, sizeof( T64TlbEntry ));
     dTlb = (T64TlbEntry *) calloc( dTlbEntries, sizeof( T64TlbEntry ));
 
+    // ??? build tlbConfigRegister based on type and kind of TLB    
+
     reset( );
 }
 
@@ -132,13 +134,13 @@ void T64LocalTlb::reset( ) {
     
     iTlbHits            = 0;
     iTlbMisses          = 0;
-    iTlbMissUTlbHits    = 0;
-    iTlbMissUTlbMisses  = 0;
+    iTlbMissGTlbHits    = 0;
+    iTlbMissGTlbMisses  = 0;
 
     dTlbHits            = 0;
     dTlbMisses          = 0;
-    dTlbMissUTlbHits    = 0;
-    dTlbMissUTlbMisses  = 0;
+    dTlbMissGTlbHits    = 0;
+    dTlbMissGTlbMisses  = 0;
 }
 
 //----------------------------------------------------------------------------------------
@@ -167,12 +169,12 @@ bool T64LocalTlb::lookupItlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
     T64TlbEntry tlbEntry;
     if ( ! gTlb -> lookupTlb( vAdr, &tlbEntry )) {
         
-        iTlbMissUTlbMisses ++;
+        iTlbMissGTlbMisses ++;
         return ( false );
     }
     else {
 
-        iTlbMissUTlbHits ++;
+        iTlbMissGTlbHits ++;
 
         iTlb[ iTlbRoundRobin & ( iTlbEntries - 1 ) ] = tlbEntry;
         iTlbRoundRobin ++;
@@ -217,12 +219,12 @@ bool T64LocalTlb::lookupDtlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
     T64TlbEntry tlbEntry;
     if ( ! gTlb -> lookupTlb( vAdr, &tlbEntry )) {
         
-        dTlbMissUTlbMisses ++;
+        dTlbMissGTlbMisses ++;
         return ( false );
     }
     else {
 
-        dTlbMissUTlbHits ++;
+        dTlbMissGTlbHits ++;
 
         for ( int i = dTlbEntries - 1; i > 0; i-- ) dTlb[ i ] = dTlb[ i - 1 ];
         dTlb[ 0 ] = tlbEntry;
@@ -250,8 +252,7 @@ bool T64LocalTlb::purgeTlb( T64Word vAdr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Get an entry from the TLB tables, which are mapped into the HPA address space. 
-// This is used for debugging and display purposes.
+// Getters.
 //
 //----------------------------------------------------------------------------------------
 T64TlbEntry *T64LocalTlb::getITlbEntry( int index ) {
@@ -264,4 +265,52 @@ T64TlbEntry *T64LocalTlb::getDTlbEntry( int index ) {
 
     if ( index < 0 || index >= dTlbEntries ) return ( nullptr );
     return ( &dTlb[ index ] );
+}
+
+T64Word T64LocalTlb::getTlbStatus( ) {
+    
+    return ( tlbStatus );
+}
+    
+T64Word T64LocalTlb::getTlbConfig( ) {
+    
+    return ( tlbConfig );
+}
+
+T64Word T64LocalTlb::getItlbHits( ) {
+
+    return ( iTlbHits );
+}
+
+T64Word T64LocalTlb::getItlbMisses( ) {
+
+    return ( iTlbMisses );
+}
+
+T64Word T64LocalTlb::getItlbMissGTlbHits( ) {
+
+    return ( iTlbMissGTlbHits );
+}
+
+T64Word T64LocalTlb::getItlbMissGTlbMisses( ) {
+
+    return ( iTlbMissGTlbMisses );
+}
+
+T64Word T64LocalTlb::getDtlbHits( ) {
+
+    return ( dTlbHits );
+}
+
+T64Word T64LocalTlb::getDtlbMisses( ) {
+
+    return ( dTlbMisses );
+}
+T64Word T64LocalTlb::getDtlbMissGTlbHits( ) {
+
+    return ( dTlbMissGTlbHits );
+}
+T64Word T64LocalTlb::getDtlbMissGTlbMisses( ) {
+
+    return ( dTlbMissGTlbMisses );
 }

@@ -219,7 +219,7 @@ enum SimTokId : uint16_t {
     //------------------------------------------------------------------------------------
     CMD_SET,                    CMD_EXIT,                   CMD_HELP,
     CMD_DO,                     CMD_REDO,                   CMD_HIST,
-    CMD_ENV,                    CMD_XF,                     CMD_LF,
+    CMD_ENV,                    CMD_XF,                     CMD_LOADELF,
     CMD_WRITE_LINE,             CMD_ASSERT,                 CMD_CHECK,   
     CMD_DMOD,                   CMD_NMOD,                   CMD_RMOD,       
     CMD_RESET,                  CMD_RUN,                    CMD_STEP,                                             

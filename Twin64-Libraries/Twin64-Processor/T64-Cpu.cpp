@@ -273,8 +273,6 @@ void T64Cpu::dataReadAccCheck( T64Word vAdr, uint16_t tlbInfo ) {
     uint8_t privMode = extractPsrXbit( psrReg );
     if ( privMode == 0 ) return;
 
-    uint8_t pLevel = tlbInfoPrivLevel1( tlbInfo );
-
     if ( ! ( privMode <= tlbInfoPrivLevel1( tlbInfo ))) { 
         
         dataMemAccRightsTrap( psrReg );

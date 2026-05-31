@@ -77,9 +77,8 @@ T64Processor::T64Processor( T64System           *sys,
 
     this -> sys = sys;
 
-    cpu     = new T64Cpu( this, cpuType );
-    localTlb     = new T64LocalTlb( this, T64_TK_UNIFIED_TLB, tlbType );
-
+    cpu       = new T64Cpu( this, cpuType );
+    localTlb  = new T64LocalTlb( this, T64_TK_UNIFIED_TLB, tlbType );
     globalTlb = dynamic_cast<T64GlobalTlb*>( sys -> lookupByModuleType( MT_GTLB ));
     
     cpu -> reset( );
@@ -138,9 +137,6 @@ void T64Processor::execModule( int units ) {
 // processor this is a trap that was raised. The thread will then be placed in a
 // "HALT" state for examination.
 //
-// ??? flesh this out a little. What exactly do we need to do ? 
-// ??? explain how traps are handled when we don't need attention...
-//
 //----------------------------------------------------------------------------------------
 bool T64Processor::executeUnit( ) {
 
@@ -174,12 +170,16 @@ T64GlobalTlb *T64Processor::getGlobalTlbPtr( ) {
 //----------------------------------------------------------------------------------------
 // We have a read request for the processor HPA address range. 
 //
+// ??? document what is covered in the reg sets.
+// ??? should we define for the common IO Regs routines at the module level ?
 //----------------------------------------------------------------------------------------
 bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
 
-    int wordIndex = ( pAdr - T64_IO_HPA_MEM_START ) >> 3;
+    int     wordIndex   = (( pAdr - T64_IO_HPA_MEM_START ) >> 3 );
+    int     regSetIndex = wordIndex / T64_IO_REG_SET_SIZE;
+    T64Word tmp;
     
-    if ( wordIndex < T64_IO_REG_SET_SIZE ) {
+    if ( regSetIndex == 0 ) {
 
         switch ( wordIndex ) {
 
@@ -203,67 +203,118 @@ bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
 
             case T64_IO_SPA_ADR_REG_OFS: {
 
-                return ( true );
+                return ( false );
 
             } break;
 
             case T64_IO_TLB_STATUS_REG_OFS: {
+
+                tmp = localTlb -> getTlbStatus( );
                     
-                return ( false );
+                memcpy( data, 
+                        (uint8_t *) &tmp, 
+                        sizeof( T64Word ));
+                
+                return ( true );
 
             } break;
                 
             case T64_IO_TLB_CONFIG_REG_OFS: {
 
-                return ( false );
+                tmp = localTlb -> getTlbConfig( );
+                memcpy( data, 
+                        (uint8_t *) &tmp, 
+                        sizeof( T64Word ));
+
+                return ( true );
 
             } break;
 
             case T64_IO_ITLB_HITS_OFS: {
 
-                return ( false );
+                tmp = localTlb -> getItlbHits();
+                memcpy( data, 
+                        (uint8_t *) &tmp, 
+                        sizeof( T64Word ));
 
-            } break;        
+                return( true );
+
+            } break;
 
             case T64_IO_ITLB_MISSES_OFS: {
 
-                return ( false );
+                tmp = localTlb -> getItlbMisses();
+                memcpy( data, 
+                        (uint8_t *) &tmp, 
+                        sizeof( T64Word ));
+
+                return( true );
 
             } break;
 
             case T64_IO_ITLB_GTLB_HITS_OFS: {
 
-                return ( false );
+                tmp = localTlb -> getItlbMissGTlbHits();
+                memcpy( data, 
+                        (uint8_t *) &tmp, 
+                        sizeof( T64Word ));
 
-            } break;
-
+                return( true );
+            
+            } break;  
+    
             case T64_IO_ITLB_GTLB_MISSES_OFS: {
+                
+                tmp = localTlb -> getItlbMissGTlbMisses();
+                memcpy( data, 
+                        (uint8_t *) &tmp,
+                         sizeof( T64Word ));
 
-                return ( false );
+                return( true );
+
+            } break;                
+
+            case T64_IO_DTLB_HITS_OFS: { 
+
+                tmp = localTlb -> getDtlbHits();
+                memcpy( data, 
+                        (uint8_t *) &tmp, 
+                        sizeof( T64Word ));
+
+                return( true );
 
             } break;
-
-            case T64_IO_DTLB_HITS_OFS: {
-
-                return ( false );
-
-            } break;        
 
             case T64_IO_DTLB_MISSES_OFS: {
 
-                return ( false );
+                tmp = localTlb -> getDtlbMisses();
+                memcpy( data, 
+                        (uint8_t *) &tmp, 
+                        sizeof( T64Word ));
+
+                return( true );
 
             } break;
 
             case T64_IO_DTLB_GTLB_HITS_OFS: {
 
-                return ( false );
+                tmp = localTlb -> getDtlbMissGTlbHits();
+                memcpy( data, 
+                        (uint8_t *) &tmp, 
+                        sizeof( T64Word ));
+
+                return( true );
 
             } break;
 
             case T64_IO_DTLB_GTLB_MISSES_OFS: {
 
-                return ( false );
+                tmp = localTlb -> getDtlbMissGTlbMisses();
+                memcpy( data, 
+                        (uint8_t *) &tmp, 
+                        sizeof( T64Word ));
+
+                return( true );
 
             } break;
 
@@ -274,7 +325,7 @@ bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
             }
         }
     }
-    else if (( wordIndex >= 32 ) && ( wordIndex < 48 )) {
+    else if ( regSetIndex == 1 ) {
 
         int wordInRegSetIndex = wordIndex % T64_IO_REG_SET_SIZE;
         T64TlbEntry *e = nullptr;
@@ -297,7 +348,7 @@ bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
         }
         else {
 
-            T64Word tmp = ( e -> tlbInfo << 48 ) | ( e -> pAdr );
+            T64Word tmp = ((T64Word) e -> tlbInfo << 48 ) | ( e -> pAdr );
             memcpy( data, (uint8_t *) &tmp, sizeof( T64Word ));
             return( true );
         }
