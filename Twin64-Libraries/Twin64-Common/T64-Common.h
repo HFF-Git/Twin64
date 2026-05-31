@@ -94,7 +94,7 @@ const   T64Word T64_IO_BCAST_MEM_LIMIT      = 0xFFFFFFFF;
 
 const   T64Word T64_DEF_PHYS_MEM_SIZE       = 1LL << 32;
 const   T64Word T64_DEF_PHYS_MEM_LIMIT      = 0xEFFFFFFF;
-const   T64Word T64_MAX_PHYS_MEM_LIMIT      = 0xFFFFFFFFF;
+const   T64Word T64_MAX_PHYS_MEM_LIMIT      = 0xFFFFFFFFFF;
 
 const   T64Word T64_MAX_REGION_ID           = 0xFFFFF;
 const   T64Word T64_VIRT_MEM_START          = T64_MAX_PHYS_MEM_LIMIT + 1;
@@ -103,9 +103,9 @@ const   T64Word T64_MAX_VIRT_MEM_LIMIT      = 0xFFFFFFFFFFFFF;
 const   int     T64_PAGE_SIZE_BYTES         = 4096;
 const   int     T64_PAGE_OFS_BITS           = 12;
 const   int     T64_VADR_BITS               = 52;
-const   int     T64_PADR_BITS               = 36;
+const   int     T64_PADR_BITS               = 40;
 
-const   int     T64_REG_SET_SIZE            = 32;
+const   int     T64_IO_REG_SET_SIZE         = 32;
 
 //----------------------------------------------------------------------------------------
 // T64 page types.
@@ -289,25 +289,7 @@ enum OpCodeFam : uint32_t {
 // the module. 
 //
 //----------------------------------------------------------------------------------------
-enum T64IoRegSetIndex : int {
 
-    T64_IO_REG_SET_0_OFS    =  0 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_1_OFS    =  1 * T64_REG_SET_SIZE, 
-    T64_IO_REG_SET_2_OFS    =  2 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_3_OFS    =  3 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_4_OFS    =  4 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_5_OFS    =  5 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_6_OFS    =  6 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_7_OFS    =  7 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_8_OFS    =  8 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_9_OFS    =  9 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_10_OFS   = 10 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_11_OFS   = 11 * T64_REG_SET_SIZE, 
-    T64_IO_REG_SET_12_OFS   = 12 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_13_OFS   = 13 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_14_OFS   = 14 * T64_REG_SET_SIZE,
-    T64_IO_REG_SET_15_OFS   = 15 * T64_REG_SET_SIZE
-};
 
 //----------------------------------------------------------------------------------------
 // Within a regs set, registers defined. Register set zero has architected 
@@ -375,19 +357,6 @@ struct T64TlbEntry {
     T64Word     pAdr;
     T64Word     pageMask;
     uint16_t    tlbInfo;
-};
-
-enum T64TbInfoFieldMask : uint16_t {
-
-    T64_TM_VALID    = 0x8000,
-    T64_TM_LOCKED   = 0x4000,
-    T64_TM_UNCACHED = 0x2000,
-    T64_TM_MODIFIED = 0x1000,
-
-    T64_TM_PRIV1    = 0x0080,
-    T64_TM_PRIV2    = 0x0040,
-    T64_TM_ACC      = 0x0030,
-    T64_TM_PSIZE    = 0x000F
 };
 
 //----------------------------------------------------------------------------------------

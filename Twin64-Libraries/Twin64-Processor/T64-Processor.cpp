@@ -178,8 +178,8 @@ T64GlobalTlb *T64Processor::getGlobalTlbPtr( ) {
 bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
 
     int wordIndex = ( pAdr - T64_IO_HPA_MEM_START ) >> 3;
-
-    if (( wordIndex < T64_IO_REG_SET_1_OFS )) {
+    
+    if ( wordIndex < T64_IO_REG_SET_SIZE ) {
 
         switch ( wordIndex ) {
 
@@ -203,75 +203,104 @@ bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
 
             case T64_IO_SPA_ADR_REG_OFS: {
 
-                memcpy( data, (uint8_t *) &hpaAdr, sizeof( T64Word ));
                 return ( true );
 
             } break;
 
             case T64_IO_TLB_STATUS_REG_OFS: {
                     
+                return ( false );
+
             } break;
                 
             case T64_IO_TLB_CONFIG_REG_OFS: {
+
+                return ( false );
 
             } break;
 
             case T64_IO_ITLB_HITS_OFS: {
 
+                return ( false );
+
             } break;        
 
             case T64_IO_ITLB_MISSES_OFS: {
+
+                return ( false );
 
             } break;
 
             case T64_IO_ITLB_GTLB_HITS_OFS: {
 
+                return ( false );
+
             } break;
 
             case T64_IO_ITLB_GTLB_MISSES_OFS: {
+
+                return ( false );
 
             } break;
 
             case T64_IO_DTLB_HITS_OFS: {
 
+                return ( false );
+
             } break;        
 
             case T64_IO_DTLB_MISSES_OFS: {
+
+                return ( false );
 
             } break;
 
             case T64_IO_DTLB_GTLB_HITS_OFS: {
 
+                return ( false );
+
             } break;
 
             case T64_IO_DTLB_GTLB_MISSES_OFS: {
 
-            } break;
+                return ( false );
 
+            } break;
 
             default: {
 
                 memset( data, 0, len );
                 return ( false );
             }
-
         }
     }
-    else if ( wordIndex < T64_IO_REG_SET_2_OFS ) {
+    else if (( wordIndex >= 32 ) && ( wordIndex < 48 )) {
 
-        // tlb data...
+        int wordInRegSetIndex = wordIndex % T64_IO_REG_SET_SIZE;
+        T64TlbEntry *e = nullptr;
 
-        wordIndex = wordIndex - T64_IO_REG_SET_1_OFS;
+        if ( wordInRegSetIndex > 16 ) {
 
-        // tlb data - two arrays of 8 entries.
-        return ( false );
-    }
-    else if ( wordIndex < T64_IO_REG_SET_3_OFS) {
+            e = localTlb -> getDTlbEntry( wordInRegSetIndex / 2 );
+            if ( e == nullptr ) return( false );
+        }
+        else {
 
-        wordIndex = wordIndex - T64_IO_REG_SET_2_OFS;
+             e = localTlb -> getITlbEntry( wordInRegSetIndex / 2 );
+             if ( e == nullptr ) return( false );
+        }
 
-        // dcache - not used yet.
-        return ( false );
+        if ( wordInRegSetIndex % 2 == 0 ) {
+
+            memcpy( data, (uint8_t *) &e -> vAdr, sizeof( T64Word ));
+            return( true );
+        }
+        else {
+
+            T64Word tmp = ( e -> tlbInfo << 48 ) | ( e -> pAdr );
+            memcpy( data, (uint8_t *) &tmp, sizeof( T64Word ));
+            return( true );
+        }
     }
     else return ( false );
 }

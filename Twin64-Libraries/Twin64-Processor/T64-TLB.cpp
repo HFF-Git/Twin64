@@ -69,13 +69,11 @@ T64TlbEntry* lookup( T64TlbEntry *tlb, uint32_t tlbSize, T64Word  vAdr ) {
     if ( ! tlb ) return ( nullptr );
     
     for ( int i = 0; i < tlbSize; i++ ) {
-        
-        if (( tlb[ i ].tlbInfo & T64_TM_VALID ) && 
-            (( vAdr & tlb[ i ].pageMask ) == tlb[ i ].vAdr )) {
 
-            return ( &tlb[ i ] );
+        if ( tlbInfoIsValid( tlb[ i ].tlbInfo )) {
+
+            if (( vAdr & tlb[ i ].pageMask ) == tlb[ i ].vAdr ) return ( &tlb[ i ] );
         }
-            
     }
     
     return ( nullptr );
@@ -94,7 +92,9 @@ T64TlbEntry* lookup( T64TlbEntry *tlb, uint32_t tlbSize, T64Word  vAdr ) {
 // structure. 
 //
 //----------------------------------------------------------------------------------------
-T64LocalTlb::T64LocalTlb( T64Processor *proc, T64TlbKind tlbKind, T64TlbType tlbType ) {
+T64LocalTlb::T64LocalTlb( T64Processor *proc, 
+                          T64TlbKind tlbKind, 
+                          T64TlbType tlbType ) {
 
     this -> proc    = proc;
     this -> tlbKind = tlbKind;
@@ -241,10 +241,27 @@ bool T64LocalTlb::lookupDtlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
 bool T64LocalTlb::purgeTlb( T64Word vAdr ) {
 
     T64TlbEntry *e = lookup( iTlb, iTlbEntries, vAdr );
-    if ( e != nullptr ) e -> tlbInfo &= ~ T64_TM_VALID;
+    if ( e != nullptr ) e -> tlbInfo &= 0x7FFF;
 
     e = lookup( dTlb, dTlbEntries, vAdr );
-    if ( e != nullptr ) e -> tlbInfo &= ~ T64_TM_VALID;
+    if ( e != nullptr ) e -> tlbInfo &= 0x7FFF;
         
     return( true );
+}
+
+//----------------------------------------------------------------------------------------
+// Get an entry from the TLB tables, which are mapped into the HPA address space. 
+// This is used for debugging and display purposes.
+//
+//----------------------------------------------------------------------------------------
+T64TlbEntry *T64LocalTlb::getITlbEntry( int index ) {
+
+    if ( index < 0 || index >= iTlbEntries ) return ( nullptr );
+    return ( &iTlb[ index ] );
+}
+
+T64TlbEntry *T64LocalTlb::getDTlbEntry( int index ) {
+
+    if ( index < 0 || index >= dTlbEntries ) return ( nullptr );
+    return ( &dTlb[ index ] );
 }

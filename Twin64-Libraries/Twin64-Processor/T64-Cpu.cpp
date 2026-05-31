@@ -87,8 +87,8 @@ void T64Cpu::reset( ) {
 //----------------------------------------------------------------------------------------
 T64Word T64Cpu::getGeneralReg( int index ) {
     
-    if ( index == 0 )   return( 0 );
-    else                return( gRegFile[ index % T64_MAX_GREGS ] );
+    if ( index == 0 ) return( 0 );
+    else              return( gRegFile[ index % T64_MAX_GREGS ] );
 }
 
 void T64Cpu::setGeneralReg( int index, T64Word val ) {
@@ -215,6 +215,11 @@ void T64Cpu::illegalInstrTrap( ) {
 // met, raise the corresponding trap.
 //
 //----------------------------------------------------------------------------------------
+void T64Cpu::privModeCheck( ) {
+
+    if ( extractPsrXbit( psrReg ) != 0 ) privModeOperationTrap( );
+}
+
 bool T64Cpu::regionIdCheck( uint32_t rId, bool wMode ) {
 
     for ( int i = 4; i < 8; i++ ) {
@@ -231,45 +236,31 @@ bool T64Cpu::regionIdCheck( uint32_t rId, bool wMode ) {
     return( false );  
 }
 
-void T64Cpu::privModeCheck( ) {
-
-    if ( extractPsrXbit( psrReg ) != 0 ) privModeOperationTrap( );
-}
-
-void T64Cpu::instrReadRegionIdCheck( T64Word adr ) {
-
-    if ( extractPsrXbit( psrReg ) == 0 ) return;
-
-    if ( ! regionIdCheck( vAdrRegionId( adr ), false )) {
-
-        instrMemProtectionTrap( adr );
-    }
-}
-
-void T64Cpu::instrReadAccCheck( uint16_t tlbInfo ) {
-
-    uint8_t privMode = extractPsrXbit( psrReg );
-    uint8_t pageType = ( tlbInfo >> 4 ) & 0x3; 
-    uint8_t pLevel   = ( tlbInfo >> 5 ) & 0x1;
-
-    if ( privMode > 0 ) {
-
-        if (( pageType != PT_EXECUTE ) && 
-            ( pageType != PT_GATEWAY )) {
-
-            instrMemAccRightsTrap( psrReg );
-        } 
-    
-        if ( ! ( privMode <= pLevel )) {
-        
-            instrMemAccRightsTrap( psrReg );
-        }  
-    }    
-}
-
-void T64Cpu::instrReadAlignmentCheck( T64Word adr ) {
+void T64Cpu::instrAlignmentCheck( T64Word adr ) {
 
     if ( ! isAlignedAdr( adr, 4 )) instrMemAlignmentTrap( adr );
+}
+
+void T64Cpu::instrAccCheck( T64Word vAdr, uint16_t tlbInfo ) {
+
+    uint8_t privMode = extractPsrXbit( psrReg );
+    if ( privMode == 0 ) return;
+
+    uint8_t pageType = tlbInfoPageType( tlbInfo );
+    if (( pageType != PT_EXECUTE ) && ( pageType != PT_GATEWAY )) {
+
+        instrMemAccRightsTrap( psrReg );
+    } 
+    
+    if ( ! ( privMode <= tlbInfoPrivLevel1( tlbInfo ))) {
+        
+        instrMemAccRightsTrap( psrReg );
+    }  
+
+    if ( ! regionIdCheck( vAdrRegionId( vAdr ), false )) {
+
+        instrMemProtectionTrap( vAdr );
+    }   
 }
 
 void T64Cpu::dataAlignmentCheck( T64Word adr, int len ) {
@@ -277,44 +268,45 @@ void T64Cpu::dataAlignmentCheck( T64Word adr, int len ) {
     if ( ! isAlignedAdr( adr, len )) dataMemAlignmentTrap( adr );
 }
 
-void T64Cpu::dataRegionIdCheck( T64Word adr, bool wMode ) {
-
-    if ( extractPsrXbit( psrReg )) return;
-
-    if ( ! regionIdCheck( vAdrRegionId( adr ), wMode )) {
-
-        dataMemProtectionTrap( adr );  
-    }
-}
-
-void T64Cpu::dataReadAccCheck( uint16_t tlbInfo ) {
+void T64Cpu::dataReadAccCheck( T64Word vAdr, uint16_t tlbInfo ) {
 
     uint8_t privMode = extractPsrXbit( psrReg );
-    uint8_t pLevel   = ( tlbInfo >> 6 ) & 0x1;
+    if ( privMode == 0 ) return;
 
-    if ( ! ( privMode <= pLevel )) { 
+    uint8_t pLevel = tlbInfoPrivLevel1( tlbInfo );
+
+    if ( ! ( privMode <= tlbInfoPrivLevel1( tlbInfo ))) { 
         
         dataMemAccRightsTrap( psrReg );
     }
+
+    if ( ! regionIdCheck( vAdrRegionId( vAdr ), false )) {
+
+        dataMemProtectionTrap( vAdr );  
+    }
 }
 
-void T64Cpu::dataWriteAccCheck ( uint16_t tlbInfo ) {
+void T64Cpu::dataWriteAccCheck ( T64Word vAdr, uint16_t tlbInfo ) {
 
     uint8_t privMode = extractPsrXbit( psrReg );
-    uint8_t pageType  = ( tlbInfo >> 4 ) & 0x3; 
-    uint8_t pLevel2   = ( tlbInfo >> 7 ) & 0x1;
+    if ( privMode == 0 ) return;
 
-    if ( privMode > 0 ) {
+    uint8_t pageType  = tlbInfoPageType( tlbInfo );
+    uint8_t pLevel2   = tlbInfoPrivLevel2( tlbInfo );
 
-        if ( pageType != PT_READ_WRITE ) {
+    if ( pageType != PT_READ_WRITE ) {
+
+        dataMemAccRightsTrap( psrReg );
+    }
+
+    if ( ! ( privMode <= pLevel2 )) {
 
             dataMemAccRightsTrap( psrReg );
-        }
+    }
 
-        if ( ! ( privMode <= pLevel2 )) {
+    if ( ! regionIdCheck( vAdrRegionId( vAdr ), true )) {
 
-            dataMemAccRightsTrap( psrReg );
-        }
+        dataMemProtectionTrap( vAdr );  
     }
 }
 
@@ -375,7 +367,7 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
 
     uint32_t instr = 0;
 
-    instrReadAlignmentCheck( vAdr );
+    instrAlignmentCheck( vAdr );
 
     if ( isInPhysMemAdrRange( vAdr )) { 
 
@@ -384,8 +376,6 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
 
             machineCheckTrap( vAdr );
         }   
-        
-        copyEndianAware( ((uint8_t *) &instr ), ((uint8_t *) &instr ), 4 );  
     }
     else {
 
@@ -395,17 +385,15 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
         if ( ! proc -> localTlb -> lookupItlb( vAdr, &pAdr, &tlbInfo )) 
             instrTlbMissTrap( vAdr );
 
-        instrReadAccCheck( tlbInfo );      
-        instrReadRegionIdCheck( vAdr );
+        instrAccCheck( vAdr,tlbInfo );      
        
         if ( ! proc -> busOpRead( pAdr, (uint8_t *) &instr, 4 )) {
 
             machineCheckTrap( pAdr );
         }
-
-        copyEndianAware( ((uint8_t *) &instr ), ((uint8_t *) &instr ), 4 );  
     }
 
+    copyEndianAware( ((uint8_t *) &instr ), ((uint8_t *) &instr ), 4 );
     return( instr );
 }
 
@@ -443,11 +431,12 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt ) {
         uint16_t tlbInfo;
         T64Word  pAdr;
 
-        if ( ! proc -> localTlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) 
+        if ( ! proc -> localTlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) {
+
             dataMemTlbMissTrap( vAdr );
-       
-        dataReadAccCheck( tlbInfo );             
-        dataRegionIdCheck( vAdr, false );
+        }
+
+        dataReadAccCheck( vAdr,tlbInfo );             
 
         if ( ! proc -> busOpRead( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
 
@@ -505,12 +494,13 @@ void T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len ) {
         uint16_t tlbInfo;
         T64Word  pAdr;
 
-        if ( ! proc -> localTlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) 
-            dataMemTlbMissTrap( vAdr );
-       
-        dataWriteAccCheck( tlbInfo );             
-        dataRegionIdCheck( vAdr, true );
+        if ( ! proc -> localTlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) {
 
+            dataMemTlbMissTrap( vAdr );
+        }
+        
+        dataWriteAccCheck( vAdr, tlbInfo );             
+       
         copyEndianAware( ((uint8_t *) &data ) + wordOfs, 
                          ((uint8_t *) &data ) + wordOfs, 
                          len );
@@ -1245,7 +1235,7 @@ void T64Cpu::instrBrBrOp( T64Instr instr ) {
     if ( extractInstrFieldU( instr, 19, 3 ) != 0 ) illegalInstrTrap( );
     if ( extractInstrFieldU( instr, 0, 13 ) != 0 ) illegalInstrTrap( );
 
-    instrReadAlignmentCheck( newIA );
+    instrAlignmentCheck( newIA );
     psrReg = newIA;
     setRegR( instr, rl );
 }
@@ -1264,7 +1254,7 @@ void T64Cpu::instrBrBvOp( T64Instr instr ) {
     if ( extractInstrFieldU( instr, 19, 3 ) != 0 ) illegalInstrTrap( );
     if ( extractInstrFieldU( instr, 0, 9 ) != 0 ) illegalInstrTrap( );
 
-    instrReadAlignmentCheck( newIA );
+    instrAlignmentCheck( newIA );
     psrReg = newIA;
     setRegR( instr, rl );
 }

@@ -225,7 +225,8 @@ enum SimTokId : uint16_t {
     CMD_RESET,                  CMD_RUN,                    CMD_STEP,                                             
     CMD_HALT,                   CMD_ITLB,                   CMD_PTLB, 
     CMD_MR,                     CMD_DM,                     CMD_MB,             
-    CMD_MS,                     CMD_MW,                     CMD_MD,                   
+    CMD_MS,                     CMD_MW,                     CMD_MD,     
+    CMD_DWIN,              
     
     //------------------------------------------------------------------------------------
     // Window Commands Tokens.
@@ -238,7 +239,7 @@ enum SimTokId : uint16_t {
     CMD_WF,                     CMD_WB,                     CMD_WH,
     CMD_WJ,                     CMD_WL,                     CMD_WN,
     CMD_WK,                     CMD_WS,                     CMD_WC,
-    CMD_WT,                     CMD_WX,                     CMD_WLIST, 
+    CMD_WT,                     CMD_WX,                     
 
     //------------------------------------------------------------------------------------
     // Predefined Function Tokens.
@@ -418,6 +419,9 @@ const char ENV_WORDS_PER_LINE [ ]       = "WORDS_PER_LINE";
 const char ENV_WIN_MIN_ROWS[ ]          = "WIN_MIN_ROWS";
 const char ENV_WIN_TEXT_LINE_WIDTH[ ]   = "WIN_TEXT_WIDTH";
 const char ENV_WIN_TEXT_TAB_SIZE[ ]     = "WIN_TEXT_TAB_SIZE";
+
+const char ENV_ASSERT_DEF_MSG[ ]        = "ASSERT_DEF_MSG";
+const char ENV_CHECK_DEF_MSG[ ]         = "CHECK_DEF_MSG";
 
 //----------------------------------------------------------------------------------------
 // Forward declaration of the globals structure. Every object will have access to 

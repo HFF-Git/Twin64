@@ -98,6 +98,9 @@ struct T64LocalTlb {
 
     bool            purgeTlb( T64Word vAdr );
 
+    T64TlbEntry     *getITlbEntry( int index );
+    T64TlbEntry     *getDTlbEntry( int index );
+
     T64Processor    *proc               = nullptr;
 
     T64TlbKind      tlbKind             = T64_TK_NIL;
@@ -180,13 +183,11 @@ struct T64Cpu {
 
     void            privModeCheck( );
     bool            regionIdCheck( uint32_t pId, bool wMode );
-    void            instrReadAlignmentCheck( T64Word vAdr );
-    void            instrReadRegionIdCheck( T64Word adr );
-    void            instrReadAccCheck( uint16_t tlbInfo );
+    void            instrAlignmentCheck( T64Word vAdr );
+    void            instrAccCheck( T64Word vAdr, uint16_t tlbInfo );
     void            dataAlignmentCheck( T64Word vAdr, int len );
-    void            dataRegionIdCheck( T64Word adr, bool wMode );
-    void            dataReadAccCheck( uint16_t tlbInfo );
-    void            dataWriteAccCheck( uint16_t tlbInfo );
+    void            dataReadAccCheck( T64Word vAdr, uint16_t tlbInfo );
+    void            dataWriteAccCheck( T64Word vAdr, uint16_t tlbInfo );
     void            addOverFlowCheck( T64Word val1, T64Word val2 );
     void            subUnderFlowCheck( T64Word val1, T64Word val2 );
 

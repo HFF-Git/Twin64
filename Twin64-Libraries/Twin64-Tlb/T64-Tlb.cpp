@@ -173,7 +173,9 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
 
     std::unique_lock lock( tLock );
 
-    int pSize   = tlbPageSize( tlbInfoPageSize( arg2 >> 48 ));
+    uint16_t tlbInfo = arg2 >> 48;
+    int      pSize   = tlbPageSize( tlbInfoPageSize( tlbInfo ));
+    
 
     if ( isInIoAdrRange( arg1 )) return ( true );
     if ( ! isAlignedPageAdr( arg1, pSize )) return ( false );
@@ -184,20 +186,19 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
     entry.pageMask  = tlbPageMask( pSize );
     entry.vAdr      = arg1 & entry.pageMask;
     entry.pAdr      = arg2 & entry.pageMask;
-    entry.tlbInfo   = arg2 >> 48;
-    entry.tlbInfo   = entry.tlbInfo | 0x8000;
-
+    entry.tlbInfo   = tlbInfo | 0x8000;
+    
     for ( int i = 0; i < tlbSize; i++ ) {
 
         T64TlbEntry *e = &tlbTable[ i ];
 
-         if ( ! ( e -> tlbInfo & T64_TM_VALID )) continue;
+         if ( ! ( tlbInfoIsValid( e -> tlbInfo ))) continue;
 
         if (( e -> vAdr == entry.vAdr ) &&
             ( e -> pageMask == entry.pageMask )) {
 
-            if (( e -> tlbInfo & T64_TM_LOCKED ) && 
-                ( ! ( entry.tlbInfo & T64_TM_LOCKED ))) {
+            if (( tlbInfoIsLocked( e -> tlbInfo )) && 
+                ( ! ( tlbInfoIsLocked( entry.tlbInfo )))) {
 
                 return ( true );
             }
@@ -209,7 +210,7 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
 
     for ( int i = 0; i < tlbSize; i++ ) {
 
-        if ( ! ( tlbTable[ i ].tlbInfo & T64_TM_VALID )) {
+        if ( ! ( tlbInfoIsValid( tlbTable[ i ].tlbInfo ))) {
 
             tlbTable[ i ] = entry;
             return ( true );
@@ -220,7 +221,7 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
 
         int idx = tlbRoundRobin++ % tlbSize;
 
-        if ( ! ( tlbTable[ idx ].tlbInfo & T64_TM_LOCKED )) {
+        if ( ! ( tlbInfoIsLocked( tlbTable[ idx ].tlbInfo ))) {
 
             tlbTable[ idx ] = entry;
             return ( true );
@@ -241,7 +242,7 @@ bool T64GlobalTlb::removeTlbEntry( T64Word vAdr ) {
     T64TlbEntry *e = lookupTlbEntry( tlbTable, tlbSize, vAdr );
     if ( e == nullptr ) return( true );
     
-    e -> tlbInfo &= ( ~ T64_TM_VALID );
+    e -> tlbInfo &= 0x7FFF; // reset valid bit, but keep the lock bit if it is set. We want to be able to remove locked entries.
     return ( true );
 }
 
@@ -258,11 +259,11 @@ char *T64GlobalTlb::getTlbTypeStr( ) {
 
     switch ( tlbType ) {
 
-        case T64_TT_FA_16S:     return ( "FA_16S" ); break;
-        case T64_TT_FA_32S:     return ( "FA_32S" ); break;
-        case T64_TT_FA_64S:     return ( "FA_64S" ); break;
-        case T64_TT_FA_128S:    return ( "FA_128S" ); break;
-        default:                return ( "TLB_**" ); break;
+        case T64_TT_FA_16S:     return ((char *) "FA_16S" ); break;
+        case T64_TT_FA_32S:     return ( (char *) "FA_32S" ); break;
+        case T64_TT_FA_64S:     return ( (char *) "FA_64S" ); break;
+        case T64_TT_FA_128S:    return ( (char *) "FA_128S" ); break;
+        default:                return ( (char *) "TLB_**" ); break;
     }
 }
 
@@ -326,29 +327,11 @@ bool
 T64GlobalTlb::busOpReadEvent( int reqModNum, T64Word pAdr, uint8_t *data, int len )  {
 
     if ( ! isInIoHpaRange( pAdr )) return( false );
-    if ( ! isAlignedPageAdr( pAdr, sizeof( T64Word) )) return ( false );
+    if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( false );
 
-    int wordIndex = ( pAdr - T64_IO_HPA_MEM_START ) >> 3;
-
-    if ( wordIndex < 32 ) { // ??? come up wth named constant ... 
-
-        switch ( wordIndex ) {  
-
-            // ??? simple cases are the variables such miss or hot count.
-
-            // ??? complex cases are the words from the TLB entry. We may 
-            // not do it in the switch statement.
-
-            // ??? need to build the second word from TÖB pAdr and info field.
-
-            default: ;
-        }
-    }
-    else {
-
-        // ??? TLB array access in the reg sets 1 ... 8
-
-    }
+    int wordIndex    = ( pAdr - T64_IO_HPA_MEM_START ) >> 3;
+    int regSetIndex  = wordIndex / T64_IO_REG_SET_SIZE;
+    int wordInRegSet = wordIndex % T64_IO_REG_SET_SIZE;
 
     *data = 0; // ??? for now ...
     return ( true );

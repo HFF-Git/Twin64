@@ -2938,7 +2938,7 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                     case CMD_RMOD:          removeModuleCmd( );             break;
                     case CMD_DMOD:          displayModuleCmd( );            break;   
 
-                    case CMD_WLIST:         displayWindowCmd( );            break;  
+                    case CMD_DWIN:          displayWindowCmd( );            break;  
 
                     case CMD_MR:            modifyRegCmd( );                break;
                         

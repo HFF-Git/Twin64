@@ -480,12 +480,12 @@ inline bool tlbInfoIsModified( T64Word tlbInfo ) {
 
 inline uint8_t tlbInfoPrivLevel1( T64Word tlbInfo ) {
 
-    return( ( tlbInfo >> 4 ) & 0x1 );
+    return( ( tlbInfo >> 5 ) & 0x1 );
 }
 
 inline uint8_t tlbInfoPrivLevel2( T64Word tlbInfo ) {
 
-    return( ( tlbInfo >> 5 ) & 0x1 );
+    return( ( tlbInfo >> 4 ) & 0x1 );
 }
 
 inline uint8_t tlbInfoPageType( T64Word tlbInfo ) {

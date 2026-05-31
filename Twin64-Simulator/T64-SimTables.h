@@ -99,7 +99,7 @@ const SimToken cmdTokTab[ ] = {
     { .name = "XF",         .typ = TYP_CMD,     .tid = CMD_XF                       },
     { .name = "LF",         .typ = TYP_CMD,     .tid = CMD_LF                       },
     { .name = "W",          .typ = TYP_CMD,     .tid = CMD_WRITE_LINE               },
-    { .name = "WLIST",      .typ = TYP_CMD,     .tid = CMD_WLIST                    },
+    { .name = "DWIN",       .typ = TYP_CMD,     .tid = CMD_DWIN                     },
 
     { .name = "DMOD",       .typ = TYP_CMD,     .tid = CMD_DMOD                     },
     { .name = "NMOD",       .typ = TYP_CMD,     .tid = CMD_NMOD                     },
@@ -700,9 +700,9 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_WLIST,
-        .cmdNameStr     = (char *) "wlist",
-        .cmdSyntaxStr   = (char *) "wlist [ <sNum>]",
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_DWIN,
+        .cmdNameStr     = (char *) "dwin",
+        .cmdSyntaxStr   = (char *) "dwin [ <sNum>]",
         .helpStr        = (char *) "display window list info"
     },
     
