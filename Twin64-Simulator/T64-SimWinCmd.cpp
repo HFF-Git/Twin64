@@ -1778,12 +1778,12 @@ void SimCommandsWin::stepCmd( ) {
 
         modNum = glb -> winDisplay -> getCurrentWinModNum( );
         if ( modNum == -1 ) throw( ERR_EXPCTED_PROC_MODULE );
-
-        T64Module *m = glb -> system -> lookupByModNum( modNum );
-        if ( m == nullptr ) throw( ERR_INVALID_MOD_NUM );
-
-        if ( m -> getModuleType( ) != MT_PROC ) throw( ERR_EXPCTED_PROC_MODULE );
     }
+
+    T64Module *m = glb -> system -> lookupByModNum( modNum );
+    if ( m == nullptr ) throw( ERR_EXPCTED_PROC_MODULE );
+
+    if ( m -> getModuleType( ) != MT_PROC ) throw( ERR_EXPCTED_PROC_MODULE );
 
     tok -> checkEOS( );
     glb -> system -> execModule( modNum, numOfSteps );
