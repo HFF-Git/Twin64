@@ -277,6 +277,29 @@ bool translateAdr( T64System *sys, T64Word virtAdr, T64Word *physAdr ) {
     }
 }
 
+//----------------------------------------------------------------------------------------
+// "readMem" is a helper function to read memory content. It takes care of the
+// address translation and the endian conversion. It first translates the virtual
+// address to a physical address. If the translation succeeds, it performs a bus 
+// read operation to read the memory content. If the bus read operation succeeds, 
+// it converts endian aware the data and returns true.
+//
+//----------------------------------------------------------------------------------------
+bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
+
+    T64Word physAdr = 0;
+
+    if ( ! translateAdr( sys, adr, &physAdr )) return ( false );
+
+    if ( sys -> busOpRead( -1, physAdr, (uint8_t *)val, size)) {
+
+        copyEndianAware((uint8_t *) val, (uint8_t *) val, size);
+        return ( true );    
+    }
+
+    return ( false );
+}
+
 }; // namespace
 
 
@@ -1127,7 +1150,7 @@ void SimCommandsWin::addIoModule( int modNum ) {
 // boundary. We display the data in words.
 //
 //----------------------------------------------------------------------------------------
-void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) {
+void  SimCommandsWin::displayMemContent( T64Word ofs, T64Word len, int rdx ) {
     
     T64Word index        = rounddown( ofs, sizeof( T64Word ));
     T64Word limit        = roundup(( index + len ), sizeof( T64Word ));
@@ -1142,21 +1165,8 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
             
             if ( index < limit ) {
 
-                bool    rStat = translateAdr( glb -> system, index, &index );
-                T64Word val   = 0;
-
-                if ( rStat ) {
-                
-                    rStat = glb -> system -> busOpRead( -1,
-                                                        index, 
-                                                        (uint8_t *) &val, 
-                                                        sizeof( val ));
-                                                    
-                }
-
-                if ( rStat ) {
-
-                    copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
+                T64Word val = 0;
+                if ( readMem( glb -> system, index, (uint8_t *) &val, sizeof( val )) ) {
 
                     if ( rdx == 16 )
                         winOut -> printNumber( val, FMT_HEX_4_4_4_4 );
@@ -1189,11 +1199,11 @@ void  SimCommandsWin::displayAbsMemContent( T64Word ofs, T64Word len, int rdx ) 
 // one word per line.
 //
 //----------------------------------------------------------------------------------------
-void SimCommandsWin::displayAbsMemContentAsCode( T64Word adr, T64Word len ) {
+void SimCommandsWin::displayMemContentAsCode( T64Word adr, T64Word len ) {
     
     T64Word  index  = rounddown( adr, 4 );
     T64Word  limit  = roundup(( index + len ), 4 );
-    T64Word  instr  = 0;
+    uint32_t instr  = 0;
     char     buf[ MAX_TEXT_FIELD_LEN ];
 
     while ( index < limit ) {
@@ -1201,19 +1211,7 @@ void SimCommandsWin::displayAbsMemContentAsCode( T64Word adr, T64Word len ) {
         winOut -> printNumber( index, FMT_HEX_2_4_4 );
         winOut -> writeChars( ": " );
 
-        bool rStat = translateAdr( glb -> system, index, &index );
-
-        if ( rStat ) {
-
-            rStat = glb -> system -> busOpRead( -1,
-                                                    index, 
-                                                    (uint8_t *) &instr, 
-                                                    sizeof( uint32_t));
-        }
-
-        if ( rStat ) {
-
-            copyEndianAware((uint8_t *) &instr, (uint8_t *) &instr, sizeof( instr ));
+        if ( readMem( glb -> system, index, (uint8_t *) &instr, sizeof( instr )) ) {
 
             disAsm -> formatInstr( buf, sizeof( buf ), instr, 16 );
             winOut -> writeChars( "%s\n", buf ); 
@@ -2043,7 +2041,7 @@ void SimCommandsWin::checkCmd( ) {
 //  DM <ofs> [ "," <len> [ "," <fmt> ]]
 //
 //----------------------------------------------------------------------------------------
-void SimCommandsWin::displayAbsMemCmd( ) {
+void SimCommandsWin::displayMemCmd( ) {
     
     int         rdx     = glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT );
     T64Word     ofs     = 0;
@@ -2080,8 +2078,8 @@ void SimCommandsWin::displayAbsMemCmd( ) {
     
     if (((T64Word) ofs + len ) <= T64_MAX_PHYS_MEM_LIMIT ) { 
         
-        if ( asCode ) displayAbsMemContentAsCode( ofs, len );
-        else          displayAbsMemContent( ofs, len, rdx );
+        if ( asCode ) displayMemContentAsCode( ofs, len );
+        else          displayMemContent( ofs, len, rdx );
     }
     else throw ( ERR_OFS_LEN_LIMIT_EXCEEDED );
 }
@@ -2100,7 +2098,7 @@ void SimCommandsWin::displayAbsMemCmd( ) {
 // then written to the memory.
 //
 //----------------------------------------------------------------------------------------
-void SimCommandsWin::modifyAbsMemCmd( ) {
+void SimCommandsWin::modifyMemCmd( ) {
     
     T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_OFS, 0, INT64_MAX );
   
@@ -2953,12 +2951,12 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
 
                     case CMD_MR:            modifyRegCmd( );                break;
                         
-                    case CMD_DM:            displayAbsMemCmd( );            break;
+                    case CMD_DM:            displayMemCmd( );            break;
 
                     case CMD_MB:
                     case CMD_MS:
                     case CMD_MW:
-                    case CMD_MD:            modifyAbsMemCmd( );             break;
+                    case CMD_MD:            modifyMemCmd( );             break;
                         
                     case CMD_ITLB:          insertTLBCmd( );                break;
                     case CMD_PTLB:          purgeTLBCmd( );                 break;

@@ -295,6 +295,29 @@ bool translateAdr( T64System *sys, T64Word virtAdr, T64Word *physAdr ) {
     }
 }
 
+//----------------------------------------------------------------------------------------
+// "readMem" is a helper function to read memory content. It takes care of the
+// address translation and the endian conversion. It first translates the virtual
+// address to a physical address. If the translation succeeds, it performs a bus 
+// read operation to read the memory content. If the bus read operation succeeds, 
+// it converts endian aware the data and returns true.
+//
+//----------------------------------------------------------------------------------------
+bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
+
+    T64Word physAdr = 0;
+
+    if ( ! translateAdr( sys, adr, &physAdr )) return ( false );
+
+    if ( sys -> busOpRead( -1, physAdr, (uint8_t *)val, size)) {
+
+        copyEndianAware((uint8_t *) val, (uint8_t *) val, size);
+        return ( true );    
+    }
+
+    return ( false );
+}
+
 }; // namespace
 
 
@@ -410,21 +433,13 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
         parseExpr( rExpr );
         if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
 
-        if ( ! translateAdr( glb -> system, rExpr -> u.val, &rExpr -> u.val )) 
-            throw ( ERR_INVALID_ADDR );
+         if ( ! isAlignedAdr( rExpr -> u.val, len )) throw ( ERR_UNALIGNED_ADDR );
 
-        if ( ! isAlignedAdr( rExpr -> u.val, len )) throw ( ERR_UNALIGNED_ADDR );
+        T64Word data = 0;
+        if ( readMem( glb -> system, rExpr -> u.val, (uint8_t *) &data, len )) {
 
-        T64Word data;
-        if ( glb -> system -> busOpRead( -1, 
-                                         rExpr -> u.val, 
-                                         (uint8_t *) &data, 
-                                         len )) {
-
-            copyEndianAware((uint8_t *) &data, (uint8_t *) &data, len );
-            
             rExpr -> typ = TYP_NUM;
-            rExpr -> u.val = data;
+            rExpr -> u.val = data;      
         }
         else throw ( ERR_MEM_OP_FAILED );
                                                  

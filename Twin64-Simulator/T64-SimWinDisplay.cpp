@@ -817,7 +817,7 @@ void SimWinDisplay::windowNewMemData( int modNum, T64Word adr ) {
 
     int slot = getFreeWindowSlot( );
 
-    windowList[ slot ] = (SimWin *) new SimWinAbsMem( glb, modNum, adr );
+    windowList[ slot ] = (SimWin *) new SimWinMem( glb, modNum, adr );
     windowList[ slot ] -> setWinName(( char *) "MEM" );
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
@@ -843,8 +843,8 @@ void SimWinDisplay::windowNewCpuState( int modNum ) {
 
     int slot = getFreeWindowSlot( );
 
-    windowList[ slot ] = (SimWin *) new SimWinCpuState( glb, modNum  );
-    windowList[ slot ] -> setWinName(( char *) "CPU" );
+    windowList[ slot ] = (SimWin *) new SimWinProcState( glb, modNum  );
+    windowList[ slot ] -> setWinName(( char *) "PROC" );
     windowList[ slot ] -> setWinModNum( modNum );
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
@@ -858,7 +858,7 @@ void SimWinDisplay::windowNewTlb( int modNum ) {
     int slot = getFreeWindowSlot( );
 
     windowList[ slot ] = (SimWin *) new SimWinTlb( glb, modNum );
-    windowList[ slot ] -> setWinName(( char *) "TLB" );
+    windowList[ slot ] -> setWinName(( char *) "GTLB" );
     windowList[ slot ] -> setWinModNum( modNum );
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );

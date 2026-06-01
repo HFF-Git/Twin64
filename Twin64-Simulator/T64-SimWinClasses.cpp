@@ -142,6 +142,29 @@ bool translateAdr( T64System *sys, T64Word virtAdr, T64Word *physAdr ) {
     }
 }
 
+//----------------------------------------------------------------------------------------
+// "readMem" is a helper function to read memory content. It takes care of the
+// address translation and the endian conversion. It first translates the virtual
+// address to a physical address. If the translation succeeds, it performs a bus 
+// read operation to read the memory content. If the bus read operation succeeds, 
+// it converts endian aware the data and returns true.
+//
+//----------------------------------------------------------------------------------------
+bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
+
+    T64Word physAdr = 0;
+
+    if ( ! translateAdr( sys, adr, &physAdr )) return ( false );
+
+    if ( sys -> busOpRead( -1, physAdr, (uint8_t *)val, size)) {
+
+        copyEndianAware((uint8_t *) val, (uint8_t *) val, size);
+        return ( true );    
+    }
+
+    return ( false );
+}
+
 }; // namespace
 
 
@@ -154,9 +177,11 @@ bool translateAdr( T64System *sys, T64Word virtAdr, T64Word *physAdr ) {
 // Object creator.
 //
 //----------------------------------------------------------------------------------------
-SimWinCpuState::SimWinCpuState( SimGlobals *glb, int modNum ) : SimWin( glb ) { 
+SimWinProcState::SimWinProcState( SimGlobals *glb, int modNum ) : SimWin( glb ) { 
 
-    this -> glb = glb;
+    this -> glb             = glb;
+    this -> disAsm          = new T64DisAssemble( );
+    this -> codeWinBaseAdr  = 0;
 
     T64ModuleType mType = glb -> system -> getModuleType( modNum );
     if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
@@ -170,19 +195,53 @@ SimWinCpuState::SimWinCpuState( SimGlobals *glb, int modNum ) : SimWin( glb ) {
 
 //----------------------------------------------------------------------------------------
 // The default values are the initial settings when windows is brought up the first 
-// time, or for the WDEF command.
+// time, or for the WDEF command. The window limits are set for the different 
+// toggle values. The minimum row count specifies how many lines we need for the
+// banner line, the respective register lines and the minimum number of code
+// lines plus the subwindow banner.
 //
 //----------------------------------------------------------------------------------------
-void SimWinCpuState::setDefaults( ) {
+void SimWinProcState::setDefaults( ) {
+
+    const int MIN_ROW_BANNERS               = 2;
+    const int MIN_ROW_GREG_SUBWINDOW        = 4; 
+    const int MIN_ROW_CREG_SUBWINDOW        = 4; 
+    const int MIN_ROW_CREG_SUBSET_SUBWINDOW = 1;
+    const int MIN_ROW_CODE_SUBWINDOW        = 4; 
+    const int MAX_ROWS                      = 32;
+    const int MAX_COLS                      = 96;
     
     setWinType( WT_CPU_WIN );
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 3 );
     setWinToggleVal( 0 );
-    setWinLimitsForToggle( 0, 5, 5, 96, 96 );
-    setWinLimitsForToggle( 1, 6, 6, 96, 96 );
-    setWinLimitsForToggle( 2, 5, 5, 96, 96 );
+
+    setWinLimitsForToggle( 0, 
+                           MIN_ROW_BANNERS + 
+                           MIN_ROW_GREG_SUBWINDOW + 
+                           MIN_ROW_CODE_SUBWINDOW,
+                           MAX_ROWS,
+                           MAX_COLS, 
+                           MAX_COLS );
+
+    setWinLimitsForToggle( 1, 
+                           MIN_ROW_BANNERS + 
+                           MIN_ROW_GREG_SUBWINDOW + 
+                           MIN_ROW_CREG_SUBSET_SUBWINDOW +
+                           MIN_ROW_CODE_SUBWINDOW,
+                           MAX_ROWS,
+                           MAX_COLS, 
+                           MAX_COLS );
+
+    setWinLimitsForToggle( 2, 
+                           MIN_ROW_BANNERS + 
+                           MIN_ROW_CREG_SUBWINDOW + 
+                           MIN_ROW_CODE_SUBWINDOW,
+                           MAX_ROWS,
+                           MAX_COLS, 
+                           MAX_COLS );
+
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
     setEnable( true );
@@ -198,7 +257,7 @@ void SimWinCpuState::setDefaults( ) {
 //  <winId> Proc: n IA: 0x00_0000_0000 ST: [xxxxxxx] <rdx>
 //
 //----------------------------------------------------------------------------------------
-void SimWinCpuState::drawBanner( ) {
+void SimWinProcState::drawBanner( ) {
     
     uint32_t fmtDesc = FMT_BOLD | FMT_INVERSE;
 
@@ -232,136 +291,244 @@ void SimWinCpuState::drawBanner( ) {
 }
 
 //----------------------------------------------------------------------------------------
+// "drawGeneralRegSubWindow" draws the general registers set in the body of the 
+// window. We show 4 registers per line, with the format "GRn=0x0000_0000_0000_0000". 
+//
+//----------------------------------------------------------------------------------------
+void SimWinProcState::drawGeneralRegSubWindow( int linePos ) {
+
+    uint32_t fmtDesc        = FMT_DEF_ATTR | FMT_ALIGN_LFT;
+    T64Cpu   *cpu           = proc -> getCpuPtr( );
+    int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 ) + 3;
+    int      labelFlen      = 8;
+    uint32_t numFmtField    = fmtDesc | FMT_HEX_4_4_4_4;
+    uint32_t labelFmtField  = fmtDesc | FMT_BOLD;
+    
+    setWinCursor( linePos, 1 );
+    printTextField((char *) "GR0=", labelFmtField, labelFlen );
+
+    for ( int i = 0; i < 4; i++ ) {
+
+        printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
+    }
+
+    padLine( fmtDesc );
+    setWinCursor( linePos + 1, 1 );
+    printTextField((char *) "GR4=", labelFmtField, labelFlen );
+
+    for ( int i = 4; i < 8; i++ ) {
+
+        printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
+    }
+
+    padLine( fmtDesc );
+    setWinCursor( linePos + 2, 1 );
+    printTextField((char *) "GR8=", labelFmtField, labelFlen );
+
+    for ( int i = 8; i < 12; i++ ) {
+
+        printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
+    }
+
+    padLine( fmtDesc );
+    setWinCursor( linePos + 3, 1 );
+    printTextField((char *) "GR12=", labelFmtField, labelFlen );
+
+    for ( int i = 12; i < 16; i++ ) {
+
+        printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
+    }
+
+    padLine( fmtDesc );
+} 
+
+//----------------------------------------------------------------------------------------
+// "drawControlRegSubWindow" draws the control registers set in the body of the 
+// window. We show 4 registers per line, with the format "CRn=0x0000_0000_0000_0000". 
+//
+//----------------------------------------------------------------------------------------
+void SimWinProcState::drawControlRegSubWindow( int linePos ) {
+
+    uint32_t fmtDesc        = FMT_DEF_ATTR | FMT_ALIGN_LFT;
+    T64Cpu   *cpu           = proc -> getCpuPtr( );
+    int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 ) + 3;
+    int      labelFlen      = 8;
+    uint32_t numFmtField    = fmtDesc | FMT_HEX_4_4_4_4;
+    uint32_t labelFmtField  = fmtDesc | FMT_BOLD;
+
+    setWinCursor( linePos, 1 );
+    printTextField((char *) "CR0=", labelFmtField, labelFlen );
+
+    for ( int i = 0; i < 4; i++ ) {
+
+        printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
+    }
+
+    padLine( fmtDesc );
+    setWinCursor( linePos + 1, 1 );
+    printTextField((char *) "CR4=", labelFmtField, labelFlen );
+
+    for ( int i = 4; i < 8; i++ ) {
+
+        printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
+    }
+
+    padLine( fmtDesc );
+    setWinCursor( linePos + 2, 1 );
+    printTextField((char *) "CR8=", labelFmtField, labelFlen );
+
+    for ( int i = 8; i < 12; i++ ) {
+
+        printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
+    }
+
+    padLine( fmtDesc );
+    setWinCursor( linePos + 3, 1 );
+    printTextField((char *) "CR12=", labelFmtField, labelFlen );
+
+    for ( int i = 12; i < 16; i++ ) {
+
+        printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
+    }
+
+    padLine( fmtDesc );
+}
+
+//----------------------------------------------------------------------------------------
+// "drawCregSubsetRegSubWindow" draws a subset of the control registers. The 
+// registers are related to user visible registers and registers that can be 
+// modified in user mode. 
+//
+//----------------------------------------------------------------------------------------
+void SimWinProcState::drawCregSubsetRegSubWindow( int linePos ) {
+
+    uint32_t fmtDesc        = FMT_DEF_ATTR | FMT_ALIGN_LFT;
+    T64Cpu   *cpu           = proc -> getCpuPtr( );
+    int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 ) + 3;
+    int      labelFlen      = 8;
+    uint32_t numFmtField    = fmtDesc | FMT_HEX_4_4_4_4;
+    uint32_t labelFmtField  = fmtDesc | FMT_BOLD;
+
+    padLine( fmtDesc );
+    setWinCursor( linePos, 1 );
+    printTextField((char *) "PID=", labelFmtField, labelFlen );
+
+    for ( int i = 4; i < 8; i++ ) {
+
+        printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
+    }
+
+    padLine( fmtDesc );
+}
+    
+//----------------------------------------------------------------------------------------
+// "drawCodeSubWindow" draws the code area in the body of the window. We show a
+// banner and a small number of code lines, with the instruction address and the
+// instruction in hex. We also show the disassembled instruction text. Also, the
+// code line where the instruction address points to is marked.
+//
+// Whenever the current instruction address comes near or is is outside the 
+// current code window, we move the code window so that the current instruction 
+//address is in the visible range.
+//
+//----------------------------------------------------------------------------------------
+void SimWinProcState::drawCodeSubWindow( int linePos, int linesLeft ) {
+
+    uint32_t    fmtDesc     = FMT_DEF_ATTR | FMT_BOLD | FMT_INVERSE;
+    T64Word     currentIa   = proc -> getCpuPtr( ) -> getPsrReg( );
+    T64Word     windowSize  = linesLeft * 4;
+    T64Word     windowEnd   = codeWinBaseAdr + windowSize - 4;
+    uint32_t    instr       = 0x0;
+    char        instrBuf[ MAX_TEXT_LINE_SIZE ] = { 0 };
+
+    if ( currentIa < codeWinBaseAdr + 4 ) {
+
+        codeWinBaseAdr = ( currentIa >= 4 ) ? currentIa - 4 : 0;
+
+    } else if ( currentIa >= windowEnd - 4 ) {
+
+        codeWinBaseAdr = currentIa - 4;
+    }
+
+    setWinCursor( linePos, 1 );
+    printTextField((char *) "Code", fmtDesc );
+    printTextField((char *) " ", fmtDesc );
+    padLine( fmtDesc );
+
+    fmtDesc = FMT_DEF_ATTR;
+    for ( int i = 0; i < linesLeft; i++ ) {
+
+        T64Word ia = codeWinBaseAdr + ( i * 4 );
+
+        setWinCursor( linePos + i + 1, 1 );
+        printNumericField( ia, fmtDesc | FMT_HEX_2_4_4_4 );
+        printTextField((char *) ": ", fmtDesc );
+
+        if ( readMem( glb -> system, ia, (uint8_t *) &instr, sizeof( instr ))) {
+
+            if ( currentIa ==  ia ) printTextField((char *) "    >", fmtDesc, 5 );
+            else                    printTextField((char *) "     ", fmtDesc, 5 );
+
+            printNumericField( instr, fmtDesc | FMT_HEX_8 );
+            printTextField((char *) "    ", fmtDesc );
+
+            int pos          = getWinCursorCol( );
+            int opCodeField  = disAsm -> getOpCodeFieldWidth( );
+            int operandField = disAsm -> getOperandsFieldWidth( );
+            
+            clearField( opCodeField );
+            disAsm -> formatOpCode( instrBuf, sizeof( instrBuf ), instr );
+            printTextField( instrBuf, fmtDesc, (int) strlen( instrBuf ));
+            setWinCursor( 0, pos + opCodeField );
+            
+            clearField( operandField );
+            disAsm -> formatOperands( instrBuf, sizeof( instrBuf ), instr, 16 );
+            printTextField( instrBuf, fmtDesc, (int) strlen( instrBuf ));
+            setWinCursor( 0, pos + opCodeField + operandField );
+
+            padLine( fmtDesc );
+        }
+        else {
+
+            printTextField((char *) "????_????", fmtDesc );
+            padLine( fmtDesc );
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------
 // Each window consist of a banner and a body. The body lines are displayed after 
-// the banner line. The program state window body lists the general registers.
-//
-// Format Ideas:
-//
-//  R0:  0x0000_0000_0000_0000 0x... 0x... 0x...
-//  R4:  0x0000_0000_0000_0000 0x... 0x... 0x...
-//  R8:  0x0000_0000_0000_0000 0x... 0x... 0x...
-//  R12: 0x0000_0000_0000_0000 0x... 0x... 0x...
-//
-//  PID: 0x0000_0000_0000_0000 0x... 0x... 0x...
-//
-// The window supports the toggle concept. We should as default only the GRs.
-// Toggle to CRs. Perhaps toggle to more formatted screens...
+// the banner line. The window supports the toggle concept and shows in the upper
+// part the selected register view. The lower part will display the code area
+// where the instruction address register points to. This window will eat up 
+// the remaining line sin the processor window.
 // 
 //----------------------------------------------------------------------------------------
-void SimWinCpuState::drawBody( ) {
+void SimWinProcState::drawBody( ) {
     
-    uint32_t fmtDesc   = FMT_DEF_ATTR | FMT_ALIGN_LFT;
-    T64Cpu   *cpu      = proc -> getCpuPtr( );
-    int      toggleVal = getWinToggleVal( );
+    int     toggleVal = getWinToggleVal( );
+    int     linePos   = 2;
 
     if (( toggleVal == 0 ) || ( toggleVal == 1 )) {
 
-        int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 ) + 3;
-        int      labelFlen      = 8;
-        uint32_t numFmtField    = fmtDesc | FMT_HEX_4_4_4_4;
-        uint32_t labelFmtField  = fmtDesc | FMT_BOLD;
-        
-        setWinCursor( 2, 1 );
-        printTextField((char *) "GR0=", labelFmtField, labelFlen );
-    
-        for ( int i = 0; i < 4; i++ ) {
-
-            printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
-        }
-
-        padLine( fmtDesc );
-        setWinCursor( 3, 1 );
-        printTextField((char *) "GR4=", labelFmtField, labelFlen );
-    
-        for ( int i = 4; i < 8; i++ ) {
-
-            printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
-        }
-
-        padLine( fmtDesc );
-        setWinCursor( 4, 1 );
-        printTextField((char *) "GR8=", labelFmtField, labelFlen );
-    
-        for ( int i = 8; i < 12; i++ ) {
-
-            printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
-        }
-
-        padLine( fmtDesc );
-        setWinCursor( 5, 1 );
-        printTextField((char *) "GR12=", labelFmtField, labelFlen );
-    
-        for ( int i = 12; i < 16; i++ ) {
-
-            printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
-        }
-
-        padLine( fmtDesc );
-    } 
-
+        drawGeneralRegSubWindow( linePos );
+        linePos += 4;
+    }    
+       
     if ( toggleVal == 1 ) {
 
-        int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 ) + 3;
-        int      labelFlen      = 8;
-        uint32_t numFmtField    = fmtDesc | FMT_HEX_4_4_4_4;
-        uint32_t labelFmtField  = fmtDesc | FMT_BOLD;
-
-        padLine( fmtDesc );
-        setWinCursor( 6, 1 );
-        printTextField((char *) "PID=", labelFmtField, labelFlen );
-    
-        for ( int i = 4; i < 8; i++ ) {
-
-            printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
-        }
-
-        padLine( fmtDesc );
+        drawCregSubsetRegSubWindow( linePos );
+        linePos += 1;
     }
     
     if ( toggleVal == 2 ) {
 
-        int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 ) + 3;
-        int      labelFlen      = 8;
-        uint32_t numFmtField    = fmtDesc | FMT_HEX_4_4_4_4;
-        uint32_t labelFmtField  = fmtDesc | FMT_BOLD;
-        
-        setWinCursor( 2, 1 );
-        printTextField((char *) "CR0=", labelFmtField, labelFlen );
-    
-        for ( int i = 0; i < 4; i++ ) {
-
-            printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
-        }
-
-        padLine( fmtDesc );
-        setWinCursor( 3, 1 );
-        printTextField((char *) "CR4=", labelFmtField, labelFlen );
-    
-        for ( int i = 4; i < 8; i++ ) {
-
-            printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
-        }
-
-        padLine( fmtDesc );
-        setWinCursor( 4, 1 );
-        printTextField((char *) "CR8=", labelFmtField, labelFlen );
-    
-        for ( int i = 8; i < 12; i++ ) {
-
-            printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
-        }
-
-        padLine( fmtDesc );
-        setWinCursor( 5, 1 );
-        printTextField((char *) "CR12=", labelFmtField, labelFlen );
-    
-        for ( int i = 12; i < 16; i++ ) {
-
-            printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
-        }
-
-        padLine( fmtDesc );
+        drawControlRegSubWindow( linePos );
+        linePos += 4;
     }
+
+    int linesLeft = getRows( ) - linePos + 1;
+    drawCodeSubWindow( linePos, linesLeft );
 }
 
 //****************************************************************************************
@@ -489,7 +656,7 @@ void SimWinTlb::drawLine( T64Word index ) {
 // Object constructor.
 //
 //----------------------------------------------------------------------------------------
-SimWinAbsMem::SimWinAbsMem( SimGlobals *glb, int modNum, T64Word adr ) : 
+SimWinMem::SimWinMem( SimGlobals *glb, int modNum, T64Word adr ) : 
                                                          SimWinScrollable( glb ) {
 
     this -> adr = rounddown( adr, 8 );
@@ -504,7 +671,7 @@ SimWinAbsMem::SimWinAbsMem( SimGlobals *glb, int modNum, T64Word adr ) :
 // number of lines.
 //
 //----------------------------------------------------------------------------------------
-void SimWinAbsMem::setDefaults( ) {
+void SimWinMem::setDefaults( ) {
     
     setWinType( WT_MEM_WIN );
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
@@ -529,7 +696,7 @@ void SimWinAbsMem::setDefaults( ) {
 // address.
 //
 //----------------------------------------------------------------------------------------
-void SimWinAbsMem::drawBanner( ) {
+void SimWinMem::drawBanner( ) {
     
     uint32_t fmtDesc = FMT_BOLD | FMT_INVERSE;
 
@@ -578,7 +745,7 @@ void SimWinAbsMem::drawBanner( ) {
 // Toggle 3: (0x00_0000_0000) "...." "...."           ... 8 times ASCII in "" 
 //
 //----------------------------------------------------------------------------------------
-void SimWinAbsMem::drawLine( T64Word itemAdr ) {
+void SimWinMem::drawLine( T64Word itemAdr ) {
 
     uint32_t    fmtDesc     = FMT_DEF_ATTR;
     uint32_t    limit       = getLineIncrementItemAdr( ) - 1; // ??? why - 1?
@@ -598,18 +765,11 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
 
         for ( int i = 0; i < limit; i = i + 4 ) {
 
-            if ( translateAdr( glb -> system, itemAdr, &itemAdr )) {
+            uint32_t val = 0;
+            if ( readMem( glb -> system, itemAdr + i, (uint8_t *)&val, sizeof( val ))) {
 
-                uint32_t val = 0;
-                if ( glb -> system -> busOpRead( -1, 
-                                        itemAdr + i, 
-                                        (uint8_t *)&val, 
-                                        sizeof( val ))) {
-
-                    copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
-                    printNumericField( val, fmtDesc | FMT_HEX_4_4 );
-                    printTextField((char *) "   " );
-                }
+                printNumericField( val, fmtDesc | FMT_HEX_4_4 );
+                printTextField((char *) "   " );
             }
         }
     }
@@ -617,18 +777,11 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
 
         for ( int i = 0; i < limit; i = i + 8 ) {
 
-            if ( translateAdr( glb -> system, itemAdr, &itemAdr )) {
+            T64Word val = 0;
+            if ( readMem( glb -> system, itemAdr + i, (uint8_t *)&val, sizeof( val ))) {
 
-                T64Word val = 0;
-                if ( glb -> system -> busOpRead( -1, 
-                                        itemAdr + i, 
-                                        (uint8_t *)&val, 
-                                        sizeof( val ))) {
-
-                    copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
-                    printNumericField( val, fmtDesc | FMT_HEX_4_4_4_4 );
-                    printTextField((char *) "   " );
-                }
+                printNumericField( val, fmtDesc | FMT_HEX_4_4_4_4 );
+                printTextField((char *) "   " );
             }
         }
     }
@@ -636,18 +789,11 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
 
         for ( int i = 0; i < limit; i = i + 4 ) {
 
-            if ( translateAdr( glb -> system, itemAdr, &itemAdr )) {
+            uint32_t val = 0;
+            if ( readMem( glb -> system, itemAdr + i, (uint8_t *)&val, sizeof( val ))) {
 
-                uint32_t val = 0;
-                if ( glb -> system -> busOpRead( -1, 
-                                        itemAdr + i, 
-                                        (uint8_t *)&val, 
-                                        sizeof( val ))) {
-
-                    copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
-                    printNumericField( val, fmtDesc | FMT_DEC_32 );
-                    printTextField((char *) "   " );
-                }
+                printNumericField( val, fmtDesc | FMT_DEC_32 );
+                printTextField((char *) "   " );
             }
         }
     }
@@ -655,18 +801,11 @@ void SimWinAbsMem::drawLine( T64Word itemAdr ) {
 
         for ( int i = 0; i < limit; i = i + 4 ) {
 
-            if ( translateAdr( glb -> system, itemAdr, &itemAdr )) {
+            uint32_t val = 0;
+            if ( readMem( glb -> system, itemAdr + i, (uint8_t *)&val, sizeof( val ))) {
 
-                uint32_t val = 0;
-                if ( glb -> system -> busOpRead( -1, 
-                                        itemAdr + i, 
-                                        (uint8_t *)&val, 
-                                        sizeof( val ))) {
-
-                    copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
-                    printNumericField( val, fmtDesc | FMT_ASCII_4 );
-                    printTextField((char *) "   " );
-                }
+                printNumericField( val, fmtDesc | FMT_ASCII_4 );
+                printTextField((char *) "   " );
             }
         }
     }
@@ -729,37 +868,9 @@ void SimWinCode::setDefaults( ) {
 //
 //----------------------------------------------------------------------------------------
 void SimWinCode::drawBanner( ) {
-
     
-    // ??? how about we add the option for translating the address ?
-    // ??? if we have a TLB module, then we could also manage virtual 
-    // addresses.
+    uint32_t fmtDesc = FMT_BOLD | FMT_INVERSE;
 
-    // ??? what do we do about the indicator if the IA is in this window ?
-    // ??? we could check all halted processors for their IA. The first that
-    // matches could placed before the arrow ( "nn>" ). 
-
-    // ??? we could also check if we have a current processor window and just
-    // show this processor in the arrow...
-
-    
-    uint32_t    fmtDesc         = FMT_BOLD | FMT_INVERSE;
-    T64Word     currentIa       = getCurrentItemAdr( );
-    T64Word     currentIaLimit  = 
-                currentIa + (( getRows( ) - 1 ) * getLineIncrementItemAdr( ));    
-
-    T64Word     currentIaOfs    = 0; // ??? need to get the Ofs 
-    
-    SimTokId    currentCmd      = glb -> winDisplay -> getCurrentCmd( );
-    bool        hasIaOfsAdr     = (( currentIaOfs >= currentIa ) && 
-                                    ( currentIaOfs <= currentIaLimit ));
-    
-    if (( currentCmd == CMD_STEP ) && ( hasIaOfsAdr )) {
-        
-        if      ( currentIaOfs >= currentIaLimit ) winJump( currentIaOfs );
-        else if ( currentIaOfs < currentIa )       winJump( currentIaOfs );
-    }
-    
     setWinCursor( 1, 1 );
     printWindowIdField( fmtDesc );
     printTextField((char *) "Mod:", fmtDesc );
@@ -775,18 +886,8 @@ void SimWinCode::drawBanner( ) {
 
 //----------------------------------------------------------------------------------------
 // A scrollable window needs to implement a routine for displaying a row. We are 
-// passed the item address and need to map this to the actual meaning of the 
-// particular window. The disassembled format is printed in two parts, the first
-// is the instruction and options, the second is the target and operand field. 
-// We make sure that both parts are nicely aligned.
-//
-// ??? would be nice to mark the current instruction address. However we need to
-// be careful. It is a virtual address, which first needs to be translated. 
-// Perhaps add a method to the Processor class, which translates the current
-// instruction address to a physical address, which we can compare with the item 
-// address. We also need to be careful with the single step command, which changes
-// the instruction address after the command is executed. We need to detect this 
-// and scroll to the new instruction address.
+// passed the item address and will print the instruction address and value as
+// well as the disassembled format.
 // 
 //----------------------------------------------------------------------------------------
 void SimWinCode::drawLine( T64Word itemAdr ) {
@@ -794,41 +895,17 @@ void SimWinCode::drawLine( T64Word itemAdr ) {
     uint32_t    fmtDesc                     = FMT_DEF_ATTR;
     uint32_t    instr                       = 0x0;
     char        buf[ MAX_TEXT_LINE_SIZE ]   = { 0 };
-    
-    T64Word     currentIaOfs    = 0; // ??? need to get the Ofs 
 
-    #if 0
-    if ( translateAdr( glb -> system, itemAdr, &itemAdr )) {
-
-        uint32_t val = 0;
-        if ( glb -> system -> busOpRead( -1, 
-                                itemAdr, 
-                                (uint8_t *)&val, 
-                                sizeof( val ))) {
-
-            copyEndianAware((uint8_t *) &val, (uint8_t *) &val, sizeof( val ));
-            printNumericField( val, fmtDesc | FMT_HEX_4_4 );
-            printTextField((char *) "   " );
-        }
-    }
-    #endif
-
-
-    if ( ! glb -> system -> busOpRead( -1,
-                                       itemAdr, 
-                                       (uint8_t *) &instr, 
-                                       sizeof( uint32_t ))) {
-
-        printNumericField( 0, fmtDesc | FMT_INVALID_NUM );
-    } 
-
-    copyEndianAware((uint8_t *) &instr, (uint8_t *) &instr, sizeof(uint32_t));
-    
-    printNumericField( itemAdr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_2_4_4, 14 );
-
-    if ( itemAdr ==  currentIaOfs ) printTextField((char *) "    >", fmtDesc, 5 );
-    else                            printTextField((char *) "     ", fmtDesc, 5 );
+    printNumericField( itemAdr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_2_4_4, 18 );
    
+    if ( ! readMem( glb -> system, 
+                    itemAdr, (uint8_t *) &instr, 
+                    sizeof( uint32_t ))) {
+
+        printTextField((char *) "Invalid address", fmtDesc );
+        return;
+    }
+
     printNumericField( instr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_8, 12 );
     
     int pos          = getWinCursorCol( );

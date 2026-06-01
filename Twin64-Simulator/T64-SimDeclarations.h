@@ -1042,11 +1042,11 @@ struct SimWinScrollable : SimWin {
 // passed our globals and the module number of the processor.
 //
 //----------------------------------------------------------------------------------------
-struct SimWinCpuState : SimWin {
+struct SimWinProcState : SimWin {
     
     public:
     
-    SimWinCpuState( SimGlobals *glb, int modNum );
+    SimWinProcState( SimGlobals *glb, int modNum );
     
     void setDefaults( );
     void drawBanner( );
@@ -1054,7 +1054,14 @@ struct SimWinCpuState : SimWin {
 
     private:
 
-    T64Processor *proc = nullptr;
+    void drawGeneralRegSubWindow( int linePos );
+    void drawControlRegSubWindow( int linePos);
+    void drawCregSubsetRegSubWindow( int linePos);
+    void drawCodeSubWindow( int linePos, int lineLeft );
+    
+    T64Processor    *proc           = nullptr;
+    T64DisAssemble  *disAsm         = nullptr;
+    T64Word         codeWinBaseAdr  = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -1084,11 +1091,11 @@ struct SimWinTlb : SimWinScrollable {
 // i.e. words, on a line.
 //
 //----------------------------------------------------------------------------------------
-struct SimWinAbsMem : SimWinScrollable {
+struct SimWinMem : SimWinScrollable {
     
     public:
     
-    SimWinAbsMem( SimGlobals *glb, int modNum, T64Word adr );
+    SimWinMem( SimGlobals *glb, int modNum, T64Word adr );
     
     void setDefaults( );
     void drawBanner( );
@@ -1214,8 +1221,8 @@ private:
                                          int row = 0,
                                          int col = 0 );
   
-    void            displayAbsMemContent( T64Word ofs, T64Word len, int rdx = 16 );
-    void            displayAbsMemContentAsCode( T64Word ofs, T64Word len );
+    void            displayMemContent( T64Word ofs, T64Word len, int rdx = 16 );
+    void            displayMemContentAsCode( T64Word ofs, T64Word len );
 
     void            parseWinNumRange( int *winNumStart, int *winNumEnd );
     
@@ -1254,8 +1261,8 @@ private:
    
     void            modifyRegCmd( );
     
-    void            displayAbsMemCmd( );
-    void            modifyAbsMemCmd( );
+    void            displayMemCmd( );
+    void            modifyMemCmd( );
     
     void            displayCacheCmd( );
     void            purgeCacheCmd( );

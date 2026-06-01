@@ -975,6 +975,7 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
         case ( OPC_GRP_ALU * 16 + OPC_NOP ): {
             
+            buf[0] = '\0';
             return ( 0 );
         }
             
