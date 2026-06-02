@@ -103,8 +103,7 @@ bool T64Memory::busOpReadEvent( int     reqModNum,
 
     if ( isInIoAdrRange( pAdr )) {
 
-         // for now ...
-        *data = 0;
+        memset( data, 0, len );
         return ( false );
     }
     else {
@@ -142,8 +141,7 @@ bool T64Memory::busOpWriteEvent( int     reqModNum,
 
     if ( isInIoAdrRange( pAdr )) {
 
-         // for now ...
-        *data = 0;
+        memset( data, 0, len );
         return ( false );
     }
     else {
