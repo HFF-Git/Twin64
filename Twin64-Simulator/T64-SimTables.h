@@ -711,9 +711,9 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     
     {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_DM,
-        .cmdNameStr     = (char *) "da",
-        .cmdSyntaxStr   = (char *) "da <adr> [ , <len> ] [ , <fmt> ]",
-        .helpStr        = (char *) "display absolute memory"
+        .cmdNameStr     = (char *) "dam",
+        .cmdSyntaxStr   = (char *) "dm <adr> [ , <len> ] [ , <fmt> ]",
+        .helpStr        = (char *) "display memory"
     },
     
     {
@@ -748,14 +748,14 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ITLB,
         .cmdNameStr     = (char *) "itlb",
         .cmdSyntaxStr   = (char *) "itlb <arg1> , <arg2>",
-        .helpStr        = (char *) "inserts an entry into the unified TLB"
+        .helpStr        = (char *) "insert into the global TLB"
     },
 
     {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_PTLB,
         .cmdNameStr     = (char *) "ptlb",
         .cmdSyntaxStr   = (char *) "ptlb <vAdr>",
-        .helpStr        = (char *) "purges an entry from the unified TLB"
+        .helpStr        = (char *) "purge from the global TLB"
     },
     
     {
@@ -865,7 +865,7 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
         .cmdNameStr     = (char *)  "wn",
         .cmdSyntaxStr   = (char *)  "wn <type> [ , <arg1> [ , <arg2> ]]",
         .helpStr        = (char *)  "create a new window " 
-                                    "( CPU, ITLB, DTLB, ICACHE, DCACHE, MEM, CODE, TEXT )"
+                                    "( PROC, TLB, MEM, CODE, TEXT )"
     },
     
     {

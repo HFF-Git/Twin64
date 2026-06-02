@@ -1378,7 +1378,7 @@ void SimCommandsWin::helpCmd( ) {
 // or the argument value in the command. This will be quite useful for test script
 // development.
 //
-// EXIT <val>
+//  EXIT <val>
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::exitCmd( ) {
@@ -1758,9 +1758,6 @@ void SimCommandsWin::stepCmd( ) {
 // Run command. The command will just run the system until a halt is detected.
 //
 //  RUN [ <modNum> ]
-//
-// ??? the RUN command should actually run all modules. If a module halted, it
-// can be stepped and put into run mode with the RUN command too...
 //
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 

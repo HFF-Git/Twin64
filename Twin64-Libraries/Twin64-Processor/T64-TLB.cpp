@@ -38,15 +38,6 @@
 namespace {
 
 //----------------------------------------------------------------------------------------
-// "canonicalizeVa" clears the page offset part of a virtual address.
-//
-//----------------------------------------------------------------------------------------
-inline T64Word canonicalizeVa( T64Word vAdr ) {
-
-    return vAdr & (( 1ULL << T64_VADR_BITS ) - 1);
-}
-
-//----------------------------------------------------------------------------------------
 // Clear a TLB entry.
 //
 //----------------------------------------------------------------------------------------
@@ -102,6 +93,7 @@ T64LocalTlb::T64LocalTlb( T64Processor *proc,
 
     iTlbEntries = 4;
     dTlbEntries = 4;
+    tlbConfig   = 0;
 
     iTlb = (T64TlbEntry *) calloc( iTlbEntries, sizeof( T64TlbEntry ));
     dTlb = (T64TlbEntry *) calloc( dTlbEntries, sizeof( T64TlbEntry ));
@@ -152,7 +144,7 @@ void T64LocalTlb::reset( ) {
 //----------------------------------------------------------------------------------------
 bool T64LocalTlb::lookupItlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
     
-    T64TlbEntry *e = lookup( iTlb, iTlbEntries, canonicalizeVa( vAdr ));
+    T64TlbEntry *e = lookup( iTlb, iTlbEntries, vAdr );
     if ( e != nullptr ) {
 
         *pAdr    = e -> pAdr | ( vAdr & ~ e -> pageMask );  
@@ -167,13 +159,8 @@ bool T64LocalTlb::lookupItlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
     if ( gTlb == nullptr ) return ( false );
 
     T64TlbEntry tlbEntry;
-    if ( ! gTlb -> lookupTlb( vAdr, &tlbEntry )) {
+    if ( gTlb -> lookupTlb( vAdr, &tlbEntry )) {
         
-        iTlbMissGTlbMisses ++;
-        return ( false );
-    }
-    else {
-
         iTlbMissGTlbHits ++;
 
         iTlb[ iTlbRoundRobin & ( iTlbEntries - 1 ) ] = tlbEntry;
@@ -183,8 +170,13 @@ bool T64LocalTlb::lookupItlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
         *tlbInfo = tlbEntry.tlbInfo;
         return( true );
     }
-}
+    else {
 
+        iTlbMissGTlbMisses ++;
+        return ( false );
+    }
+}
+    
 //----------------------------------------------------------------------------------------
 // Lookup a Data TLB. If we find the entry in the L1 buffer, we return it and 
 // also place it in the slot 0, so that the next lookup has a higher chance of
@@ -195,7 +187,7 @@ bool T64LocalTlb::lookupItlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
 //----------------------------------------------------------------------------------------
 bool T64LocalTlb::lookupDtlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
                         
-    T64TlbEntry *e = lookup( dTlb, dTlbEntries, canonicalizeVa( vAdr ));
+    T64TlbEntry *e = lookup( dTlb, dTlbEntries, vAdr );
     if ( e != nullptr ) {
 
         dTlbHits ++;
@@ -217,13 +209,8 @@ bool T64LocalTlb::lookupDtlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
     if ( gTlb == nullptr ) return ( false );
 
     T64TlbEntry tlbEntry;
-    if ( ! gTlb -> lookupTlb( vAdr, &tlbEntry )) {
+    if ( gTlb -> lookupTlb( vAdr, &tlbEntry )) {
         
-        dTlbMissGTlbMisses ++;
-        return ( false );
-    }
-    else {
-
         dTlbMissGTlbHits ++;
 
         for ( int i = dTlbEntries - 1; i > 0; i-- ) dTlb[ i ] = dTlb[ i - 1 ];
@@ -232,6 +219,11 @@ bool T64LocalTlb::lookupDtlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
         *pAdr    = tlbEntry.pAdr | ( vAdr & ~ tlbEntry.pageMask );  
         *tlbInfo = tlbEntry.tlbInfo;
         return ( true );
+    }
+    else {
+
+        dTlbMissGTlbMisses ++;
+        return ( false );
     }
 }
 

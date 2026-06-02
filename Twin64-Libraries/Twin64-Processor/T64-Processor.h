@@ -346,6 +346,8 @@ private:
 
     friend struct   T64Cpu;
 
+    T64Word         tlbConfig                 = 0;
+
     T64System       *sys                    = nullptr;
     T64Cpu          *cpu                    = nullptr;
     T64LocalTlb     *localTlb               = nullptr;

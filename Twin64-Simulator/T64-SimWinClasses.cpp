@@ -722,9 +722,11 @@ void SimWinMem::drawBanner( ) {
     printNumericField( getHomeItemAdr( ), fmtDesc | FMT_HEX_2_4_4 );
     padLine( fmtDesc );
 
-    // ??? if toggleVal is ascii should say ascii...
+    if ( getWinToggleVal( ) == 3 ) {
 
-    printRadixField( fmtDesc | FMT_LAST_FIELD );
+        printTextField((char *) "ascii", fmtDesc | FMT_LAST_FIELD );
+    }
+    else printRadixField( fmtDesc | FMT_LAST_FIELD );
 
     if ( ! isAlignedAdr( getCurrentItemAdr( ), 8 )) {
         
@@ -748,7 +750,7 @@ void SimWinMem::drawBanner( ) {
 void SimWinMem::drawLine( T64Word itemAdr ) {
 
     uint32_t    fmtDesc     = FMT_DEF_ATTR;
-    uint32_t    limit       = getLineIncrementItemAdr( ) - 1; // ??? why - 1?
+    uint32_t    limit       = getLineIncrementItemAdr( );
 
     T64Memory   *mem = (T64Memory *) 
                             glb -> system -> lookupByAdr( getCurrentItemAdr( ));

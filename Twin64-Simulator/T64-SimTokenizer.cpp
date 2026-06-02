@@ -470,8 +470,8 @@ void SimTokenizer::parseIdent( ) {
             if ( isdigit( currentChar )) {
                 
                 parseNum( );
-                currentToken.u.val &= 0x00000000FFFFFC00;
-                currentToken.u.val >>= 10;
+                currentToken.u.val &= 0x00000000FFFFF000;
+                currentToken.u.val >>= 12;
                 return;
             }
             else throw ( ERR_INVALID_CHAR_IN_IDENT );
@@ -490,7 +490,7 @@ void SimTokenizer::parseIdent( ) {
             if ( isdigit( currentChar )) {
                 
                 parseNum( );
-                currentToken.u.val &= 0x00000000000003FF;
+                currentToken.u.val &= 0x0000000000000FFF;
                 return;
             }
             else throw ( ERR_INVALID_CHAR_IN_IDENT );
@@ -604,7 +604,21 @@ void SimTokenizer::nextToken( ) {
         
             currentToken.typ   = TYP_SYM;
             currentToken.tid   = TOK_EQUAL;
+        }
+    }
+    else if ( currentChar == '!' ) {
 
+        nextChar( );
+        if ( currentChar == '=' ) {
+
+            currentToken.typ   = TYP_SYM;
+            currentToken.tid   = TOK_NE;
+            nextChar( );
+        }
+        else {
+        
+            currentToken.typ   = TYP_SYM;
+            currentToken.tid   = TOK_EX_MARK;
         }
     }
     else if ( currentChar == '<' ) {
