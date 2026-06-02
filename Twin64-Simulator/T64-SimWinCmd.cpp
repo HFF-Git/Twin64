@@ -240,14 +240,10 @@ void throwAddModuleErr( int errNum ) {
     switch ( errNum ) {
 
         case  0: return;
-
-        case -1: 
+        case -1: throw( SimErrMsgId( ERR_MODULE_TABLE_FULL ));
         case -2: throw( SimErrMsgId( ERR_MODULE_TABLE_FULL ));
-
         case -3: throw( SimErrMsgId( ERR_MODULE_RANGE_OVERLAP ));
-
         case -4: throw( SimErrMsgId( ERR_MODULE_ALREADY_USED ));
-        
         default: throw( SimErrMsgId( ERR_CREATE_MODULE ));
     }
 }
@@ -933,8 +929,6 @@ int SimCommandsWin::buildCmdPrompt( char *promptStr, int promptStrLen ) {
     else return ( snprintf( promptStr, promptStrLen, "->" ));
 }
 
-
-
 //----------------------------------------------------------------------------------------
 // "addProcModule" parses the parameters for a PROC module. We are entered with 
 // the token being the module type keyword. The routine loops over the key/value
@@ -949,37 +943,8 @@ int SimCommandsWin::buildCmdPrompt( char *promptStr, int promptStrLen ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addProcModule( int modNum ) {
 
-    T64TlbType   tlbType    = T64_TT_FA_64S;  
+    T64TlbType   tlbType    = T64_TT_FA_4U;  
     T64CacheType cacheType  = T64_CT_NIL;
-  
-    while ( tok -> isToken( TOK_COMMA )) {
-
-        tok -> nextToken( );
-
-        switch ( tok -> tokId( )) {
-
-            case TOK_TLB: {
-
-                tok -> nextToken( );
-                tok -> acceptEqual( );
-
-                if ( tok -> isToken( TOK_TLB_FA_16S )) 
-                    tlbType = T64_TT_FA_16S;
-                else if ( tok -> isToken( TOK_TLB_FA_32S )) 
-                    tlbType = T64_TT_FA_32S;
-                else if ( tok -> isToken( TOK_TLB_FA_64S )) 
-                    tlbType = T64_TT_FA_64S;
-                else if ( tok -> isToken( TOK_TLB_FA_128S )) 
-                    tlbType = T64_TT_FA_128S;
-                else throw( ERR_INVALID_ARG );
-
-                tok -> nextToken( );
-
-            } break;
-
-            default: throw( ERR_INVALID_MODULE_TYPE );
-        }
-    }
 
     tok -> checkEOS( );
 
@@ -1101,9 +1066,9 @@ void SimCommandsWin::addTlbModule( int modNum ) {
 
     if ( tok -> isToken( TOK_COMMA )) {
 
-         tok -> nextToken( );
+        tok -> nextToken( );
 
-         if ( tok -> isToken( TOK_TLB_FA_16S )) 
+        if ( tok -> isToken( TOK_TLB_FA_16S )) 
             tlbType = T64_TT_FA_16S;
         else if ( tok -> isToken( TOK_TLB_FA_32S )) 
             tlbType = T64_TT_FA_32S;
@@ -1112,6 +1077,8 @@ void SimCommandsWin::addTlbModule( int modNum ) {
         else if ( tok -> isToken( TOK_TLB_FA_128S )) 
             tlbType = T64_TT_FA_128S;
         else throw( ERR_INVALID_ARG );
+
+        tok -> nextToken( );
     }
 
     tok -> checkEOS( );
@@ -2048,7 +2015,7 @@ void SimCommandsWin::displayMemCmd( ) {
     T64Word     len     = sizeof( T64Word );
     bool        asCode  = false;
 
-    ofs = eval -> acceptNumExpr( ERR_EXPECTED_START_OFS, 0, T64_MAX_PHYS_MEM_LIMIT );
+    ofs = eval -> acceptNumExpr( ERR_EXPECTED_START_OFS, 0, T64_MAX_VIRT_MEM_LIMIT );
     
     if ( tok -> isToken( TOK_COMMA )) {
         
@@ -2076,7 +2043,7 @@ void SimCommandsWin::displayMemCmd( ) {
     
     tok -> checkEOS( );
     
-    if (((T64Word) ofs + len ) <= T64_MAX_PHYS_MEM_LIMIT ) { 
+    if (((T64Word) ofs + len ) <= T64_MAX_VIRT_MEM_LIMIT ) { 
         
         if ( asCode ) displayMemContentAsCode( ofs, len );
         else          displayMemContent( ofs, len, rdx );

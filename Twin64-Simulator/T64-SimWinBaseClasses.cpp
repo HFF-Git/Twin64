@@ -121,7 +121,8 @@ void SimWin::setRows( int arg ) {
     int maxRows = winSizes[ winToggleVal ].maxRow;
     int minRows = winSizes[ winToggleVal ].minRow;
 
-    if (( arg < minRows ) || ( arg > maxRows )) arg = minRows;
+    if ( arg < minRows ) arg = minRows;
+    if ( arg > maxRows ) arg = maxRows;
 
     winSizes[ winToggleVal ].actualRow = arg;
 
@@ -654,7 +655,7 @@ void SimWinScrollable::winForward( T64Word amt ) {
     
     if ( amt == 0 ) amt = ( getRows( ) - 1 ) * lineIncrement;
     
-    if (((uint64_t) currentItemAdr + amt ) > (uint64_t) limitItemAdr ) {
+    if (((uint64_t) currentItemAdr + amt ) >= (uint64_t) limitItemAdr ) {
         
         currentItemAdr = limitItemAdr - (( getRows( ) - 1 ) * lineIncrement );
     }
@@ -679,11 +680,12 @@ void SimWinScrollable::winBackward( T64Word amt ) {
 // Object methods - SimCmdWinOutBuffer
 //
 //----------------------------------------------------------------------------------------
-// Command window output buffer. We cannot directly print to the command window when 
-// we want to support scrolling of the command window data. Instead, all printing is 
-// routed to a command window buffer. The buffer is a circular structure, the oldest 
-// lines are removed when we need room. When it comes to printing the window body 
-// content, the data is taken from the windows output buffer.
+// Command window output buffer. We cannot directly print to the command window 
+// when we want to support scrolling of the command window data. Instead, all 
+// printing is routed to a command window buffer. The buffer is a circular 
+// structure, the oldest lines are removed when we need room. When it comes to 
+// printing the window body content, the data is taken from the windows output
+// buffer.
 //
 //----------------------------------------------------------------------------------------
 SimWinOutBuffer::SimWinOutBuffer( ) { 

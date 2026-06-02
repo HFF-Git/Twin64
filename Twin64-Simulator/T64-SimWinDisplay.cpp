@@ -607,10 +607,9 @@ void SimWinDisplay::windowRadix( int rdx, int winNum ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "setRows" is the method to set the number if lines in a window. The number 
-// includes the banner. We are passed an optional windows number, which is used 
-// when there are user defined windows for locating the window object. The window
-// is made the current window.
+// "setRows" is the method to set the number if lines in a window. We are passed 
+// an optional windows number, which is used when there are user defined windows 
+// for locating the window object. The window is made the current window.
 //
 //----------------------------------------------------------------------------------------
 void SimWinDisplay::windowSetRows( int rows, int winNum ) {
@@ -634,7 +633,7 @@ void SimWinDisplay::windowSetCmdWinRows( int rows ) {
     if ( ! winModeOn ) throw( ERR_NOT_IN_WIN_MODE );
 
     if ( rows == 0 ) rows = cmdWin -> getWinSize( 0 ).minRow;
-    cmdWin -> setRows( rows );
+    cmdWin -> setRows( rows + 1 );
 
     setWinReFormat( );
 }
@@ -900,7 +899,7 @@ void SimWinDisplay::windowKill( int winNumStart, int winNumEnd ) {
                 
         if ( currentWinNum == i ) {
                  
-            for ( int i = 1; i < MAX_WINDOWS; i++ ) {
+            for ( int i = 0; i < MAX_WINDOWS; i++ ) {
                         
                 if ( validWindowNum( i )) {
                             

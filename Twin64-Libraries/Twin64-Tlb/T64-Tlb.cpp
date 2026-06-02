@@ -183,9 +183,9 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
 
     T64TlbEntry entry;
 
-    entry.pageMask  = tlbPageMask( pSize );
-    entry.vAdr      = arg1 & entry.pageMask;
-    entry.pAdr      = arg2 & entry.pageMask;
+    entry.pageMask  = tlbPageMask( tlbInfoPageSize( tlbInfo ));
+    entry.vAdr      = vAdr( arg1 & entry.pageMask );
+    entry.pAdr      = arg2 & entry.pageMask & 0xFFFFFFFFFFULL;
     entry.tlbInfo   = tlbInfo | 0x8000;
     
     for ( int i = 0; i < tlbSize; i++ ) {

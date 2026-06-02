@@ -417,6 +417,11 @@ inline bool willShiftLeftOverflow( T64Word val, int shift ) {
 // Extract functions for virtual addresses.
 //
 //----------------------------------------------------------------------------------------
+inline T64Word vAdr( T64Word vAdr ) {
+
+    return( extractField64( vAdr, 0, 52 ));
+}
+
 inline T64Word vAdrRegionId( T64Word vAdr ) {
 
     return( extractField64( vAdr, 32, 20 ));

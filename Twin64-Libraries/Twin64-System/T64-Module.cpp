@@ -39,14 +39,14 @@ T64Module::T64Module( T64ModuleType    modType,
 
     this -> moduleTyp   = modType;
     this -> moduleNum   = modNum;
-    this -> hpaAdr      =  T64_IO_HPA_MEM_START + ( modNum * T64_PAGE_SIZE_BYTES );
+    this -> hpaAdr      = T64_IO_HPA_MEM_START + ( modNum * T64_PAGE_SIZE_BYTES );
     this -> hpaLen      = T64_PAGE_SIZE_BYTES;
     this -> spaAdr      = spaAdr;
     this -> spaLen      = spaLen;
 }
 
 //----------------------------------------------------------------------------------------
-// Object constructor.
+// Module properties.
 //
 //----------------------------------------------------------------------------------------
 int T64Module::getModuleNum( ) {
@@ -54,10 +54,6 @@ int T64Module::getModuleNum( ) {
     return ( moduleNum );
 }
 
-//----------------------------------------------------------------------------------------
-// Module properties.
-//
-//----------------------------------------------------------------------------------------
 T64ModuleType T64Module::getModuleType( ) {
 
     return ( moduleTyp );

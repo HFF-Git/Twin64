@@ -569,7 +569,7 @@ void SimWinTlb::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 1 );
-    setWinLimitsForToggle( 0, 8, tlb -> getTlbSize( ), 96, 96 );
+    setWinLimitsForToggle( 0, 8, tlb -> getTlbSize( ) + 1, 96, 96 );
     
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
