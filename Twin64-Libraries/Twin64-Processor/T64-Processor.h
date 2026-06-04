@@ -270,6 +270,7 @@ struct T64Cpu {
     T64Word         psrReg;
     uint32_t        instrReg;
     T64Word         resvReg;
+    uint16_t        instrTlbInfo;
 
     T64CpuType      cpuType         = T64_CPU_T_NIL;
     T64Word         physMemSize     = T64_MAX_PHYS_MEM_LIMIT;
@@ -345,8 +346,6 @@ private:
                                         T64Word             arg2);
 
     friend struct   T64Cpu;
-
-    T64Word         tlbConfig                 = 0;
 
     T64System       *sys                    = nullptr;
     T64Cpu          *cpu                    = nullptr;

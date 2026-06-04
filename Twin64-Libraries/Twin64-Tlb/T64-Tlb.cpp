@@ -45,15 +45,6 @@ int tlbPageSize( int size ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "canonicalizeVa" clears the page offset part of a virtual address.
-//
-//----------------------------------------------------------------------------------------
-inline T64Word canonicalizeVa( T64Word vAdr ) {
-
-    return vAdr & (( 1ULL << T64_VADR_BITS ) - 1);
-}
-
-//----------------------------------------------------------------------------------------
 // The page mask is key for the TLB supporting multiple page sizes. When we 
 // lookup an entry, the comparison will use the mask to compare the bits 
 // corresponding to the page size.
@@ -176,7 +167,6 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
     uint16_t tlbInfo = arg2 >> 48;
     int      pSize   = tlbPageSize( tlbInfoPageSize( tlbInfo ));
     
-
     if ( isInIoAdrRange( arg1 )) return ( true );
     if ( ! isAlignedPageAdr( arg1, pSize )) return ( false );
     if ( ! isAlignedPageAdr( arg2, pSize )) return ( false );

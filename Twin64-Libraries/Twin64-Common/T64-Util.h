@@ -170,6 +170,18 @@ inline bool copyEndianAware( uint8_t *dst, uint8_t *src, int len ) {
 }
 
 //----------------------------------------------------------------------------------------
+// We often need a portion of a memory mapped register. These registers are 
+// T64Words, stored in the simulator endianess. When we display them as memory,
+// the endianess needs to be corrected to show a big endian layout.
+//
+//----------------------------------------------------------------------------------------
+inline void copyFromReg( uint8_t *dst, T64Word reg, int ofs, int len ) {
+
+    copyEndianAware((uint8_t *) &reg, (uint8_t *) &reg, sizeof( T64Word ));
+    memcpy( dst,  ((uint8_t *) &reg + ofs % sizeof( T64Word )), len );
+}
+
+//----------------------------------------------------------------------------------------
 // Helper function to check a bit range value in the instruction.
 //
 //----------------------------------------------------------------------------------------
@@ -319,20 +331,20 @@ inline void depositInstrRegA( T64Instr *instr, uint32_t regId ) {
 // General extract, deposit and shift functions.
 //
 //----------------------------------------------------------------------------------------
-inline T64Word extractBit64( T64Word arg, int bitpos ) {
+inline T64Word extractBit64( T64Word arg, uint8_t bitpos ) {
     
     if ( bitpos > 63 ) return ( 0 );
     return ( arg >> bitpos ) & 1;
 }
 
-inline T64Word extractField64( T64Word arg, int bitpos, int len ) {
+inline T64Word extractField64( T64Word arg, uint8_t bitpos, int len ) {
     
     if ( bitpos > 63 ) return ( 0 );
     if ( bitpos + len > 64 ) return ( 0 );
     return ( arg >> bitpos ) & (( 1LL << len ) - 1 );
 }
 
-inline T64Word extractSignedField64( T64Word arg, int bitpos, int len ) {
+inline T64Word extractSignedField64( T64Word arg, uint8_t bitpos, int len ) {
     
     T64Word field = ( arg >> bitpos ) & (( 1ULL << len ) - 1 );
     
@@ -340,13 +352,22 @@ inline T64Word extractSignedField64( T64Word arg, int bitpos, int len ) {
     else             return ( field );
 }
 
-inline T64Word depositField( T64Word word, int bitpos, int len, T64Word value ) {
+inline void depositBit64( T64Word *arg, uint8_t bitpos, uint8_t val ) {
+
+    if ( bitpos <= 63 ) {
+
+        if ( val > 0 ) *arg |= ( 1U << bitpos );
+        else *arg &= ~ ( 1U << bitpos );
+    }
+}
+
+inline T64Word depositField( T64Word word, uint8_t bitpos, int len, T64Word value ) {
     
     T64Word mask = (( 1ULL << len ) - 1 ) << bitpos;
     return ( word & ~mask ) | (( value << bitpos ) & mask );
 }
 
-inline T64Word shiftRight128( T64Word hi, T64Word lo, int shift ) {
+inline T64Word shiftRight128( T64Word hi, T64Word lo, uint8_t shift ) {
     
     if      ( shift == 0 ) return ( lo );
     else if (( shift > 0 ) && ( shift < 64 )) {
@@ -443,7 +464,7 @@ inline T64Word vAdrPageOfs( T64Word vAdr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Extract functions for the PSR status bits.
+// Extract and deposit functions for the PSR status bits.
 //
 //----------------------------------------------------------------------------------------
 inline bool extractPsrMbit( T64Word psr ) {
@@ -454,6 +475,11 @@ inline bool extractPsrMbit( T64Word psr ) {
 inline uint8_t extractPsrXbit( T64Word psr ) {
 
     return((uint8_t) extractBit64( psr, 61 ));
+}
+
+inline void depositPsrXbit( T64Word *psr, uint8_t val ) {
+
+    depositBit64( psr, 61, val );
 }
 
 //----------------------------------------------------------------------------------------

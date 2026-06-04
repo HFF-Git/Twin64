@@ -212,7 +212,12 @@ void T64Cpu::illegalInstrTrap( ) {
 
 //----------------------------------------------------------------------------------------
 // Check routines that generate traps. We check for the condition and if not
-// met, raise the corresponding trap.
+// met, raise the corresponding trap. There are  couple of checks. The first
+// is the privilege level and data alignment check. Next, we have a routine to
+// check whether the region Id of the data address matches any of the protection
+// Ids in the control registers. Finally, we perform the access rights check 
+// based on the TLB info for the address. Note that instruction address are 
+// checked for alignment and access rights but not for a region Id match.
 //
 //----------------------------------------------------------------------------------------
 void T64Cpu::privModeCheck( ) {
@@ -256,11 +261,6 @@ void T64Cpu::instrAccCheck( T64Word vAdr, uint16_t tlbInfo ) {
         
         instrMemAccRightsTrap( psrReg );
     }  
-
-    if ( ! regionIdCheck( vAdrRegionId( vAdr ), false )) {
-
-        instrMemProtectionTrap( vAdr );
-    }   
 }
 
 void T64Cpu::dataAlignmentCheck( T64Word adr, int len ) {
@@ -377,13 +377,12 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
     }
     else {
 
-        uint16_t tlbInfo;
         T64Word  pAdr;
 
-        if ( ! proc -> localTlb -> lookupItlb( vAdr, &pAdr, &tlbInfo )) 
+        if ( ! proc -> localTlb -> lookupItlb( vAdr, &pAdr, &instrTlbInfo )) 
             instrTlbMissTrap( vAdr );
 
-        instrAccCheck( vAdr,tlbInfo );      
+        instrAccCheck( vAdr, instrTlbInfo );      
        
         if ( ! proc -> busOpRead( pAdr, (uint8_t *) &instr, 4 )) {
 
@@ -1187,17 +1186,13 @@ void T64Cpu::instrBrBOp( T64Instr instr ) {
     if ( extractInstrFieldU( instr, 20, 2 ) != 0 ) illegalInstrTrap( );
     
     if ( extractInstrBit( instr, 19 )) { 
-        
-        // ??? gateway check ?
-        // ??? priv transfer check ?
 
+        if ( tlbInfoPageType( instrTlbInfo ) == PT_GATEWAY ) {
+
+            depositPsrXbit( &psrReg, tlbInfoPrivLevel1( instrTlbInfo ));
+        }
     }
-    else {
-
-        // ??? priv transfer check ?
-
-    }
-
+   
     psrReg = newIA;
     setRegR( instr, rl );
 }

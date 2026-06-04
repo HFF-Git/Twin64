@@ -64,10 +64,11 @@ enum T64ModuleType {
 //----------------------------------------------------------------------------------------
 enum T64BroadcastEvents {
 
-    T64_BCAST_TLB_PURGE = 1,
-    T64_BCAST_TLB_INSERT = 2,
-    T64_BCAST_MODULE_PURGE = 3,
-
+    T64_BCAST_TLB_PURGE     = 1,
+    T64_BCAST_TLB_INSERT    = 2,
+    T64_BCAST_MODULE_PURGE  = 3,
+    T64_BCAST_LDR_EVENT     = 4,
+    T64_BCAST_STC_EVENT     = 5
 };
 
 //----------------------------------------------------------------------------------------
