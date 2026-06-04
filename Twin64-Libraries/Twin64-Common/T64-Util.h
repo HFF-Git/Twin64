@@ -84,6 +84,11 @@ inline T64Word rounddown( T64Word arg, int round ) {
     return (arg / round) * round;
 }
 
+inline bool isAligned( T64Word arg, int align ) {
+
+    return (( arg & ( align - 1 )) == 0 );
+}
+
 inline bool isAlignedAdr( T64Word adr, int align ) {
 
     if (( align == 1 ) || ( align == 2 ) || 

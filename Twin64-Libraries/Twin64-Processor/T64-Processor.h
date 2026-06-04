@@ -174,6 +174,8 @@ struct T64Cpu {
     T64Word         getPsrReg( );
     void            setPsrReg( T64Word val );
 
+    void            handleStcEvent( T64Word adr );        
+ 
     private: 
 
     int             evalCond( int cond, T64Word val1, T64Word val2 );
@@ -218,8 +220,8 @@ struct T64Cpu {
     T64Word         dataReadRegBOfsRegX( uint32_t instr, bool sExt );
 
     void            dataWrite( T64Word vAdr, T64Word val, int len );
-    void            dataWriteRegBOfsImm13( uint32_t instr );
-    void            dataWriteRegBOfsRegX( uint32_t instr );
+    T64Word         dataWriteRegBOfsImm13( uint32_t instr );
+    T64Word         dataWriteRegBOfsRegX( uint32_t instr );
 
     void            instrAluNopOp( T64Instr instr );
     void            instrAluAddOp( T64Instr instr );

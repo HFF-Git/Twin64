@@ -211,6 +211,21 @@ void T64Cpu::illegalInstrTrap( ) {
 }
 
 //----------------------------------------------------------------------------------------
+// Each processor participates in the LDR/STC processing. When a store on any
+// other processor to its reservation address happens that processor will 
+// broadcast this event to all processors. We check this address against our
+// reservation register and clear it if there is a match. 
+//
+//----------------------------------------------------------------------------------------
+void T64Cpu::handleStcEvent( T64Word adr ) {
+
+    if (( resvReg < 0 ) && ( extractField64( resvReg, 0, 52 ))) {
+
+        resvReg = 0;
+    }
+}
+
+//----------------------------------------------------------------------------------------
 // Check routines that generate traps. We check for the condition and if not
 // met, raise the corresponding trap. There are  couple of checks. The first
 // is the privilege level and data alignment check. Next, we have a routine to
@@ -542,31 +557,35 @@ T64Word T64Cpu::dataReadRegBOfsRegX( uint32_t instr, bool sExt ) {
 // address.
 //
 //----------------------------------------------------------------------------------------
-void T64Cpu::dataWriteRegBOfsImm13( uint32_t instr ) {
+T64Word T64Cpu::dataWriteRegBOfsImm13( uint32_t instr ) {
     
-    T64Word     adr     = getRegB( instr );
-    int         dw      = extractInstrDwField( instr );
-    T64Word     ofs     = extractInstrSignedScaledImm13( instr );
-    int         len     = 1 << dw;
-    T64Word     val     = getRegR( instr );
+    T64Word adr       = getRegB( instr );
+    int     dw        = extractInstrDwField( instr );
+    T64Word ofs       = extractInstrSignedScaledImm13( instr );
+    T64Word targetAdr = addAdrOfs32( adr, ofs );
+    int     len     = 1 << dw;
+    T64Word val     = getRegR( instr );
     
     dataWrite( addAdrOfs32( adr, ofs ), val, len );
+    return( targetAdr );
 }
 
 //----------------------------------------------------------------------------------------
 // Write data to memory based using RegB and the RegX offset to form the
-// address.
+// address. In addition, we return the computed target address.
 //
 //----------------------------------------------------------------------------------------
-void T64Cpu:: dataWriteRegBOfsRegX( uint32_t instr ) {
+T64Word T64Cpu:: dataWriteRegBOfsRegX( uint32_t instr ) {
     
-    T64Word     adr     = getRegB( instr );
-    int         dw      = extractInstrDwField( instr );
-    T64Word     ofs     = getRegA( instr ) << dw;
-    int         len     = 1U << dw;
-    T64Word     val     = getRegR( instr );
+    T64Word adr     = getRegB( instr );
+    int     dw      = extractInstrDwField( instr );
+    T64Word ofs     = getRegA( instr ) << dw;
+    T64Word targetAdr = addAdrOfs32( adr, ofs );
+    int     len     = 1U << dw;
+    T64Word val     = getRegR( instr );
   
     dataWrite( addAdrOfs32( adr, ofs ), val, len );
+    return( targetAdr );
 }
 
 //----------------------------------------------------------------------------------------
@@ -1121,8 +1140,11 @@ void T64Cpu::instrMemLdOp( T64Instr instr ) {
 //----------------------------------------------------------------------------------------
 // MEM:LDR operation.
 //
-// ??? update reserved flag ?
-// ??? how would we do it without a cache ?
+// The load reserved instruction loads the value from address and remembers
+// the address. It will set a reservation valid flag, encoded in bit 63 of 
+// the reserved register.
+//
+// ??? enforce an alignment larger than 8 bytes ?
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrMemLdrOp( T64Instr instr ) {
 
@@ -1130,7 +1152,13 @@ void T64Cpu::instrMemLdrOp( T64Instr instr ) {
     if ( extractInstrBit( instr, 21 )) illegalInstrTrap( );
     if ( extractInstrDwField( instr ) != 3 ) illegalInstrTrap( );
 
-    bool sExt = ! extractInstrBit( instr, 20 );
+    bool        sExt    = ! extractInstrBit( instr, 20 );
+    T64Word     adr     = getRegB( instr ); 
+    T64Word     ofs     = extractInstrSignedScaledImm13( instr );
+    int         len     = 3;
+    T64Word     val     = dataRead( addAdrOfs32( adr, ofs ), len, sExt );
+
+    resvReg = addAdrOfs32( adr, ofs ) | ( 1U << 63 );
           
     setRegR( instr, dataReadRegBOfsImm13( instr, sExt ));
     nextInstr( );
@@ -1139,20 +1167,32 @@ void T64Cpu::instrMemLdrOp( T64Instr instr ) {
 //----------------------------------------------------------------------------------------
 // MEM:ST operation.
 //
+// The ST instruction stores a data item to memory. In addition, the reservation
+// is cleared if the address matches. In addition, we need to broadcast this
+// event to all processors.
+//
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrMemStOp( T64Instr instr ) {
 
+    T64Word targetAdr;
+
     switch ( extractInstrFieldU( instr, 19, 3 )) {
 
-        case 0: dataWriteRegBOfsImm13( instr ); break;
+        case 0: targetAdr = dataWriteRegBOfsImm13( instr ); break;
         case 1: {
             
             if ( extractInstrFieldU( instr, 0, 9 ) != 0 ) illegalInstrTrap( );
-            dataWriteRegBOfsRegX( instr );
+            targetAdr = dataWriteRegBOfsRegX( instr );
         
         } break;
 
         default: illegalInstrTrap( );
+    }
+
+    if ( extractField64( resvReg, 0, 52 ) == targetAdr ) {
+
+        proc -> busOpBroadCast( T64_BCAST_STC_EVENT, targetAdr, 0 );
+        resvReg = 0;
     }
 
     nextInstr( );
@@ -1161,15 +1201,31 @@ void T64Cpu::instrMemStOp( T64Instr instr ) {
 //----------------------------------------------------------------------------------------
 // MEM:STC operation.
 //
-// ??? update reserved flag ?
-// ??? how would we do it without a cache ?
+// The store conditional instruction computes the target address and compares 
+// it against the reserved register data. If the reservation is valid and the
+// addresses match, we report a success, else a failure. In addition, we need 
+// to broadcast this event to all processors.
+//
+// ??? enforce an alignment larger than 8 bytes ? 
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrMemStcOp( T64Instr instr ) {
 
     if ( extractInstrFieldU( instr, 19, 3 ) != 0 ) illegalInstrTrap( );
     if ( extractInstrDwField( instr ) != 3 ) illegalInstrTrap( );
-        
-    dataWriteRegBOfsImm13( instr );
+
+    T64Word adr       = getRegB( instr ); 
+    T64Word ofs       = extractInstrSignedScaledImm13( instr );
+    T64Word targetAdr = addAdrOfs32( adr, ofs );
+
+    if (( resvReg < 0 ) && (( - resvReg ) == targetAdr )) {
+
+        dataWrite( targetAdr, getRegR( instr ), sizeof( T64Word ));
+        setRegR( instr, 1 );
+
+         proc -> busOpBroadCast( T64_BCAST_STC_EVENT, targetAdr, 0 );
+    }
+    else setRegR( instr, 0 );
+
     nextInstr( );
 }
 
@@ -1696,6 +1752,7 @@ bool T64Cpu::executeInstr( ) {
 
         T64Word ivaAdr  = cRegFile[ CTL_REG_IVA ];
         psrReg          = ivaAdr + ( code * 32 );
+        resvReg         = 0;
 
         return( true );
     }

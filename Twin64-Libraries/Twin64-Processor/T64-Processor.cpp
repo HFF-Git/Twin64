@@ -377,20 +377,15 @@ bool T64Processor::handleHPABroadcast( T64BroadcastEvents event,
 
         case T64_BCAST_MODULE_PURGE: {
 
-            // ??? i get the module number...
+            // ??? get the module number...
             // ??? has the global TLB been purged ?
-
-        } break;
-
-        case T64_BCAST_LDR_EVENT: {
-
-            // ??? another processor issued a LDR instruction...
 
         } break;
 
         case T64_BCAST_STC_EVENT: {
 
-            // ??? another processor issued a STC instruction...
+            cpu -> handleStcEvent( arg1 );
+            return ( true );
 
         } break;
 
