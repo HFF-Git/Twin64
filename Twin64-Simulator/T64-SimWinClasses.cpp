@@ -771,8 +771,10 @@ void SimWinMem::drawLine( T64Word itemAdr ) {
             if ( readMem( glb -> system, itemAdr + i, (uint8_t *)&val, sizeof( val ))) {
 
                 printNumericField( val, fmtDesc | FMT_HEX_4_4 );
-                printTextField((char *) "   " );
             }
+            else printNumericField( val, fmtDesc | FMT_HEX_4_4 | FMT_INVALID_NUM );
+
+            printTextField((char *) "   " );
         }
     }
     else if ( getWinToggleVal( ) == 1 ) {
@@ -783,8 +785,10 @@ void SimWinMem::drawLine( T64Word itemAdr ) {
             if ( readMem( glb -> system, itemAdr + i, (uint8_t *)&val, sizeof( val ))) {
 
                 printNumericField( val, fmtDesc | FMT_HEX_4_4_4_4 );
-                printTextField((char *) "   " );
             }
+            else printNumericField( val, fmtDesc | FMT_HEX_4_4_4_4 | FMT_INVALID_NUM );
+
+            printTextField((char *) "   " );
         }
     }
     else if ( getWinToggleVal( ) == 2 ) {

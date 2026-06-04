@@ -318,12 +318,16 @@ T64GlobalTlb::busOpReadEvent( int reqModNum, T64Word pAdr, uint8_t *data, int le
 
     if ( ! isInIoHpaRange( pAdr )) return( false );
     if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( false );
+    if ( reqModNum == moduleNum ) return( false );
 
-    int wordIndex    = ( pAdr - T64_IO_HPA_MEM_START ) >> 3;
-    int regSetIndex  = wordIndex / T64_IO_REG_SET_SIZE;
-    int wordInRegSet = wordIndex % T64_IO_REG_SET_SIZE;
+    T64Word hpaAdr  =  T64_IO_HPA_MEM_START + moduleNum * T64_PAGE_SIZE_BYTES;
+    int     wordIndex           = (( pAdr - hpaAdr ) >> 3 );
+    int     regSetIndex         = wordIndex / T64_IO_REG_SET_SIZE;
+    int     wordInRegSetIndex   = wordIndex % T64_IO_REG_SET_SIZE;
+    int     wordOfs             = pAdr % sizeof( T64Word );
+    T64Word tmp                 = 0;
 
-    *data = 0; // ??? for now ...
+    copyFromReg( data, tmp, 0, len );
     return ( true );
 }
 
@@ -334,6 +338,17 @@ T64GlobalTlb::busOpReadEvent( int reqModNum, T64Word pAdr, uint8_t *data, int le
 //----------------------------------------------------------------------------------------
 bool 
 T64GlobalTlb::busOpWriteEvent( int reqModNum, T64Word pAdr, uint8_t *data, int len )  {
+
+    if ( ! isInIoHpaRange( pAdr )) return( false );
+    if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( false );
+    if ( reqModNum == moduleNum ) return( false );
+
+    T64Word hpaAdr  =  T64_IO_HPA_MEM_START + moduleNum * T64_PAGE_SIZE_BYTES;
+    int     wordIndex           = (( pAdr - hpaAdr ) >> 3 );
+    int     regSetIndex         = wordIndex / T64_IO_REG_SET_SIZE;
+    int     wordInRegSetIndex   = wordIndex % T64_IO_REG_SET_SIZE;
+    int     wordOfs             = pAdr % sizeof( T64Word );
+    T64Word tmp                 = 0;
 
     return ( false );
 } 
