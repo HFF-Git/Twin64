@@ -725,7 +725,7 @@ void SimWinDisplay::windowBackward( int amt, int winNum ) {
 // is made the current window.
 //
 //----------------------------------------------------------------------------------------
-void SimWinDisplay::windowJump( int pos, int winNum ) {
+void SimWinDisplay::windowJump( T64Word pos, int winNum ) {
     
     if ( ! winModeOn ) throw( ERR_NOT_IN_WIN_MODE );
     if ( winNum == -1 ) winNum = getCurrentWindow( );

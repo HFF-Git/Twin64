@@ -754,14 +754,17 @@ void SimWinMem::drawLine( T64Word itemAdr ) {
 
     T64Memory   *mem = (T64Memory *) 
                             glb -> system -> lookupByAdr( getCurrentItemAdr( ));
-    if ( mem == nullptr ) {
-
-        printTextField((char *) "Invalid address" );
-    }; 
-
+   
     printTextField((char *) "(", fmtDesc );
     printNumericField( itemAdr, fmtDesc | FMT_HEX_2_4_4 );
     printTextField((char *) "): ", fmtDesc );
+
+     if ( mem == nullptr ) {
+
+        printTextField((char *) "Invalid address" );
+        padLine( fmtDesc );
+        return;
+    }; 
 
     if ( getWinToggleVal( ) == 0 ) {
 

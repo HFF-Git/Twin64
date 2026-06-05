@@ -1349,7 +1349,7 @@ public:
     void            windowHome( int amt, int winNum );
     void            windowForward( int amt, int winNum );
     void            windowBackward( int amt, int winNum );
-    void            windowJump( int amt, int winNum );
+    void            windowJump( T64Word pos, int winNum );
     void            windowToggle( int winNum, int toggleVal );
     void            windowExchangeOrder( int winNum );
     

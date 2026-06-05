@@ -2707,6 +2707,7 @@ void SimCommandsWin::winExchangeCmd( ) {
 //  WN  CODE    "," <adr> [ "," <modNum> ]
 //  WN  TEXT    "," <str>
 // 
+// ??? WN MEM, CODE needs to handle virtual windows !!!
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winNewWinCmd( ) {
     
