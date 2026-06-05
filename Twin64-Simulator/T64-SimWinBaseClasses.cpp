@@ -320,23 +320,23 @@ void SimWin::printNumericField( T64Word     val,
     if ( col == 0 )                 col = lastColPos;
     if ( fmtDesc & FMT_LAST_FIELD ) col = getColumns( );
 
-    int maxLen = glb -> console -> numberFmtLen( fmtDesc, val );
+    int maxNumLen = glb -> console -> numberFmtLen( fmtDesc, val );
    
-    if ( fLen == 0 ) fLen = maxLen;
+    if ( fLen == 0 ) fLen = maxNumLen;
 
     glb -> console -> setFmtAttributes( fmtDesc );
     setWinCursor( row, col );
    
-    if ( fLen > maxLen ) {
+    if ( fLen > maxNumLen ) {
         
         if ( fmtDesc & FMT_ALIGN_LFT ) {
 
             glb -> console -> printNumber( val, fmtDesc );
-            padField( maxLen, fLen );
+            padField( maxNumLen, fLen );
         }
         else {
             
-            padField( maxLen, fLen );
+            padField( maxNumLen, fLen );
             glb -> console -> printNumber( val, fmtDesc );
         }
     }
@@ -353,6 +353,7 @@ void SimWin::printNumericField( T64Word     val,
 // in the field. If the data is larger than the field, it will be truncated.
 //
 // ??? add a check that we do not go past the window column size ?
+// ??? use calculateStrLen vs. strlen ?
 //----------------------------------------------------------------------------------------
 void SimWin::printTextField( char       *text, 
                              uint32_t   fmtDesc, 

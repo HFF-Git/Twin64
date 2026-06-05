@@ -659,9 +659,6 @@ struct SimExprEvaluator {
     void            parsePredefinedFunction( SimToken funcId, SimExpr *rExpr );    
     void            pFuncAssemble( SimExpr *rExpr );
     void            pFuncDisAssemble( SimExpr *rExpr );
-    void            pFuncHash( SimExpr *rExpr );
-    void            pFuncS32( SimExpr *rExpr );
-    void            pFuncU32( SimExpr *rExpr );
     
     SimGlobals      *glb        = nullptr;
     SimTokenizer    *tok        = nullptr;

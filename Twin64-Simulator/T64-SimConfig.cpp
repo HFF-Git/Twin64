@@ -168,15 +168,6 @@ void processCmdLineOptions( SimGlobals *glb, int argc, char *argv[ ] ) {
         
                     strncpy( glb -> logFileName, optArg, MAX_FILE_PATH_SIZE - 1 );
                     glb -> logFileName[ MAX_FILE_PATH_SIZE - 1 ] = '\0';
-
-                    #if 0
-                    glb -> logFp = fopen(glb->logFile, "w");
-                    if ( ! glb-> logFp ) {
-                        
-                        perror( "Failed to open log file\n" );
-                        exit( 1 );
-                    }
-                    #endif
                 }
                 else {
         

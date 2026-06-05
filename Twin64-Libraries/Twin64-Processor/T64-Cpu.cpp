@@ -76,7 +76,6 @@ void T64Cpu::reset( ) {
     
     psrReg          = 0;
     instrReg        = 0;
-    resvReg         = 0;
     physMemSize     = T64_MAX_PHYS_MEM_LIMIT;
 }
 
@@ -208,21 +207,6 @@ void T64Cpu::overFlowTrap( ) {
 void T64Cpu::illegalInstrTrap( ) {
 
     throw( T64Trap( ILLEGAL_INSTR_TRAP, psrReg, instrReg, 0 ));
-}
-
-//----------------------------------------------------------------------------------------
-// Each processor participates in the LDR/STC processing. When a store on any
-// other processor to its reservation address happens that processor will 
-// broadcast this event to all processors. We check this address against our
-// reservation register and clear it if there is a match. 
-//
-//----------------------------------------------------------------------------------------
-void T64Cpu::handleStcEvent( T64Word adr ) {
-
-    if (( resvReg < 0 ) && ( extractField64( resvReg, 0, 52 ))) {
-
-        resvReg = 0;
-    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -1201,25 +1185,17 @@ void T64Cpu::instrMemLdrOp( T64Instr instr ) {
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrMemStOp( T64Instr instr ) {
 
-    T64Word targetAdr = 0;
-
     switch ( extractInstrFieldU( instr, 19, 3 )) {
 
-        case 0: targetAdr = dataWriteRegBOfsImm13( instr ); break;
+        case 0: dataWriteRegBOfsImm13( instr ); break;
         case 1: {
             
             if ( extractInstrFieldU( instr, 0, 9 ) != 0 ) illegalInstrTrap( );
-            targetAdr = dataWriteRegBOfsRegX( instr );
+            dataWriteRegBOfsRegX( instr );
         
         } break;
 
         default: illegalInstrTrap( );
-    }
-
-    if ( extractField64( resvReg, 0, 52 ) == targetAdr ) {
-
-        proc -> busOpBroadCast( T64_BCAST_STC_EVENT, targetAdr, 0 );
-        resvReg = 0;
     }
 
     nextInstr( );
@@ -1771,7 +1747,6 @@ bool T64Cpu::executeInstr( ) {
 
         T64Word ivaAdr  = cRegFile[ CTL_REG_IVA ];
         psrReg          = ivaAdr + ( code * 32 );
-        resvReg         = 0;
 
         return( true );
     }

@@ -31,81 +31,7 @@
 //----------------------------------------------------------------------------------------
 namespace {
 
-
-
 }; // namespace
-
-
-// ??? we will have all kinds of functions that will need access to modules, etc.
-
-
-//----------------------------------------------------------------------------------------
-// Coercing functions. Not a lot there yet. The idea is to coerce an expression into a
-// 32-bit value where possible. There are signed and unsigned versions, which at the
-// moment identical. We only have 32-bit values. If we have one day 16-bit and 64-bit 
-// various in addition, there is more to do. What we also coerced is the first characters
-// of a string, right justified if shorter than 4 bytes.
-//
-//----------------------------------------------------------------------------------------
-void SimExprEvaluator::pFuncS32( SimExpr *rExpr ) {
-    
-    SimExpr     lExpr;
-    uint32_t    res = 0;
-     
-    tok -> nextToken( );
-    if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
-    else throw ( ERR_EXPECTED_LPAREN );
-        
-    parseExpr( &lExpr );
-    if ( lExpr.typ == TYP_NUM ) {
-        
-        res = lExpr.u.val;
-    }
-    else if ( lExpr.typ == TYP_STR ) {
-       
-        if ( strlen( lExpr.u.str ) > 0 ) res = ( lExpr.u.str[ 0 ] & 0xFF );
-        if ( strlen( lExpr.u.str ) > 1 ) res = ( res << 8 ) | ( lExpr.u.str[ 1 ] & 0xFF );
-        if ( strlen( lExpr.u.str ) > 2 ) res = ( res << 8 ) | ( lExpr.u.str[ 2 ] & 0xFF );
-        if ( strlen( lExpr.u.str ) > 3 ) res = ( res << 8 ) | ( lExpr.u.str[ 3 ] & 0xFF );
-    }
-    else throw ( ERR_EXPECTED_EXPR );
-    
-    rExpr -> typ    = TYP_NUM;
-    rExpr -> u.val = res;
-
-    if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
-    else throw ( ERR_EXPECTED_RPAREN );
-}
-
-void SimExprEvaluator::pFuncU32( SimExpr *rExpr ) {
-    
-    SimExpr     lExpr;
-    uint32_t    res = 0;
-     
-    tok -> nextToken( );
-    if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
-    else throw ( ERR_EXPECTED_LPAREN );
-        
-    parseExpr( &lExpr );
-    if ( lExpr.typ == TYP_NUM ) {
-        
-        res = lExpr.u.val;
-    }
-    else if ( lExpr.typ == TYP_STR ) {
-        
-        if ( strlen( lExpr.u.str ) > 0 ) res = ( lExpr.u.str[ 0 ] & 0xFF );
-        if ( strlen( lExpr.u.str ) > 1 ) res = ( res << 8 ) | ( lExpr.u.str[ 1 ] & 0xFF );
-        if ( strlen( lExpr.u.str ) > 2 ) res = ( res << 8 ) | ( lExpr.u.str[ 2 ] & 0xFF );
-        if ( strlen( lExpr.u.str ) > 3 ) res = ( res << 8 ) | ( lExpr.u.str[ 3 ] & 0xFF );
-    }
-    else throw ( ERR_EXPECTED_EXPR );
-    
-    rExpr -> typ    = TYP_NUM;
-    rExpr -> u.val = res;
-
-    if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
-    else throw ( ERR_EXPECTED_RPAREN );
-}
 
 //----------------------------------------------------------------------------------------
 // Assemble function.
@@ -201,28 +127,6 @@ void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Virtual address hash function.
-//
-// HASH "(" <extAdr> ")"
-//----------------------------------------------------------------------------------------
-void SimExprEvaluator::pFuncHash( SimExpr *rExpr ) {
-    
-    SimExpr     lExpr;
-   
-    tok -> nextToken( );
-    
-    if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
-    else throw ( ERR_EXPECTED_LPAREN );
-        
-    parseExpr( &lExpr );
-
-    // ??? call the function ...
-   
-    if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
-    else throw ( ERR_EXPECTED_RPAREN );
-}
-
-//----------------------------------------------------------------------------------------
 // Entry point to the predefined functions. We dispatch based on the predefined function
 // token Id.
 //
@@ -233,8 +137,6 @@ void SimExprEvaluator::parsePredefinedFunction( SimToken funcId, SimExpr *rExpr 
             
         case PF_ASSEMBLE:       pFuncAssemble( rExpr );     break;
         case PF_DIS_ASM:        pFuncDisAssemble( rExpr );  break;
-        case PF_HASH:           pFuncHash( rExpr );         break;
-        case PF_S32:            pFuncS32( rExpr );          break;
             
         default: throw ( ERR_UNDEFINED_PFUNC );
     }

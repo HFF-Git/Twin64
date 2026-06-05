@@ -2616,9 +2616,6 @@ void SimCommandsWin::winClearCmdWinCmd( ) {
 //
 //  WC <winNum>
 //
-// ??? do we need a way to set the command window as current window. This would
-// be the case if we have console windows that take the console input.
-//
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winCurrentCmd( ) {
     
@@ -2704,10 +2701,9 @@ void SimCommandsWin::winExchangeCmd( ) {
 //  WN  PROC    "," <mod>
 //  WN  TLB     "," <mod>
 //  WN  MEM     "," <adr>
-//  WN  CODE    "," <adr> [ "," <modNum> ]
+//  WN  CODE    "," <adr>
 //  WN  TEXT    "," <str>
 // 
-// ??? WN MEM, CODE needs to handle virtual windows !!!
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winNewWinCmd( ) {
     
@@ -2742,35 +2738,23 @@ void SimCommandsWin::winNewWinCmd( ) {
         case TOK_MEM: {
 
             tok -> acceptComma( );
-            T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE );
+            T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE,
+                                                 0, T64_MAX_VIRT_MEM_LIMIT );
             tok -> checkEOS( );
 
-            T64Module *mod = glb -> system -> lookupByAdr( adr );
-            if ( mod != nullptr ) {
-
-                glb -> winDisplay -> windowNewMemData( mod -> getModuleNum( ), adr );
-            }
-            else throw( ERR_INVALID_MOD_NUM );
+            glb -> winDisplay -> windowNewMemData( -1, adr );
 
         }  break;
 
         case TOK_CODE: {  
 
-            int modNum = -1;
-
             tok -> acceptComma( );
             T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE, 
                                                  0,
-                                                 T64_MAX_PHYS_MEM_LIMIT );
-            
-            if ( tok -> isToken( TOK_COMMA )) {
-
-                modNum = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE, 
-                                                0, MAX_MODULES );
-            }
+                                                 T64_MAX_VIRT_MEM_LIMIT );
 
             tok -> checkEOS( );
-            glb -> winDisplay -> windowNewMemCode( modNum, adr );
+            glb -> winDisplay -> windowNewMemCode( -1, adr );
 
         }  break;
 

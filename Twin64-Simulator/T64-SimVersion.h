@@ -27,9 +27,9 @@
 //----------------------------------------------------------------------------------------
 #pragma once
 
-const char SIM_VERSION[ ] = "A.00.01";
+const char SIM_VERSION[ ] = "A.00.02";
 const char SIM_GIT_BRANCH[ ] = "main";
-const int  SIM_PATCH_LEVEL = 83;
+const int  SIM_PATCH_LEVEL = 84;
 
 #if __APPLE__
 const bool SIM_IS_APPLE = true;

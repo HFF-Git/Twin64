@@ -429,7 +429,7 @@ void SimWinProcState::drawCregSubsetRegSubWindow( int linePos ) {
 //
 // Whenever the current instruction address comes near or is is outside the 
 // current code window, we move the code window so that the current instruction 
-//address is in the visible range.
+// address is in the visible range.
 //
 //----------------------------------------------------------------------------------------
 void SimWinProcState::drawCodeSubWindow( int linePos, int linesLeft ) {
@@ -490,7 +490,7 @@ void SimWinProcState::drawCodeSubWindow( int linePos, int linesLeft ) {
         }
         else {
 
-            printTextField((char *) "????_????", fmtDesc );
+            printTextField((char *) "****_****", fmtDesc );
             padLine( fmtDesc );
         }
     }
@@ -660,7 +660,7 @@ SimWinMem::SimWinMem( SimGlobals *glb, int modNum, T64Word adr ) :
                                                          SimWinScrollable( glb ) {
 
     this -> adr = rounddown( adr, 8 );
-    setWinModNum( modNum );
+    setWinModNum( -1 );
     setDefaults( );
  }
 
@@ -677,10 +677,10 @@ void SimWinMem::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 4 );
-    setWinLimitsForToggle( 0, 5, MAX_WIN_ROW_SIZE, 112, 112 );
-    setWinLimitsForToggle( 1, 5, MAX_WIN_ROW_SIZE, 112, 112 );
-    setWinLimitsForToggle( 2, 5, MAX_WIN_ROW_SIZE, 112, 112 );
-    setWinLimitsForToggle( 3, 5, MAX_WIN_ROW_SIZE, 112, 112 );
+    setWinLimitsForToggle( 0, 5, MAX_WIN_ROW_SIZE, 116, 116 );
+    setWinLimitsForToggle( 1, 5, MAX_WIN_ROW_SIZE, 116, 116 );
+    setWinLimitsForToggle( 2, 5, MAX_WIN_ROW_SIZE, 116, 116 );
+    setWinLimitsForToggle( 3, 5, MAX_WIN_ROW_SIZE, 116, 116 );
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
     setHomeItemAdr( adr );
@@ -703,23 +703,24 @@ void SimWinMem::drawBanner( ) {
     if ( getWinToggleVal( ) == 2 )  setRadix( 10 ); 
     else                            setRadix( 16 ); 
 
+    setWinCursor( 1, 1 );
+    printWindowIdField( fmtDesc );
+    
     T64Memory *mem = (T64Memory *) 
             glb -> system -> lookupByAdr( getCurrentItemAdr( ));
 
-    setWinCursor( 1, 1 );
-    printWindowIdField( fmtDesc );
-    printTextField((char *) "Mod:", fmtDesc );
-    printNumericField( getWinModNum( ), fmtDesc | FMT_DEC );
-
     if ( mem != nullptr ) {
 
-       printTextField((char *) " ( ", fmtDesc );
-       printTextField( mem -> getMemTypeString( ), fmtDesc );
-       printTextField((char *) " ) ", fmtDesc );
+        printTextField((char *) "Mod:", fmtDesc );
+        printNumericField( getWinModNum( ), fmtDesc | FMT_DEC );
+
+        printTextField((char *) " ( ", fmtDesc );
+        printTextField( mem -> getMemTypeString( ), fmtDesc );
+        printTextField((char *) " ) ", fmtDesc );
     }
 
     printTextField((char *) "  Home: " );
-    printNumericField( getHomeItemAdr( ), fmtDesc | FMT_HEX_2_4_4 );
+    printNumericField( getHomeItemAdr( ), fmtDesc | FMT_HEX_2_4_4_4 );
     padLine( fmtDesc );
 
     if ( getWinToggleVal( ) == 3 ) {
@@ -749,22 +750,12 @@ void SimWinMem::drawBanner( ) {
 //----------------------------------------------------------------------------------------
 void SimWinMem::drawLine( T64Word itemAdr ) {
 
-    uint32_t    fmtDesc     = FMT_DEF_ATTR;
-    uint32_t    limit       = getLineIncrementItemAdr( );
+    uint32_t   fmtDesc  = FMT_DEF_ATTR;
+    T64Word    limit    = getLineIncrementItemAdr( );
 
-    T64Memory   *mem = (T64Memory *) 
-                            glb -> system -> lookupByAdr( getCurrentItemAdr( ));
-   
     printTextField((char *) "(", fmtDesc );
-    printNumericField( itemAdr, fmtDesc | FMT_HEX_2_4_4 );
+    printNumericField( itemAdr, fmtDesc | FMT_HEX_2_4_4_4 );
     printTextField((char *) "): ", fmtDesc );
-
-     if ( mem == nullptr ) {
-
-        printTextField((char *) "Invalid address" );
-        padLine( fmtDesc );
-        return;
-    }; 
 
     if ( getWinToggleVal( ) == 0 ) {
 
@@ -858,7 +849,7 @@ void SimWinCode::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 1 );
-    setWinLimitsForToggle( 0, 8, MAX_WIN_ROW_SIZE, 80, 80 );
+    setWinLimitsForToggle( 0, 8, MAX_WIN_ROW_SIZE, 84, 84 );
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
     setHomeItemAdr( adr );
@@ -882,13 +873,25 @@ void SimWinCode::drawBanner( ) {
 
     setWinCursor( 1, 1 );
     printWindowIdField( fmtDesc );
-    printTextField((char *) "Mod:", fmtDesc );
-    printNumericField( getWinModNum( ), fmtDesc | FMT_DEC );
+
+    T64Memory *mem = (T64Memory *) 
+            glb -> system -> lookupByAdr( getCurrentItemAdr( ));
+
+    if ( mem != nullptr ) {
+
+        printTextField((char *) "Mod:", fmtDesc );
+        printNumericField( mem -> getModuleNum( ), fmtDesc | FMT_DEC );
+
+        printTextField((char *) " ( ", fmtDesc );
+        printTextField( mem -> getMemTypeString( ), fmtDesc );
+        printTextField((char *) " ) ", fmtDesc );
+    }
+
     printTextField((char *) " ", fmtDesc );
     printTextField((char *) "Current: " );
-    printNumericField( getCurrentItemAdr( ), fmtDesc | FMT_HEX_2_4_4 );
+    printNumericField( getCurrentItemAdr( ), fmtDesc | FMT_HEX_2_4_4_4 );
     printTextField((char *) "  Home: " );
-    printNumericField( getHomeItemAdr( ), fmtDesc | FMT_HEX_2_4_4 );
+    printNumericField( getHomeItemAdr( ), fmtDesc | FMT_HEX_2_4_4_4 );
     padLine( fmtDesc );
     printRadixField( fmtDesc | FMT_LAST_FIELD );
 }
@@ -905,7 +908,7 @@ void SimWinCode::drawLine( T64Word itemAdr ) {
     uint32_t    instr                       = 0x0;
     char        buf[ MAX_TEXT_LINE_SIZE ]   = { 0 };
 
-    printNumericField( itemAdr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_2_4_4, 18 );
+    printNumericField( itemAdr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_2_4_4_4, 18 );
    
     if ( ! readMem( glb -> system, 
                     itemAdr, (uint8_t *) &instr, 

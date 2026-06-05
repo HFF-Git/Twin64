@@ -382,13 +382,6 @@ bool T64Processor::handleHPABroadcast( T64BroadcastEvents event,
 
         } break;
 
-        case T64_BCAST_STC_EVENT: {
-
-            cpu -> handleStcEvent( arg1 );
-            return ( true );
-
-        } break;
-
         default: ;
     }
 
@@ -433,11 +426,6 @@ bool T64Processor::busOpWriteCond( T64Word adr,
                                int len ) {
 
     return( sys -> busOpWriteCond( moduleNum, adr, data, len ));
-}
-
-bool T64Processor::busOpClearRsv( ) {
-
-    return( sys -> busOpClearRsv( moduleNum ));
 }
 
 bool T64Processor::busOpBroadCast( T64BroadcastEvents id, 

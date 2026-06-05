@@ -174,8 +174,6 @@ struct T64Cpu {
     T64Word         getPsrReg( );
     void            setPsrReg( T64Word val );
 
-    void            handleStcEvent( T64Word adr );        
- 
     private: 
 
     int             evalCond( int cond, T64Word val1, T64Word val2 );
@@ -271,7 +269,6 @@ struct T64Cpu {
     T64Word         gRegFile[ T64_MAX_GREGS ];
     T64Word         psrReg;
     uint32_t        instrReg;
-    T64Word         resvReg;
     uint16_t        instrTlbInfo;
 
     T64CpuType      cpuType         = T64_CPU_T_NIL;
@@ -309,7 +306,6 @@ struct T64Processor : T64ThreadModule {
     bool            busOpReadRsv( T64Word adr, uint8_t *data, int len );
     bool            busOpWrite( T64Word adr, uint8_t *data, int len );
     bool            busOpWriteCond( T64Word adr, uint8_t *data, int len );
-    bool            busOpClearRsv( );
 
     bool            busOpBroadCast( T64BroadcastEvents id, 
                                     T64Word            arg1, 

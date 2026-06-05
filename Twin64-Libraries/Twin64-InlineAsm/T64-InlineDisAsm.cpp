@@ -270,7 +270,7 @@ int buildOpCodeStr( char *buf, T64Instr instr ) {
                   
                 case 0:  return ( snprintf( buf, LEN_16, "ADDIL" ));
                 case 1:  return ( snprintf( buf, LEN_16, "LDI.L" ));
-                case 2:  return ( snprintf( buf, LEN_16, "LDI.S" ));
+                case 2:  return ( snprintf( buf, LEN_16, "LDI.M" ));
                 case 3:  return ( snprintf( buf, LEN_16, "LDI.U" ));
             }
         }

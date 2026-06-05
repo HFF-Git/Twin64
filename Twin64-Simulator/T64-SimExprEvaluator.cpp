@@ -582,6 +582,7 @@ void SimExprEvaluator::parseSimpleExpr( SimExpr *rExpr ) {
 //      <expr>      ->  <simpleExpr> <relOp> <simpleExpr>
 //      <relOp>    ->  "==" | "!=" | "<" | "<=" | ">" | ">=" 
 //
+// ??? type mix options ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::parseExpr( SimExpr *rExpr ) {
     
