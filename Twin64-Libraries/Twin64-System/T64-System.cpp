@@ -78,7 +78,7 @@ bool overlap( T64Module *a, T64Module *b ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Insert an SPA address range into one of the address range maps.
+// Insert a module in one of the auxiliary maps.
 //
 //----------------------------------------------------------------------------------------
 int insertIntoMap( T64Module **map, T64Module *module, int *hwm, int maxEntries ) {
@@ -106,8 +106,8 @@ int insertIntoMap( T64Module **map, T64Module *module, int *hwm, int maxEntries 
 }
 
 //----------------------------------------------------------------------------------------
-// Remove a module from one of the memory maps. We locate the module and maintain
-// the sorted. If found the HWM is decremented.
+// Remove a module from one of the auxiliary maps. We locate the module, remove
+// it and maintain the rest of the map sorted. If found the HWM is decremented.
 //----------------------------------------------------------------------------------------
 void removeFromMap( T64Module **map, T64Module *module, int *hwm ) {
 
@@ -157,6 +157,7 @@ void T64System::initModuleMap( ) {
     for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
         moduleMap[ i ] = nullptr;
+        systemRsvMap[ i ] = nullptr;
     }
 
     for ( int i = 0; i < MAX_MOD_MAP_ENTRIES * 2; i++ ) {
@@ -165,8 +166,9 @@ void T64System::initModuleMap( ) {
         systemIoMap[ i ] = nullptr;
     }
 
-    systemMemMapHwm = 0;
-    systemIoMapHwm  = 0;
+    systemMemMapHwm     = 0;
+    systemIoMapHwm      = 0;
+    systemRsvMapHwm     = 0;
 }
 
 //----------------------------------------------------------------------------------------
@@ -177,8 +179,6 @@ int T64System::getSystemState( ) {
 
     return( 0 );
 }
-
-
 
 //----------------------------------------------------------------------------------------
 // Add a module. There are three tables. The first table just contains the 
@@ -197,11 +197,13 @@ int T64System::getSystemState( ) {
 int T64System::addModule( T64Module *module ) {
 
     if (( module -> getModuleNum( ) > MAX_MOD_MAP_ENTRIES )) return ( -1 );
-    if (moduleMap[ module -> getModuleNum( ) ] != nullptr ) return -4;
+    if (moduleMap[ module -> getModuleNum( ) ] != nullptr ) return ( -4 );
 
     bool isIo = isInRange( module->getSpaAdr(),
                            T64_IO_SPA_MEM_START,
                            T64_IO_SPA_MEM_LIMIT);
+
+    int rStat;
 
     if ( module -> getSpaLen( ) > 0 ) {
 
@@ -215,27 +217,36 @@ int T64System::addModule( T64Module *module ) {
             if ( overlap( moduleMap[ i ], module )) return ( -3 );
         }
 
-        int rStat;
-
         if ( isIo ) {
 
             rStat = insertIntoMap( systemIoMap,
                                    module,
                                    &systemIoMapHwm,
-                                   MAX_MOD_MAP_ENTRIES);
+                                   MAX_MOD_MAP_ENTRIES );
         } 
         else {
 
             rStat = insertIntoMap( systemMemMap,
                                    module,
                                    &systemMemMapHwm,
-                                   MAX_MOD_MAP_ENTRIES);
+                                   MAX_MOD_MAP_ENTRIES );
         }
     
         if ( rStat != 0 ) return( -2 );
     }
 
     moduleMap[ module -> getModuleNum( ) ] = module;    
+
+    if ( module -> getModuleType( ) == MT_PROC ) {
+
+        rStat = insertIntoMap( systemRsvMap,
+                               module,
+                               &systemRsvMapHwm,
+                               MAX_MOD_MAP_ENTRIES );
+
+        if ( rStat != 0 ) return( -2 );
+    }
+
     module -> initModule( );
     return ( 0 );
 }
@@ -260,6 +271,7 @@ int T64System::removeModule( T64Module *module ) {
 
     removeFromMap( systemMemMap, module, &systemMemMapHwm );
     removeFromMap( systemIoMap, module, &systemIoMapHwm );
+    removeFromMap( systemRsvMap, module, &systemRsvMapHwm );
     moduleMap[ modNum ] = nullptr;
     delete module;
 
@@ -440,10 +452,10 @@ bool T64System::busOpRead( int reqModNum,
 // several processors.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::busOpReadRsv( int reqModNum,
-                           T64Word pAdr, 
-                           uint8_t *data, 
-                           int     len ) {
+bool T64System::busOpReadRsv( int     reqModNum,
+                              T64Word pAdr, 
+                              uint8_t *data, 
+                              int     len ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return( false );
@@ -454,9 +466,7 @@ bool T64System::busOpReadRsv( int reqModNum,
         std::lock_guard<std::mutex> lk(sLock);
 
         rStat = mPtr -> busOpReadEvent( reqModNum, pAdr, data, len );
-
-        // ??? remember in the reserved table ...
-
+        if ( rStat ) mPtr -> setRsvInfo( pAdr, true );
     }
 
     return ( rStat );
@@ -473,7 +483,7 @@ bool T64System::busOpReadRsv( int reqModNum,
 bool T64System::busOpWrite( int reqModNum,
                             T64Word pAdr, 
                             uint8_t *data, 
-                           int     len ) {
+                            int     len ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return ( false );
@@ -484,7 +494,7 @@ bool T64System::busOpWrite( int reqModNum,
         std::lock_guard<std::mutex> lk(sLock);
         rStat = mPtr -> busOpWriteEvent( reqModNum, pAdr, data, len );
 
-        // ??? if match, clear reservation ...
+        // ??? if match, clear reservation in all processors...
     }
 
     return ( rStat );
@@ -498,10 +508,10 @@ bool T64System::busOpWrite( int reqModNum,
 // status.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::busOpWriteCond( int reqModNum,
-                            T64Word pAdr, 
-                            uint8_t *data, 
-                           int     len ) {
+bool T64System::busOpWriteCond( int     reqModNum,
+                                T64Word pAdr, 
+                                uint8_t *data, 
+                                int     len ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return ( false );
@@ -528,8 +538,7 @@ bool T64System::busOpWriteCond( int reqModNum,
 bool T64System::busOpClearRsv(  int reqModNum ) {
 
     // ??? clear for the module only ?
-    // ??? need to record the module in the reservation ? YES at LDR
-
+   
     return( true );
 }
 

@@ -148,6 +148,9 @@ struct T64Module {
     T64Word             getSpaAdr( );
     int                 getSpaLen( );
 
+    void                setRsvInfo( T64Word pAdr, bool valid );
+    T64Word             getRsvInfo( );
+
     public: 
 
     T64ModuleType       moduleTyp   = MT_NIL;
@@ -160,6 +163,8 @@ struct T64Module {
 
     T64Word             spaAdr      = 0;
     int                 spaLen      = 0;
+
+    T64Word             rsvInfo     = 0;
 
     // ??? work in progress ... how do we best represent the regs in a module ?
     // ??? we should have the fields that are common to every module...
@@ -209,11 +214,11 @@ struct T64ThreadModule : T64Module {
     void            moduleWorker( );
     void            threadModuleStop( );
 
-    std::atomic<T64ModuleState>         mState { T64_MOD_STATE_NIL };
-    std::mutex                          mLock;
-    std::condition_variable             mCondVar;
-    std::thread                         mWorker;
-    int                                 unitCount  = 0;
+    std::atomic<T64ModuleState> mState { T64_MOD_STATE_NIL };
+    std::mutex                  mLock;
+    std::condition_variable     mCondVar;
+    std::thread                 mWorker;
+    int                         mUnitCount  = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -297,6 +302,9 @@ struct T64System {
 
     T64Module           *systemIoMap[ MAX_MOD_MAP_ENTRIES * 2 ];
     int                 systemIoMapHwm = 0;
+
+    T64Module           *systemRsvMap[ MAX_MOD_MAP_ENTRIES ];
+    int                 systemRsvMapHwm;
 
     std::mutex          sLock;
 };

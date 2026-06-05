@@ -103,7 +103,7 @@ void T64ThreadModule::threadModuleHalt( ) {
 
 void T64ThreadModule::threadModuleExec( int units ) {
 
-    unitCount = units;
+    mUnitCount = units;
     setModuleState( T64_MOD_STATE_EXECUTE );
 }
 
@@ -209,7 +209,7 @@ void T64ThreadModule::moduleWorker( ) {
                         break;
                     }
 
-                    if ( unitCount == 0 ) {
+                    if ( mUnitCount == 0 ) {
 
                         mState.store( T64_MOD_STATE_HALTED,
                                       std::memory_order_release );
@@ -227,7 +227,7 @@ void T64ThreadModule::moduleWorker( ) {
                         break;
                     }
 
-                    if ( unitCount > 0 ) unitCount--;
+                    if ( mUnitCount > 0 ) mUnitCount--;
                 }
 
                 mCondVar.notify_one();
