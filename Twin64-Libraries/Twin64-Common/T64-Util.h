@@ -366,10 +366,16 @@ inline void depositBit64( T64Word *arg, uint8_t bitpos, uint8_t val ) {
     }
 }
 
-inline T64Word depositField( T64Word word, uint8_t bitpos, int len, T64Word value ) {
-    
-    T64Word mask = (( 1ULL << len ) - 1 ) << bitpos;
-    return ( word & ~mask ) | (( value << bitpos ) & mask );
+inline T64Word depositField64( T64Word word,
+                               uint8_t bitpos,
+                               int     len,
+                               T64Word value) {
+
+    T64Word mask = ( len >= 64 ) ? ~0ULL : (( 1ULL << len ) - 1) ;
+    mask <<= bitpos;
+
+    return ( T64Word)(((uint64_t)word & ~mask) |
+                (((uint64_t)value << bitpos) & mask));
 }
 
 inline T64Word shiftRight128( T64Word hi, T64Word lo, uint8_t shift ) {

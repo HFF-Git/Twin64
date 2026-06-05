@@ -2164,8 +2164,8 @@ void SimCommandsWin::modifyRegCmd( ) {
 
             T64Word tmp = proc -> getCpuPtr( ) -> getPsrReg( );
             
-            if      ( regNum == 1 ) tmp = depositField( tmp, 0, 52, val );
-            else if ( regNum == 2 ) tmp = depositField( tmp, 52, 12, val );
+            if      ( regNum == 1 ) tmp = depositField64( tmp, 0, 52, val );
+            else if ( regNum == 2 ) tmp = depositField64( tmp, 52, 12, val );
 
             proc -> getCpuPtr( ) -> setPsrReg( tmp );     
             
