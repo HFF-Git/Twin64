@@ -123,6 +123,7 @@ struct T64Module {
 
     virtual void        initModule( )           = 0;
     virtual void        resetModule( )          = 0;
+
     virtual void        haltModule( )           = 0;
     virtual void        runModule( )            = 0;
     virtual void        execModule( int steps ) = 0;
@@ -171,8 +172,6 @@ struct T64Module {
     T64Word             mrVersion;
     T64Word             mrType;
     T64Word             mrId;
-    
-    // ?? entry point code area ?
 };
 
 //----------------------------------------------------------------------------------------
@@ -265,10 +264,22 @@ struct T64System {
                                    uint8_t *data, 
                                    int     len );
 
+    bool                busOpReadRsv( int reqModNum,
+                                      T64Word pAdr, 
+                                      uint8_t *data, 
+                                      int     len );
+
     bool                busOpWrite( int reqModNum,
                                     T64Word pAdr, 
                                     uint8_t *data, 
                                     int     len );
+
+    bool                busOpWriteCond( int reqModNum,
+                                        T64Word pAdr, 
+                                        uint8_t *data, 
+                                        int     len );    
+                                        
+    bool                busOpClearRsv(  int reqModNum );
 
     bool                busOpBroadcast( int                 reqModNum,
                                         T64BroadcastEvents  event,
@@ -286,4 +297,6 @@ struct T64System {
 
     T64Module           *systemIoMap[ MAX_MOD_MAP_ENTRIES * 2 ];
     int                 systemIoMapHwm = 0;
+
+    std::mutex          sLock;
 };

@@ -414,11 +414,30 @@ bool T64Processor::busOpRead( T64Word adr,
     return( sys -> busOpRead( moduleNum, adr, data, len ));
 }
 
+bool T64Processor::busOpReadRsv( T64Word adr, 
+                              uint8_t *data, 
+                              int len ) {
+
+    return( sys -> busOpReadRsv( moduleNum, adr, data, len ));
+}
+
 bool T64Processor::busOpWrite( T64Word adr, 
                                uint8_t *data, 
                                int len ) {
 
     return( sys -> busOpWrite( moduleNum, adr, data, len ));
+}
+
+bool T64Processor::busOpWriteCond( T64Word adr, 
+                               uint8_t *data, 
+                               int len ) {
+
+    return( sys -> busOpWriteCond( moduleNum, adr, data, len ));
+}
+
+bool T64Processor::busOpClearRsv( ) {
+
+    return( sys -> busOpClearRsv( moduleNum ));
 }
 
 bool T64Processor::busOpBroadCast( T64BroadcastEvents id, 

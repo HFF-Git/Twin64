@@ -26,36 +26,6 @@
 #include "T64-System.h"
 
 //----------------------------------------------------------------------------------------
-// Thread model. The system maintains also an array of threads. There could be 
-// a thread for each processor or I/O module. 
-// 
-// Basic idea:  
-//
-//  #include <array>
-//  std::array<T64Thread, MAX_THREADS> threadMap;
-//
-//  for ( int i = 0; < MAX_THREADS; i++ ) 
-//      threadMap[ i ] = str::thread( &T64Processor::processorThread, processor[ i ] );
-// 
-// A module needs a mutex, and a state. And a signal mask.
-//
-//  std::atomic<uint32_t> mask = 0;
-//
-// The thread execution loop would be something like this:
-//
-//  while ( true ) {
-//     executeInstruction( );
-//     if ( mask.load( memory_ordered_release ) != 0 ) handleSignals( );
-//  }
-//
-// We would also need a condition variable where a thread can wait for a signal.
-//
-// Need to think about all this .... :-).
-// 
-//--------------------------------------------------------------------------------------
-
-
-//----------------------------------------------------------------------------------------
 // Name space for local routines.
 //
 //----------------------------------------------------------------------------------------
@@ -463,10 +433,41 @@ bool T64System::busOpRead( int reqModNum,
 }
 
 //----------------------------------------------------------------------------------------
+// Bus read and reserve operation. The LDR instruction implements our foundation
+// for mutexes, semaphores, etc. A bus read reserved operation will just as the 
+// normal read operation read the data value, and also remember the address 
+// used. The operation needs to be protected by a mutex, as we potentially run 
+// several processors.
+//
+//----------------------------------------------------------------------------------------
+bool T64System::busOpReadRsv( int reqModNum,
+                           T64Word pAdr, 
+                           uint8_t *data, 
+                           int     len ) {
+
+    T64Module *mPtr = lookupByAdr( pAdr );
+    if ( mPtr == nullptr ) return( false );
+
+    bool rStat;
+
+    {
+        std::lock_guard<std::mutex> lk(sLock);
+
+        rStat = mPtr -> busOpReadEvent( reqModNum, pAdr, data, len );
+
+        // ??? remember in the reserved table ...
+
+    }
+
+    return ( rStat );
+}
+
+//----------------------------------------------------------------------------------------
 // Bus write operation. The system is the dispatcher for bus operations. We look
 // up the module that covers the address and call the module's bus event handler.
-// The module can react to the bus event and return true if it has handled the 
-// event, or false if it has not handled the event.
+// Since the write operation could potentially address a location used by a 
+// LDR/STC instruction, we need to synchronize access and if there is an address
+// match clear the reservation.
 //
 //----------------------------------------------------------------------------------------
 bool T64System::busOpWrite( int reqModNum,
@@ -477,7 +478,59 @@ bool T64System::busOpWrite( int reqModNum,
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return ( false );
 
-    return ( mPtr -> busOpWriteEvent( reqModNum, pAdr, data, len ));
+    bool rStat;
+
+    {
+        std::lock_guard<std::mutex> lk(sLock);
+        rStat = mPtr -> busOpWriteEvent( reqModNum, pAdr, data, len );
+
+        // ??? if match, clear reservation ...
+    }
+
+    return ( rStat );
+}
+
+//----------------------------------------------------------------------------------------
+// Bus write conditional operation.This  bus operation is only used by the STC 
+// instruction. We look up the module that covers the address and look for the
+// address in the reservation table. If found and the reservation is still valid, 
+// the value is written to that address. Otherwise, we failed and report the 
+// status.
+//
+//----------------------------------------------------------------------------------------
+bool T64System::busOpWriteCond( int reqModNum,
+                            T64Word pAdr, 
+                            uint8_t *data, 
+                           int     len ) {
+
+    T64Module *mPtr = lookupByAdr( pAdr );
+    if ( mPtr == nullptr ) return ( false );
+
+    bool rStat;
+
+    {
+        std::lock_guard<std::mutex> lk(sLock);
+
+        // ??? check the reservation table for a valid entry.
+        // ??? if found - > write operation, else fail.
+
+        rStat = mPtr -> busOpWriteEvent( reqModNum, pAdr, data, len );
+    }
+
+    return ( rStat );
+}
+
+//----------------------------------------------------------------------------------------
+// When a processor encounters a trap or an external interrupt, a valid 
+// reservation initiated by this processor will be cleared.
+//
+//----------------------------------------------------------------------------------------
+bool T64System::busOpClearRsv(  int reqModNum ) {
+
+    // ??? clear for the module only ?
+    // ??? need to record the module in the reservation ? YES at LDR
+
+    return( true );
 }
 
 //----------------------------------------------------------------------------------------

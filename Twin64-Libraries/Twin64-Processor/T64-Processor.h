@@ -215,13 +215,13 @@ struct T64Cpu {
     void            setRegR( uint32_t instr, T64Word val );
    
     T64Word         instrRead( T64Word vAdr );
-    T64Word         dataRead( T64Word vAdr, int len, bool sExt );
-    T64Word         dataReadRegBOfsImm13( uint32_t instr, bool sExt );
+    T64Word         dataRead( T64Word vAdr, int len, bool sExt, bool rsv = false );
+    T64Word         dataReadRegBOfsImm13( uint32_t instr, bool sExt, bool rsv = false );
     T64Word         dataReadRegBOfsRegX( uint32_t instr, bool sExt );
 
-    void            dataWrite( T64Word vAdr, T64Word val, int len );
-    T64Word         dataWriteRegBOfsImm13( uint32_t instr );
-    T64Word         dataWriteRegBOfsRegX( uint32_t instr );
+    bool            dataWrite( T64Word vAdr, T64Word val, int len, bool cond = false );
+    bool            dataWriteRegBOfsImm13( uint32_t instr, bool cond = false );
+    bool            dataWriteRegBOfsRegX( uint32_t instr );
 
     void            instrAluNopOp( T64Instr instr );
     void            instrAluAddOp( T64Instr instr );
@@ -305,13 +305,11 @@ struct T64Processor : T64ThreadModule {
     void            execModule( int steps );
     bool            executeUnit( );
 
-    bool            busOpRead( T64Word adr, 
-                              uint8_t *data, 
-                              int len );
-
-    bool            busOpWrite( T64Word adr, 
-                               uint8_t *data, 
-                               int len );
+    bool            busOpRead( T64Word adr, uint8_t *data, int len );
+    bool            busOpReadRsv( T64Word adr, uint8_t *data, int len );
+    bool            busOpWrite( T64Word adr, uint8_t *data, int len );
+    bool            busOpWriteCond( T64Word adr, uint8_t *data, int len );
+    bool            busOpClearRsv( );
 
     bool            busOpBroadCast( T64BroadcastEvents id, 
                                     T64Word            arg1, 
