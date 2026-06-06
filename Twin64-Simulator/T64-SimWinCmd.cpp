@@ -1375,12 +1375,12 @@ void SimCommandsWin::helpCmd( ) {
 
 //----------------------------------------------------------------------------------------
 // Echo command. We will just print all characters after the ECHO command token.
+// We are passed the command line buffer and start printing at line position 5.
 //
-// ??? need some support from the Tokenizer ?
 //----------------------------------------------------------------------------------------
-void SimCommandsWin::echoCmd( ) {
+void SimCommandsWin::echoCmd( char *cmdBuf ) {
 
-
+    winOut -> writeChars( "%s\n", (char *) &cmdBuf[ 5 ] );
 }
 
 //----------------------------------------------------------------------------------------
@@ -2714,14 +2714,9 @@ void SimCommandsWin::winExchangeCmd( ) {
 //  WN  CODE    "," <adr>
 //  WN  TEXT    "," <str>
 // 
-// ??? how about combining MEM and CODE ? 
-//
-//. WN MEM      "," <adr> [ "," <mode> ]
-//
-// The mode argument would be the toggle indicator. ( HEX, DEC, ASCII, CODE )
-// We would also need to set the lineItemArgument to 32 or 1 on the fly...
-//
-// ??? introduce HEX32 and HEX64 for the different viewpoints on data ? 
+// ??? i have added silently the mode on the WN MEM command. How to get this
+// info to the window creator ? Or set directly after creation ? Maybe a 
+// routine that sets the mode and the itemsPerLine ...
 // 
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winNewWinCmd( ) {
@@ -2759,6 +2754,25 @@ void SimCommandsWin::winNewWinCmd( ) {
             tok -> acceptComma( );
             T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE,
                                                  0, T64_MAX_VIRT_MEM_LIMIT );
+
+            SimTokId mode;
+
+            if ( tok -> isToken( TOK_COMMA )) {
+
+                tok -> nextToken( );
+                mode = tok -> tokId( );
+
+                if ( mode == TOK_HEX ) mode = TOK_HEX64;
+                
+                if (( mode != TOK_HEX32 ) && ( mode != TOK_HEX64 ) &&
+                    ( mode != TOK_ASCII ) && ( mode != TOK_CODE )) {
+
+                    throw( ERR_EXPECTED_WIN_TYPE );
+                }
+
+                tok -> nextToken( );
+            } 
+
             tok -> checkEOS( );
 
             glb -> winDisplay -> windowNewMemData( adr );
@@ -2916,7 +2930,7 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                     case CMD_DMOD:          displayModuleCmd( );            break;   
 
                     case CMD_DWIN:          displayWindowCmd( );            break;  
-                    case CMD_ECHO:          echoCmd( );                     break;
+                    case CMD_ECHO:          echoCmd( cmdBuf );              break;
 
                     case CMD_MR:            modifyRegCmd( );                break;
                         

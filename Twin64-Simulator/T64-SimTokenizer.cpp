@@ -32,12 +32,11 @@
 namespace {
 
 //----------------------------------------------------------------------------------------
-//
+// Locals.
 //
 //----------------------------------------------------------------------------------------
 const int   TOK_NAME_SIZE   = 32;
 const char  EOS_CHAR        = 0;
-
 char        strTokenBuf[ MAX_TOK_STR_SIZE ] = { 0 };
 
 //----------------------------------------------------------------------------------------
@@ -81,7 +80,6 @@ int lookupToken( char *inputStr, SimToken *tokTab ) {
 //----------------------------------------------------------------------------------------
 //
 //
-//
 //----------------------------------------------------------------------------------------
 void addChar( char *buf, int size, char ch ) {
     
@@ -106,7 +104,6 @@ void appendChar(char *&out, char *end, char c) {
 }
 
 //----------------------------------------------------------------------------------------
-//
 //
 //
 //----------------------------------------------------------------------------------------
@@ -138,8 +135,7 @@ void appendUTF8( char *&out, char *end, uint32_t cp ) {
 }
 
 //----------------------------------------------------------------------------------------
-//
-//
+// A little helper to test for a HEX char.
 //
 //----------------------------------------------------------------------------------------
 int hexValue( char c ) {
@@ -159,7 +155,7 @@ int hexValue( char c ) {
 SimTokenizer::SimTokenizer( ) { }
 
 //----------------------------------------------------------------------------------------
-// helper functions for the current token.
+// Helper functions for the current token.
 //
 //----------------------------------------------------------------------------------------
 bool SimTokenizer::isToken( SimTokId tokId ) { 
@@ -798,7 +794,6 @@ SimTokId SimTokenizer::acceptTokSym( SimErrMsgId errId ) {
     else throw ( errId );
 }
 
-
 //****************************************************************************************
 //****************************************************************************************
 //
@@ -888,10 +883,9 @@ void SimTokenizerFromFile::closeFile( ) {
     }
 }   
 
- 
 //----------------------------------------------------------------------------------------
-// "nextChar" returns the next character from the source file. We also maintain a 
-// character and line index.
+// "nextChar" returns the next character from the source file. We also maintain
+// a character and line index.
 //
 //----------------------------------------------------------------------------------------
 void SimTokenizerFromFile::nextChar( ) {

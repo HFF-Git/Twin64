@@ -199,19 +199,16 @@ enum SimTokId : uint16_t {
     //------------------------------------------------------------------------------------
     TOK_IDENT,                  TOK_NUM,                    TOK_STR,
     TOK_DEF,                    TOK_ALL,                    TOK_DEC,
-    TOK_HEX,                    TOK_ASCII,                  TOK_MEM,                    
-    TOK_CODE,                   TOK_STATS,                  TOK_TEXT,                   
-    TOK_SYS,                    TOK_PROC,                   TOK_CPU,                    
-    TOK_IO,                     TOK_TLB,       
-    
+    TOK_HEX,                    TOK_HEX32,                  TOK_HEX64,
+    TOK_ASCII,                  TOK_MEM,                    TOK_CODE,
+    TOK_STATS,                  TOK_TEXT,                   TOK_SYS,        
+    TOK_PROC,                   TOK_CPU,                    TOK_IO,
+    TOK_TLB,                    TOK_MEM_ROM,                TOK_MEM_RAM,  
     TOK_BYTE,                   TOK_SHORT,                  TOK_WORD,               
-    TOK_DOUBLE,   
+    TOK_DOUBLE,                 
     
     TOK_TLB_FA_16S,             TOK_TLB_FA_32S,             TOK_TLB_FA_64S,             
-    TOK_TLB_FA_128S,
-    
-    TOK_MEM_ROM,                TOK_MEM_RAM,         
-    TOK_MOD_SPA_ADR,            TOK_MOD_SPA_LEN,
+    TOK_TLB_FA_128S,            TOK_MOD_SPA_ADR,            TOK_MOD_SPA_LEN,
 
     //------------------------------------------------------------------------------------
     // Line Commands.
@@ -522,6 +519,7 @@ struct SimTokenizer {
     SimTokenizer( );
 
     void            setupTokenizer( char *lineBuf, SimToken *tokTab );
+
     void            nextToken( );
     
     bool            isToken( SimTokId tokId );
@@ -546,7 +544,6 @@ struct SimTokenizer {
     private:
     
     virtual void    nextChar( ) = 0;
-
     int             parseHex2( );
     int             parseHex4( );
     uint32_t        parseHex8( );
@@ -574,9 +571,9 @@ struct SimTokenizerFromString : public SimTokenizer {
     
     SimTokenizerFromString( );
     void setupTokenizer( char *lineBuf, SimToken *tokTab ); 
-    
+   
     private:
-
+ 
     void            nextChar( );
 
     int             currentCharIndex    = 0;
@@ -599,14 +596,13 @@ struct SimTokenizerFromFile : public SimTokenizer {
 
     void    setupTokenizer( char *filePath, SimToken *tokTab );
     int     getCurrentLineIndex( );
-    int     getCurrentCharPos( );
     
     private:
     
     void    openFile( char *filePath );
     void    closeFile( );
     void    nextChar( );
-
+    
     int    currentLineIndex     = 0;
     int    currentCharIndex     = 0;
     FILE   *srcFile             = nullptr;
@@ -1223,7 +1219,7 @@ private:
 
     void            parseWinNumRange( int *winNumStart, int *winNumEnd );
     
-    void            echoCmd( );
+    void            echoCmd( char *cmdBuf );
     void            exitCmd( );
     void            helpCmd( );
     void            envCmd( );

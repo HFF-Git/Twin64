@@ -71,6 +71,9 @@ const SimToken cmdTokTab[ ] = {
 
     { .name = "DEC",        .typ = TYP_SYM,     .tid = TOK_DEC,   .u = { .val = 10 }},
     { .name = "HEX",        .typ = TYP_SYM,     .tid = TOK_HEX,   .u = { .val = 16 }},
+    { .name = "HEX32",      .typ = TYP_SYM,     .tid = TOK_HEX32,                   },
+    { .name = "HEX64",      .typ = TYP_SYM,     .tid = TOK_HEX64,                   },
+    { .name = "ASCII",      .typ = TYP_SYM,     .tid = TOK_ASCII,                   },
     { .name = "CODE",       .typ = TYP_SYM,     .tid = TOK_CODE                     },
 
     { .name = "BYTE",       .typ = TYP_SYM,     .tid = TOK_BYTE,   .u = { .val = 1  }},
