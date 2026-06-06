@@ -812,11 +812,11 @@ int SimWinDisplay::getFreeWindowSlot( ) {
     throw( ERR_OUT_OF_WINDOWS );
 }
 
-void SimWinDisplay::windowNewMemData( int modNum, T64Word adr ) {
+void SimWinDisplay::windowNewMemData( T64Word adr ) {
 
     int slot = getFreeWindowSlot( );
 
-    windowList[ slot ] = (SimWin *) new SimWinMem( glb, modNum, adr );
+    windowList[ slot ] = (SimWin *) new SimWinMem( glb, adr );
     windowList[ slot ] -> setWinName(( char *) "MEM" );
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
@@ -825,11 +825,11 @@ void SimWinDisplay::windowNewMemData( int modNum, T64Word adr ) {
     currentWinNum = slot;
 }
 
-void SimWinDisplay::windowNewMemCode( int modNum, T64Word adr ){
+void SimWinDisplay::windowNewMemCode( T64Word adr ){
 
     int slot = getFreeWindowSlot( );
 
-    windowList[ slot ] = (SimWin *) new SimWinCode( glb, modNum, adr ); 
+    windowList[ slot ] = (SimWin *) new SimWinCode( glb, adr ); 
     windowList[ slot ] -> setWinName(( char *) "CODE" );
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
@@ -838,7 +838,7 @@ void SimWinDisplay::windowNewMemCode( int modNum, T64Word adr ){
     currentWinNum = slot;
 }
 
-void SimWinDisplay::windowNewCpuState( int modNum ) {
+void SimWinDisplay::windowNewProcState( int modNum ) {
 
     int slot = getFreeWindowSlot( );
 

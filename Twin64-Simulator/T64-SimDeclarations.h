@@ -226,7 +226,7 @@ enum SimTokId : uint16_t {
     CMD_HALT,                   CMD_ITLB,                   CMD_PTLB, 
     CMD_MR,                     CMD_DM,                     CMD_MB,             
     CMD_MS,                     CMD_MW,                     CMD_MD,     
-    CMD_DWIN,              
+    CMD_DWIN,                   CMD_ECHO,
     
     //------------------------------------------------------------------------------------
     // Window Commands Tokens.
@@ -1092,7 +1092,7 @@ struct SimWinMem : SimWinScrollable {
     
     public:
     
-    SimWinMem( SimGlobals *glb, int modNum, T64Word adr );
+    SimWinMem( SimGlobals *glb, T64Word adr );
     
     void setDefaults( );
     void drawBanner( );
@@ -1113,7 +1113,7 @@ struct SimWinCode : SimWinScrollable {
     
     public:
     
-    SimWinCode( SimGlobals *glb, int modNum, T64Word adr );
+    SimWinCode( SimGlobals *glb, T64Word adr );
     ~ SimWinCode( );
     
     void setDefaults( );
@@ -1223,6 +1223,7 @@ private:
 
     void            parseWinNumRange( int *winNumStart, int *winNumEnd );
     
+    void            echoCmd( );
     void            exitCmd( );
     void            helpCmd( );
     void            envCmd( );
@@ -1350,9 +1351,9 @@ public:
     void            windowToggle( int winNum, int toggleVal );
     void            windowExchangeOrder( int winNum );
     
-    void            windowNewMemData( int modNum, T64Word adr );
-    void            windowNewMemCode( int modNum, T64Word adr );
-    void            windowNewCpuState( int modNum );
+    void            windowNewMemData( T64Word adr );
+    void            windowNewMemCode( T64Word adr );
+    void            windowNewProcState( int modNum );
     void            windowNewTlb( int modNum );
     void            windowNewText( char *pathStr );
 

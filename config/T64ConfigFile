@@ -1,5 +1,6 @@
 # A simple configuration file
 #
+rmod all
 nmod tlb,  0, TLB_FA_16S
 nmod proc, 4
 nmod proc, 5

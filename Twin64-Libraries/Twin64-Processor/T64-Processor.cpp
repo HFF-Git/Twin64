@@ -111,7 +111,6 @@ void T64Processor::resetModule( ) {
 
     cpu -> reset( );
     localTlb -> reset( );
-
     threadModuleReset( );
 }
 

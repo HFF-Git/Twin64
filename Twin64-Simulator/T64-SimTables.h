@@ -100,6 +100,7 @@ const SimToken cmdTokTab[ ] = {
     { .name = "LOADELF",    .typ = TYP_CMD,     .tid = CMD_LOADELF                  },
     { .name = "W",          .typ = TYP_CMD,     .tid = CMD_WRITE_LINE               },
     { .name = "DWIN",       .typ = TYP_CMD,     .tid = CMD_DWIN                     },
+    { .name = "ECHO",       .typ = TYP_CMD,     .tid = CMD_ECHO                     },
 
     { .name = "DMOD",       .typ = TYP_CMD,     .tid = CMD_DMOD                     },
     { .name = "NMOD",       .typ = TYP_CMD,     .tid = CMD_NMOD                     },

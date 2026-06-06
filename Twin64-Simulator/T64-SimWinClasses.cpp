@@ -656,11 +656,9 @@ void SimWinTlb::drawLine( T64Word index ) {
 // Object constructor.
 //
 //----------------------------------------------------------------------------------------
-SimWinMem::SimWinMem( SimGlobals *glb, int modNum, T64Word adr ) : 
-                                                         SimWinScrollable( glb ) {
+SimWinMem::SimWinMem( SimGlobals *glb, T64Word adr ) : SimWinScrollable( glb ) {
 
     this -> adr = rounddown( adr, 8 );
-    setWinModNum( -1 );
     setDefaults( );
  }
 
@@ -683,6 +681,7 @@ void SimWinMem::setDefaults( ) {
     setWinLimitsForToggle( 3, 5, MAX_WIN_ROW_SIZE, 116, 116 );
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
+    setWinModNum( -1 );
     setHomeItemAdr( adr );
     setCurrentItemAdr( adr );
     setLineIncrementItemAdr( 8 * 4 );
@@ -821,12 +820,10 @@ void SimWinMem::drawLine( T64Word itemAdr ) {
 // instructions and also need to remove it when the window is killed. 
 //
 //----------------------------------------------------------------------------------------
-SimWinCode::SimWinCode( SimGlobals *glb, int modNum, T64Word adr ) : 
-                                                    SimWinScrollable( glb ) {
+SimWinCode::SimWinCode( SimGlobals *glb, T64Word adr ) : SimWinScrollable( glb ) {
 
     disAsm = new T64DisAssemble( );
 
-    setWinModNum( modNum );
     this -> adr = rounddown( adr, 8 );
     setDefaults( );
 }
@@ -852,6 +849,7 @@ void SimWinCode::setDefaults( ) {
     setWinLimitsForToggle( 0, 8, MAX_WIN_ROW_SIZE, 84, 84 );
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
+    setWinModNum( -1 );
     setHomeItemAdr( adr );
     setCurrentItemAdr( adr );
     setLineIncrementItemAdr( 4 );

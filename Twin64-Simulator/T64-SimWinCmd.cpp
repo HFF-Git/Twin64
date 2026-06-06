@@ -1374,6 +1374,16 @@ void SimCommandsWin::helpCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
+// Echo command. We will just print all characters after the ECHO command token.
+//
+// ??? need some support from the Tokenizer ?
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::echoCmd( ) {
+
+
+}
+
+//----------------------------------------------------------------------------------------
 // Exit command. We will exit with the environment variable value for the exit code
 // or the argument value in the command. This will be quite useful for test script
 // development.
@@ -2704,6 +2714,15 @@ void SimCommandsWin::winExchangeCmd( ) {
 //  WN  CODE    "," <adr>
 //  WN  TEXT    "," <str>
 // 
+// ??? how about combining MEM and CODE ? 
+//
+//. WN MEM      "," <adr> [ "," <mode> ]
+//
+// The mode argument would be the toggle indicator. ( HEX, DEC, ASCII, CODE )
+// We would also need to set the lineItemArgument to 32 or 1 on the fly...
+//
+// ??? introduce HEX32 and HEX64 for the different viewpoints on data ? 
+// 
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winNewWinCmd( ) {
     
@@ -2721,7 +2740,7 @@ void SimCommandsWin::winNewWinCmd( ) {
             int modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM );
             tok -> checkEOS( );
 
-            glb -> winDisplay -> windowNewCpuState( modNum );
+            glb -> winDisplay -> windowNewProcState( modNum );
 
         } break;
 
@@ -2742,7 +2761,7 @@ void SimCommandsWin::winNewWinCmd( ) {
                                                  0, T64_MAX_VIRT_MEM_LIMIT );
             tok -> checkEOS( );
 
-            glb -> winDisplay -> windowNewMemData( -1, adr );
+            glb -> winDisplay -> windowNewMemData( adr );
 
         }  break;
 
@@ -2754,7 +2773,7 @@ void SimCommandsWin::winNewWinCmd( ) {
                                                  T64_MAX_VIRT_MEM_LIMIT );
 
             tok -> checkEOS( );
-            glb -> winDisplay -> windowNewMemCode( -1, adr );
+            glb -> winDisplay -> windowNewMemCode( adr );
 
         }  break;
 
@@ -2897,15 +2916,16 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                     case CMD_DMOD:          displayModuleCmd( );            break;   
 
                     case CMD_DWIN:          displayWindowCmd( );            break;  
+                    case CMD_ECHO:          echoCmd( );                     break;
 
                     case CMD_MR:            modifyRegCmd( );                break;
                         
-                    case CMD_DM:            displayMemCmd( );            break;
+                    case CMD_DM:            displayMemCmd( );               break;
 
                     case CMD_MB:
                     case CMD_MS:
                     case CMD_MW:
-                    case CMD_MD:            modifyMemCmd( );             break;
+                    case CMD_MD:            modifyMemCmd( );                break;
                         
                     case CMD_ITLB:          insertTLBCmd( );                break;
                     case CMD_PTLB:          purgeTLBCmd( );                 break;

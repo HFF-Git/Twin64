@@ -363,31 +363,27 @@ T64Word T64Cpu::diagOpHandler( int opt, T64Word arg1, T64Word arg2 ) {
 T64Word T64Cpu::instrRead( T64Word vAdr ) {
 
     uint32_t instr = 0;
+    T64Word  pAdr  = vAdr;
 
     instrAlignmentCheck( vAdr );
 
     if ( isInPhysMemAdrRange( vAdr )) { 
 
         privModeCheck( );
-        if ( ! proc -> busOpRead( vAdr, (uint8_t *) &instr, 4 )) {
-
-            machineCheckTrap( vAdr );
-        }   
+        pAdr = vAdr;  
     }
     else {
-
-        T64Word  pAdr;
 
         if ( ! proc -> localTlb -> lookupItlb( vAdr, &pAdr, &instrTlbInfo )) 
             instrTlbMissTrap( vAdr );
 
         instrAccCheck( vAdr, instrTlbInfo );      
-       
-        if ( ! proc -> busOpRead( pAdr, (uint8_t *) &instr, 4 )) {
-
-            machineCheckTrap( pAdr );
-        }
     }
+
+    if ( ! proc -> busOpRead( pAdr, (uint8_t *) &instr, 4 )) {
+
+            machineCheckTrap( vAdr );
+    }  
 
     copyEndianAware( ((uint8_t *) &instr ), ((uint8_t *) &instr ), 4 );
     return( instr );
@@ -404,6 +400,7 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
 //----------------------------------------------------------------------------------------
 T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt, bool rsv ) {
 
+    T64Word pAdr    = 0;
     T64Word data    = 0;
     int     wordOfs = sizeof( T64Word ) - len;
 
@@ -412,49 +409,34 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt, bool rsv ) {
     if ( vAdr < physMemSize ) { 
         
         privModeCheck( );
-
-        if ( rsv ) {
-
-            if ( ! proc -> busOpReadRsv( vAdr, ((uint8_t *) &data ) + wordOfs, len )) {
-
-                machineCheckTrap( vAdr );
-            }
-        }
-        else {
-           
-            if ( ! proc -> busOpRead( vAdr, ((uint8_t *) &data ) + wordOfs, len )) {
-
-                machineCheckTrap( vAdr );
-            }
-
-        }
+        pAdr = vAdr;
     }
     else {
 
         uint16_t tlbInfo;
-        T64Word  pAdr;
-
+       
         if ( ! proc -> localTlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) {
 
             dataMemTlbMissTrap( vAdr );
         }
 
         dataReadAccCheck( vAdr, tlbInfo );      
-        
-        if ( rsv ) {
+    }
 
-             if ( ! proc -> busOpReadRsv( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
+    if ( rsv ) {
 
-                machineCheckTrap( pAdr );
-             }
+        if ( ! proc -> busOpReadRsv( vAdr, ((uint8_t *) &data ) + wordOfs, len )) {
+
+            machineCheckTrap( vAdr );
         }
-        else {
+    }
+    else {
+           
+        if ( ! proc -> busOpRead( vAdr, ((uint8_t *) &data ) + wordOfs, len )) {
 
-            if ( ! proc -> busOpRead( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
-
-                machineCheckTrap( pAdr );
-            }
+            machineCheckTrap( vAdr );
         }
+
     }
 
     copyEndianAware(((uint8_t *) &data ) + wordOfs, 
@@ -485,7 +467,8 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt, bool rsv ) {
 //----------------------------------------------------------------------------------------
 bool T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len, bool cond ) {
 
-    int wordOfs = sizeof( T64Word ) - len;
+    T64Word pAdr    = 0;
+    int     wordOfs = sizeof( T64Word ) - len;
 
     dataAlignmentCheck( vAdr, len );
 
@@ -496,26 +479,11 @@ bool T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len, bool cond ) {
     if ( vAdr < physMemSize ) {
         
         privModeCheck( );
-
-        if ( cond ) {
-
-            if ( ! proc -> busOpWriteCond( vAdr, ((uint8_t *) &data ) + wordOfs, len )) {
-
-                machineCheckTrap( vAdr );
-            }   
-        }
-        else {
-
-            if ( ! proc -> busOpWrite( vAdr, ((uint8_t *) &data ) + wordOfs, len )) {
-
-                machineCheckTrap( vAdr );
-            }  
-        }
+        pAdr = vAdr;
     }
     else {
 
         uint16_t tlbInfo;
-        T64Word  pAdr;
 
         if ( ! proc -> localTlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) {
 
@@ -523,20 +491,20 @@ bool T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len, bool cond ) {
         }
         
         dataWriteAccCheck( vAdr, tlbInfo ); 
-        
-        if ( cond ) {
+    }
 
-            if ( ! proc -> busOpWriteCond( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
+    if ( cond ) {
 
-                machineCheckTrap( pAdr );
-            }
+        if ( ! proc -> busOpWriteCond( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
+
+            machineCheckTrap( pAdr );
         }
-        else {
+    }
+    else {
 
-            if ( ! proc -> busOpWrite( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
+        if ( ! proc -> busOpWrite( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
 
-                machineCheckTrap( pAdr );
-            }
+            machineCheckTrap( pAdr );
         }
     }
 

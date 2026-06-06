@@ -369,7 +369,8 @@ void T64System::resetModule( int modNum ) {
 
     if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
-        moduleMap[ modNum ] -> resetModule( );
+        if ( moduleMap[ modNum ] != nullptr )
+            moduleMap[ modNum ] -> resetModule( );
     }
 }
 
