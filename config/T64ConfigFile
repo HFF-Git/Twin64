@@ -8,7 +8,6 @@ nmod mem,  1, ROM, SPA_ADR=0xf000_0000, SPA_LEN=0x4000
 nmod mem,  2, RAM, SPA_ADR=0x0000_0000, SPA_LEN=0x40_0000
 nmod mem,  3, RAM, SPA_ADR=0x0040_0000, SPA_LEN=0x40_0000
 
-
 # insert translations for TLB tests
 
 # 4Kb pages, R/W, User privilege

@@ -872,7 +872,7 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
         .cmdNameStr     = (char *)  "wn",
         .cmdSyntaxStr   = (char *)  "wn <type> [ , <arg1> [ , <arg2> ]]",
         .helpStr        = (char *)  "create a new window " 
-                                    "( PROC, TLB, MEM, CODE, TEXT )"
+                                    "( PROC, TLB, MEM, TEXT )"
     },
     
     {

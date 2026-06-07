@@ -1102,29 +1102,6 @@ struct SimWinMem : SimWinScrollable {
 };
 
 //----------------------------------------------------------------------------------------
-// Code Memory Window. A code memory window will show the instruction memory content
-// starting with the current address followed by the instruction and a human readable
-// disassembled version.
-//
-//----------------------------------------------------------------------------------------
-struct SimWinCode : SimWinScrollable {
-    
-    public:
-    
-    SimWinCode( SimGlobals *glb, T64Word adr );
-    ~ SimWinCode( );
-    
-    void setDefaults( );
-    void drawBanner( );
-    void drawLine( T64Word index );
-    
-    private:
-
-    T64Word         adr     = 0;
-    T64DisAssemble  *disAsm = nullptr;
-};
-
-//----------------------------------------------------------------------------------------
 // Text Window. It may be handy to also display an ordinary ASCII text file. One day
 // this will allow us to display for example the source code to a running program 
 // when symbolic debugging is supported.
@@ -1349,8 +1326,7 @@ public:
     void            windowToggle( int winNum, int toggleVal );
     void            windowExchangeOrder( int winNum );
     
-    void            windowNewMemData( T64Word adr, int toggleVal );
-    void            windowNewMemCode( T64Word adr );
+    void            windowNewMem( T64Word adr, int toggleVal );
     void            windowNewProcState( int modNum );
     void            windowNewTlb( int modNum );
     void            windowNewText( char *pathStr );

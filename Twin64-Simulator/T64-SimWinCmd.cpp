@@ -1384,9 +1384,9 @@ void SimCommandsWin::echoCmd( char *cmdBuf ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Exit command. We will exit with the environment variable value for the exit code
-// or the argument value in the command. This will be quite useful for test script
-// development.
+// Exit command. We will exit with the environment variable value for the exit
+// code or the argument value in the command. This will be quite useful for test
+// script development.
 //
 //  EXIT <val>
 //
@@ -2640,8 +2640,8 @@ void SimCommandsWin::winCurrentCmd( ) {
 //----------------------------------------------------------------------------------------
 // This command toggles through alternate window content, if supported by the 
 // window. The toggle command will just flip through the sets or set a specific
-// value. Like windows, toggles are mumbered from 1 to MAX, but internally from
-// starting at zero. When teh toggla value is omitted, a -1 is passed to indicate
+// value. Like windows, toggles are numbered from 1 to MAX, but internally from
+// starting at zero. When the toggle value is omitted, a -1 is passed to indicate
 // a round robin toggling.
 //
 //  WT [ <toggleVal> [ "," <winNum> ]]
@@ -2757,7 +2757,7 @@ void SimCommandsWin::winNewWinCmd( ) {
             T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE,
                                                  0, T64_MAX_VIRT_MEM_LIMIT );
 
-           int toggleVal;
+           int toggleVal = -1;
 
             if ( tok -> isToken( TOK_COMMA )) {
 
@@ -2778,20 +2778,7 @@ void SimCommandsWin::winNewWinCmd( ) {
             } 
 
             tok -> checkEOS( );
-            glb -> winDisplay -> windowNewMemData( adr, toggleVal );
-
-        }  break;
-
-        // ??? phase out ?
-        case TOK_CODE: {  
-
-            tok -> acceptComma( );
-            T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE, 
-                                                 0,
-                                                 T64_MAX_VIRT_MEM_LIMIT );
-
-            tok -> checkEOS( );
-            glb -> winDisplay -> windowNewMemCode( adr );
+            glb -> winDisplay -> windowNewMem( adr, toggleVal );
 
         }  break;
 
