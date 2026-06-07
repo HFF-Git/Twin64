@@ -327,6 +327,9 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
     { .errNum = ERR_INVALID_FMT_OPT,            
       .errStr = (char *) "Invalid format option" },
 
+    { .errNum = ERR_INVALID_TOGGLE_VAL,            
+      .errStr = (char *) "Invalid toggle value" },
+
     { .errNum = ERR_INVALID_WIN_TYPE,           
       .errStr = (char *) "Invalid window type" },
 

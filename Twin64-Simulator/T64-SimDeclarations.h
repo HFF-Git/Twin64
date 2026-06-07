@@ -293,13 +293,14 @@ enum SimErrMsgId : int {
     ERR_INVALID_RADIX               = 16,
     ERR_INVALID_REG_ID              = 17,
     ERR_INVALID_FMT_OPT             = 23,
+    ERR_INVALID_TOGGLE_VAL          = 24,
 
-    ERR_INVALID_MODULE_TYPE         = 24,
-    ERR_INVALID_MOD_NUM             = 25,
+    ERR_INVALID_MODULE_TYPE         = 25,
+    ERR_INVALID_MOD_NUM             = 26,
    
-    ERR_INVALID_NUM                 = 26,
-    ERR_UNALIGNED_ADDR              = 27,
-    ERR_INVALID_ADDR                = 28,
+    ERR_INVALID_NUM                 = 27,
+    ERR_UNALIGNED_ADDR              = 28,
+    ERR_INVALID_ADDR                = 29,
 
     // -----   
     
@@ -1096,7 +1097,8 @@ struct SimWinMem : SimWinScrollable {
 
     private:
 
-    T64Word adr = 0;
+    T64Word         adr     = 0;
+    T64DisAssemble  *disAsm = nullptr;
 };
 
 //----------------------------------------------------------------------------------------
@@ -1347,7 +1349,7 @@ public:
     void            windowToggle( int winNum, int toggleVal );
     void            windowExchangeOrder( int winNum );
     
-    void            windowNewMemData( T64Word adr );
+    void            windowNewMemData( T64Word adr, int toggleVal );
     void            windowNewMemCode( T64Word adr );
     void            windowNewProcState( int modNum );
     void            windowNewTlb( int modNum );

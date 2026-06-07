@@ -2639,10 +2639,12 @@ void SimCommandsWin::winCurrentCmd( ) {
 
 //----------------------------------------------------------------------------------------
 // This command toggles through alternate window content, if supported by the 
-// window. An example is the cache sets in a two-way associative cache. The toggle
-// command will just flip through the sets or set a specific set.
+// window. The toggle command will just flip through the sets or set a specific
+// value. Like windows, toggles are mumbered from 1 to MAX, but internally from
+// starting at zero. When teh toggla value is omitted, a -1 is passed to indicate
+// a round robin toggling.
 //
-//  WT [ <winNum> [ "," <toggleVal> ]]
+//  WT [ <toggleVal> [ "," <winNum> ]]
 //
 //----------------------------------------------------------------------------------------
 void  SimCommandsWin::winToggleCmd( ) {
@@ -2650,21 +2652,25 @@ void  SimCommandsWin::winToggleCmd( ) {
     if ( tok -> isToken( TOK_EOS )) {
         
         glb -> winDisplay -> 
-            windowToggle( glb -> winDisplay -> getCurrentWindow( ), 0 );
+            windowToggle( glb -> winDisplay -> getCurrentWindow( ), -1 );
     }
     else {
 
-        int toggleVal = 0;
-        int winNum    = eval -> acceptNumExpr( ERR_INVALID_WIN_ID, 1, MAX_WINDOWS );
-    
-        if ( ! glb -> winDisplay -> validWindowNum( internalWinNum( winNum ))) 
-            throw ( ERR_INVALID_WIN_ID );
+        int winNum      = 0;
+        int toggleVal   = eval -> acceptNumExpr( ERR_INVALID_TOGGLE_VAL, 
+                                                 0, MAX_WIN_TOGGLES );
+
+        toggleVal = toggleVal - 1;
 
         if ( tok -> isToken( TOK_COMMA )) {
 
             tok -> nextToken( );
 
-            toggleVal = eval -> acceptNumExpr( ERR_INVALID_WIN_ID, 1, MAX_WIN_TOGGLES );
+            winNum = eval -> acceptNumExpr( ERR_INVALID_WIN_ID, 1, MAX_WINDOWS );
+
+            if ( ! glb -> winDisplay -> validWindowNum( internalWinNum( winNum ))) 
+                throw ( ERR_INVALID_WIN_ID );
+
             tok -> checkEOS( );
         }
     
@@ -2714,10 +2720,6 @@ void SimCommandsWin::winExchangeCmd( ) {
 //  WN  CODE    "," <adr>
 //  WN  TEXT    "," <str>
 // 
-// ??? i have added silently the mode on the WN MEM command. How to get this
-// info to the window creator ? Or set directly after creation ? Maybe a 
-// routine that sets the mode and the itemsPerLine ...
-// 
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winNewWinCmd( ) {
     
@@ -2755,30 +2757,32 @@ void SimCommandsWin::winNewWinCmd( ) {
             T64Word adr = eval -> acceptNumExpr( ERR_EXPECTED_NUM_VALUE,
                                                  0, T64_MAX_VIRT_MEM_LIMIT );
 
-            SimTokId mode;
+           int toggleVal;
 
             if ( tok -> isToken( TOK_COMMA )) {
 
                 tok -> nextToken( );
-                mode = tok -> tokId( );
 
-                if ( mode == TOK_HEX ) mode = TOK_HEX64;
-                
-                if (( mode != TOK_HEX32 ) && ( mode != TOK_HEX64 ) &&
-                    ( mode != TOK_ASCII ) && ( mode != TOK_CODE )) {
+                switch ( tok -> tokId( )) {
 
-                    throw( ERR_EXPECTED_WIN_TYPE );
+                    case TOK_HEX32: toggleVal = 0; break;
+                    case TOK_HEX:   toggleVal = 1; break;
+                    case TOK_HEX64: toggleVal = 1; break;
+                    case TOK_DEC:   toggleVal = 2; break;
+                    case TOK_ASCII: toggleVal = 3; break;
+                    case TOK_CODE:  toggleVal = 4; break;
+                    default:        throw( ERR_EXPECTED_WIN_TYPE );
                 }
 
                 tok -> nextToken( );
             } 
 
             tok -> checkEOS( );
-
-            glb -> winDisplay -> windowNewMemData( adr );
+            glb -> winDisplay -> windowNewMemData( adr, toggleVal );
 
         }  break;
 
+        // ??? phase out ?
         case TOK_CODE: {  
 
             tok -> acceptComma( );

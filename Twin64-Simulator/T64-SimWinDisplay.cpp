@@ -812,16 +812,16 @@ int SimWinDisplay::getFreeWindowSlot( ) {
     throw( ERR_OUT_OF_WINDOWS );
 }
 
-void SimWinDisplay::windowNewMemData( T64Word adr ) {
+void SimWinDisplay::windowNewMemData( T64Word adr, int toggleVal ) {
 
     int slot = getFreeWindowSlot( );
 
     windowList[ slot ] = (SimWin *) new SimWinMem( glb, adr );
     windowList[ slot ] -> setWinName(( char *) "MEM" );
-    windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
     windowList[ slot ] -> setWinStack( 0 );
-    windowList[ slot ] -> setEnable( true );
+    windowList[ slot ] -> setWinToggleVal( toggleVal );
+    windowList[ slot ] -> setDefaults( );
     currentWinNum = slot;
 }
 
@@ -834,7 +834,6 @@ void SimWinDisplay::windowNewMemCode( T64Word adr ){
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
     windowList[ slot ] -> setWinStack( 0 );
-    windowList[ slot ] -> setEnable( true );
     currentWinNum = slot;
 }
 
@@ -848,7 +847,6 @@ void SimWinDisplay::windowNewProcState( int modNum ) {
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
     windowList[ slot ] -> setWinStack( 0 );
-    windowList[ slot ] -> setEnable( true );
     currentWinNum = slot;
 }
 
@@ -862,7 +860,6 @@ void SimWinDisplay::windowNewTlb( int modNum ) {
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
     windowList[ slot ] -> setWinStack( 0 );
-    windowList[ slot ] -> setEnable( true );
     currentWinNum = slot;
 }
    

@@ -658,7 +658,8 @@ void SimWinTlb::drawLine( T64Word index ) {
 //----------------------------------------------------------------------------------------
 SimWinMem::SimWinMem( SimGlobals *glb, T64Word adr ) : SimWinScrollable( glb ) {
 
-    this -> adr = rounddown( adr, 8 );
+    this -> disAsm  = new T64DisAssemble( );
+    this -> adr     = rounddown( adr, 8 );
     setDefaults( );
  }
 
@@ -674,19 +675,19 @@ void SimWinMem::setDefaults( ) {
     setWinType( WT_MEM_WIN );
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
-    setWinToggleLimit( 4 );
+    setWinToggleLimit( 5 );
     setWinLimitsForToggle( 0, 5, MAX_WIN_ROW_SIZE, 116, 116 );
     setWinLimitsForToggle( 1, 5, MAX_WIN_ROW_SIZE, 116, 116 );
     setWinLimitsForToggle( 2, 5, MAX_WIN_ROW_SIZE, 116, 116 );
     setWinLimitsForToggle( 3, 5, MAX_WIN_ROW_SIZE, 116, 116 );
+    setWinLimitsForToggle( 4, 8, MAX_WIN_ROW_SIZE, 116, 116 );
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
     setWinModNum( -1 );
     setHomeItemAdr( adr );
     setCurrentItemAdr( adr );
     setLineIncrementItemAdr( 8 * 4 );
-    setLimitItemAdr( T64_MAX_PHYS_MEM_LIMIT );
-    setWinToggleVal( 0 );
+    setLimitItemAdr( T64_MAX_VIRT_MEM_LIMIT );
     setEnable( true );
 }
 
@@ -725,9 +726,20 @@ void SimWinMem::drawBanner( ) {
     if ( getWinToggleVal( ) == 3 ) {
 
         printTextField((char *) "ascii", fmtDesc | FMT_LAST_FIELD );
+        setLineIncrementItemAdr( 8 * 4 );
     }
-    else printRadixField( fmtDesc | FMT_LAST_FIELD );
+    else if ( getWinToggleVal( ) == 4 ) {
 
+         printTextField((char *) "code", fmtDesc | FMT_LAST_FIELD );
+         setLineIncrementItemAdr( 4 );
+    }
+    else {
+        
+        printRadixField( fmtDesc | FMT_LAST_FIELD );
+        setLineIncrementItemAdr( 8 * 4 );
+    }
+
+    // ??? adapt to 8 or 4 byte alignment ?
     if ( ! isAlignedAdr( getCurrentItemAdr( ), 8 )) {
         
         setCurrentItemAdr( rounddown( getCurrentItemAdr( ), 8 ));
@@ -807,6 +819,37 @@ void SimWinMem::drawLine( T64Word itemAdr ) {
                 printTextField((char *) "   " );
             }
         }
+    }
+    else if ( getWinToggleVal( ) == 4 ) {
+
+        uint32_t    instr                       = 0x0;
+        char        buf[ MAX_TEXT_LINE_SIZE ]   = { 0 };
+
+        if ( ! readMem( glb -> system, 
+                        itemAdr, (uint8_t *) &instr, 
+                        sizeof( uint32_t ))) {
+
+            printTextField((char *) "Invalid address", fmtDesc );
+            return;
+        }
+
+        printNumericField( instr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_8, 12 );
+    
+        int pos          = getWinCursorCol( );
+        int opCodeField  = disAsm -> getOpCodeFieldWidth( );
+        int operandField = disAsm -> getOperandsFieldWidth( );
+        
+        clearField( opCodeField );
+        disAsm -> formatOpCode( buf, sizeof( buf ), instr );
+        printTextField( buf, fmtDesc, (int) strlen( buf ));
+        setWinCursor( 0, pos + opCodeField );
+        
+        clearField( operandField );
+        disAsm -> formatOperands( buf, sizeof( buf ), instr, 16 );
+        printTextField( buf, fmtDesc, (int) strlen( buf ));
+        setWinCursor( 0, pos + opCodeField + operandField );
+
+        padLine( fmtDesc );
     }
 }
 

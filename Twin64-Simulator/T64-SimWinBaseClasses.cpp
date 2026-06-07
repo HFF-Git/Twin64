@@ -234,7 +234,11 @@ void SimWin::setWinToggleVal( int val ) {
 
 void SimWin::toggleWin( int toggleVal ) { 
 
-    winToggleVal = (winToggleVal + 1) % winToggleLimit;
+    if ( toggleVal == -1 ) {
+
+        winToggleVal = (winToggleVal + 1) % winToggleLimit;
+    }
+    else winToggleVal = toggleVal % winToggleLimit;
 
     winRows    = winSizes[ winToggleVal ].actualRow; 
     winColumns = winSizes[ winToggleVal ].actualCol; 
