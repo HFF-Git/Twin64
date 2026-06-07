@@ -820,7 +820,12 @@ void SimWinDisplay::windowNewMem( T64Word adr, int toggleVal ) {
     windowList[ slot ] -> setWinName(( char *) "MEM" );
     windowList[ slot ] -> setWinIndex( slot );
     windowList[ slot ] -> setWinStack( 0 );
-    windowList[ slot ] -> setWinToggleVal( toggleVal );
+    
+    if ( toggleVal == -1 ) 
+        windowList[ slot ] -> setWinToggleVal( 0 );
+    else
+        windowList[ slot ] -> setWinToggleVal( toggleVal );
+    
     windowList[ slot ] -> setDefaults( );
     currentWinNum = slot;
 }

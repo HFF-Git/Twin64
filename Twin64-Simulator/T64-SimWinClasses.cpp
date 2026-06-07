@@ -437,7 +437,7 @@ void SimWinProcState::drawCodeSubWindow( int linePos, int linesLeft ) {
     uint32_t    fmtDesc     = FMT_DEF_ATTR | FMT_BOLD | FMT_INVERSE;
     T64Word     currentIa   = proc -> getCpuPtr( ) -> getPsrReg( );
     T64Word     windowSize  = linesLeft * 4;
-    T64Word     windowEnd   = codeWinBaseAdr + windowSize - 4;
+    T64Word     windowEnd   = codeWinBaseAdr + windowSize;
     uint32_t    instr       = 0x0;
     char        instrBuf[ MAX_TEXT_LINE_SIZE ] = { 0 };
 
@@ -527,7 +527,7 @@ void SimWinProcState::drawBody( ) {
         linePos += 4;
     }
 
-    int linesLeft = getRows( ) - linePos + 1;
+    int linesLeft = getRows( ) - linePos;
     drawCodeSubWindow( linePos, linesLeft );
 }
 
@@ -676,11 +676,11 @@ void SimWinMem::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 5 );
-    setWinLimitsForToggle( 0, 5, MAX_WIN_ROW_SIZE, 116, 116 );
-    setWinLimitsForToggle( 1, 5, MAX_WIN_ROW_SIZE, 116, 116 );
-    setWinLimitsForToggle( 2, 5, MAX_WIN_ROW_SIZE, 116, 116 );
-    setWinLimitsForToggle( 3, 5, MAX_WIN_ROW_SIZE, 116, 116 );
-    setWinLimitsForToggle( 4, 8, MAX_WIN_ROW_SIZE, 116, 116 );
+    setWinLimitsForToggle( 0, 5, MAX_WIN_ROW_SIZE, 124, 124 );
+    setWinLimitsForToggle( 1, 5, MAX_WIN_ROW_SIZE, 124, 124 );
+    setWinLimitsForToggle( 2, 5, MAX_WIN_ROW_SIZE, 124, 124 );
+    setWinLimitsForToggle( 3, 5, MAX_WIN_ROW_SIZE, 124, 124 );
+    setWinLimitsForToggle( 4, 8, MAX_WIN_ROW_SIZE, 124, 124 );
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
     setWinModNum( -1 );
@@ -739,10 +739,11 @@ void SimWinMem::drawBanner( ) {
         setLineIncrementItemAdr( 8 * 4 );
     }
 
-    // ??? adapt to 8 or 4 byte alignment ?
-    if ( ! isAlignedAdr( getCurrentItemAdr( ), 8 )) {
+    int alignVal = ( getWinToggleVal( ) < 4 ) ? 8 : 4;
+    
+    if ( ! isAlignedAdr( getCurrentItemAdr( ), alignVal )) {
         
-        setCurrentItemAdr( rounddown( getCurrentItemAdr( ), 8 ));
+        setCurrentItemAdr( rounddown( getCurrentItemAdr( ), alignVal )); 
     }   
 }
 
@@ -781,6 +782,8 @@ void SimWinMem::drawLine( T64Word itemAdr ) {
 
             printTextField((char *) "   " );
         }
+
+        padLine( fmtDesc );
     }
     else if ( getWinToggleVal( ) == 1 ) {
 
@@ -795,6 +798,8 @@ void SimWinMem::drawLine( T64Word itemAdr ) {
 
             printTextField((char *) "   " );
         }
+
+        padLine( fmtDesc );
     }
     else if ( getWinToggleVal( ) == 2 ) {
 
@@ -807,6 +812,8 @@ void SimWinMem::drawLine( T64Word itemAdr ) {
                 printTextField((char *) "   " );
             }
         }
+
+        padLine( fmtDesc );
     }
     else if ( getWinToggleVal( ) == 3 ) {
 
@@ -819,6 +826,8 @@ void SimWinMem::drawLine( T64Word itemAdr ) {
                 printTextField((char *) "   " );
             }
         }
+
+        padLine( fmtDesc );
     }
     else if ( getWinToggleVal( ) == 4 ) {
 

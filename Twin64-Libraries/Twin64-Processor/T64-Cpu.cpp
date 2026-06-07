@@ -425,16 +425,16 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt, bool rsv ) {
 
     if ( rsv ) {
 
-        if ( ! proc -> busOpReadRsv( vAdr, ((uint8_t *) &data ) + wordOfs, len )) {
+        if ( ! proc -> busOpReadRsv( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
 
-            machineCheckTrap( vAdr );
+            machineCheckTrap( pAdr );
         }
     }
     else {
            
-        if ( ! proc -> busOpRead( vAdr, ((uint8_t *) &data ) + wordOfs, len )) {
+        if ( ! proc -> busOpRead( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
 
-            machineCheckTrap( vAdr );
+            machineCheckTrap( pAdr );
         }
 
     }

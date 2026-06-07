@@ -374,6 +374,11 @@ bool T64Processor::handleHPABroadcast( T64BroadcastEvents event,
 
         } break;
 
+        case T64_BCAST_RESV_CHECK: {
+
+
+        } break;
+
         case T64_BCAST_MODULE_PURGE: {
 
             // ??? get the module number...

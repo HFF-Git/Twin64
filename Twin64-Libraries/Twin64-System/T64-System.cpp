@@ -384,7 +384,6 @@ void T64System::haltModule( int modNum ) {
 
         if ( auto *m = dynamic_cast<T64Threadble *> ( moduleMap[ modNum ] ))
             m -> haltModule( );
-        //  moduleMap[ modNum ] -> haltModule( );
     }
 }
 
@@ -502,7 +501,13 @@ bool T64System::busOpWrite( int reqModNum,
         std::lock_guard<std::mutex> lk(sLock);
         rStat = mPtr -> busOpWriteEvent( reqModNum, pAdr, data, len );
 
-        // ??? if match, clear reservation in all processors...
+        for ( int i = 0; i < systemRsvMapHwm; i ++ ) {
+
+            systemRsvMap[ i ] -> busOpBroadcastEvent( reqModNum,
+                                                      T64_BCAST_RESV_CHECK,
+                                                      pAdr,
+                                                      0 );
+        }
     }
 
     return ( rStat );
@@ -529,10 +534,24 @@ bool T64System::busOpWriteCond( int     reqModNum,
     {
         std::lock_guard<std::mutex> lk(sLock);
 
-        // ??? check the reservation table for a valid entry.
-        // ??? if found - > write operation, else fail.
+        for ( int i = 0; i < systemRsvMapHwm; i ++ ) {
 
-        rStat = mPtr -> busOpWriteEvent( reqModNum, pAdr, data, len );
+            T64Module *m = systemRsvMap[ i ];
+
+             if (( m -> getModuleType( ) == reqModNum ) &&
+                 ( m -> getRsvInfo( ) >= 0  ) && 
+                 ( abs( m -> getRsvInfo( )) == pAdr )) {
+
+                // ??? our slot, rsvInfo still valid ... we write to MEM
+
+                rStat = mPtr -> busOpWriteEvent( reqModNum, pAdr, data, len );
+            }
+            else {
+
+                // ??? we just fail, report via rStat ? 
+                rStat = false;
+            }
+        }
     }
 
     return ( rStat );
@@ -540,19 +559,32 @@ bool T64System::busOpWriteCond( int     reqModNum,
 
 //----------------------------------------------------------------------------------------
 // When a processor encounters a trap or an external interrupt, a valid 
-// reservation initiated by this processor will be cleared.
+// reservation initiated by this processor will be cleared in the processor.
 //
 //----------------------------------------------------------------------------------------
 bool T64System::busOpClearRsv(  int reqModNum ) {
 
-    // ??? clear for the module only ?
-   
+    {
+        std::lock_guard<std::mutex> lk(sLock);
+
+        for ( int i = 0; i < systemRsvMapHwm; i ++ ) {
+
+            T64Module *m = systemRsvMap[ i ];
+
+                if ( m -> getModuleType( ) == reqModNum ) {
+
+                m -> setRsvInfo( 0, false );
+            }
+        }
+    }
+
     return( true );
 }
 
 //----------------------------------------------------------------------------------------
 // Bus broadcast operation. We need to provide a way to signal global events
-// such as a TLB entry purge to all modules. 
+// such as a TLB entry purge to all modules. We will lock the system mutex and 
+// inform all modules.
 //
 //----------------------------------------------------------------------------------------
 bool T64System::busOpBroadcast( int                reqModNum,
@@ -560,10 +592,14 @@ bool T64System::busOpBroadcast( int                reqModNum,
                                 T64Word            arg1, 
                                 T64Word            arg2 ) {
 
-    for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+    {
+        std::lock_guard<std::mutex> lk(sLock);                              
 
-        if ( moduleMap[ i ] != nullptr )
-            moduleMap[ i ] -> busOpBroadcastEvent( reqModNum, event, arg1, arg2 );
+        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+            if ( moduleMap[ i ] != nullptr )
+                moduleMap[ i ] -> busOpBroadcastEvent( reqModNum, event, arg1, arg2 );
+        }
     }
 
     return( true );
