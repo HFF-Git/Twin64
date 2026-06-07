@@ -65,12 +65,7 @@ struct T64GlobalTlb : T64Module {
 
     void        initModule( );
     void        resetModule( );
-    void        haltModule( );
-    void        runModule( );
-    void        execModule( int steps );
-    bool        executeUnit( );
-    void        waitUntilHalted( );
-
+   
     bool        busOpReadEvent( int reqModNum, T64Word pAdr, uint8_t *data, int len );
     bool        busOpWriteEvent( int reqModNum, T64Word pAdr, uint8_t *data, int len );  
 
@@ -90,5 +85,4 @@ struct T64GlobalTlb : T64Module {
 
     T64Word             tlbMissCount;
     T64Word             tlbHitCount;
-
 };

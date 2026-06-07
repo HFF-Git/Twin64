@@ -123,11 +123,6 @@ struct T64Module {
     virtual void        initModule( )           = 0;
     virtual void        resetModule( )          = 0;
 
-    virtual void        haltModule( )           = 0;
-    virtual void        runModule( )            = 0;
-    virtual void        execModule( int steps ) = 0;
-    virtual void        waitUntilHalted( )      = 0;
-
     virtual bool       
     busOpReadEvent( int srcModNum, T64Word pAdr, uint8_t *data, int len ) = 0;
 
@@ -179,13 +174,28 @@ struct T64Module {
 };
 
 //----------------------------------------------------------------------------------------
-// The thread module class implements the thread logic. The inheriting classes
+// "T64Threadable" is an interface that a module which runs as a thread needs
+// to implement. The idea is that a module not running as a thread does not
+// need to implement dummy functions for these routines.
+// 
+//----------------------------------------------------------------------------------------
+struct T64Threadble {
+
+    virtual             ~ T64Threadble( ) = default;
+    virtual void        haltModule( )           = 0;
+    virtual void        runModule( )            = 0;
+    virtual void        execModule( int steps ) = 0;
+    virtual void        waitUntilHalted( )      = 0;
+};
+
+//----------------------------------------------------------------------------------------
+// The thread module class implements the thread logic and requires the inheriting
+// module to implement the "T64Threadable" interface. The inheriting classes
 // call the "threadModuleXXX" methods to carry out the the thread specific
-// functions.
-//
+// functions. 
 //
 //----------------------------------------------------------------------------------------
-struct T64ThreadModule : T64Module {
+struct T64ThreadModule : T64Module, T64Threadble {
 
     public:
 

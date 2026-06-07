@@ -300,16 +300,6 @@ void T64GlobalTlb::resetModule( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Dummy functions, we are a shared state module and not a thread.
-//
-//----------------------------------------------------------------------------------------
-void T64GlobalTlb::haltModule( ) { }
-void T64GlobalTlb::runModule( ) { };
-void T64GlobalTlb::execModule( int steps ) { }
-bool T64GlobalTlb::executeUnit( ) { return( false ); }
-void T64GlobalTlb::waitUntilHalted( ) { }
-
-//----------------------------------------------------------------------------------------
 // A bus read event that concerns us. We only listen to our HPA address range.
 //
 //----------------------------------------------------------------------------------------
@@ -326,6 +316,8 @@ T64GlobalTlb::busOpReadEvent( int reqModNum, T64Word pAdr, uint8_t *data, int le
     int     wordInRegSetIndex   = wordIndex % T64_IO_REG_SET_SIZE;
     int     wordOfs             = pAdr % sizeof( T64Word );
     T64Word tmp                 = 0;
+
+    // ??? what registers do we have ?
 
     copyFromReg( data, tmp, 0, len );
     return ( true );
@@ -349,6 +341,8 @@ T64GlobalTlb::busOpWriteEvent( int reqModNum, T64Word pAdr, uint8_t *data, int l
     int     wordInRegSetIndex   = wordIndex % T64_IO_REG_SET_SIZE;
     int     wordOfs             = pAdr % sizeof( T64Word );
     T64Word tmp                 = 0;
+
+    // ??? what registers can we write ?
 
     return ( false );
 } 

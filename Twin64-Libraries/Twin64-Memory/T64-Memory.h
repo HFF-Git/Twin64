@@ -70,11 +70,7 @@ public:
     
     void        initModule( );
     void        resetModule( );
-    void        haltModule( );
-    void        runModule( );
-    void        execModule( int steps );
-    void        waitUntilHalted( );
-   
+ 
     bool        busOpReadEvent( int     reqModNum,
                                 T64Word pAdr, 
                                 uint8_t *data, 

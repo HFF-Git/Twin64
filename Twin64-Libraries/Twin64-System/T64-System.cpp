@@ -382,7 +382,9 @@ void T64System::haltModule( int modNum ) {
 
     if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
-        moduleMap[ modNum ] -> haltModule( );
+        if ( auto *m = dynamic_cast<T64Threadble *> ( moduleMap[ modNum ] ))
+            m -> haltModule( );
+        //  moduleMap[ modNum ] -> haltModule( );
     }
 }
 
@@ -394,7 +396,8 @@ void T64System::runModule( int modNum ) {
 
     if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
-        moduleMap[ modNum ] -> runModule( );
+        if ( auto *m = dynamic_cast<T64Threadble *> ( moduleMap[ modNum ] ))
+            m -> runModule( );
     }
 }
 
@@ -411,8 +414,12 @@ void T64System::execModule( int modNum, int units ) {
 
         if (( units >= 1 ) && ( units < UINT32_MAX )) {
 
-            moduleMap[ modNum ] -> execModule( units );
-            moduleMap[ modNum ] -> waitUntilHalted( );
+            if ( auto *m = dynamic_cast<T64Threadble *> ( moduleMap[ modNum ] )) {
+
+                m -> execModule( units );
+                m -> waitUntilHalted( );    
+
+            }
         }
     }
 }

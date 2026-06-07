@@ -86,11 +86,6 @@ void T64Memory::resetModule( ) {
     this -> memData  = (uint8_t *) calloc( spaLen, sizeof( uint8_t ));
 }
 
-void T64Memory::haltModule( ) { }
-void T64Memory::runModule( ) { }
-void T64Memory::execModule( int steps ) { }
-void T64Memory::waitUntilHalted( ) { }
-
 //----------------------------------------------------------------------------------------
 // Read a data from memory. The address the physical address and we compute the
 // offset on our SPA range. The address needs to be aligned with length parameter.
