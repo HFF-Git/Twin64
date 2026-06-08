@@ -304,11 +304,10 @@ void T64GlobalTlb::resetModule( ) {
 //
 //----------------------------------------------------------------------------------------
 bool 
-T64GlobalTlb::busOpReadEvent( int reqModNum, T64Word pAdr, uint8_t *data, int len )  {
+T64GlobalTlb::busOpReadEvent( T64Word pAdr, uint8_t *data, int len )  {
 
     if ( ! isInIoHpaRange( pAdr )) return( false );
     if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( false );
-    if ( reqModNum == moduleNum ) return( false );
 
     T64Word hpaAdr  =  T64_IO_HPA_MEM_START + moduleNum * T64_PAGE_SIZE_BYTES;
     int     wordIndex           = (( pAdr - hpaAdr ) >> 3 );
@@ -329,11 +328,10 @@ T64GlobalTlb::busOpReadEvent( int reqModNum, T64Word pAdr, uint8_t *data, int le
 //
 //----------------------------------------------------------------------------------------
 bool 
-T64GlobalTlb::busOpWriteEvent( int reqModNum, T64Word pAdr, uint8_t *data, int len )  {
+T64GlobalTlb::busOpWriteEvent( T64Word pAdr, uint8_t *data, int len )  {
 
     if ( ! isInIoHpaRange( pAdr )) return( false );
     if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( false );
-    if ( reqModNum == moduleNum ) return( false );
 
     T64Word hpaAdr  =  T64_IO_HPA_MEM_START + moduleNum * T64_PAGE_SIZE_BYTES;
     int     wordIndex           = (( pAdr - hpaAdr ) >> 3 );
@@ -348,24 +346,23 @@ T64GlobalTlb::busOpWriteEvent( int reqModNum, T64Word pAdr, uint8_t *data, int l
 } 
 
 //----------------------------------------------------------------------------------------
-// A bus broadcast event. The processor uses such events to signal a TLB flush
+// A bus control event. The processor uses such events to signal a TLB flush
 // for example.
 //
 //----------------------------------------------------------------------------------------
-bool T64GlobalTlb::busOpBroadcastEvent( int srcModNum,
-                                        T64BroadcastEvents id, 
-                                        T64Word            arg1, 
-                                        T64Word            arg2 )  {
+bool T64GlobalTlb::busOpControlEvent( T64BBusOpControlEvents id, 
+                                      T64Word            arg1, 
+                                      T64Word            arg2 )  {
 
     switch ( id ) {
 
-        case T64_BCAST_TLB_INSERT: {
+        case T64_CNTRL_EVENT_TLB_INSERT: {
 
             return( insertTlbEntry( arg1, arg2));  
               
         } break;
 
-        case T64_BCAST_TLB_PURGE: {
+        case T64_CNTRL_EVENT_TLB_PURGE: {
 
             return( removeTlbEntry( arg1 ));
               

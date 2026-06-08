@@ -307,24 +307,16 @@ struct T64Processor : T64ThreadModule {
     bool            busOpWrite( T64Word adr, uint8_t *data, int len );
     bool            busOpWriteCond( T64Word adr, uint8_t *data, int len );
 
-    bool            busOpBroadCast( T64BroadcastEvents id, 
-                                    T64Word            arg1, 
-                                    T64Word            arg2 );
+    bool            busOpControl( T64BBusOpControlEvents id, 
+                                  T64Word            arg1, 
+                                  T64Word            arg2 );
 
-    bool            busOpReadEvent( int     reqModNum,
-                                    T64Word pAdr, 
-                                    uint8_t *data, 
-                                    int     len );
+    bool            busOpReadEvent( T64Word pAdr, uint8_t *data, int len );
+    bool            busOpWriteEvent( T64Word pAdr, uint8_t *data, int len );  
 
-    bool            busOpWriteEvent( int     reqModNum,
-                                     T64Word pAdr, 
-                                     uint8_t *data, 
-                                     int     len );  
-
-    bool            busOpBroadcastEvent( int                srcModNum,
-                                         T64BroadcastEvents id, 
-                                         T64Word            arg1, 
-                                         T64Word            arg2 );
+    bool            busOpControlEvent( T64BBusOpControlEvents id, 
+                                       T64Word            arg1, 
+                                       T64Word            arg2 );
                         
     T64Cpu          *getCpuPtr( );
     T64LocalTlb     *getLocalTlbPtr( );
@@ -337,7 +329,7 @@ private:
     bool            handleHPARead( T64Word pAdr, uint8_t *data, int len );
     bool            handleHPAWrite( T64Word pAdr, uint8_t *data, int len );
 
-    bool            handleHPABroadcast( T64BroadcastEvents  event, 
+    bool            handleControlEvent( T64BBusOpControlEvents  event, 
                                         T64Word             arg1, 
                                         T64Word             arg2);
 

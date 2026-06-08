@@ -105,3 +105,8 @@ T64Word T64Module::getRsvInfo( ) {
 
     return( rsvInfo );
 }
+
+bool T64Module::isRsvValid( ) {
+
+    return( rsvValid );
+}

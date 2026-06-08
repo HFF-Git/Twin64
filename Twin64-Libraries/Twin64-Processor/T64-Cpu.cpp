@@ -1522,7 +1522,7 @@ void T64Cpu::instrSysTlbOp( T64Instr instr ) {
             T64Word vAdr = addAdrOfs32( getRegB( instr ), getRegA( instr ));
             proc -> localTlb -> purgeTlb( vAdr );
             
-            proc -> busOpBroadCast( T64_BCAST_TLB_PURGE, vAdr, 0 ); 
+            proc -> busOpControl( T64_CNTRL_EVENT_TLB_PURGE, vAdr, 0 ); 
 
             setRegR( instr, 1 );
 

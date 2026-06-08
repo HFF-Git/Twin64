@@ -83,7 +83,7 @@ bool overlap( T64Module *a, T64Module *b ) {
 //----------------------------------------------------------------------------------------
 int insertIntoMap( T64Module **map, T64Module *module, int *hwm, int maxEntries ) {
 
-    if ( *hwm >= maxEntries ) return -1;
+    if ( *hwm >= maxEntries ) return ( -1 );
 
     int pos = 0;
 
@@ -267,7 +267,7 @@ int T64System::removeModule( T64Module *module ) {
 
     int modNum = module -> getModuleNum( );
 
-    busOpBroadcast( -1, T64_BCAST_MODULE_PURGE, modNum, 0 );
+    busOpControl( nullptr, T64_CNTRL_EVENT_MODULE_PURGE, modNum, 0 );
 
     removeFromMap( systemMemMap, module, &systemMemMapHwm );
     removeFromMap( systemIoMap, module, &systemIoMapHwm );
@@ -440,15 +440,12 @@ void T64System::run( ) {
 // event, or false if it has not handled the event. 
 //
 //----------------------------------------------------------------------------------------
-bool T64System::busOpRead( int reqModNum,
-                           T64Word pAdr, 
-                           uint8_t *data, 
-                           int     len ) {
+bool T64System::busOpRead( T64Word pAdr, uint8_t *data, int len ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return( false );
 
-    return ( mPtr -> busOpReadEvent( reqModNum, pAdr, data, len ));
+    return ( mPtr -> busOpReadEvent( pAdr, data, len ));
 }
 
 //----------------------------------------------------------------------------------------
@@ -459,10 +456,7 @@ bool T64System::busOpRead( int reqModNum,
 // several processors.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::busOpReadRsv( int     reqModNum,
-                              T64Word pAdr, 
-                              uint8_t *data, 
-                              int     len ) {
+bool T64System::busOpReadRsv( T64Word pAdr, uint8_t *data, int len ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return( false );
@@ -472,7 +466,7 @@ bool T64System::busOpReadRsv( int     reqModNum,
     {
         std::lock_guard<std::mutex> lk(sLock);
 
-        rStat = mPtr -> busOpReadEvent( reqModNum, pAdr, data, len );
+        rStat = mPtr -> busOpReadEvent( pAdr, data, len );
         if ( rStat ) mPtr -> setRsvInfo( pAdr, true );
     }
 
@@ -487,10 +481,7 @@ bool T64System::busOpReadRsv( int     reqModNum,
 // match clear the reservation.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::busOpWrite( int reqModNum,
-                            T64Word pAdr, 
-                            uint8_t *data, 
-                            int     len ) {
+bool T64System::busOpWrite( T64Word pAdr, uint8_t *data, int len ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return ( false );
@@ -499,14 +490,16 @@ bool T64System::busOpWrite( int reqModNum,
 
     {
         std::lock_guard<std::mutex> lk(sLock);
-        rStat = mPtr -> busOpWriteEvent( reqModNum, pAdr, data, len );
+        rStat = mPtr -> busOpWriteEvent( pAdr, data, len );
 
         for ( int i = 0; i < systemRsvMapHwm; i ++ ) {
 
-            systemRsvMap[ i ] -> busOpBroadcastEvent( reqModNum,
-                                                      T64_BCAST_RESV_CHECK,
-                                                      pAdr,
-                                                      0 );
+            T64Module *m = systemRsvMap[ i ];
+
+            if (( m -> isRsvValid( )) && ( m -> getRsvInfo( ) == pAdr )) {
+
+                m -> setRsvInfo( 0, false );
+            }
         }
     }
 
@@ -521,7 +514,7 @@ bool T64System::busOpWrite( int reqModNum,
 // status.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::busOpWriteCond( int     reqModNum,
+bool T64System::busOpWriteCond( T64Module *mod,
                                 T64Word pAdr, 
                                 uint8_t *data, 
                                 int     len ) {
@@ -529,7 +522,7 @@ bool T64System::busOpWriteCond( int     reqModNum,
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return ( false );
 
-    bool rStat;
+    bool rStat = true;
 
     {
         std::lock_guard<std::mutex> lk(sLock);
@@ -538,18 +531,15 @@ bool T64System::busOpWriteCond( int     reqModNum,
 
             T64Module *m = systemRsvMap[ i ];
 
-             if (( m -> getModuleType( ) == reqModNum ) &&
-                 ( m -> getRsvInfo( ) >= 0  ) && 
-                 ( abs( m -> getRsvInfo( )) == pAdr )) {
+            if ( m == mod ) {
 
-                // ??? our slot, rsvInfo still valid ... we write to MEM
+                if (( m -> isRsvValid( )) && ( m -> getRsvInfo( ) == pAdr )) {
 
-                rStat = mPtr -> busOpWriteEvent( reqModNum, pAdr, data, len );
-            }
-            else {
+                    rStat = mPtr -> busOpWriteEvent( pAdr, data, len );
 
-                // ??? we just fail, report via rStat ? 
-                rStat = false;
+                    // ??? how exactly do we return failure....
+                    rStat = false;
+                }
             }
         }
     }
@@ -581,16 +571,57 @@ bool T64System::busOpClearRsv(  int reqModNum ) {
     return( true );
 }
 
+// ??? think about rather doing TLB and module events via direct calls ...
+
+
+bool T64System::busOpGTlbPurge( T64Word vAdr ) {
+
+    {
+        std::lock_guard<std::mutex> lk(sLock);                              
+
+        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+            if ( moduleMap[ i ] != nullptr ) {
+
+                // ??? if a processor or global TLB ...
+            }
+        }
+    }
+
+    return( true );
+}
+
+bool T64System::busOpModulePurge( int modNum ) {
+
+    {
+        std::lock_guard<std::mutex> lk(sLock);                              
+
+        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+            if ( moduleMap[ i ] != nullptr ) {
+
+                // ??? if a processor or global TLB ...
+            }
+        }
+    }
+
+    return( true );
+}
+
+// ??? we would also need to have a reveiver routine in the modules...
+// ??? add them to processor and global tlb class
+// ??? check via dynamic_cast ?
+
 //----------------------------------------------------------------------------------------
 // Bus broadcast operation. We need to provide a way to signal global events
 // such as a TLB entry purge to all modules. We will lock the system mutex and 
 // inform all modules.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::busOpBroadcast( int                reqModNum,
-                                T64BroadcastEvents event,
-                                T64Word            arg1, 
-                                T64Word            arg2 ) {
+bool T64System::busOpControl( T64Module *mod,
+                              T64BBusOpControlEvents event,
+                              T64Word            arg1, 
+                              T64Word            arg2 ) {
 
     {
         std::lock_guard<std::mutex> lk(sLock);                              
@@ -598,7 +629,7 @@ bool T64System::busOpBroadcast( int                reqModNum,
         for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
             if ( moduleMap[ i ] != nullptr )
-                moduleMap[ i ] -> busOpBroadcastEvent( reqModNum, event, arg1, arg2 );
+                moduleMap[ i ] -> busOpControlEvent( event, arg1, arg2 );
         }
     }
 

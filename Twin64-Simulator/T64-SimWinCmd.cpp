@@ -287,7 +287,7 @@ bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
 
     if ( ! translateAdr( sys, adr, &physAdr )) return ( false );
 
-    if ( sys -> busOpRead( -1, physAdr, (uint8_t *)val, size)) {
+    if ( sys -> busOpRead( physAdr, (uint8_t *)val, size)) {
 
         copyEndianAware((uint8_t *) val, (uint8_t *) val, size);
         return ( true );    
@@ -2107,7 +2107,7 @@ void SimCommandsWin::modifyMemCmd( ) {
 
     if ( translateAdr( glb -> system, adr, &adr )) {
  
-        if ( ! glb -> system -> busOpWrite( -1, adr, ptr, len )) {
+        if ( ! glb -> system -> busOpWrite( adr, ptr, len )) {
 
             throw( ERR_MEM_OP_FAILED );
         }
@@ -2199,7 +2199,9 @@ void SimCommandsWin::insertTLBCmd( ) {
     T64Word info = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, INT64_MAX ); 
     tok -> checkEOS( );
 
-    if ( ! glb -> system -> busOpBroadcast( -1 , T64_BCAST_TLB_INSERT, vAdr, info )) {
+    if ( ! glb -> system -> busOpControl( nullptr, 
+                                          T64_CNTRL_EVENT_TLB_INSERT, 
+                                          vAdr, info )) {
 
         throw ( ERR_TLB_INSERT_OP );
     }
@@ -2224,7 +2226,9 @@ void SimCommandsWin::purgeTLBCmd( ) {
     
     tok -> checkEOS( );
 
-    if ( ! glb -> system -> busOpBroadcast( -1, T64_BCAST_TLB_PURGE, vAdr, 0 )) {
+    if ( ! glb -> system -> busOpControl( nullptr, 
+                                          T64_CNTRL_EVENT_TLB_PURGE, 
+                                          vAdr, 0 )) {
 
         throw( ERR_TLB_PURGE_OP );
     }

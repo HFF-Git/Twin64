@@ -59,15 +59,15 @@ enum T64ModuleType {
 };
 
 //----------------------------------------------------------------------------------------
-//
+// Modules send a control event to the system. They all will run serializd.
 //
 //----------------------------------------------------------------------------------------
-enum T64BroadcastEvents {
+enum T64BBusOpControlEvents {
 
-    T64_BCAST_TLB_PURGE     = 1,
-    T64_BCAST_TLB_INSERT    = 2,
-    T64_BCAST_MODULE_PURGE  = 3,
-    T64_BCAST_RESV_CHECK    = 4
+    T64_CNTRL_EVENT_MODULE_PURGE  = 1,
+    T64_CNTRL_EVENT_TLB_PURGE     = 2,
+    T64_CNTRL_EVENT_TLB_INSERT    = 3,
+    T64_CNTRL_EVENT_RESV_CHECK    = 4
 };
 
 //----------------------------------------------------------------------------------------
@@ -100,14 +100,13 @@ enum T64ModuleRegs : int {
     T64_MREG_SPA_ADR_1  = 5,
     T64_MREG_SPA_LEN_1  = 6,
     T64_MREG_SPA_ADR_2  = 7,
-    T64_MREG_SPA_LEN_2  = 8,
-   
+    T64_MREG_SPA_LEN_2  = 8
 };
 
 //----------------------------------------------------------------------------------------
-// The T64Module object represents and an object in the system. It is the base class
-// for all concrete modules and reacts to bus operations. Each module has a HPA
-// address range and an optional SPA address range in I/O memory.
+// The T64Module object represents and an object in the system. It is the base 
+// class for all concrete modules and reacts to bus operations. Each module has
+// a HPA address range and an optional SPA address range in I/O memory.
 //
 //----------------------------------------------------------------------------------------
 struct T64Module {
@@ -124,15 +123,16 @@ struct T64Module {
     virtual void        initModule( )           = 0;
     virtual void        resetModule( )          = 0;
 
-    virtual bool       
-    busOpReadEvent( int srcModNum, T64Word pAdr, uint8_t *data, int len ) = 0;
+    virtual bool        
+    busOpReadEvent( T64Word pAdr, uint8_t *data, int len ) = 0;
 
     virtual bool        
-    busOpWriteEvent( int srcModNum, T64Word pAdr, uint8_t *data, int len ) = 0;
+    busOpWriteEvent( T64Word pAdr, uint8_t *data, int len ) = 0;
 
+    // ??? may go away...
     virtual bool        
-    busOpBroadcastEvent( int srcModNum, T64BroadcastEvents event, 
-                         T64Word  arg1, T64Word arg2 ) = 0;
+    busOpControlEvent( T64BBusOpControlEvents event, 
+                       T64Word  arg1, T64Word arg2 ) = 0;
 
     T64ModuleType       getModuleType( );
     int                 getModuleNum( );
@@ -145,6 +145,7 @@ struct T64Module {
 
     void                setRsvInfo( T64Word pAdr, bool valid );
     T64Word             getRsvInfo( );
+    bool                isRsvValid( );
 
     public: 
 
@@ -159,6 +160,7 @@ struct T64Module {
     T64Word             spaAdr      = 0;
     int                 spaLen      = 0;
 
+    bool                rsvValid    = false;
     T64Word             rsvInfo     = 0;
 
     // ??? work in progress ... how do we best represent the regs in a module ?
@@ -190,7 +192,7 @@ struct T64Threadble {
 };
 
 //----------------------------------------------------------------------------------------
-// The thread module class implements the thread logic and requires the inheriting
+// The thread module implements the thread logic and requires the inheriting
 // module to implement the "T64Threadable" interface. The inheriting classes
 // call the "threadModuleXXX" methods to carry out the the thread specific
 // functions. 
@@ -232,8 +234,8 @@ struct T64ThreadModule : T64Module, T64Threadble {
 };
 
 //----------------------------------------------------------------------------------------
-// Each module is stored in the module map. Since module is an abstract class the 
-// module map cannot be just an array of modules. We package it into a struct.
+// Each module is stored in the module map. Since module is an abstract class 
+// the module map cannot be just an array of modules. We package it into a struct.
 //
 //----------------------------------------------------------------------------------------
 struct T64ModuleMapEntry {
@@ -274,32 +276,27 @@ struct T64System {
     
     bool                translateAdr( T64Word vAdr, T64Word *pAdr );
 
-    bool                busOpRead( int reqModNum,
-                                   T64Word pAdr, 
-                                   uint8_t *data, 
-                                   int     len );
+    bool                busOpRead( T64Word pAdr, uint8_t *data, int len );
+    bool                busOpReadRsv( T64Word pAdr, uint8_t *data, int len );
+    bool                busOpWrite( T64Word pAdr, uint8_t *data, int len );
 
-    bool                busOpReadRsv( int reqModNum,
-                                      T64Word pAdr, 
-                                      uint8_t *data, 
-                                      int     len );
-
-    bool                busOpWrite( int reqModNum,
-                                    T64Word pAdr, 
-                                    uint8_t *data, 
-                                    int     len );
-
-    bool                busOpWriteCond( int reqModNum,
+    bool                busOpWriteCond( T64Module *mod,
                                         T64Word pAdr, 
                                         uint8_t *data, 
                                         int     len );    
                                         
     bool                busOpClearRsv(  int reqModNum );
 
-    bool                busOpBroadcast( int                 reqModNum,
-                                        T64BroadcastEvents  event,
-                                        T64Word             arg1, 
-                                        T64Word             arg2 );
+    // ??? replace by direct methods ?
+
+    bool                busOpGTlbPurge( T64Word vAdr );
+    bool                busOpModulePurge( int modNum );
+
+
+    bool                busOpControl( T64Module *mod,
+                                      T64BBusOpControlEvents event,
+                                      T64Word             arg1, 
+                                      T64Word             arg2 );
 
     private:
 

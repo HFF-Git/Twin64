@@ -91,10 +91,7 @@ void T64Memory::resetModule( ) {
 // offset on our SPA range. The address needs to be aligned with length parameter.
 //
 //----------------------------------------------------------------------------------------
-bool T64Memory::busOpReadEvent( int     reqModNum,
-                                T64Word pAdr, 
-                                uint8_t *data, 
-                                int     len ) {
+bool T64Memory::busOpReadEvent( T64Word pAdr, uint8_t *data, int len ) {
 
     if ( isInIoAdrRange( pAdr )) {
 
@@ -127,12 +124,8 @@ bool T64Memory::busOpReadEvent( int     reqModNum,
 // Write data to memory. The address the physical address and we compute the 
 // offset on our SPA range. The address needs to be aligned with length parameter.
 //
-// ??? this is not thread safe, memcpy is not.
 //----------------------------------------------------------------------------------------
-bool T64Memory::busOpWriteEvent( int     reqModNum,
-                                 T64Word pAdr, 
-                                 uint8_t *data, 
-                                 int     len ) {
+bool T64Memory::busOpWriteEvent( T64Word pAdr, uint8_t *data, int len ) {
 
     if ( isInIoAdrRange( pAdr )) {
 
@@ -165,10 +158,9 @@ bool T64Memory::busOpWriteEvent( int     reqModNum,
     }
 }
 
-bool T64Memory::busOpBroadcastEvent( int                srcModNum,
-                                     T64BroadcastEvents id, 
-                                     T64Word            arg1, 
-                                     T64Word            arg2 ) {
+bool T64Memory::busOpControlEvent( T64BBusOpControlEvents id, 
+                                   T64Word            arg1, 
+                                   T64Word            arg2 ) {
 
     return( true );
 }

@@ -66,13 +66,12 @@ struct T64GlobalTlb : T64Module {
     void        initModule( );
     void        resetModule( );
    
-    bool        busOpReadEvent( int reqModNum, T64Word pAdr, uint8_t *data, int len );
-    bool        busOpWriteEvent( int reqModNum, T64Word pAdr, uint8_t *data, int len );  
+    bool        busOpReadEvent( T64Word pAdr, uint8_t *data, int len );
+    bool        busOpWriteEvent( T64Word pAdr, uint8_t *data, int len );  
 
-    bool        busOpBroadcastEvent( int srcModNum,
-                                     T64BroadcastEvents id, 
-                                     T64Word            arg1, 
-                                     T64Word            arg2 );
+    bool        busOpControlEvent( T64BBusOpControlEvents id, 
+                                   T64Word            arg1, 
+                                   T64Word            arg2 );
 
     private:
 

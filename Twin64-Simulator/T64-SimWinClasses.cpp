@@ -156,7 +156,7 @@ bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
 
     if ( ! translateAdr( sys, adr, &physAdr )) return ( false );
 
-    if ( sys -> busOpRead( -1, physAdr, (uint8_t *)val, size)) {
+    if ( sys -> busOpRead( physAdr, (uint8_t *)val, size)) {
 
         copyEndianAware((uint8_t *) val, (uint8_t *) val, size);
         return ( true );    

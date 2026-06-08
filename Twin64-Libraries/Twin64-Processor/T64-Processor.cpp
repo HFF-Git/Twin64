@@ -362,24 +362,24 @@ bool T64Processor::handleHPAWrite( T64Word pAdr, uint8_t *data, int len ) {
 // We have a broadcast event.
 //
 //----------------------------------------------------------------------------------------
-bool T64Processor::handleHPABroadcast( T64BroadcastEvents event, 
+bool T64Processor::handleControlEvent( T64BBusOpControlEvents event, 
                                        T64Word arg1, 
                                        T64Word arg2 ) {
 
     switch ( event ) {
 
-        case T64_BCAST_TLB_PURGE: {
+        case T64_CNTRL_EVENT_TLB_PURGE: {
             
             return( localTlb -> purgeTlb( arg1 ));
 
         } break;
 
-        case T64_BCAST_RESV_CHECK: {
+        case T64_CNTRL_EVENT_RESV_CHECK: {
 
 
         } break;
 
-        case T64_BCAST_MODULE_PURGE: {
+        case T64_CNTRL_EVENT_MODULE_PURGE: {
 
             // ??? get the module number...
             // ??? has the global TLB been purged ?
@@ -404,64 +404,46 @@ bool T64Processor::handleHPABroadcast( T64BroadcastEvents event,
 // purge and so on.
 //
 //----------------------------------------------------------------------------------------
-bool T64Processor::busOpRead( T64Word adr, 
-                              uint8_t *data, 
-                              int len ) {
+bool T64Processor::busOpRead( T64Word adr, uint8_t *data, int len ) {
 
-    return( sys -> busOpRead( moduleNum, adr, data, len ));
+    return( sys -> busOpRead( adr, data, len ));
 }
 
-bool T64Processor::busOpReadRsv( T64Word adr, 
-                              uint8_t *data, 
-                              int len ) {
+bool T64Processor::busOpReadRsv( T64Word adr, uint8_t *data, int len ) {
 
-    return( sys -> busOpReadRsv( moduleNum, adr, data, len ));
+    return( sys -> busOpReadRsv( adr, data, len ));
 }
 
-bool T64Processor::busOpWrite( T64Word adr, 
-                               uint8_t *data, 
-                               int len ) {
+bool T64Processor::busOpWrite( T64Word adr, uint8_t *data, int len ) {
 
-    return( sys -> busOpWrite( moduleNum, adr, data, len ));
+    return( sys -> busOpWrite( adr, data, len ));
 }
 
-bool T64Processor::busOpWriteCond( T64Word adr, 
-                               uint8_t *data, 
-                               int len ) {
+bool T64Processor::busOpWriteCond( T64Word adr, uint8_t *data, int len ) {
 
-    return( sys -> busOpWriteCond( moduleNum, adr, data, len ));
+    return( sys -> busOpWriteCond( this, adr, data, len ));
 }
 
-bool T64Processor::busOpBroadCast( T64BroadcastEvents id, 
+bool T64Processor::busOpControl( T64BBusOpControlEvents id, 
                                    T64Word            arg1, 
                                    T64Word            arg2 ) {
 
-    return( sys -> busOpBroadcast( moduleNum, id, arg1, arg2 ));
+    return( sys -> busOpControl( this, id, arg1, arg2 ));
 }
 
-bool T64Processor::busOpReadEvent( int     reqModNum,
-                                   T64Word pAdr, 
-                                   uint8_t *data, 
-                                   int     len ) {
+bool T64Processor::busOpReadEvent( T64Word pAdr, uint8_t *data, int len ) {
 
-    if ( reqModNum == moduleNum ) return( false );
     return( handleHPARead( pAdr, data, len ));
 }
 
-bool T64Processor::busOpWriteEvent( int     reqModNum,
-                                    T64Word pAdr, 
-                                    uint8_t *data, 
-                                    int     len ) {
+bool T64Processor::busOpWriteEvent( T64Word pAdr, uint8_t *data, int len ) {
 
-    if ( reqModNum == moduleNum ) return( false );
     return( handleHPAWrite( pAdr, data, len ));
 }   
 
-bool T64Processor::busOpBroadcastEvent( int                 reqModNum,
-                                        T64BroadcastEvents  event, 
-                                        T64Word             arg1, 
-                                        T64Word             arg2 ) {
+bool T64Processor::busOpControlEvent(  T64BBusOpControlEvents  event, 
+                                       T64Word             arg1, 
+                                       T64Word             arg2 ) {
 
-    if ( reqModNum == moduleNum ) return( false );
-    return( handleHPABroadcast( event, arg1, arg2 ));
+    return( handleControlEvent( event, arg1, arg2 ));
 }
