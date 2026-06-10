@@ -177,28 +177,12 @@ struct T64Module {
 };
 
 //----------------------------------------------------------------------------------------
-// "T64Threadable" is an interface that a module which runs as a thread needs
-// to implement. The idea is that a module not running as a thread does not
-// need to implement dummy functions for these routines.
-// 
-//----------------------------------------------------------------------------------------
-struct T64Threadble {
-
-    virtual             ~ T64Threadble( ) = default;
-    virtual void        haltModule( )           = 0;
-    virtual void        runModule( )            = 0;
-    virtual void        execModule( int steps ) = 0;
-    virtual void        waitUntilHalted( )      = 0;
-};
-
-//----------------------------------------------------------------------------------------
-// The thread module implements the thread logic and requires the inheriting
-// module to implement the "T64Threadable" interface. The inheriting classes
-// call the "threadModuleXXX" methods to carry out the the thread specific
-// functions. 
+// The thread module implements the thread logic. The inheriting module is required
+// to implement the "execModule" method, which actually executes instructions for
+// a provcessor, or IO steps for an IO module. 
 //
 //----------------------------------------------------------------------------------------
-struct T64ThreadModule : T64Module, T64Threadble {
+struct T64ThreadModule : T64Module {
 
     public:
 
@@ -209,22 +193,20 @@ struct T64ThreadModule : T64Module, T64Threadble {
 
     ~ T64ThreadModule( );
 
+    virtual void    initModule( );
+    virtual void    resetModule( );
+    virtual void    haltModule( );
+    virtual void    runModule( );
+    virtual void    execModule( int steps );
+    virtual void    waitUntilHalted( );
+    
     virtual bool    executeUnit( ) = 0;
     char            *getModuleStateStr( );
 
-    protected: 
-
-    void            threadModuleStart( );
-    void            threadModuleReset( );
-    void            threadModuleHalt( );
-    void            threadModuleExec( int units );
-    void            waitUntilHalted( );
-   
     private: 
 
     void            setModuleState( T64ModuleState state );
     void            moduleWorker( );
-    void            threadModuleStop( );
 
     std::atomic<T64ModuleState> mState { T64_MOD_STATE_NIL };
     std::mutex                  mLock;
@@ -269,7 +251,7 @@ struct T64System {
     void                run( );
     
     T64ModuleType       getModuleType( int modNum ) const;
-    char                *getModuleState( int modNum ) const;
+    char                *getModuleStateStr( int modNum ) const;
     T64Module           *lookupByModNum( int modNum ) const;
     T64Module           *lookupByModuleType( T64ModuleType typ );
     T64Module           *lookupByAdr( T64Word adr ) const;  

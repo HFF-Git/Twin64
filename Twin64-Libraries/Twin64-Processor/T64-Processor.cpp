@@ -104,29 +104,15 @@ void T64Processor::initModule( ) {
     cpu -> reset( );
     localTlb -> reset( );
     
-    threadModuleStart( );
+    T64ThreadModule::initModule( );
 }
 
 void T64Processor::resetModule( ) {
 
     cpu -> reset( );
     localTlb -> reset( );
-    threadModuleReset( );
-}
 
-void T64Processor::haltModule( ) {
-
-    threadModuleHalt( );
-}
-
-void T64Processor::runModule( ) {
-
-    threadModuleExec( -1 );
-}
-
-void T64Processor::execModule( int units ) {
-
-    threadModuleExec( units );
+    T64ThreadModule::resetModule( );
 }
 
 //----------------------------------------------------------------------------------------
@@ -381,7 +367,7 @@ bool T64Processor::handleControlEvent( T64BBusOpControlEvents event,
 
         case T64_CNTRL_EVENT_MODULE_PURGE: {
 
-            // ??? get the module number...
+            // ??? get the module number...arg1 has the number ...
             // ??? has the global TLB been purged ?
 
         } break;

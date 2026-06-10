@@ -297,9 +297,6 @@ struct T64Processor : T64ThreadModule {
 
     void            initModule( );
     void            resetModule( );
-    void            haltModule( );
-    void            runModule( );
-    void            execModule( int steps );
     bool            executeUnit( );
 
     bool            busOpRead( T64Word adr, uint8_t *data, int len );
@@ -322,7 +319,6 @@ struct T64Processor : T64ThreadModule {
     T64LocalTlb     *getLocalTlbPtr( );
     char            *getProcStateStr( );
     T64GlobalTlb    *getGlobalTlbPtr( );
-    bool            isHalted( );
 
 private:
 

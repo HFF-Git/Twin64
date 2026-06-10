@@ -47,22 +47,6 @@ T64ThreadModule::T64ThreadModule( T64ModuleType    modType,
 
 T64ThreadModule:: ~ T64ThreadModule( ) {
 
-    threadModuleStop( );
-}
-
-//----------------------------------------------------------------------------------------
-// Start and stop the thread module. The start method is called by the system
-// "addModule" routine after creating the module object. The stop method is
-// called when we remove a module. 
-//
-//----------------------------------------------------------------------------------------
-void T64ThreadModule::threadModuleStart( ) {
-
-    mWorker = std::thread( &T64ThreadModule::moduleWorker, this );
-}
-
-void T64ThreadModule::threadModuleStop( ) {
-
     mState.store( T64_MOD_STATE_TERMINATE, std::memory_order_release );
     mCondVar.notify_one( );
 
@@ -75,11 +59,6 @@ void T64ThreadModule::threadModuleStop( ) {
 // the atomic variable "mState". The mutex ensures that we do a synchronized
 // update. Finally, we wake up the thread which is waiting in the "mCondVar".
 //
-// The inheriting class is required to implement the virtual abstract methods
-// for rest, halt and execute. These routines will do their specific work and 
-// also call the protected methods "threadModuleXXX" to do the thread related
-// work.
-//
 //----------------------------------------------------------------------------------------
 void T64ThreadModule::setModuleState( T64ModuleState state ) {
 
@@ -91,17 +70,28 @@ void T64ThreadModule::setModuleState( T64ModuleState state ) {
     mCondVar.notify_one( );
 }
 
-void T64ThreadModule::threadModuleReset( ) {
+void T64ThreadModule::initModule( ) {
+
+    mWorker = std::thread( &T64ThreadModule::moduleWorker, this );
+}
+
+void T64ThreadModule::resetModule( ) {
 
     setModuleState( T64_MOD_STATE_RESET );
 }
 
-void T64ThreadModule::threadModuleHalt( ) {
+void T64ThreadModule::haltModule( ) {
 
     setModuleState( T64_MOD_STATE_HALTED );
 }
 
-void T64ThreadModule::threadModuleExec( int units ) {
+void T64ThreadModule::runModule( ) {
+
+    mUnitCount = -1;
+    setModuleState( T64_MOD_STATE_EXECUTE );
+}
+
+void T64ThreadModule::execModule( int units ) {
 
     mUnitCount = units;
     setModuleState( T64_MOD_STATE_EXECUTE );
@@ -119,15 +109,8 @@ void T64ThreadModule::waitUntilHalted( ) {
     mCondVar.wait(lk, [this] {
 
         return mState.load() == T64_MOD_STATE_HALTED;
-
     });
-
 }
-
-
-// ??? we would need a way to report in the module state ?
-// ??? should we add a "SHARED" state for the non-thread modules ?
-
 
 //----------------------------------------------------------------------------------------
 // A little helper to return a string version of the module state.
@@ -143,7 +126,7 @@ char *T64ThreadModule::getModuleStateStr( ) {
         case T64_MOD_STATE_RESET:          return ((char *) "RESET" );
         case T64_MOD_STATE_EXECUTE:        return ((char *) "RUN");
         case T64_MOD_STATE_HALTED:         return ((char *) "HALT" );
-        case T64_MOD_STATE_TRAP:           return ((char *) "TTRAP" );
+        case T64_MOD_STATE_TRAP:           return ((char *) "TRAP" );
         case T64_MOD_STATE_TERMINATE:      return ((char *) "EXIT" );
     }
 }
