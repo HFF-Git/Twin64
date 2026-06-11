@@ -374,8 +374,15 @@ T64Word T64Cpu::instrRead( T64Word vAdr ) {
     }
     else {
 
-        if ( ! proc -> localTlb -> lookupItlb( vAdr, &pAdr, &instrTlbInfo )) 
+        if ( ! proc -> localTlb -> lookupItlb( vAdr, &pAdr, &instrTlbInfo )) {
+
+            if ( proc -> getGlobalTlbPtr( ) == nullptr ) {
+                
+                machineCheckTrap( vAdr );
+            }
+
             instrTlbMissTrap( vAdr );
+        }
 
         instrAccCheck( vAdr, instrTlbInfo );      
     }
@@ -417,6 +424,11 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt, bool rsv ) {
        
         if ( ! proc -> localTlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) {
 
+            if ( proc -> getGlobalTlbPtr( ) == nullptr ) {
+                
+                machineCheckTrap( vAdr );
+            } 
+        
             dataMemTlbMissTrap( vAdr );
         }
 
@@ -486,6 +498,11 @@ bool T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len, bool cond ) {
         uint16_t tlbInfo;
 
         if ( ! proc -> localTlb -> lookupDtlb( vAdr, &pAdr, &tlbInfo )) {
+
+            if ( proc -> getGlobalTlbPtr( ) == nullptr ) {
+                
+                machineCheckTrap( vAdr );
+            }
 
             dataMemTlbMissTrap( vAdr );
         }
@@ -1472,11 +1489,21 @@ void T64Cpu::instrSysPrbOp( T64Instr instr ) {
 
     if ( proc -> getLocalTlbPtr( ) -> lookupDtlb( vAdr, &pAdr, &tlbInfo  )) {
 
-        // ??? non-access trap ?
+        if ( proc -> getGlobalTlbPtr( ) == nullptr ) {
+                
+                machineCheckTrap( vAdr );
+            }
+
+        dataMemNonAccessTlbMissTrap( vAdr );
     }
     else if ( proc -> getLocalTlbPtr( ) -> lookupItlb( vAdr, &pAdr, &tlbInfo  )) {
 
-        // ??? non-access trap ?
+        if ( proc -> getGlobalTlbPtr( ) == nullptr ) {
+                
+                machineCheckTrap( vAdr );
+            }
+
+        // ??? non-access trap ? Is there an instructoo non-access... ?
     }
     else setRegR( instr, 0 );
 
@@ -1706,6 +1733,8 @@ bool T64Cpu::executeInstr( ) {
         return ( false );
     }
     catch ( const T64Trap t ) {
+
+        proc -> setRsvInfo( 0, false );
 
         T64TrapCode code = t.trapCode;
 

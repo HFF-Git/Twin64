@@ -81,7 +81,7 @@ bool elfioValidate( elfio *reader, char* msg, int msg_len ) {
 //----------------------------------------------------------------------------------------
 bool writeMem( T64System *sys, int32_t ofs, uint32_t val ) {
 
-    if ( ! sys -> busOpWrite( ofs, (uint8_t *) &val, sizeof( uint32_t ))) {
+    if ( ! sys -> busOpWrite( nullptr, ofs, (uint8_t *) &val, sizeof( uint32_t ))) {
 
         throw( ERR_MEM_OP_FAILED );
     }

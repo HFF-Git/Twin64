@@ -9,7 +9,7 @@ add_library( ${PROJECT_NAME} STATIC
     T64-System.h 
     T64-System.cpp
     T64-Module.cpp
-    T64-ThreadModule.cpp
+    T64-ProcThreadModule.cpp
 ) 
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC 

@@ -282,7 +282,7 @@ struct T64Cpu {
 // for  memory and IO access. The unit is a single step, i.e. one instruction. 
 //
 //----------------------------------------------------------------------------------------
-struct T64Processor : T64ThreadModule {
+struct T64Processor : T64ProcThreadModule {
     
     public:
 

@@ -95,18 +95,3 @@ int T64Module::getSpaLen( )  {
     return ( spaLen );
 }
 
-void T64Module::setRsvInfo( T64Word pAdr, bool valid ) {
-
-    rsvInfo = pAdr;
-    if ( valid ) rsvInfo = - rsvInfo;
-}
-    
-T64Word T64Module::getRsvInfo( ) {
-
-    return( rsvInfo );
-}
-
-bool T64Module::isRsvValid( ) {
-
-    return( rsvValid );
-}

@@ -1050,7 +1050,6 @@ struct SimWinProcState : SimWin {
 
     void drawGeneralRegSubWindow( int linePos );
     void drawControlRegSubWindow( int linePos);
-    void drawCregSubsetRegSubWindow( int linePos);
     void drawCodeSubWindow( int linePos, int lineLeft );
     
     T64Processor    *proc           = nullptr;

@@ -70,7 +70,7 @@ T64Processor::T64Processor( T64System           *sys,
                             T64TlbType          tlbType,
                             T64CacheType        cacheType ) : 
 
-                            T64ThreadModule(    MT_PROC, 
+                            T64ProcThreadModule(    MT_PROC, 
                                                 modNum,
                                                 0,
                                                 0 ) {
@@ -104,7 +104,7 @@ void T64Processor::initModule( ) {
     cpu -> reset( );
     localTlb -> reset( );
     
-    T64ThreadModule::initModule( );
+    T64ProcThreadModule::initModule( );
 }
 
 void T64Processor::resetModule( ) {
@@ -112,7 +112,7 @@ void T64Processor::resetModule( ) {
     cpu -> reset( );
     localTlb -> reset( );
 
-    T64ThreadModule::resetModule( );
+    T64ProcThreadModule::resetModule( );
 }
 
 //----------------------------------------------------------------------------------------
@@ -345,7 +345,17 @@ bool T64Processor::handleHPAWrite( T64Word pAdr, uint8_t *data, int len ) {
 }
 
 //----------------------------------------------------------------------------------------
-// We have a broadcast event.
+// We have a broadcast event. Note that we are called with the system bus locked.
+// 
+//  T64_CNTRL_EVENT_TLB_PURGE - an entry was purged from the global TLB, clear
+//  our local copies if any.
+//
+//  T64_CNTRL_EVENT_STORE_OP - each store operation is checked for a possible
+//  match with the reserve register. If a match, we invalidate this info.
+//
+//  T64_CNTRL_EVENT_MODULE_PURGE - a module was purged. If it is the global
+//  TLB, we clear our caxched reference. A future access will lead to a machine
+//  check trap.
 //
 //----------------------------------------------------------------------------------------
 bool T64Processor::handleControlEvent( T64BBusOpControlEvents event, 
@@ -360,15 +370,16 @@ bool T64Processor::handleControlEvent( T64BBusOpControlEvents event,
 
         } break;
 
-        case T64_CNTRL_EVENT_RESV_CHECK: {
+        case T64_CNTRL_EVENT_STORE_OP: {
 
+            if ( getRsvInfo( ) == arg1 ) setRsvInfo( arg1, false );
+            return( true );
 
         } break;
 
         case T64_CNTRL_EVENT_MODULE_PURGE: {
 
-            // ??? get the module number...arg1 has the number ...
-            // ??? has the global TLB been purged ?
+            if ( arg1 == globalTlb -> getModuleNum( )) globalTlb = nullptr;  
 
         } break;
 
@@ -392,17 +403,17 @@ bool T64Processor::handleControlEvent( T64BBusOpControlEvents event,
 //----------------------------------------------------------------------------------------
 bool T64Processor::busOpRead( T64Word adr, uint8_t *data, int len ) {
 
-    return( sys -> busOpRead( adr, data, len ));
+    return( sys -> busOpRead( this, adr, data, len ));
 }
 
 bool T64Processor::busOpReadRsv( T64Word adr, uint8_t *data, int len ) {
 
-    return( sys -> busOpReadRsv( adr, data, len ));
+    return( sys -> busOpReadRsv( this, adr, data, len ));
 }
 
 bool T64Processor::busOpWrite( T64Word adr, uint8_t *data, int len ) {
 
-    return( sys -> busOpWrite( adr, data, len ));
+    return( sys -> busOpWrite( this, adr, data, len ));
 }
 
 bool T64Processor::busOpWriteCond( T64Word adr, uint8_t *data, int len ) {

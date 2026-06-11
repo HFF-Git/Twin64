@@ -287,7 +287,7 @@ bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
 
     if ( ! translateAdr( sys, adr, &physAdr )) return ( false );
 
-    if ( sys -> busOpRead( physAdr, (uint8_t *)val, size)) {
+    if ( sys -> busOpRead( nullptr, physAdr, (uint8_t *)val, size)) {
 
         copyEndianAware((uint8_t *) val, (uint8_t *) val, size);
         return ( true );    
@@ -2107,7 +2107,7 @@ void SimCommandsWin::modifyMemCmd( ) {
 
     if ( translateAdr( glb -> system, adr, &adr )) {
  
-        if ( ! glb -> system -> busOpWrite( adr, ptr, len )) {
+        if ( ! glb -> system -> busOpWrite( nullptr, adr, ptr, len )) {
 
             throw( ERR_MEM_OP_FAILED );
         }

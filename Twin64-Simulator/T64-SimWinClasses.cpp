@@ -156,7 +156,7 @@ bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
 
     if ( ! translateAdr( sys, adr, &physAdr )) return ( false );
 
-    if ( sys -> busOpRead( physAdr, (uint8_t *)val, size)) {
+    if ( sys -> busOpRead( nullptr, physAdr, (uint8_t *)val, size)) {
 
         copyEndianAware((uint8_t *) val, (uint8_t *) val, size);
         return ( true );    
@@ -194,8 +194,8 @@ SimWinProcState::SimWinProcState( SimGlobals *glb, int modNum ) : SimWin( glb ) 
 }
 
 //----------------------------------------------------------------------------------------
-// The default values are the initial settings when windows is brought up the first 
-// time, or for the WDEF command. The window limits are set for the different 
+// The default values are the initial settings when windows is brought up the 
+// first time, or for the WDEF command. The window limits are set for the defined
 // toggle values. The minimum row count specifies how many lines we need for the
 // banner line, the respective register lines and the minimum number of code
 // lines plus the subwindow banner.
@@ -206,15 +206,14 @@ void SimWinProcState::setDefaults( ) {
     const int MIN_ROW_BANNERS               = 2;
     const int MIN_ROW_GREG_SUBWINDOW        = 4; 
     const int MIN_ROW_CREG_SUBWINDOW        = 4; 
-    const int MIN_ROW_CREG_SUBSET_SUBWINDOW = 1;
-    const int MIN_ROW_CODE_SUBWINDOW        = 4; 
+    const int MIN_ROW_CODE_SUBWINDOW        = 5; 
     const int MAX_ROWS                      = 32;
-    const int MAX_COLS                      = 96;
+    const int MAX_COLS                      = 98;
     
     setWinType( WT_CPU_WIN );
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
-    setWinToggleLimit( 3 );
+    setWinToggleLimit( 2 );
     setWinToggleVal( 0 );
 
     setWinLimitsForToggle( 0, 
@@ -227,15 +226,6 @@ void SimWinProcState::setDefaults( ) {
 
     setWinLimitsForToggle( 1, 
                            MIN_ROW_BANNERS + 
-                           MIN_ROW_GREG_SUBWINDOW + 
-                           MIN_ROW_CREG_SUBSET_SUBWINDOW +
-                           MIN_ROW_CODE_SUBWINDOW,
-                           MAX_ROWS,
-                           MAX_COLS, 
-                           MAX_COLS );
-
-    setWinLimitsForToggle( 2, 
-                           MIN_ROW_BANNERS + 
                            MIN_ROW_CREG_SUBWINDOW + 
                            MIN_ROW_CODE_SUBWINDOW,
                            MAX_ROWS,
@@ -243,7 +233,7 @@ void SimWinProcState::setDefaults( ) {
                            MAX_COLS );
 
     setRows( getWinSize( 0 ).actualRow );
-    setColumns( getWinSize( 0 ).actualCol );
+    setColumns( getWinSize( 0 ).minCol );
     setEnable( true );
 }
 
@@ -293,13 +283,15 @@ void SimWinProcState::drawBanner( ) {
 //----------------------------------------------------------------------------------------
 // "drawGeneralRegSubWindow" draws the general registers set in the body of the 
 // window. We show 4 registers per line, with the format "GRn=0x0000_0000_0000_0000". 
+// The last line will be printed with the underline oprion to separate the code 
+// subwindow that follows.
 //
 //----------------------------------------------------------------------------------------
 void SimWinProcState::drawGeneralRegSubWindow( int linePos ) {
 
     uint32_t fmtDesc        = FMT_DEF_ATTR | FMT_ALIGN_LFT;
     T64Cpu   *cpu           = proc -> getCpuPtr( );
-    int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 ) + 3;
+    int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 );
     int      labelFlen      = 8;
     uint32_t numFmtField    = fmtDesc | FMT_HEX_4_4_4_4;
     uint32_t labelFmtField  = fmtDesc | FMT_BOLD;
@@ -310,6 +302,7 @@ void SimWinProcState::drawGeneralRegSubWindow( int linePos ) {
     for ( int i = 0; i < 4; i++ ) {
 
         printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
+        if ( i < 4 ) printTextField((char *) "   ", fmtDesc );
     }
 
     padLine( fmtDesc );
@@ -319,6 +312,7 @@ void SimWinProcState::drawGeneralRegSubWindow( int linePos ) {
     for ( int i = 4; i < 8; i++ ) {
 
         printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
+        if ( i < 8 ) printTextField( (char *) "   ", fmtDesc );
     }
 
     padLine( fmtDesc );
@@ -328,23 +322,31 @@ void SimWinProcState::drawGeneralRegSubWindow( int linePos ) {
     for ( int i = 8; i < 12; i++ ) {
 
         printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
+        if ( i < 12 ) printTextField( (char *) "   ", fmtDesc );
     }
 
     padLine( fmtDesc );
+
+    labelFmtField |= FMT_UNDER_LINE;
+    numFmtField |= FMT_UNDER_LINE;
+
     setWinCursor( linePos + 3, 1 );
     printTextField((char *) "GR12=", labelFmtField, labelFlen );
 
     for ( int i = 12; i < 16; i++ ) {
 
         printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
+        if ( i < 16 ) printTextField((char *) "   ", fmtDesc | FMT_UNDER_LINE );
     }
 
-    padLine( fmtDesc );
+    padLine( fmtDesc | FMT_UNDER_LINE );
 } 
 
 //----------------------------------------------------------------------------------------
 // "drawControlRegSubWindow" draws the control registers set in the body of the 
 // window. We show 4 registers per line, with the format "CRn=0x0000_0000_0000_0000". 
+// The last line will be printed with the underline oprion to separate the code 
+// subwindow that follows.
 //
 //----------------------------------------------------------------------------------------
 void SimWinProcState::drawControlRegSubWindow( int linePos ) {
@@ -383,6 +385,10 @@ void SimWinProcState::drawControlRegSubWindow( int linePos ) {
     }
 
     padLine( fmtDesc );
+
+    labelFmtField |= FMT_UNDER_LINE;
+    numFmtField |= FMT_UNDER_LINE;
+    
     setWinCursor( linePos + 3, 1 );
     printTextField((char *) "CR12=", labelFmtField, labelFlen );
 
@@ -391,34 +397,7 @@ void SimWinProcState::drawControlRegSubWindow( int linePos ) {
         printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
     }
 
-    padLine( fmtDesc );
-}
-
-//----------------------------------------------------------------------------------------
-// "drawCregSubsetRegSubWindow" draws a subset of the control registers. The 
-// registers are related to user visible registers and registers that can be 
-// modified in user mode. 
-//
-//----------------------------------------------------------------------------------------
-void SimWinProcState::drawCregSubsetRegSubWindow( int linePos ) {
-
-    uint32_t fmtDesc        = FMT_DEF_ATTR | FMT_ALIGN_LFT;
-    T64Cpu   *cpu           = proc -> getCpuPtr( );
-    int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 ) + 3;
-    int      labelFlen      = 8;
-    uint32_t numFmtField    = fmtDesc | FMT_HEX_4_4_4_4;
-    uint32_t labelFmtField  = fmtDesc | FMT_BOLD;
-
-    padLine( fmtDesc );
-    setWinCursor( linePos, 1 );
-    printTextField((char *) "PID=", labelFmtField, labelFlen );
-
-    for ( int i = 4; i < 8; i++ ) {
-
-        printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
-    }
-
-    padLine( fmtDesc );
+    padLine( fmtDesc | FMT_UNDER_LINE );
 }
     
 //----------------------------------------------------------------------------------------
@@ -451,16 +430,13 @@ void SimWinProcState::drawCodeSubWindow( int linePos, int linesLeft ) {
     }
 
     setWinCursor( linePos, 1 );
-    printTextField((char *) "Code", fmtDesc );
-    printTextField((char *) " ", fmtDesc );
-    padLine( fmtDesc );
 
     fmtDesc = FMT_DEF_ATTR;
     for ( int i = 0; i < linesLeft; i++ ) {
 
         T64Word ia = codeWinBaseAdr + ( i * 4 );
 
-        setWinCursor( linePos + i + 1, 1 );
+        setWinCursor( linePos + i, 1 );
         printNumericField( ia, fmtDesc | FMT_HEX_2_4_4_4 );
         printTextField((char *) ": ", fmtDesc );
 
@@ -490,6 +466,7 @@ void SimWinProcState::drawCodeSubWindow( int linePos, int linesLeft ) {
         }
         else {
 
+            printTextField((char *) "     ", fmtDesc, 5 );
             printTextField((char *) "****_****", fmtDesc );
             padLine( fmtDesc );
         }
@@ -509,25 +486,18 @@ void SimWinProcState::drawBody( ) {
     int     toggleVal = getWinToggleVal( );
     int     linePos   = 2;
 
-    if (( toggleVal == 0 ) || ( toggleVal == 1 )) {
+    if ( toggleVal == 0 ) {
 
         drawGeneralRegSubWindow( linePos );
         linePos += 4;
-    }    
-       
-    if ( toggleVal == 1 ) {
-
-        drawCregSubsetRegSubWindow( linePos );
-        linePos += 1;
     }
-    
-    if ( toggleVal == 2 ) {
+    else if ( toggleVal == 1 ) {
 
         drawControlRegSubWindow( linePos );
         linePos += 4;
     }
 
-    int linesLeft = getRows( ) - linePos;
+    int linesLeft = getRows( ) - linePos + 1;
     drawCodeSubWindow( linePos, linesLeft );
 }
 

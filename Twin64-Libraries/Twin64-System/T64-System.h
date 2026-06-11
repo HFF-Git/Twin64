@@ -67,7 +67,7 @@ enum T64BBusOpControlEvents {
     T64_CNTRL_EVENT_MODULE_PURGE  = 1,
     T64_CNTRL_EVENT_TLB_PURGE     = 2,
     T64_CNTRL_EVENT_TLB_INSERT    = 3,
-    T64_CNTRL_EVENT_RESV_CHECK    = 4
+    T64_CNTRL_EVENT_STORE_OP      = 4
 };
 
 //----------------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ enum T64ModuleRegs : int {
 //----------------------------------------------------------------------------------------
 // The T64Module object represents and an object in the system. It is the base 
 // class for all concrete modules and reacts to bus operations. Each module has
-// a HPA address range and an optional SPA address range in I/O memory.
+// a HPA address range and an optional SPA address range in I/O memory. 
 //
 //----------------------------------------------------------------------------------------
 struct T64Module {
@@ -129,7 +129,6 @@ struct T64Module {
     virtual bool        
     busOpWriteEvent( T64Word pAdr, uint8_t *data, int len ) = 0;
 
-    // ??? may go away...
     virtual bool        
     busOpControlEvent( T64BBusOpControlEvents event, 
                        T64Word  arg1, T64Word arg2 ) = 0;
@@ -142,10 +141,6 @@ struct T64Module {
     int                 getHpaLen( );
     T64Word             getSpaAdr( );
     int                 getSpaLen( );
-
-    void                setRsvInfo( T64Word pAdr, bool valid );
-    T64Word             getRsvInfo( );
-    bool                isRsvValid( );
 
     public: 
 
@@ -177,21 +172,21 @@ struct T64Module {
 };
 
 //----------------------------------------------------------------------------------------
-// The thread module implements the thread logic. The inheriting module is required
-// to implement the "execModule" method, which actually executes instructions for
-// a provcessor, or IO steps for an IO module. 
+// The processor thread module implements the thread logic for our procrssors. 
+// The inheriting processor module is required to implement the "execModule" 
+// method, which actually executes instructions for a processor. 
 //
 //----------------------------------------------------------------------------------------
-struct T64ThreadModule : T64Module {
+struct T64ProcThreadModule : T64Module {
 
     public:
 
-    T64ThreadModule( T64ModuleType    modType, 
+    T64ProcThreadModule( T64ModuleType    modType, 
                      int              modNum,
                      T64Word          spaAdr,
                      int              spaLen );
 
-    ~ T64ThreadModule( );
+    ~ T64ProcThreadModule( );
 
     virtual void    initModule( );
     virtual void    resetModule( );
@@ -203,6 +198,10 @@ struct T64ThreadModule : T64Module {
     virtual bool    executeUnit( ) = 0;
     char            *getModuleStateStr( );
 
+    void            setRsvInfo( T64Word pAdr, bool valid );
+    T64Word         getRsvInfo( );
+    bool            isRsvValid( );
+
     private: 
 
     void            setModuleState( T64ModuleState state );
@@ -212,7 +211,10 @@ struct T64ThreadModule : T64Module {
     std::mutex                  mLock;
     std::condition_variable     mCondVar;
     std::thread                 mWorker;
-    int                         mUnitCount  = 0;
+    int                         mUnitCount     = 0;
+    bool                        enterSimOnTrap = false;
+    bool                        rsvValid    = false;
+    T64Word                     rsvInfo     = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -258,22 +260,25 @@ struct T64System {
     
     bool                translateAdr( T64Word vAdr, T64Word *pAdr );
 
-    bool                busOpRead( T64Word pAdr, uint8_t *data, int len );
-    bool                busOpReadRsv( T64Word pAdr, uint8_t *data, int len );
-    bool                busOpWrite( T64Word pAdr, uint8_t *data, int len );
+    bool                busOpRead(  T64Module *mod, 
+                                    T64Word pAdr, 
+                                    uint8_t *data, 
+                                    int len );
+
+    bool                busOpReadRsv( T64Module *mod, 
+                                      T64Word pAdr, 
+                                      uint8_t *data, 
+                                      int len );
+
+    bool                busOpWrite( T64Module *mod, 
+                                    T64Word pAdr, 
+                                    uint8_t *data, 
+                                    int len );
 
     bool                busOpWriteCond( T64Module *mod,
                                         T64Word pAdr, 
                                         uint8_t *data, 
                                         int     len );    
-                                        
-    bool                busOpClearRsv(  int reqModNum );
-
-    // ??? replace by direct methods ?
-
-    bool                busOpGTlbPurge( T64Word vAdr );
-    bool                busOpModulePurge( int modNum );
-
 
     bool                busOpControl( T64Module *mod,
                                       T64BBusOpControlEvents event,
@@ -286,14 +291,14 @@ struct T64System {
                             
     T64Module           *moduleMap[ MAX_MOD_MAP_ENTRIES ];
 
-    T64Module           *systemMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];
-    int                 systemMemMapHwm = 0;
+    T64Module           *systemPhysMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];
+    int                 systemPhysMemMapHwm = 0;
 
-    T64Module           *systemIoMap[ MAX_MOD_MAP_ENTRIES * 2 ];
-    int                 systemIoMapHwm = 0;
+    T64Module           *systemIoMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];
+    int                 systemIoMemMapHwm = 0;
 
-    T64Module           *systemRsvMap[ MAX_MOD_MAP_ENTRIES ];
-    int                 systemRsvMapHwm;
+    T64Module           *systemProcMap[ MAX_MOD_MAP_ENTRIES ];
+    int                 systemProcMapHwm;
 
     std::mutex          sLock;
 };

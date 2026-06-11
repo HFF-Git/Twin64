@@ -445,7 +445,7 @@ void SimWin::printRadixField( uint32_t fmtDesc, int fLen, int row, int col ) {
     
     glb -> console -> setFmtAttributes( fmtDesc );
     
-    if ( fmtDesc & FMT_LAST_FIELD ) col = getColumns( ) - fLen;
+   // if ( fmtDesc & FMT_LAST_FIELD ) col = getColumns( ) - fLen;
 
     switch ( winRadix ) {
             
