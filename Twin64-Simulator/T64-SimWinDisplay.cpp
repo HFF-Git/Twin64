@@ -177,7 +177,6 @@ char *SimWinDisplay::getWinTypeName( int winNum ) {
             case WT_CPU_WIN:       return((char *) "CPU" );
             case WT_TLB_WIN:       return((char *) "TLB" );
             case WT_MEM_WIN:       return((char *) "Memory" );
-            case WT_CODE_WIN:      return((char *) "Code" );
             
             default:               return((char *) "N/A" );
         }
@@ -203,7 +202,6 @@ bool SimWinDisplay::isCurrentWin( int winNum ) {
 bool SimWinDisplay::isScrollableWin ( int typ ) {
 
         return (( typ == WT_MEM_WIN     ) ||
-                ( typ == WT_CODE_WIN    ) ||
                 ( typ == WT_TLB_WIN     ) ||        
                 ( typ == WT_TEXT_WIN    ));
 }

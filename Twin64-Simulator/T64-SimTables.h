@@ -78,7 +78,9 @@ const SimToken cmdTokTab[ ] = {
 
     { .name = "BYTE",       .typ = TYP_SYM,     .tid = TOK_BYTE,   .u = { .val = 1  }},
     { .name = "SHORT",      .typ = TYP_SYM,     .tid = TOK_SHORT,  .u = { .val = 2  }},
+    { .name = "HALF",       .typ = TYP_SYM,     .tid = TOK_HALF,   .u = { .val = 2  }},
     { .name = "WORD",       .typ = TYP_SYM,     .tid = TOK_WORD,   .u = { .val = 4  }},
+    { .name = "DWORD",      .typ = TYP_SYM,     .tid = TOK_DWORD,  .u = { .val = 4  }},
     { .name = "DOUBLE",     .typ = TYP_SYM,     .tid = TOK_DOUBLE, .u = { .val = 8  }},
    
     { .name = "COMMANDS",   .typ = TYP_CMD,     .tid = CMD_SET                      },

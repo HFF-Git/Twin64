@@ -155,7 +155,7 @@ enum SimWinType : int {
 
     WT_NIL,                     WT_CMD_WIN,                 WT_CONSOLE_WIN,
     WT_TEXT_WIN,                WT_CPU_WIN,                 WT_TLB_WIN,
-    WT_MEM_WIN,                 WT_CODE_WIN
+    WT_MEM_WIN,         
 };
 
 //----------------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ enum SimTokId : uint16_t {
     TOK_PROC,                   TOK_CPU,                    TOK_IO,
     TOK_TLB,                    TOK_MEM_ROM,                TOK_MEM_RAM,  
     TOK_BYTE,                   TOK_SHORT,                  TOK_WORD,               
-    TOK_DOUBLE,                 
+    TOK_DWORD,                  TOK_DOUBLE,                 TOK_HALF,   
     
     TOK_TLB_FA_16S,             TOK_TLB_FA_32S,             TOK_TLB_FA_64S,             
     TOK_TLB_FA_128S,            TOK_MOD_SPA_ADR,            TOK_MOD_SPA_LEN,

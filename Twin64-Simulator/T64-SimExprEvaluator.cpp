@@ -423,7 +423,9 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
 
         if ( tok -> isToken( TOK_BYTE ) ||
              tok -> isToken( TOK_SHORT  ) ||
+             tok -> isToken( TOK_HALF ) ||
              tok -> isToken( TOK_WORD  ) ||
+             tok -> isToken( TOK_DWORD ) ||
              tok -> isToken( TOK_DOUBLE )) {
 
             len = tok -> tokVal( );
