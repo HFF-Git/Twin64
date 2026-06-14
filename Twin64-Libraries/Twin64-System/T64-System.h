@@ -59,7 +59,7 @@ enum T64ModuleType {
 };
 
 //----------------------------------------------------------------------------------------
-// Modules send a control event to the system. They all will run serializd.
+// Modules send a control event to the system. They all will run serialized.
 //
 //----------------------------------------------------------------------------------------
 enum T64BBusOpControlEvents {
@@ -172,7 +172,7 @@ struct T64Module {
 };
 
 //----------------------------------------------------------------------------------------
-// The processor thread module implements the thread logic for our procrssors. 
+// The processor thread module implements the thread logic for our processors. 
 // The inheriting processor module is required to implement the "execModule" 
 // method, which actually executes instructions for a processor. 
 //
@@ -182,39 +182,40 @@ struct T64ProcThreadModule : T64Module {
     public:
 
     T64ProcThreadModule( T64ModuleType    modType, 
-                     int              modNum,
-                     T64Word          spaAdr,
-                     int              spaLen );
+                         int              modNum,
+                         T64Word          spaAdr,
+                         int              spaLen );
 
     ~ T64ProcThreadModule( );
 
-    virtual void    initModule( );
-    virtual void    resetModule( );
-    virtual void    haltModule( );
-    virtual void    runModule( );
-    virtual void    execModule( int steps );
-    virtual void    waitUntilHalted( );
+    virtual void            initModule( );
+    virtual void            resetModule( );
+    virtual void            haltModule( );
+    virtual void            runModule( );
+    virtual void            execModule( int steps );
+    virtual T64ModuleState  waitUntilStopped( );
     
-    virtual bool    executeUnit( ) = 0;
-    char            *getModuleStateStr( );
+    virtual bool            executeUnit( ) = 0;
+    T64ModuleState          getModuleState( );
+    char                    *getModuleStateStr( );
 
-    void            setRsvInfo( T64Word pAdr, bool valid );
-    T64Word         getRsvInfo( );
-    bool            isRsvValid( );
+    void                    setRsvInfo( T64Word pAdr, bool valid );
+    T64Word                 getRsvInfo( );
+    bool                    isRsvValid( );
 
     private: 
 
-    void            setModuleState( T64ModuleState state );
-    void            moduleWorker( );
+    void                    setModuleState( T64ModuleState state );
+    void                    moduleWorker( );
 
     std::atomic<T64ModuleState> mState { T64_MOD_STATE_NIL };
     std::mutex                  mLock;
     std::condition_variable     mCondVar;
     std::thread                 mWorker;
     int                         mUnitCount     = 0;
-    bool                        enterSimOnTrap = false;
-    bool                        rsvValid    = false;
-    T64Word                     rsvInfo     = 0;
+    bool                        enterSimOnTrap = true;
+    bool                        rsvValid       = false;
+    T64Word                     rsvInfo        = 0;
 };
 
 //----------------------------------------------------------------------------------------

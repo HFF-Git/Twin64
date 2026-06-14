@@ -33,16 +33,15 @@
 //
 //----------------------------------------------------------------------------------------
 T64ProcThreadModule::T64ProcThreadModule( T64ModuleType    modType, 
-                                  int              modNum,
-                                  T64Word          spaAdr,
-                                  int              spaLen ) 
-                                  : T64Module ( modType, 
-                                                modNum,
-                                                spaAdr, 
-                                                spaLen ) { 
+                                          int              modNum,
+                                          T64Word          spaAdr,
+                                          int              spaLen ) 
+                                          : T64Module ( modType, 
+                                                        modNum,
+                                                        spaAdr, 
+                                                        spaLen ) { 
 
-    mState.store( T64_MOD_STATE_HALTED, std::memory_order_release );
-                
+    mState.store( T64_MOD_STATE_HALTED, std::memory_order_release );      
 }
 
 T64ProcThreadModule:: ~ T64ProcThreadModule( ) {
@@ -98,29 +97,32 @@ void T64ProcThreadModule::execModule( int units ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Wait for the thread to complete execution. When the processor goes into the
-// HALT state, the waiting thread is awoken.
+// Wait for the thread to stop. We stop when the number of steps were executed
+// or an exception, i.e. a trap occurred. 
 //
 //----------------------------------------------------------------------------------------
-void T64ProcThreadModule::waitUntilHalted( ) {
+T64ModuleState T64ProcThreadModule::waitUntilStopped() {
 
     std::unique_lock<std::mutex> lk(mLock);
 
     mCondVar.wait(lk, [this] {
 
-        return mState.load() == T64_MOD_STATE_HALTED;
+        T64ModuleState s = mState.load(std::memory_order_acquire);
+
+        return (( s == T64_MOD_STATE_HALTED ) || ( s == T64_MOD_STATE_TRAP ));
     });
+
+    return mState.load(std::memory_order_acquire);
 }
 
 //----------------------------------------------------------------------------------------
-//
-//
+// Support for LDR/STC instructions.
 //
 //----------------------------------------------------------------------------------------
 void T64ProcThreadModule::setRsvInfo( T64Word pAdr, bool valid ) {
 
-    rsvInfo = pAdr;
-    if ( valid ) rsvInfo = - rsvInfo;
+    rsvInfo  = pAdr;
+    rsvValid = valid;
 }
     
 T64Word T64ProcThreadModule::getRsvInfo( ) {
@@ -134,9 +136,15 @@ bool T64ProcThreadModule::isRsvValid( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// A little helper to return a string version of the module state.
+// A little helper to return the module state and a string representation of 
+// the state.
 //
 //----------------------------------------------------------------------------------------
+T64ModuleState T64ProcThreadModule::getModuleState( ) {
+
+    return ( mState.load( std::memory_order_acquire ));
+}
+
 char *T64ProcThreadModule::getModuleStateStr( ) {
 
     T64ModuleState s = mState.load( std::memory_order_acquire );
@@ -176,16 +184,18 @@ void T64ProcThreadModule::moduleWorker( ) {
 
         T64ModuleState s = mState.load( std::memory_order_acquire );
 
-        // ??? add TRAP too ?
-        if ( s == T64_MOD_STATE_HALTED ) {
+        if (( s == T64_MOD_STATE_HALTED ) || ( s == T64_MOD_STATE_TRAP )) {
 
             std::unique_lock<std::mutex> lk(mLock);
 
             mCondVar.wait(lk, [this] {
 
-                return mState.load(std::memory_order_acquire)
-                                                != T64_MOD_STATE_HALTED;
+                switch (mState.load(std::memory_order_acquire)) {
 
+                    case T64_MOD_STATE_HALTED:
+                    case T64_MOD_STATE_TRAP:    return false;
+                    default:                    return true;
+                }
             });
 
             continue;
@@ -236,20 +246,6 @@ void T64ProcThreadModule::moduleWorker( ) {
                 }
 
                 mCondVar.notify_one();
-
-            } break;
-
-            case T64_MOD_STATE_TRAP:
-            case T64_MOD_STATE_HALTED: {
-
-                std::unique_lock<std::mutex> lk(mLock);
-                mCondVar.wait(lk, [this] {
-
-                    T64ModuleState s = mState.load(std::memory_order_acquire);
-
-                    return (( s != T64_MOD_STATE_TRAP ) &&
-                            ( s != T64_MOD_STATE_HALTED ));
-                });
 
             } break;
 

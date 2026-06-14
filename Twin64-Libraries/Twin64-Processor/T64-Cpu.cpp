@@ -1503,7 +1503,7 @@ void T64Cpu::instrSysPrbOp( T64Instr instr ) {
                 machineCheckTrap( vAdr );
             }
 
-        // ??? non-access trap ? Is there an instructoo non-access... ?
+        // ??? non-access trap ? Is there an instruction non-access... ?
     }
     else setRegR( instr, 0 );
 

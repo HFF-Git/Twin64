@@ -415,8 +415,8 @@ void T64System::execModule( int modNum, int units ) {
 
             if ( auto *m = dynamic_cast<T64ProcThreadModule *> ( moduleMap[ modNum ] )) {
 
-                m -> execModule( units );
-                m -> waitUntilHalted( );    
+                m -> execModule( units );   
+                m -> waitUntilStopped( );
 
             }
         }

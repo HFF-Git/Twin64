@@ -354,7 +354,7 @@ bool T64Processor::handleHPAWrite( T64Word pAdr, uint8_t *data, int len ) {
 //  match with the reserve register. If a match, we invalidate this info.
 //
 //  T64_CNTRL_EVENT_MODULE_PURGE - a module was purged. If it is the global
-//  TLB, we clear our caxched reference. A future access will lead to a machine
+//  TLB, we clear our cached reference. A future access will lead to a machine
 //  check trap.
 //
 //----------------------------------------------------------------------------------------
