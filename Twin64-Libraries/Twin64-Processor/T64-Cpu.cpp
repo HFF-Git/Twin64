@@ -1679,7 +1679,7 @@ void T64Cpu::instrSysTrapOp( T64Instr instr ) {
 // and execution continuous at the IVA address slot for the respective trap.
 //
 //----------------------------------------------------------------------------------------
-bool T64Cpu::executeInstr( ) {
+T64TrapCode T64Cpu::executeInstr( ) {
 
     uint32_t instr = instrRead( extractField64( psrReg, 0, 52 ));
 
@@ -1730,7 +1730,7 @@ bool T64Cpu::executeInstr( ) {
             default: illegalInstrTrap( );
         }
 
-        return ( false );
+        return ( NO_TRAP );
     }
     catch ( const T64Trap t ) {
 
@@ -1745,6 +1745,6 @@ bool T64Cpu::executeInstr( ) {
         T64Word ivaAdr  = cRegFile[ CTL_REG_IVA ];
         psrReg          = ivaAdr + ( code * 32 );
 
-        return( true );
+        return( code );
     }
 }

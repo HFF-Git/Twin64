@@ -163,7 +163,7 @@ struct T64Cpu {
     virtual         ~ T64Cpu( );
 
     void            reset( );
-    bool            executeInstr( );
+    T64TrapCode     executeInstr( );
 
     T64Word         getGeneralReg( int index );
     void            setGeneralReg( int index, T64Word val );
@@ -297,7 +297,7 @@ struct T64Processor : T64ProcThreadModule {
 
     void            initModule( );
     void            resetModule( );
-    bool            executeUnit( );
+    T64TrapCode     executeUnit( );
 
     bool            busOpRead( T64Word adr, uint8_t *data, int len );
     bool            busOpReadRsv( T64Word adr, uint8_t *data, int len );

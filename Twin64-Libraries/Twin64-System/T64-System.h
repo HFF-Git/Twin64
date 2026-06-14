@@ -83,15 +83,6 @@ enum T64ModuleState : int {
     T64_MOD_STATE_TERMINATE    = 4    
 };
 
-enum T64StopReason : int {
-
-    T64_STOP_NONE       = 0,
-    T64_STOP_HALT       = 1,
-    T64_STOP_TRAP       = 2,
-    T64_STOP_BREAKPOINT = 3,
-    T64_STOP_WATCHPOINT = 4
-};
-
 //----------------------------------------------------------------------------------------
 // Modules have registers in their HPA. The can be accessed via load / store 
 // instructions. 
@@ -201,12 +192,12 @@ struct T64ProcThreadModule : T64Module {
     virtual void            haltModule( );
     virtual void            runModule( );
     virtual void            execModule( int steps );
-    virtual T64StopReason   waitUntilStopped( );
+    virtual T64TrapCode     waitUntilStopped( );
     
-    virtual bool            executeUnit( ) = 0;
+    virtual T64TrapCode     executeUnit( ) = 0;
 
     T64ModuleState          getModuleState( );
-    T64StopReason           getStopReason( );
+    T64TrapCode             getTrapCode( );
   
     void                    setRsvInfo( T64Word pAdr, bool valid );
     T64Word                 getRsvInfo( );
@@ -221,7 +212,7 @@ struct T64ProcThreadModule : T64Module {
     std::mutex                  mLock;
     std::condition_variable     mCondVar;
     std::thread                 mWorker;
-    T64StopReason               mStopReason    = T64_STOP_NONE;
+    T64TrapCode                 mTrapCode      = NO_TRAP;
     int                         mUnitCount     = 0;
     bool                        enterSimOnTrap = true;
     bool                        rsvValid       = false;

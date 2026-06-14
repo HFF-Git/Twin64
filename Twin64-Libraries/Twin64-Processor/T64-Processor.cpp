@@ -123,7 +123,7 @@ void T64Processor::resetModule( ) {
 // "HALT" state for examination.
 //
 //----------------------------------------------------------------------------------------
-bool T64Processor::executeUnit( ) {
+T64TrapCode T64Processor::executeUnit( ) {
 
     return( cpu -> executeInstr( ));
 };
@@ -142,15 +142,79 @@ char *T64Processor::getProcStateStr( ) {
 
         case T64_MOD_STATE_HALTED: {
 
-            switch ( getStopReason( )) {
+            switch ( getTrapCode( )) {
 
-                case T64_STOP_HALT: return((char *) "HALT" );
-                case T64_STOP_TRAP: return((char *) "TRAP" );
-                default: return ((char *) "??? " );
+                case NO_TRAP: 
+                    return((char *) "HALT" );
+
+                case MACHINE_CHECK: 
+                    return((char *) "TRAP: MCHECK" );
+
+                case POWER_FAILURE: 
+                    return((char *) "TRAP: PWF-FAIL" );  
+
+                case RECOVERY_COUNTER_TRAP: 
+                    return((char *) "TRAP: REC_CNTR" );
+
+                case EXTERNAL_INTERRUPT: 
+                    return((char *) "TRAP: EXT-INT" );
+
+                case ILLEGAL_INSTR_TRAP: 
+                    return((char *) "TRAP: ILLEGAL-INSTR" );
+
+                case PRIV_OPERATION_TRAP: 
+                    return((char *) "TRAP: PRIV-VIOLATION" );
+
+                case PRIV_REGISTER_TRAP: 
+                    return((char *) "TRAP: PRIV-REG-ACC" );
+
+                case OVERFLOW_TRAP: 
+                    return((char *) "TRAP: OVERFLOW" );
+
+                case INSTR_TLB_MISS_TRAP: 
+                    return((char *) "TRAP: ITLB-MISS" );
+
+                case NON_ACC_INSTR_TLB_MISS_TRAP: 
+                    return((char *) "TRAP: NON-ACC-ITLB-MISS" );
+
+                case INSTR_ACC_RIGHTS_TRAP: 
+                    return((char *) "TRAP: INSTR-ACC" );
+
+                case INSTR_PROTECTION_TRAP: 
+                    return((char *) "TRAP: INSTR-PROT" );
+
+                case INSTR_ALIGNMENT_TRAP: 
+                    return((char *) "TRAP: INSTR-ALIGN" );
+
+                case DATA_TLB_MISS_TRAP: 
+                    return((char *) "TRAP: DTLB-MISS" );
+
+                case NON_ACC_DATA_TLB_MISS_TRAP: 
+                    return((char *) "TRAP: NON-ACC-DTLB-MISS" );
+
+                case DATA_ACC_RIGHTS_TRAP: 
+                    return((char *) "TRAP: DATA-ACC" );
+                    
+                case DATA_PROTECTION_TRAP: 
+                    return((char *) "TRAP: DATA-PROT" );
+
+                case DATA_ALIGNMENT_TRAP: 
+                    return((char *) "TRAP: DATA-ALIGN" );
+      
+                case PAGE_REF_TRAP: 
+                    return((char *) "TRAP: PAGE-REF" );
+
+                case BREAK_INSTR_TRAP: 
+                    return((char *) "TRAP: BREAK" );
+
+                case USER_DEFINED_TRAP: 
+                    return((char *) "TRAP: USER" );
+
+                default: return ((char *) "TRAP: ???" );
             }
         }
 
-        default: return ((char *) "??? " );
+        default: return ((char *) "HALT: ??? " );
     }
 }
 

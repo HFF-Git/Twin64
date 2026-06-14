@@ -41,13 +41,13 @@ T64ProcThreadModule::T64ProcThreadModule( T64ModuleType    modType,
                                                         spaAdr, 
                                                         spaLen ) { 
 
-    mStopReason = T64_STOP_HALT;
+    mTrapCode = NO_TRAP;
     mState.store( T64_MOD_STATE_HALTED, std::memory_order_release );      
 }
 
 T64ProcThreadModule:: ~ T64ProcThreadModule( ) {
 
-    mStopReason = T64_STOP_NONE;
+    mTrapCode = NO_TRAP;
     mState.store( T64_MOD_STATE_TERMINATE, std::memory_order_release );
     mCondVar.notify_one( );
 
@@ -103,7 +103,7 @@ void T64ProcThreadModule::execModule( int units ) {
 // or an exception, i.e. a trap occurred. 
 //
 //----------------------------------------------------------------------------------------
-T64StopReason T64ProcThreadModule::waitUntilStopped( ) {
+T64TrapCode T64ProcThreadModule::waitUntilStopped( ) {
 
     std::unique_lock<std::mutex> lk(mLock);
 
@@ -115,7 +115,7 @@ T64StopReason T64ProcThreadModule::waitUntilStopped( ) {
                (s == T64_MOD_STATE_TERMINATE);
     });
 
-    return mStopReason;
+    return ( mTrapCode );
 }
 
 //----------------------------------------------------------------------------------------
@@ -148,9 +148,9 @@ T64ModuleState T64ProcThreadModule::getModuleState( ) {
     return ( mState.load( std::memory_order_acquire ));
 }
 
-T64StopReason T64ProcThreadModule::getStopReason( ) {
+T64TrapCode T64ProcThreadModule::getTrapCode( ) {
 
-    return( mStopReason );
+    return( mTrapCode );
 }
 
 //----------------------------------------------------------------------------------------
@@ -196,7 +196,7 @@ void T64ProcThreadModule::moduleWorker( ) {
 
                 resetModule( );
 
-                mStopReason = T64_STOP_HALT;
+                mTrapCode = NO_TRAP;
                 mState.store( T64_MOD_STATE_HALTED, 
                                  std::memory_order_release );
 
@@ -216,20 +216,18 @@ void T64ProcThreadModule::moduleWorker( ) {
 
                     if ( mUnitCount == 0 ) {
 
-                        mStopReason = T64_STOP_HALT;
+                        mTrapCode = NO_TRAP;
                         mState.store( T64_MOD_STATE_HALTED,
                                       std::memory_order_release );
 
                         break;
                     }
 
-                    bool trapOcurred = executeUnit();
+                    mTrapCode = executeUnit();
 
-                    if (( trapOcurred ) && ( enterSimOnTrap )) {
+                    if (( mTrapCode != NO_TRAP ) && ( enterSimOnTrap )) {
 
-                        mStopReason = T64_STOP_TRAP;
                         mState.store(T64_MOD_STATE_HALTED, std::memory_order_release);
-
                         break;
                     }
 
