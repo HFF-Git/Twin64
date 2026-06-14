@@ -405,7 +405,7 @@ void T64System::runModule( int modNum ) {
 // executed. 
 //
 //----------------------------------------------------------------------------------------
-void T64System::execModule( int modNum, int units ) {
+void T64System::execModule( int modNum, int units, bool haltOnTrap ) {
 
     if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
@@ -415,7 +415,7 @@ void T64System::execModule( int modNum, int units ) {
 
             if ( auto *m = dynamic_cast<T64ProcThreadModule *> ( moduleMap[ modNum ] )) {
 
-                m -> execModule( units );   
+                m -> execModule( units, haltOnTrap );   
                 m -> waitUntilStopped( );
 
             }

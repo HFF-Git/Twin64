@@ -191,13 +191,14 @@ struct T64ProcThreadModule : T64Module {
     virtual void            resetModule( );
     virtual void            haltModule( );
     virtual void            runModule( );
-    virtual void            execModule( int steps );
+    virtual void            execModule( int steps, bool haltOnTrap );
     virtual T64TrapCode     waitUntilStopped( );
     
     virtual T64TrapCode     executeUnit( ) = 0;
 
     T64ModuleState          getModuleState( );
     T64TrapCode             getTrapCode( );
+    void                    setEnterSimOnTrap( bool val );
   
     void                    setRsvInfo( T64Word pAdr, bool valid );
     T64Word                 getRsvInfo( );
@@ -214,7 +215,7 @@ struct T64ProcThreadModule : T64Module {
     std::thread                 mWorker;
     T64TrapCode                 mTrapCode      = NO_TRAP;
     int                         mUnitCount     = 0;
-    bool                        enterSimOnTrap = true;
+    bool                        enterSimOnTrap = false;
     bool                        rsvValid       = false;
     T64Word                     rsvInfo        = 0;
 };
@@ -249,7 +250,7 @@ struct T64System {
     void                resetModule( int modNum );
     void                haltModule( int modNum );
     void                runModule( int modNum );
-    void                execModule( int modNum, int steps );
+    void                execModule( int modNum, int steps, bool haltOnTrap );
     bool                isModuleHalted( int modNum );   
     
     void                run( );

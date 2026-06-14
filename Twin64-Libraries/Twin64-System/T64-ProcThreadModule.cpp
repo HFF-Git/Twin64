@@ -92,9 +92,11 @@ void T64ProcThreadModule::runModule( ) {
     setModuleState( T64_MOD_STATE_EXECUTE );
 }
 
-void T64ProcThreadModule::execModule( int units ) {
+void T64ProcThreadModule::execModule( int units, bool haltOnTrap ) {
 
-    mUnitCount = units;
+    mUnitCount      = units;
+    enterSimOnTrap  = haltOnTrap;
+
     setModuleState( T64_MOD_STATE_EXECUTE );
 }
 
@@ -139,8 +141,7 @@ bool T64ProcThreadModule::isRsvValid( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// A little helper to return the module state and a string representation of 
-// the state.
+// A little helper to return the module state and trap code.
 //
 //----------------------------------------------------------------------------------------
 T64ModuleState T64ProcThreadModule::getModuleState( ) {
@@ -153,9 +154,13 @@ T64TrapCode T64ProcThreadModule::getTrapCode( ) {
     return( mTrapCode );
 }
 
+ void T64ProcThreadModule::setEnterSimOnTrap( bool val ) {
+
+    enterSimOnTrap = val;
+ }
+
 //----------------------------------------------------------------------------------------
-// The module thread worker routine. The module is the base class for processors
-// and I/O modules. 
+// The module thread worker routine. The module is the class for processors.
 //
 // If the thread is in HALT state, we wait on the "mCondVar" variable. Our mutex
 // ensures synchronized access. If the thread was awoken we continue the main 

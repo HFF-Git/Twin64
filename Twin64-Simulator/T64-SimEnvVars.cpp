@@ -52,10 +52,10 @@ namespace {
 //******************************************************************************
 
 //----------------------------------------------------------------------------------------
-// There predefined and user defined variables. Predefined variables are created at 
-// program start and initialized. They are marked predefined and optional readonly by 
-// the ENV command. Also, their type cannot be changed by a new value of a different 
-// type.
+// There predefined and user defined variables. Predefined variables are created
+// at program start and initialized. They are marked predefined and optional 
+// readonly by the ENV command. Also, their type cannot be changed by a new value
+// of a different type.
 //
 // User defined variables can be changed in type and value. They are by definition 
 // read and write enabled and can also be removed.
@@ -121,8 +121,8 @@ int SimEnv::getEnvHwm( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Look a variable. We just do a linear search up to the HWM. If not found, a -1 is 
-// returned. Straightforward.
+// Look a variable. We just do a linear search up to the HWM. If not found, a 
+// -1 is returned. Straightforward.
 //
 //----------------------------------------------------------------------------------------
 int SimEnv::lookupEntry( char *name ) {
@@ -145,9 +145,9 @@ int SimEnv::lookupEntry( char *name ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Find a free slot for a variable. First we look for a free entry in the range up to 
-// the HWM. If there is none, we try to increase the HWM. If all fails, the table is
-// full.
+// Find a free slot for a variable. First we look for a free entry in the range
+// up to the HWM. If there is none, we try to increase the HWM. If all fails, 
+// the table is full.
 //
 //----------------------------------------------------------------------------------------
 int SimEnv::findFreeEntry( ) {
@@ -169,12 +169,13 @@ int SimEnv::findFreeEntry( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "setEnvVar" is a set of function signatures that modify an ENV variable value. If 
-// the variable is a predefined variable, the readOnly option is checked as well as 
-// that the variable type matches. A user defined variable is by definition read/write 
-// enabled and the type changes based on the type of the value set. If the variable is
-// not found, a new variable will be allocated. One more thing. If the ENV variable 
-// type is string and we set a value, the old string is deallocated.
+// "setEnvVar" is a set of function signatures that modify an ENV variable value.
+// If the variable is a predefined variable, the readOnly option is checked as 
+// well as that the variable type matches. A user defined variable is always 
+// read/write enabled and the type changes based on the type of the value set. 
+// If the variable is not found, a new variable will be allocated. One more 
+// thing. If the ENV variable type is string and we set a value, the old string
+// is deallocated.
 //
 //----------------------------------------------------------------------------------------
 void SimEnv::setEnvVar( char *name, T64Word val ) {
@@ -209,7 +210,7 @@ void SimEnv::setEnvVar( char *name, bool val )  {
         
         SimEnvTabEntry *ptr = &table[ index ];
         
-        if (( ptr -> predefined ) && ( ptr -> typ != TYP_NUM )) {
+        if (( ptr -> predefined ) && ( ptr -> typ != TYP_BOOL )) {
             
             throw ( ERR_ENV_VALUE_EXPR );
         }
@@ -251,8 +252,8 @@ void SimEnv::setEnvVar( char *name, char *str )  {
 }
 
 //----------------------------------------------------------------------------------------
-// Environment variables getter functions. Just look up the entry and return the value.
-// If the entry does not exist, we return an optional default.
+// Environment variables getter functions. Just look up the entry and return the 
+// value. If the entry does not exist, we return an optional default.
 //
 //----------------------------------------------------------------------------------------
 bool SimEnv::getEnvVarBool( char *name, bool def ) {
@@ -280,9 +281,9 @@ char *SimEnv::getEnvVarStr( char *name, char *def ) {
 }
 
 //----------------------------------------------------------------------------------------
-// A set of helper function to enter a variable. The variable can be a user or predefined
-// one. If it is a predefined variable, the readonly flag marks the variable read only 
-// for the ENV command.
+// A set of helper function to enter a variable. The variable can be a user or 
+// predefined one. If it is a predefined variable, the readonly flag marks the
+// variable read only for the ENV command.
 //
 //----------------------------------------------------------------------------------------
 void SimEnv::enterVar( char *name, T64Word  val, bool predefined, bool rOnly ) {
@@ -341,10 +342,10 @@ void SimEnv::enterVar( char *name, char *str, bool predefined, bool rOnly ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Remove a user defined ENV variable. If the ENV variable is predefined it is an 
-// error. If the ENV variable type is a string, free the string space. The entry 
-// is marked invalid, i.e. free. Finally, if the entry was at the high water mark, 
-// adjust the HWM.
+// Remove a user defined ENV variable. If the ENV variable is predefined it is 
+// an error. If the ENV variable type is a string, free the string space. The 
+// entry is marked invalid, i.e. free. Finally, if the entry was at the high 
+// water mark, adjust the HWM.
 //
 //----------------------------------------------------------------------------------------
 void SimEnv::removeEnvVar( char *name ) {
@@ -395,11 +396,13 @@ int SimEnv::formatEnvEntry( int index, char *buf, int bufLen ) {
 
                     if (( e -> u.iVal >= INT_MIN ) && ( e -> u.iVal <= INT_MAX )) {
 
-                        len += snprintf( buf + len, 128, "NUM:     %i", (int) e -> u.iVal ); 
+                        len += snprintf( buf + len, 128, "NUM:     %i", 
+                                        (int) e -> u.iVal ); 
                     }
                     else {
 
-                        len += snprintf( buf + len, 128, "NUM:     %llx.", e -> u.iVal ); 
+                        len += snprintf( buf + len, 128, "NUM:     %llx.", 
+                                         e -> u.iVal ); 
                     } 
 
                 } break;
@@ -407,7 +410,8 @@ int SimEnv::formatEnvEntry( int index, char *buf, int bufLen ) {
                 case TYP_STR: {
                 
                     // ??? any length checks ?
-                    len += snprintf( buf + len, 128, "STR:     \"%s\"", e -> u.strVal );
+                    len += snprintf( buf + len, 128, "STR:     \"%s\"", 
+                                     e -> u.strVal );
                 
                 } break;
                 
@@ -454,4 +458,6 @@ void SimEnv::setupPredefined( ) {
     enterVar((char *) ENV_WIN_MIN_ROWS, (T64Word) 24, true, false );
     enterVar((char *) ENV_WIN_TEXT_LINE_WIDTH, (T64Word) 90, true, false );
     enterVar((char *) ENV_WIN_TEXT_TAB_SIZE, (T64Word) 4, true, false );
+
+    enterVar((char *) ENV_HALT_ON_TRAPS, (bool) false, true, false );
 }

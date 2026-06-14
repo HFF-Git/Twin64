@@ -1760,8 +1760,10 @@ void SimCommandsWin::stepCmd( ) {
 
     if ( m -> getModuleType( ) != MT_PROC ) throw( ERR_EXPCTED_PROC_MODULE );
 
+    bool haltOnTrap = glb -> env -> getEnvVarBool((char *) ENV_HALT_ON_TRAPS );
+
     tok -> checkEOS( );
-    glb -> system -> execModule( modNum, numOfSteps );
+    glb -> system -> execModule( modNum, numOfSteps, haltOnTrap );
 }
 
 //----------------------------------------------------------------------------------------

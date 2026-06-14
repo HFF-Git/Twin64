@@ -70,10 +70,10 @@
 //                  :                                                        :
 //                  :--------------------------------------------------------:
 //
-// Total size of the screen can vary. It is the sum of all active window line plus
-// the command window lines. Command window is a bit special on that it has an input
-// line at the lowest line. Scroll lock after the active windows before the command
-// window. Routines to move cursor, print fields with attributes.
+// Total size of the screen can vary. It is the sum of all active window line 
+// plus the command window lines. Command window is a bit special on that it has
+// an input line at the lowest line. Scroll lock after the active windows before
+// the command window. Routines to move cursor, print fields with attributes.
 //
 // In addition, windows can be organized in stacks. The stacks are displayed next
 // to each other, which is quite helpful, but could make the columns needed quite
@@ -113,7 +113,6 @@
 //  CPU Window      -> CPU
 //  TLB Window      -> TLB
 //  Memory Window   -> MEM
-//  Program Code    -> CODE
 //  Text Window     -> TEXT
 //  Commands        -> n/a
 //
@@ -420,6 +419,8 @@ const char ENV_WIN_TEXT_TAB_SIZE[ ]     = "WIN_TEXT_TAB_SIZE";
 
 const char ENV_ASSERT_DEF_MSG[ ]        = "ASSERT_DEF_MSG";
 const char ENV_CHECK_DEF_MSG[ ]         = "CHECK_DEF_MSG";
+
+const char ENV_HALT_ON_TRAPS[ ]         = "HALT_ON_TRAPS";
 
 //----------------------------------------------------------------------------------------
 // Forward declaration of the globals structure. Every object will have access to 
