@@ -274,6 +274,8 @@ void SimWinProcState::drawBanner( ) {
     printTextField((char *) " State: ", fmtDesc );
     printTextField( proc -> getProcStateStr( ), fmtDesc );
 
+    // ??? add halt reason ?
+
     padLine( fmtDesc );
     printRadixField( fmtDesc | FMT_LAST_FIELD );
 
@@ -283,7 +285,7 @@ void SimWinProcState::drawBanner( ) {
 //----------------------------------------------------------------------------------------
 // "drawGeneralRegSubWindow" draws the general registers set in the body of the 
 // window. We show 4 registers per line, with the format "GRn=0x0000_0000_0000_0000". 
-// The last line will be printed with the underline oprion to separate the code 
+// The last line will be printed with the underline option to separate the code 
 // subwindow that follows.
 //
 //----------------------------------------------------------------------------------------
@@ -345,7 +347,7 @@ void SimWinProcState::drawGeneralRegSubWindow( int linePos ) {
 //----------------------------------------------------------------------------------------
 // "drawControlRegSubWindow" draws the control registers set in the body of the 
 // window. We show 4 registers per line, with the format "CRn=0x0000_0000_0000_0000". 
-// The last line will be printed with the underline oprion to separate the code 
+// The last line will be printed with the underline option to separate the code 
 // subwindow that follows.
 //
 //----------------------------------------------------------------------------------------

@@ -134,7 +134,24 @@ bool T64Processor::executeUnit( ) {
 //----------------------------------------------------------------------------------------
 char *T64Processor::getProcStateStr( ) {
 
-    return( getModuleStateStr( ));
+    switch ( getModuleState( )) {
+
+        case T64_MOD_STATE_RESET: return (( char *) "RESET" );
+        case T64_MOD_STATE_EXECUTE: return (( char *) "RUN" );
+        case T64_MOD_STATE_TERMINATE: return ((char *) "TERMINATE" );
+
+        case T64_MOD_STATE_HALTED: {
+
+            switch ( getStopReason( )) {
+
+                case T64_STOP_HALT: return((char *) "HALT" );
+                case T64_STOP_TRAP: return((char *) "TRAP" );
+                default: return ((char *) "??? " );
+            }
+        }
+
+        default: return ((char *) "??? " );
+    }
 }
 
 T64Cpu *T64Processor::getCpuPtr( ) {

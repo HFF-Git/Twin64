@@ -41,11 +41,13 @@ T64ProcThreadModule::T64ProcThreadModule( T64ModuleType    modType,
                                                         spaAdr, 
                                                         spaLen ) { 
 
+    mStopReason = T64_STOP_HALT;
     mState.store( T64_MOD_STATE_HALTED, std::memory_order_release );      
 }
 
 T64ProcThreadModule:: ~ T64ProcThreadModule( ) {
 
+    mStopReason = T64_STOP_NONE;
     mState.store( T64_MOD_STATE_TERMINATE, std::memory_order_release );
     mCondVar.notify_one( );
 
@@ -101,7 +103,7 @@ void T64ProcThreadModule::execModule( int units ) {
 // or an exception, i.e. a trap occurred. 
 //
 //----------------------------------------------------------------------------------------
-T64ModuleState T64ProcThreadModule::waitUntilStopped() {
+T64StopReason T64ProcThreadModule::waitUntilStopped( ) {
 
     std::unique_lock<std::mutex> lk(mLock);
 
@@ -109,10 +111,11 @@ T64ModuleState T64ProcThreadModule::waitUntilStopped() {
 
         T64ModuleState s = mState.load(std::memory_order_acquire);
 
-        return (( s == T64_MOD_STATE_HALTED ) || ( s == T64_MOD_STATE_TRAP ));
+        return (s == T64_MOD_STATE_HALTED) ||
+               (s == T64_MOD_STATE_TERMINATE);
     });
 
-    return mState.load(std::memory_order_acquire);
+    return mStopReason;
 }
 
 //----------------------------------------------------------------------------------------
@@ -145,19 +148,9 @@ T64ModuleState T64ProcThreadModule::getModuleState( ) {
     return ( mState.load( std::memory_order_acquire ));
 }
 
-char *T64ProcThreadModule::getModuleStateStr( ) {
+T64StopReason T64ProcThreadModule::getStopReason( ) {
 
-    T64ModuleState s = mState.load( std::memory_order_acquire );
-
-    switch( s ) {
-
-        case T64_MOD_STATE_NIL:            return ((char *) "NIL" );
-        case T64_MOD_STATE_RESET:          return ((char *) "RESET" );
-        case T64_MOD_STATE_EXECUTE:        return ((char *) "RUN");
-        case T64_MOD_STATE_HALTED:         return ((char *) "HALT" );
-        case T64_MOD_STATE_TRAP:           return ((char *) "TRAP" );
-        case T64_MOD_STATE_TERMINATE:      return ((char *) "EXIT" );
-    }
+    return( mStopReason );
 }
 
 //----------------------------------------------------------------------------------------
@@ -184,18 +177,14 @@ void T64ProcThreadModule::moduleWorker( ) {
 
         T64ModuleState s = mState.load( std::memory_order_acquire );
 
-        if (( s == T64_MOD_STATE_HALTED ) || ( s == T64_MOD_STATE_TRAP )) {
+        if ( s == T64_MOD_STATE_HALTED ) {
 
             std::unique_lock<std::mutex> lk(mLock);
 
             mCondVar.wait(lk, [this] {
 
-                switch (mState.load(std::memory_order_acquire)) {
-
-                    case T64_MOD_STATE_HALTED:
-                    case T64_MOD_STATE_TRAP:    return false;
-                    default:                    return true;
-                }
+                return( mState.load(std::memory_order_acquire) != 
+                            T64_MOD_STATE_HALTED );
             });
 
             continue;
@@ -207,6 +196,7 @@ void T64ProcThreadModule::moduleWorker( ) {
 
                 resetModule( );
 
+                mStopReason = T64_STOP_HALT;
                 mState.store( T64_MOD_STATE_HALTED, 
                                  std::memory_order_release );
 
@@ -226,6 +216,7 @@ void T64ProcThreadModule::moduleWorker( ) {
 
                     if ( mUnitCount == 0 ) {
 
+                        mStopReason = T64_STOP_HALT;
                         mState.store( T64_MOD_STATE_HALTED,
                                       std::memory_order_release );
 
@@ -236,8 +227,8 @@ void T64ProcThreadModule::moduleWorker( ) {
 
                     if (( trapOcurred ) && ( enterSimOnTrap )) {
 
-                        mState.store(T64_MOD_STATE_TRAP,
-                                    std::memory_order_release);
+                        mStopReason = T64_STOP_TRAP;
+                        mState.store(T64_MOD_STATE_HALTED, std::memory_order_release);
 
                         break;
                     }

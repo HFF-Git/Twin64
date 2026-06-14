@@ -78,10 +78,18 @@ enum T64ModuleState : int {
 
     T64_MOD_STATE_NIL          = 0,
     T64_MOD_STATE_RESET        = 1,
-    T64_MOD_STATE_EXECUTE      = 2,
-    T64_MOD_STATE_TRAP         = 3, 
-    T64_MOD_STATE_HALTED       = 4,
-    T64_MOD_STATE_TERMINATE    = 5    
+    T64_MOD_STATE_EXECUTE      = 2, 
+    T64_MOD_STATE_HALTED       = 3,
+    T64_MOD_STATE_TERMINATE    = 4    
+};
+
+enum T64StopReason : int {
+
+    T64_STOP_NONE       = 0,
+    T64_STOP_HALT       = 1,
+    T64_STOP_TRAP       = 2,
+    T64_STOP_BREAKPOINT = 3,
+    T64_STOP_WATCHPOINT = 4
 };
 
 //----------------------------------------------------------------------------------------
@@ -193,12 +201,13 @@ struct T64ProcThreadModule : T64Module {
     virtual void            haltModule( );
     virtual void            runModule( );
     virtual void            execModule( int steps );
-    virtual T64ModuleState  waitUntilStopped( );
+    virtual T64StopReason   waitUntilStopped( );
     
     virtual bool            executeUnit( ) = 0;
-    T64ModuleState          getModuleState( );
-    char                    *getModuleStateStr( );
 
+    T64ModuleState          getModuleState( );
+    T64StopReason           getStopReason( );
+  
     void                    setRsvInfo( T64Word pAdr, bool valid );
     T64Word                 getRsvInfo( );
     bool                    isRsvValid( );
@@ -212,6 +221,7 @@ struct T64ProcThreadModule : T64Module {
     std::mutex                  mLock;
     std::condition_variable     mCondVar;
     std::thread                 mWorker;
+    T64StopReason               mStopReason    = T64_STOP_NONE;
     int                         mUnitCount     = 0;
     bool                        enterSimOnTrap = true;
     bool                        rsvValid       = false;
