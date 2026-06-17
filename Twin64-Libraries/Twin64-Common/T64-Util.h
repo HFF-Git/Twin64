@@ -3,8 +3,8 @@
 //  Twin64Sim - A 64-bit CPU Simulator - Common utility functions
 //
 //----------------------------------------------------------------------------------------
-// Throughout the Twin64 project we use a few common utility functions. They are
-// collected here.
+// Throughout the Twin64 project we use a quite few common utility inline 
+// functions. 
 //
 //----------------------------------------------------------------------------------------
 //
@@ -483,14 +483,59 @@ inline bool extractPsrMbit( T64Word psr ) {
     return( extractBit64( psr, 63 ));
 }
 
+inline bool extractPsrEbit( T64Word psr ) {
+
+    return( extractBit64( psr, 62 ));
+}
+
 inline uint8_t extractPsrXbit( T64Word psr ) {
 
     return((uint8_t) extractBit64( psr, 61 ));
 }
 
+inline bool extractPsrRbit( T64Word psr ) {
+
+    return( extractBit64( psr, 60 ));
+}
+
+inline bool extractPsrBbit( T64Word psr ) {
+
+    return( extractBit64( psr, 59 ));
+}
+
+inline bool extractPsrTbit( T64Word psr ) {
+
+    return( extractBit64( psr, 58 ));
+}
+
+inline bool extractPsrIbit( T64Word psr ) {
+
+    return( extractBit64( psr, 52 ));
+}
+
 inline void depositPsrXbit( T64Word *psr, uint8_t val ) {
 
     depositBit64( psr, 61, val );
+}
+
+inline void depositPsrRbit( T64Word *psr, uint8_t val ) {
+
+    depositBit64( psr, 60, val );
+}
+
+inline void depositPsrBbit( T64Word *psr, uint8_t val ) {
+
+    depositBit64( psr, 59, val );
+}
+
+inline void depositPsrTbit( T64Word *psr, uint8_t val ) {
+
+    depositBit64( psr, 58, val );
+}
+
+inline void depositPsrIbit( T64Word *psr, uint8_t val ) {
+
+    depositBit64( psr, 52, val );
 }
 
 //----------------------------------------------------------------------------------------

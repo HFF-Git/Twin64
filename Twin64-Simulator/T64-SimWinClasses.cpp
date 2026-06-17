@@ -263,18 +263,17 @@ void SimWinProcState::drawBanner( ) {
     printNumericField( psw, fmtDesc | FMT_HEX_2_4_4_4 );
 
     printTextField((char *) " ST: [", fmtDesc );
-    printBitField( psw, 63, 'A', fmtDesc );
-    printBitField( psw, 62, 'B', fmtDesc );
-    printBitField( psw, 61, 'C', fmtDesc );
-    printBitField( psw, 60, 'D', fmtDesc );
-    printBitField( psw, 59, 'E', fmtDesc );
-    printBitField( psw, 58, 'F', fmtDesc );
+    printBitField( psw, 63, 'M', fmtDesc );
+    printBitField( psw, 62, 'E', fmtDesc );
+    printBitField( psw, 61, 'X', fmtDesc );
+    printBitField( psw, 60, 'R', fmtDesc );
+    printBitField( psw, 59, 'B', fmtDesc );
+    printBitField( psw, 58, 'T', fmtDesc );
+    printBitField( psw, 52, 'I', fmtDesc );
     printTextField((char *) "]", fmtDesc );
 
     printTextField((char *) " State: ", fmtDesc );
     printTextField( proc -> getProcStateStr( ), fmtDesc );
-
-    // ??? add halt reason ?
 
     padLine( fmtDesc );
     printRadixField( fmtDesc | FMT_LAST_FIELD );
@@ -683,11 +682,19 @@ void SimWinMem::drawBanner( ) {
 
     if ( mem != nullptr ) {
 
-        printTextField((char *) "Mod:", fmtDesc );
-        printNumericField( getWinModNum( ), fmtDesc | FMT_DEC );
+       printTextField((char *) "Mod:", fmtDesc );
+       printNumericField( mem -> getModuleNum( ), fmtDesc | FMT_DEC );
 
         printTextField((char *) " ( ", fmtDesc );
-        printTextField( mem -> getMemTypeString( ), fmtDesc );
+        if ( isInIoAdrRange( getCurrentItemAdr( ))) {
+
+            printTextField((char *) "IOMEM", fmtDesc );
+        }
+        else {
+
+            printTextField( mem -> getMemTypeString( ), fmtDesc );
+        }
+        
         printTextField((char *) " ) ", fmtDesc );
     }
 

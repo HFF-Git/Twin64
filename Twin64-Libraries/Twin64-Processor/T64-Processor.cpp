@@ -260,7 +260,7 @@ bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
  
             case T64_IO_STATUS_REG_OFS: {
 
-                tmp = 0xaaaabbbbccccdddd;  // ??? test only ...
+                tmp = 0;  // ??? test only ...
 
                 copyFromReg( data, tmp, wordOfs, len );
                 return( true );
@@ -269,7 +269,7 @@ bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
 
             case T64_IO_COMMAND_REG_OFS: {
 
-                tmp = 0x55;  // ??? test only ...
+                tmp = 0;  // ??? test only ...
 
                 copyFromReg( data, tmp, wordOfs, len );
                 return ( true );
@@ -278,7 +278,7 @@ bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
 
             case T64_IO_CONFIG_REG_OFS: {
 
-                tmp = 66; // ??? test only ...
+                tmp = 0; // ??? test only ...
                 copyFromReg( data, tmp, wordOfs, len );
                 return ( true );
 
