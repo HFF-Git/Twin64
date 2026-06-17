@@ -1681,51 +1681,51 @@ void T64Cpu::instrSysTrapOp( T64Instr instr ) {
 //----------------------------------------------------------------------------------------
 T64TrapCode T64Cpu::executeInstr( ) {
 
-    uint32_t instr = instrRead( extractField64( psrReg, 0, 52 ));
+    instrReg = instrRead( extractField64( psrReg, 0, 52 ));
 
     try {
         
-        switch ( extractInstrOpCode( instr ) ) {
+        switch ( extractInstrOpCode( instrReg ) ) {
                 
-            case ( OPC_GRP_ALU * 16 + OPC_NOP ):    instrAluNopOp( instr );   break;
-            case ( OPC_GRP_ALU * 16 + OPC_ADD ):    instrAluAddOp( instr );   break;
-            case ( OPC_GRP_MEM * 16 + OPC_ADD ):    instrMemAddOp( instr );   break;
-            case ( OPC_GRP_ALU * 16 + OPC_SUB ):    instrAluSubOp( instr );   break;
-            case ( OPC_GRP_MEM * 16 + OPC_SUB ):    instrMemSubOp( instr );   break;
-            case ( OPC_GRP_ALU * 16 + OPC_AND ):    instrAluAndOp( instr );   break;
-            case ( OPC_GRP_MEM * 16 + OPC_AND ):    instrMemAndOp( instr );   break;
-            case ( OPC_GRP_ALU * 16 + OPC_OR ):     instrAluOrOp( instr );    break;
-            case ( OPC_GRP_MEM * 16 + OPC_OR ):     instrMemOrOp( instr );    break;
-            case ( OPC_GRP_ALU * 16 + OPC_XOR ):    instrAluXorOp( instr );   break;
-            case ( OPC_GRP_MEM * 16 + OPC_XOR ):    instrMemXorOp( instr );   break;
-            case ( OPC_GRP_ALU * 16 + OPC_CMP_A ):  instrAluCmpOp( instr );   break;
-            case ( OPC_GRP_ALU * 16 + OPC_CMP_B ):  instrAluCmpOp( instr );   break;
-            case ( OPC_GRP_MEM * 16 + OPC_CMP_A ):  instrMemCmpOp( instr );   break;
-            case ( OPC_GRP_MEM * 16 + OPC_CMP_B ):  instrMemCmpOp( instr );   break;
-            case ( OPC_GRP_ALU * 16 + OPC_BITOP ):  instrAluBitOp( instr );   break;
-            case ( OPC_GRP_ALU * 16 + OPC_SHAOP ):  instrAluShaOP( instr );   break;
-            case ( OPC_GRP_ALU * 16 + OPC_IMMOP ):  instrAluImmOp( instr );   break;
-            case ( OPC_GRP_ALU * 16 + OPC_LDO ):    instrAluLdoOp( instr );   break;
-            case ( OPC_GRP_MEM * 16 + OPC_LD ):     instrMemLdOp( instr );    break;
-            case ( OPC_GRP_MEM * 16 + OPC_LDR ):    instrMemLdrOp( instr );   break;
-            case ( OPC_GRP_MEM * 16 + OPC_ST ):     instrMemStOp( instr );    break;
-            case ( OPC_GRP_MEM * 16 + OPC_STC ):    instrMemStcOp( instr );   break;
-            case ( OPC_GRP_BR * 16 + OPC_B ):       instrBrBOp( instr );      break;
-            case ( OPC_GRP_BR * 16 + OPC_BE ):      instrBrBeOp( instr );     break;
-            case ( OPC_GRP_BR * 16 + OPC_BR ):      instrBrBrOp( instr );     break;
-            case ( OPC_GRP_BR * 16 + OPC_BB ):      instrBrBbOp( instr );     break;
-            case ( OPC_GRP_BR * 16 + OPC_ABR ):     instrBrAbrOp( instr );    break;
-            case ( OPC_GRP_BR * 16 + OPC_CBR ):     instrBrCbrOp( instr );    break;
-            case ( OPC_GRP_BR * 16 + OPC_MBR ):     instrBrMbrOp( instr );    break;
-            case ( OPC_GRP_SYS * 16 + OPC_MR ):     instrSysMrOp( instr );    break;
-            case ( OPC_GRP_SYS * 16 + OPC_LPA ):    instrSysLpaOp( instr );   break;
-            case ( OPC_GRP_SYS * 16 + OPC_PRB ):    instrSysPrbOp( instr );   break;
-            case ( OPC_GRP_SYS * 16 + OPC_TLB ):    instrSysTlbOp( instr  );  break;
-            case ( OPC_GRP_SYS * 16 + OPC_CA ):     instrSysCaOp( instr );    break;
-            case ( OPC_GRP_SYS * 16 + OPC_MST ):    instrSysMstOp( instr );   break;
-            case ( OPC_GRP_SYS * 16 + OPC_RFI ):    instrSysRfiOp( instr );   break;
-            case ( OPC_GRP_SYS * 16 + OPC_DIAG ):   instrSysDiagOp( instr );  break;
-            case ( OPC_GRP_SYS * 16 + OPC_TRAP ):   instrSysTrapOp( instr );  break;
+            case ( OPC_GRP_ALU * 16 + OPC_NOP ):    instrAluNopOp( instrReg );   break;
+            case ( OPC_GRP_ALU * 16 + OPC_ADD ):    instrAluAddOp( instrReg );   break;
+            case ( OPC_GRP_MEM * 16 + OPC_ADD ):    instrMemAddOp( instrReg );   break;
+            case ( OPC_GRP_ALU * 16 + OPC_SUB ):    instrAluSubOp( instrReg );   break;
+            case ( OPC_GRP_MEM * 16 + OPC_SUB ):    instrMemSubOp( instrReg );   break;
+            case ( OPC_GRP_ALU * 16 + OPC_AND ):    instrAluAndOp( instrReg );   break;
+            case ( OPC_GRP_MEM * 16 + OPC_AND ):    instrMemAndOp( instrReg );   break;
+            case ( OPC_GRP_ALU * 16 + OPC_OR ):     instrAluOrOp( instrReg );    break;
+            case ( OPC_GRP_MEM * 16 + OPC_OR ):     instrMemOrOp( instrReg );    break;
+            case ( OPC_GRP_ALU * 16 + OPC_XOR ):    instrAluXorOp( instrReg );   break;
+            case ( OPC_GRP_MEM * 16 + OPC_XOR ):    instrMemXorOp( instrReg );   break;
+            case ( OPC_GRP_ALU * 16 + OPC_CMP_A ):  instrAluCmpOp( instrReg );   break;
+            case ( OPC_GRP_ALU * 16 + OPC_CMP_B ):  instrAluCmpOp( instrReg );   break;
+            case ( OPC_GRP_MEM * 16 + OPC_CMP_A ):  instrMemCmpOp( instrReg );   break;
+            case ( OPC_GRP_MEM * 16 + OPC_CMP_B ):  instrMemCmpOp( instrReg );   break;
+            case ( OPC_GRP_ALU * 16 + OPC_BITOP ):  instrAluBitOp( instrReg );   break;
+            case ( OPC_GRP_ALU * 16 + OPC_SHAOP ):  instrAluShaOP( instrReg );   break;
+            case ( OPC_GRP_ALU * 16 + OPC_IMMOP ):  instrAluImmOp( instrReg );   break;
+            case ( OPC_GRP_ALU * 16 + OPC_LDO ):    instrAluLdoOp( instrReg );   break;
+            case ( OPC_GRP_MEM * 16 + OPC_LD ):     instrMemLdOp( instrReg );    break;
+            case ( OPC_GRP_MEM * 16 + OPC_LDR ):    instrMemLdrOp( instrReg );   break;
+            case ( OPC_GRP_MEM * 16 + OPC_ST ):     instrMemStOp( instrReg );    break;
+            case ( OPC_GRP_MEM * 16 + OPC_STC ):    instrMemStcOp( instrReg );   break;
+            case ( OPC_GRP_BR * 16 + OPC_B ):       instrBrBOp( instrReg );      break;
+            case ( OPC_GRP_BR * 16 + OPC_BE ):      instrBrBeOp( instrReg );     break;
+            case ( OPC_GRP_BR * 16 + OPC_BR ):      instrBrBrOp( instrReg );     break;
+            case ( OPC_GRP_BR * 16 + OPC_BB ):      instrBrBbOp( instrReg );     break;
+            case ( OPC_GRP_BR * 16 + OPC_ABR ):     instrBrAbrOp( instrReg );    break;
+            case ( OPC_GRP_BR * 16 + OPC_CBR ):     instrBrCbrOp( instrReg );    break;
+            case ( OPC_GRP_BR * 16 + OPC_MBR ):     instrBrMbrOp( instrReg );    break;
+            case ( OPC_GRP_SYS * 16 + OPC_MR ):     instrSysMrOp( instrReg );    break;
+            case ( OPC_GRP_SYS * 16 + OPC_LPA ):    instrSysLpaOp( instrReg );   break;
+            case ( OPC_GRP_SYS * 16 + OPC_PRB ):    instrSysPrbOp( instrReg );   break;
+            case ( OPC_GRP_SYS * 16 + OPC_TLB ):    instrSysTlbOp( instrReg  );  break;
+            case ( OPC_GRP_SYS * 16 + OPC_CA ):     instrSysCaOp( instrReg );    break;
+            case ( OPC_GRP_SYS * 16 + OPC_MST ):    instrSysMstOp( instrReg );   break;
+            case ( OPC_GRP_SYS * 16 + OPC_RFI ):    instrSysRfiOp( instrReg );   break;
+            case ( OPC_GRP_SYS * 16 + OPC_DIAG ):   instrSysDiagOp( instrReg );  break;
+            case ( OPC_GRP_SYS * 16 + OPC_TRAP ):   instrSysTrapOp( instrReg );  break;
             
             default: illegalInstrTrap( );
         }
