@@ -357,7 +357,7 @@ void SimWinProcState::drawControlRegSubWindow( int linePos ) {
     int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 ) + 3;
     int      labelFlen      = 8;
     uint32_t numFmtField    = fmtDesc | FMT_HEX_4_4_4_4;
-    uint32_t labelFmtField  = fmtDesc | FMT_BOLD;
+    uint32_t labelFmtField  = fmtDesc | FMT_BOLD | FMT_FG_COL_MAGENTA;
 
     setWinCursor( linePos, 1 );
     printTextField((char *) "CR0=", labelFmtField, labelFlen );
@@ -399,6 +399,11 @@ void SimWinProcState::drawControlRegSubWindow( int linePos ) {
     }
 
     padLine( fmtDesc | FMT_UNDER_LINE );
+
+    setWinCursor( linePos + 4, 1 );
+
+    glb -> console -> printSeparator( getColumns( ));
+    
 }
     
 //----------------------------------------------------------------------------------------

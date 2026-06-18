@@ -85,15 +85,23 @@ enum FmtDescOptions : uint32_t {
     
     FMT_USE_ACTUAL_ATTR = 0x0,
     
-    FMT_BG_COL_DEF      = 0x00000001,
-    FMT_BG_COL_RED      = 0x00000002,
-    FMT_BG_COL_GREEN    = 0x00000003,
-    FMT_BG_COL_YELLOW   = 0x00000004,
+    FMT_BG_COL_DEF      = 0x00000000,
+    FMT_BG_COL_RED      = 0x00000001,
+    FMT_BG_COL_GREEN    = 0x00000002,
+    FMT_BG_COL_YELLOW   = 0x00000003,
+    FMT_BG_COL_BLUE     = 0x00000004,
+    FMT_BG_COL_MAGENTA  = 0x00000005,
+    FMT_BG_COL_CYAN     = 0x00000006,
+    FMT_BG_COL_WHITE    = 0x00000007,
     
-    FMT_FG_COL_DEF      = 0x00000010,
-    FMT_FG_COL_RED      = 0x00000020,
-    FMT_FG_COL_GREEN    = 0x00000030,
-    FMT_FG_COL_YELLOW   = 0x00000040,
+    FMT_FG_COL_BLACK    = 0x00000000,
+    FMT_FG_COL_RED      = 0x00000010,
+    FMT_FG_COL_GREEN    = 0x00000020,
+    FMT_FG_COL_YELLOW   = 0x00000030,
+    FMT_FG_COL_BLUE     = 0x00000040,
+    FMT_FG_COL_MAGENTA  = 0x00000050,
+    FMT_FG_COL_CYAN     = 0x00000060,
+    FMT_FG_COL_WHITE    = 0x00000070,
 
     FMT_HEX             = 0x00000100,
     FMT_HEX_2           = 0x00000200,
@@ -106,25 +114,31 @@ enum FmtDescOptions : uint32_t {
     FMT_HEX_4_4_4       = 0x00000900,
     FMT_HEX_2_4_4_4     = 0x00000A00,
     FMT_HEX_4_4_4_4     = 0x00000B00, 
+
+    // 0x00000C00 to 0x00000F00 are reserved. 
     
     FMT_DEC             = 0x00001000,
     FMT_DEC_32          = 0x00002000,
+    FMT_DEC_64          = 0x00003000,
+
+    // 0x00004000 to 0x00007000 are reserved. 
+
+    FMT_ASCII_4         = 0x00008000,
+    FMT_ASCII_8         = 0x00009000,
+
+    // 0x0000A000 to 0x0000F000 are reserved.
 
     FMT_BOLD            = 0x00010000,
     FMT_BLINK           = 0x00020000,
     FMT_INVERSE         = 0x00040000,
     FMT_UNDER_LINE      = 0x00080000,
     FMT_HALF_BRIGHT     = 0x00100000,
-
     FMT_ALIGN_LFT       = 0x00200000,
     FMT_TRUNC_LFT       = 0x00400000,
     FMT_LAST_FIELD      = 0x00800000,
-
-    FMT_ASCII_4         = 0x01000000,
-    FMT_ASCII_8         = 0x02000000,
-    FMT_PREFIX_0X       = 0x04000000,
-    FMT_INVALID_NUM     = 0x08000000,
-   
+    FMT_PREFIX_0X       = 0x01000000,
+    FMT_INVALID_NUM     = 0x02000000,
+    
     FMT_DEF_ATTR        = 0x80000000
 };
 
@@ -158,6 +172,7 @@ struct SimFormatter {
 
     void            setFmtAttributes( uint32_t fmtDesc );
     int             printBlanks( int len );
+    int             printSeparator( int len );
     int             printText( char *text, int len );
     int             printNumber( T64Word val, uint32_t fmtDesc );
     int             numberFmtLen( uint32_t fmtDesc, T64Word val = 0 );
