@@ -85,23 +85,28 @@ enum FmtDescOptions : uint32_t {
     
     FMT_USE_ACTUAL_ATTR = 0x0,
     
-    FMT_BG_COL_DEF      = 0x00000000,
-    FMT_BG_COL_RED      = 0x00000001,
-    FMT_BG_COL_GREEN    = 0x00000002,
-    FMT_BG_COL_YELLOW   = 0x00000003,
-    FMT_BG_COL_BLUE     = 0x00000004,
-    FMT_BG_COL_MAGENTA  = 0x00000005,
-    FMT_BG_COL_CYAN     = 0x00000006,
-    FMT_BG_COL_WHITE    = 0x00000007,
+    FMT_BG_COL_DEF      = 0x00000001,
+    FMT_BG_COL_RED      = 0x00000002,
+    FMT_BG_COL_GREEN    = 0x00000003,
+    FMT_BG_COL_YELLOW   = 0x00000004,
+    FMT_BG_COL_BLUE     = 0x00000005,
+    FMT_BG_COL_MAGENTA  = 0x00000006,
+    FMT_BG_COL_CYAN     = 0x00000007,
+    FMT_BG_COL_WHITE    = 0x00000008,
     
-    FMT_FG_COL_BLACK    = 0x00000000,
-    FMT_FG_COL_RED      = 0x00000010,
-    FMT_FG_COL_GREEN    = 0x00000020,
-    FMT_FG_COL_YELLOW   = 0x00000030,
-    FMT_FG_COL_BLUE     = 0x00000040,
-    FMT_FG_COL_MAGENTA  = 0x00000050,
-    FMT_FG_COL_CYAN     = 0x00000060,
-    FMT_FG_COL_WHITE    = 0x00000070,
+    FMT_FG_COL_DEF      = 0x00000010,
+    FMT_FG_COL_BLACK    = 0x00000020,
+    FMT_FG_COL_RED      = 0x00000030,
+    FMT_FG_COL_GREEN    = 0x00000040,
+    FMT_FG_COL_YELLOW   = 0x00000050,
+    FMT_FG_COL_BLUE     = 0x00000060,
+    FMT_FG_COL_MAGENTA  = 0x00000070,
+    FMT_FG_COL_CYAN     = 0x00000080,
+    FMT_FG_COL_WHITE    = 0x00000090,
+    FMT_FG_COL_ORANGE   = 0x000000A0,
+    FMT_FG_COL_AMBER    = 0x000000B0,
+    FMT_FG_COL_TEAL     = 0x000000C0,
+    FMT_FG_COL_VIOLET   = 0x000000D0,
 
     FMT_HEX             = 0x00000100,
     FMT_HEX_2           = 0x00000200,
@@ -172,12 +177,11 @@ struct SimFormatter {
 
     void            setFmtAttributes( uint32_t fmtDesc );
     int             printBlanks( int len );
-    int             printSeparator( int len );
+    int             printSeparator( int len, bool light = false );
     int             printText( char *text, int len );
     int             printNumber( T64Word val, uint32_t fmtDesc );
     int             numberFmtLen( uint32_t fmtDesc, T64Word val = 0 );
     char            printBit( T64Word val, int pos, char printChar );
-
 };
 
 //----------------------------------------------------------------------------------------

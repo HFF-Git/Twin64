@@ -421,27 +421,33 @@ void SimFormatter::setFmtAttributes( uint32_t fmtDesc ) {
         
         switch ( fmtDesc & 0xF ) { // BG Color
                     
-            case 1:     writeChars((char *) "\x1b[41m"); break;
-            case 2:     writeChars((char *) "\x1b[42m"); break;
-            case 3:     writeChars((char *) "\x1b[43m"); break;
-            case 4:     writeChars((char *) "\x1b[44m"); break;
-            case 5:     writeChars((char *) "\x1b[45m"); break;
-            case 6:     writeChars((char *) "\x1b[46m"); break;
-            case 7:     writeChars((char *) "\x1b[47m"); break;
-
+            case 1:     writeChars((char *) "\x1b[49m"); break;
+            case 2:     writeChars((char *) "\x1b[41m"); break;
+            case 3:     writeChars((char *) "\x1b[42m"); break;
+            case 4:     writeChars((char *) "\x1b[43m"); break;
+            case 5:     writeChars((char *) "\x1b[44m"); break;
+            case 6:     writeChars((char *) "\x1b[45m"); break;
+            case 7:     writeChars((char *) "\x1b[46m"); break;
+            case 8:     writeChars((char *) "\x1b[47m"); break;
             default:    writeChars((char *) "\x1b[49m");
         }
         
         switch (( fmtDesc >> 4 ) & 0xF ) { // FG Color
                 
-            case 1:     writeChars((char *) "\x1b[31m"); break;
-            case 2:     writeChars((char *) "\x1b[32m"); break;
-            case 3:     writeChars((char *) "\x1b[33m"); break;
-            case 4:     writeChars((char *) "\x1b[34m"); break;
-            case 5:     writeChars((char *) "\x1b[35m"); break;
-            case 6:     writeChars((char *) "\x1b[36m"); break;
-            case 7:     writeChars((char *) "\x1b[37m"); break;
-            default:    writeChars((char *) "\x1b[39m");
+            case 1:   writeChars((char *) "\x1b[39m");              break;
+            case 2:   writeChars((char *) "\x1b[30m");              break;
+            case 3:   writeChars((char *) "\x1b[31m");              break;
+            case 4:   writeChars((char *) "\x1b[32m");              break;
+            case 5:   writeChars((char *) "\x1b[33m");              break;
+            case 6:   writeChars((char *) "\x1b[34m");              break;
+            case 7:   writeChars((char *) "\x1b[35m");              break;
+            case 8:   writeChars((char *) "\x1b[36m");              break;
+            case 9:   writeChars((char *) "\x1b[37m");              break;
+            case 10:  writeChars((char *) "\x1b[38;2;192;96;0m");   break; 
+            case 11:  writeChars((char *) "\x1b[38;2;255;191;0m");  break; 
+            case 12:  writeChars((char *) "\x1b[38;2;0;160;160m");  break;
+            case 13:  writeChars((char *) "\x1b[38;2;160;64;255m"); break; 
+            default:  writeChars((char *) "\x1b[39m");
         }
     }
 }
@@ -457,13 +463,19 @@ int SimFormatter::printBlanks( int len ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Emit a separator line.
+// Emit a separator line. It will draw a solid line for N columns.
 //
 //----------------------------------------------------------------------------------------
-int SimFormatter::printSeparator( int len ) {
+int SimFormatter::printSeparator( int len, bool light ) {
 
     writeChars((char *) "\033[90m");
-    for ( int i = 0; i < len; i++ ) writeChars((char *) "-" );
+    
+    for ( int i = 0; i < len - 1; i++ ) {
+
+        if ( light ) writeChars("\xE2\x94\x80");
+        else         writeChars("\xE2\x94\x81");
+    }
+
     writeChars((char *) "\033[0m");
     return( len );
 }

@@ -249,34 +249,34 @@ void SimWinProcState::setDefaults( ) {
 //----------------------------------------------------------------------------------------
 void SimWinProcState::drawBanner( ) {
     
-    uint32_t fmtDesc = FMT_BOLD | FMT_INVERSE;
+    uint32_t fmtDesc = FMT_BOLD | FMT_BG_COL_WHITE;
 
     setWinCursor( 1, 1 );
-    printWindowIdField( fmtDesc );
+    printWindowIdField( fmtDesc  | FMT_FG_COL_BLACK) ;
 
-    printTextField((char *) "Mod:", fmtDesc );
-    printNumericField( getWinModNum( ), fmtDesc | FMT_DEC );
+    printTextField((char *) "Mod:", fmtDesc  | FMT_FG_COL_BLACK );
+    printNumericField( getWinModNum( ), fmtDesc | FMT_DEC  | FMT_FG_COL_BLACK );
 
     T64Word psw = proc -> getCpuPtr( ) -> getPsrReg( );
 
-    printTextField((char *) " IA: ", fmtDesc );
-    printNumericField( psw, fmtDesc | FMT_HEX_2_4_4_4 );
+    printTextField((char *) " IA: ", fmtDesc | FMT_FG_COL_BLACK );
+    printNumericField( psw, fmtDesc | FMT_HEX_2_4_4_4 | FMT_FG_COL_BLACK );
 
-    printTextField((char *) " ST: [", fmtDesc );
-    printBitField( psw, 63, 'M', fmtDesc );
-    printBitField( psw, 62, 'E', fmtDesc );
-    printBitField( psw, 61, 'X', fmtDesc );
-    printBitField( psw, 60, 'R', fmtDesc );
-    printBitField( psw, 59, 'B', fmtDesc );
-    printBitField( psw, 58, 'T', fmtDesc );
-    printBitField( psw, 52, 'I', fmtDesc );
-    printTextField((char *) "]", fmtDesc );
+    printTextField((char *) " ST: [", fmtDesc | FMT_FG_COL_BLACK );
+    printBitField( psw, 63, 'M', fmtDesc | FMT_FG_COL_BLACK );
+    printBitField( psw, 62, 'E', fmtDesc | FMT_FG_COL_BLACK );
+    printBitField( psw, 61, 'X', fmtDesc | FMT_FG_COL_BLACK );
+    printBitField( psw, 60, 'R', fmtDesc | FMT_FG_COL_BLACK );
+    printBitField( psw, 59, 'B', fmtDesc | FMT_FG_COL_BLACK );
+    printBitField( psw, 58, 'T', fmtDesc | FMT_FG_COL_BLACK );
+    printBitField( psw, 52, 'I', fmtDesc | FMT_FG_COL_BLACK );
+    printTextField((char *) "]", fmtDesc | FMT_FG_COL_BLACK );
 
-    printTextField((char *) " State: ", fmtDesc );
-    printTextField( proc -> getProcStateStr( ), fmtDesc );
+    printTextField((char *) " State: ", fmtDesc | FMT_FG_COL_BLACK );
+    printTextField( proc -> getProcStateStr( ), fmtDesc | FMT_FG_COL_RED );
 
     padLine( fmtDesc );
-    printRadixField( fmtDesc | FMT_LAST_FIELD );
+    printRadixField( fmtDesc | FMT_LAST_FIELD | FMT_FG_COL_BLACK );
 
     setRows( getWinSize( getWinToggleVal( )).actualRow );
 }
@@ -328,19 +328,16 @@ void SimWinProcState::drawGeneralRegSubWindow( int linePos ) {
 
     padLine( fmtDesc );
 
-    labelFmtField |= FMT_UNDER_LINE;
-    numFmtField |= FMT_UNDER_LINE;
-
     setWinCursor( linePos + 3, 1 );
     printTextField((char *) "GR12=", labelFmtField, labelFlen );
 
     for ( int i = 12; i < 16; i++ ) {
 
         printNumericField( cpu -> getGeneralReg( i ), numFmtField, numFlen );
-        if ( i < 16 ) printTextField((char *) "   ", fmtDesc | FMT_UNDER_LINE );
+        if ( i < 16 ) printTextField((char *) "   ", fmtDesc );
     }
 
-    padLine( fmtDesc | FMT_UNDER_LINE );
+    padLine( fmtDesc );
 } 
 
 //----------------------------------------------------------------------------------------
@@ -357,7 +354,7 @@ void SimWinProcState::drawControlRegSubWindow( int linePos ) {
     int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 ) + 3;
     int      labelFlen      = 8;
     uint32_t numFmtField    = fmtDesc | FMT_HEX_4_4_4_4;
-    uint32_t labelFmtField  = fmtDesc | FMT_BOLD | FMT_FG_COL_MAGENTA;
+    uint32_t labelFmtField  = fmtDesc | FMT_BOLD | FMT_FG_COL_AMBER;
 
     setWinCursor( linePos, 1 );
     printTextField((char *) "CR0=", labelFmtField, labelFlen );
@@ -387,9 +384,6 @@ void SimWinProcState::drawControlRegSubWindow( int linePos ) {
 
     padLine( fmtDesc );
 
-    labelFmtField |= FMT_UNDER_LINE;
-    numFmtField |= FMT_UNDER_LINE;
-    
     setWinCursor( linePos + 3, 1 );
     printTextField((char *) "CR12=", labelFmtField, labelFlen );
 
@@ -398,12 +392,7 @@ void SimWinProcState::drawControlRegSubWindow( int linePos ) {
         printNumericField( cpu -> getControlReg( i ), numFmtField, numFlen );
     }
 
-    padLine( fmtDesc | FMT_UNDER_LINE );
-
-    setWinCursor( linePos + 4, 1 );
-
-    glb -> console -> printSeparator( getColumns( ));
-    
+    padLine( fmtDesc );
 }
     
 //----------------------------------------------------------------------------------------
@@ -496,11 +485,19 @@ void SimWinProcState::drawBody( ) {
 
         drawGeneralRegSubWindow( linePos );
         linePos += 4;
+
+        setWinCursor( linePos, 1 );
+        glb -> console -> printSeparator( getColumns( ));
+        linePos += 1;
     }
     else if ( toggleVal == 1 ) {
 
         drawControlRegSubWindow( linePos );
         linePos += 4;
+
+        setWinCursor( linePos, 1 );
+        glb -> console -> printSeparator( getColumns( ));
+        linePos += 1;
     }
 
     int linesLeft = getRows( ) - linePos + 1;
