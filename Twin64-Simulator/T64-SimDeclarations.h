@@ -432,6 +432,12 @@ const char ENV_HALT_ON_TRAPS[ ]         = "HALT_ON_TRAPS";
 struct SimGlobals;
 
 //----------------------------------------------------------------------------------------
+// Our entry into parsing program command line options.
+//
+//----------------------------------------------------------------------------------------
+void processCmdLineOptions( SimGlobals *glb, int argc, char *argv[ ] );
+
+//----------------------------------------------------------------------------------------
 // Command line option argument types and structure. This is the argc, argv parser
 // used to parse long options (e.g. --option=value).
 //
@@ -1049,13 +1055,18 @@ struct SimWinProcState : SimWin {
 
     private:
 
-    void drawGeneralRegSubWindow( int linePos );
-    void drawControlRegSubWindow( int linePos);
-    void drawCodeSubWindow( int linePos, int lineLeft );
+    int  drawGRegSubWindow( int linePos );
+    int  drawCRegSubWindow( int linePos);
+    int  drawCodeSubWindow( int linePos, int lineLeft );
+    void drawGRegDataLine( int from, int to );
+    void drawCRegDataLine( int from, int to );
     
-    T64Processor    *proc           = nullptr;
-    T64DisAssemble  *disAsm         = nullptr;
-    T64Word         codeWinBaseAdr  = 0;
+    T64Processor    *proc;
+    T64DisAssemble  *disAsm;
+    T64Word         codeWinBaseAdr;
+
+    T64Word         lastGRegState[ T64_MAX_GREGS ];
+    T64Word         lastCRegState[ T64_MAX_CREGS ];
 };
 
 //----------------------------------------------------------------------------------------
@@ -1390,9 +1401,3 @@ struct SimGlobals {
     char                configFileName[ MAX_FILE_PATH_SIZE ]    = { 0 };
     char                logFileName[ MAX_FILE_PATH_SIZE ]       = { 0 };
 };
-
-//----------------------------------------------------------------------------------------
-// Our entry into parsing program command line options.
-//
-//----------------------------------------------------------------------------------------
-void processCmdLineOptions( SimGlobals *glb, int argc, char *argv[ ] );

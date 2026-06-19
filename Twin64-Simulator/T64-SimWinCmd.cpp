@@ -446,18 +446,19 @@ void SimCommandsWin::setDefaults( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::drawBanner( ) {
     
-    uint32_t fmtDesc = FMT_BOLD | FMT_INVERSE;
+    uint32_t fmtDesc        = FMT_DEFAULT | FMT_BOLD | FMT_BG_COL_WHITE;
+    uint32_t fmtDescBlack   = fmtDesc | FMT_FG_COL_BLACK;
 
     setWinCursor( 1, 1 );
-    printTextField((char *) "Commands", ( fmtDesc | FMT_ALIGN_LFT ), 32 );
+    printTextField((char *) "Commands", ( fmtDescBlack | FMT_ALIGN_LFT ), 32 );
 
-    printTextField((char *) "System State: ", fmtDesc );
-    printNumericField( glb -> system -> getSystemState( ), fmtDesc | FMT_HEX_4 );
+    printTextField((char *) "System State: ", fmtDescBlack );
+    printNumericField( glb -> system -> getSystemState( ), fmtDescBlack | FMT_HEX_4 );
     padLine( fmtDesc ); 
 
     if ( glb -> winDisplay -> isWindowsOn( )) {
 
-        printStackInfoField( fmtDesc | FMT_LAST_FIELD );
+        printStackInfoField( fmtDescBlack | FMT_LAST_FIELD );
     }
 }
 
@@ -475,7 +476,7 @@ void SimCommandsWin::drawBody( ) {
     
     char lineOutBuf[ MAX_WIN_OUT_LINE_SIZE ];
     
-    glb -> console ->setFmtAttributes( FMT_DEF_ATTR );
+    glb -> console ->setFmtAttributes( FMT_DEFAULT );
   
     int rowsToShow = getRows( ) - 2;
     winOut -> setScrollWindowSize( rowsToShow );

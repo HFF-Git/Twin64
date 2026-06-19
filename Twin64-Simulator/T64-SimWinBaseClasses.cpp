@@ -469,7 +469,7 @@ void SimWin::printWindowIdField( uint32_t fmtDesc, int row, int col ) {
     bool isCurrent  = glb -> winDisplay -> isCurrentWin( winIndex );
     int  len        = 0;
     
-    glb -> console -> setFmtAttributes( fmtDesc );
+    glb -> console -> setFmtAttributes( fmtDesc | FMT_FG_COL_BLUE );
     
     if ( winIndex <= MAX_WINDOWS ) {
 
