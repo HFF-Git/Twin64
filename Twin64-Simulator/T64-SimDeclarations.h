@@ -1030,17 +1030,17 @@ struct SimWinScrollable : SimWin {
     
     private:
     
-    T64Word         homeItemAdr         = 0;
-    T64Word         currentItemAdr      = 0;
-    T64Word         limitItemAdr        = 0;
-    T64Word         lineIncrement       = 0;
-    int             rowsPerItemLine     = 1;
+    T64Word         homeItemAdr             = 0;
+    T64Word         currentItemAdr          = 0;
+    T64Word         limitItemAdr            = 0;
+    T64Word         lineIncrementItemAdr    = 0;
 };
 
 //----------------------------------------------------------------------------------------
-// CPU Register Window. This window holds the programmer visible state. The window
-// is a toggle window, top show different sets of register data. The constructor is
-// passed our globals and the module number of the processor.
+// CPU Register Window. This window holds the programmer visible state. The 
+// window is a toggle window, top show different sets of register data. The 
+// constructor is passed our globals and the module number of the processor.
+// The window support also that register changes are highlighted.
 //
 //----------------------------------------------------------------------------------------
 struct SimWinProcState : SimWin {
@@ -1090,10 +1090,14 @@ struct SimWinTlb : SimWinScrollable {
 };
 
 //----------------------------------------------------------------------------------------
-// Absolute Memory Window. A memory window will show the absolute memory content
-// starting with the current address followed by a number of data words. The number
-// of words shown is the number of lines of the window times the number of items, 
-// i.e. words, on a line.
+// Memory Window. A memory window will show memory content in a line by line
+// fashion. The window always uses byte addresses to refer to memory content.
+// The number of data items shown on a line is the number of items per line,
+// which is typically four 64bit words, or 8 32bit words. With the exception
+// of the code window toggle, the amount of memory on a shown is 32 bytes.
+// 
+// The memory window also supports the highlighting of changes to a data item
+// in the currently displayed window range.
 //
 //----------------------------------------------------------------------------------------
 struct SimWinMem : SimWinScrollable {
@@ -1108,8 +1112,12 @@ struct SimWinMem : SimWinScrollable {
 
     private:
 
-    T64Word         adr     = 0;
-    T64DisAssemble  *disAsm = nullptr;
+    T64Word         adr;
+    T64DisAssemble  *disAsm;
+
+    T64Word         lastWinItemAdr;
+    T64Word         lastWinRows;
+    uint8_t         lastDataBuf[ MAX_WIN_ROW_SIZE * 32 ];
 };
 
 //----------------------------------------------------------------------------------------

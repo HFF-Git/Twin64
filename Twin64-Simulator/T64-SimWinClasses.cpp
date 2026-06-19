@@ -638,13 +638,20 @@ void SimWinTlb::drawLine( T64Word index ) {
 // Methods for the physical memory window class.
 //
 //----------------------------------------------------------------------------------------
-// Object constructor.
+// Object constructor. We create the disassembler object, round down the home
+// item address to a multiple of 8 bytes. Finally, we initialize the last data
+// buffer variables.
 //
 //----------------------------------------------------------------------------------------
 SimWinMem::SimWinMem( SimGlobals *glb, T64Word adr ) : SimWinScrollable( glb ) {
 
-    this -> disAsm  = new T64DisAssemble( );
-    this -> adr     = rounddown( adr, 8 );
+    this -> disAsm              = new T64DisAssemble( );
+    this -> adr                 = rounddown( adr, 8 );
+    this -> lastWinItemAdr      = 0;
+    this -> lastWinRows         = 0;
+
+    for ( int i = 0; i < sizeof( lastDataBuf ); i++ ) lastDataBuf[ i ] = 0;
+
     setDefaults( );
  }
 
@@ -671,23 +678,21 @@ void SimWinMem::setDefaults( ) {
     setWinModNum( -1 );
     setHomeItemAdr( adr );
     setCurrentItemAdr( adr );
-    setLineIncrementItemAdr( 8 * 4 );
+    setLineIncrementItemAdr( 32 );
     setLimitItemAdr( T64_MAX_VIRT_MEM_LIMIT );
     setEnable( true );
 }
 
 //----------------------------------------------------------------------------------------
-// In addition to the module and window info, the banner line shows the item home
-// address.
+// In addition to the module and window info, the banner line shows the item 
+// home address. Depending on the current toggleVal, we do some housekeeping
+// for presentation radix, 
 //
 //----------------------------------------------------------------------------------------
 void SimWinMem::drawBanner( ) {
 
     uint32_t fmtDesc = FMT_DEFAULT | FMT_BOLD | FMT_BG_COL_WHITE;
     
-    if ( getWinToggleVal( ) == 2 )  setRadix( 10 ); 
-    else                            setRadix( 16 ); 
-
     setWinCursor( 1, 1 );
     printWindowIdField( fmtDesc );
 
@@ -718,20 +723,43 @@ void SimWinMem::drawBanner( ) {
     printNumericField( getHomeItemAdr( ), fmtDesc | FMT_HEX_2_4_4_4 );
     padLine( fmtDesc );
 
-    if ( getWinToggleVal( ) == 3 ) {
+    int toggleVal = getWinToggleVal( );
+
+    if ( toggleVal == 0 ) {
+
+        printTextField((char *) "hex", fmtDesc | FMT_LAST_FIELD );
+        setLineIncrementItemAdr( 32 );
+        setRadix( 16 );
+    }
+    else if ( toggleVal == 1 ) {
+
+        printTextField((char *) "hex", fmtDesc | FMT_LAST_FIELD );
+        setLineIncrementItemAdr( 32 );
+        setRadix( 16 );
+    }
+    else if ( toggleVal == 2 ) {
+
+        printTextField((char *) "dec", fmtDesc | FMT_LAST_FIELD );
+        setLineIncrementItemAdr( 32 );
+        setRadix( 10 );
+    }
+    else if ( toggleVal == 3 ) {
 
         printTextField((char *) "ascii", fmtDesc | FMT_LAST_FIELD );
-        setLineIncrementItemAdr( 8 * 4 );
+        setLineIncrementItemAdr( 32 );
+        setRadix( 16 );
     }
-    else if ( getWinToggleVal( ) == 4 ) {
+    else if ( toggleVal == 4 ) {
 
-         printTextField((char *) "code", fmtDesc | FMT_LAST_FIELD );
-         setLineIncrementItemAdr( 4 );
+        printTextField((char *) "code", fmtDesc | FMT_LAST_FIELD );
+        setLineIncrementItemAdr( 4 );
+        setRadix( 16 );
     }
     else {
         
-        printRadixField( fmtDesc | FMT_LAST_FIELD );
-        setLineIncrementItemAdr( 8 * 4 );
+        printTextField((char *) "???", fmtDesc | FMT_LAST_FIELD );
+        setLineIncrementItemAdr( 32 );
+        setRadix( 16 );
     }
 
     int alignVal = ( getWinToggleVal( ) < 4 ) ? 8 : 4;
@@ -740,6 +768,23 @@ void SimWinMem::drawBanner( ) {
         
         setCurrentItemAdr( rounddown( getCurrentItemAdr( ), alignVal )); 
     }   
+
+    if (( getWinToggleVal( ) < 4 ) && 
+        (( lastWinItemAdr != getCurrentItemAdr( )) ||
+        ( lastWinRows    != getRows( )))) {
+
+        lastWinItemAdr = getCurrentItemAdr( );
+        lastWinRows    = getRows( );
+
+        int numOfBytes = ( getRows( ) - 1 ) * 32;
+
+        for ( int i = 0; i < numOfBytes; i ++ ) {
+
+            readMem( glb -> system, 
+                     lastWinItemAdr + i, 
+                     (uint8_t *)&lastDataBuf[ i ], sizeof( uint8_t ));
+        }
+    } 
 }
 
 //----------------------------------------------------------------------------------------
@@ -753,7 +798,9 @@ void SimWinMem::drawBanner( ) {
 // Toggle 1: (0x00_0000_0000) 0x0000_0000_0000_0000   ... 4 times HEX.
 // Toggle 2: (0x00_0000_0000)           0             ... 8 times DEC.
 // Toggle 3: (0x00_0000_0000) "...." "...."           ... 8 times ASCII in "" 
+// Toggle 4: --- disassembler string ---
 //
+// 
 //----------------------------------------------------------------------------------------
 void SimWinMem::drawLine( T64Word itemAdr ) {
 

@@ -118,6 +118,9 @@ int SimWin::getRows( ) {
 
 void SimWin::setRows( int arg ) { 
 
+    if ( arg < 1 ) arg = 1;
+    if ( arg > MAX_WIN_ROW_SIZE ) arg = MAX_WIN_ROW_SIZE;
+
     int maxRows = winSizes[ winToggleVal ].maxRow;
     int minRows = winSizes[ winToggleVal ].minRow;
 
@@ -193,6 +196,16 @@ void SimWin::setWinLimitsForToggle( int toggleVal,
                                     int maxCol ) {
 
     toggleVal = toggleVal % MAX_WIN_TOGGLES;
+
+    if ( minRow < 1 ) minRow = 1;
+    if ( maxRow > MAX_WIN_ROW_SIZE ) maxRow = MAX_WIN_ROW_SIZE;
+    if ( minRow > maxRow ) minRow = maxRow;
+    if ( maxRow < minRow ) maxRow = minRow;
+
+    if ( minCol < 1 ) minCol = 1;
+    if ( maxCol > MAX_WIN_COL_SIZE ) maxCol = MAX_WIN_COL_SIZE;
+    if ( minCol > maxCol ) minCol = maxCol;
+    if ( maxCol < minCol ) maxCol = minCol;
 
     winSizes[ toggleVal ].minRow = minRow;
     winSizes[ toggleVal ].maxRow = maxRow;
@@ -578,12 +591,12 @@ void SimWinScrollable::setLimitItemAdr( T64Word adr ) {
 
 int SimWinScrollable::getLineIncrementItemAdr( ) { 
     
-    return ( lineIncrement ); 
+    return ( lineIncrementItemAdr ); 
 }
 
 void SimWinScrollable::setLineIncrementItemAdr( int arg ) { 
     
-    lineIncrement = arg; 
+    lineIncrementItemAdr = arg; 
 }
 
 //----------------------------------------------------------------------------------------
@@ -603,12 +616,12 @@ void SimWinScrollable::setLineIncrementItemAdr( int arg ) {
 //----------------------------------------------------------------------------------------
 void SimWinScrollable::drawBody( ) {
     
-    int numOfItemLines = ( getRows( ) - 1 ) / rowsPerItemLine;
+    int numOfItemLines = getRows( ) - 1;
 
     for ( int line = 0; line < numOfItemLines; line++ ) {
         
         setWinCursor( line + 2, 1 );
-        drawLine( currentItemAdr + ( line * lineIncrement ));
+        drawLine( currentItemAdr + ( line * lineIncrementItemAdr ));
     }
 }
 
@@ -624,7 +637,7 @@ void SimWinScrollable::winHome( T64Word pos ) {
     
     if ( pos > 0 ) {
         
-        int itemsPerWindow = ( getRows( ) - 1 ) * lineIncrement;
+        int itemsPerWindow = ( getRows( ) - 1 ) * lineIncrementItemAdr;
         
         if ( pos > limitItemAdr - itemsPerWindow ) {
             
@@ -658,18 +671,18 @@ void SimWinScrollable::winJump( T64Word pos ) {
 //----------------------------------------------------------------------------------------
 void SimWinScrollable::winForward( T64Word amt ) {
     
-    if ( amt == 0 ) amt = ( getRows( ) - 1 ) * lineIncrement;
+    if ( amt == 0 ) amt = ( getRows( ) - 1 ) * lineIncrementItemAdr;
     
     if (((uint64_t) currentItemAdr + amt ) >= (uint64_t) limitItemAdr ) {
         
-        currentItemAdr = limitItemAdr - (( getRows( ) - 1 ) * lineIncrement );
+        currentItemAdr = limitItemAdr - (( getRows( ) - 1 ) * lineIncrementItemAdr );
     }
     else currentItemAdr = currentItemAdr + amt;
 }
 
 void SimWinScrollable::winBackward( T64Word amt ) {
     
-    if ( amt == 0 ) amt = ( getRows( ) - 1 ) * lineIncrement;
+    if ( amt == 0 ) amt = ( getRows( ) - 1 ) * lineIncrementItemAdr;
     
     if ( amt <= currentItemAdr ) {
         
