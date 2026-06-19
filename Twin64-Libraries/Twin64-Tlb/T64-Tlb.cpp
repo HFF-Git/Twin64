@@ -3,26 +3,26 @@
 // Twin-64 - System Wide TLB
 //
 //----------------------------------------------------------------------------------------
-// The T64-System represent the system consisting of several modules. Modules are
-// for example processor, memory and I/O modules. The simulator is connected to
-// the system which handles all module functions. A program start, the individual
-// modules are registered to the system. Think of a kind of bus where you plug in
-// boards.  
+// The T64-System represent the system consisting of several modules. Modules 
+// are for example processor, memory and I/O modules. The simulator is connected
+// to the system which handles all module functions. A program start, all
+// modules are registered to the system. Think of a kind of bus where you plug
+// in boards.  
 //
 //----------------------------------------------------------------------------------------
 //
 //  Twin-64 - SSystem Wide TLB
 // Copyright (C) 2020 - 2026 Helmut Fieres
 //
-// This program is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or any later version.
+// This program is free software: you can redistribute it and/or modify it under 
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should
-//  have received a copy of the GNU General Public License along with this program.  
-// If not, see <http://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #include "T64-Tlb.h"
@@ -35,8 +35,8 @@
 namespace {
 
 //----------------------------------------------------------------------------------------
-// Calculate the page size from the size field in the TLB entry. Currently, there
-// are four sizes defined. They are 4 Kb, 64 Kb, 1 Mb and 16 Mb.
+// Calculate the page size from the size field in the TLB entry. The sizes 
+// inclement in multiples of four of the base page size.
 // 
 //----------------------------------------------------------------------------------------
 int tlbPageSize( int size ) {
@@ -97,8 +97,8 @@ T64TlbEntry* lookupTlbEntry( T64TlbEntry *tlb,
 //
 //----------------------------------------------------------------------------------------
 // Object creator. Based on kind and type of TLB, we allocate the global TLB 
-// data structure. Right now, we only support a fully associative unified TLB of
-// different sizes.
+// data structure. Right now, we only support a fully associative unified TLB 
+// of different sizes.
 //
 //----------------------------------------------------------------------------------------
 T64GlobalTlb::T64GlobalTlb( T64ModuleType    modType, 
@@ -224,6 +224,8 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
 //----------------------------------------------------------------------------------------
 // Remove an entry. We simply find it and reset the "valid" bit.
 //
+// ??? ... but keep the lock bit if it is set. 
+// We want to be able to remove locked entries.
 //----------------------------------------------------------------------------------------
 bool T64GlobalTlb::removeTlbEntry( T64Word vAdr ) {
 
@@ -232,7 +234,7 @@ bool T64GlobalTlb::removeTlbEntry( T64Word vAdr ) {
     T64TlbEntry *e = lookupTlbEntry( tlbTable, tlbSize, vAdr );
     if ( e == nullptr ) return( true );
     
-    e -> tlbInfo &= 0x7FFF; // reset valid bit, but keep the lock bit if it is set. We want to be able to remove locked entries.
+    e -> tlbInfo &= 0x7FFF; 
     return ( true );
 }
 

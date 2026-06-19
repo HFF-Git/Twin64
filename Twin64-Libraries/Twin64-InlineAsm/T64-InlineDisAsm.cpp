@@ -3,13 +3,14 @@
 // T64 - A 64-bit Processor - DisAssembler
 //
 //----------------------------------------------------------------------------------------
-// The instruction disassemble routines will format an instruction word in a human 
-// readable form. An instruction has the general format
+// The instruction disassemble routines will format an instruction word in a 
+// human readable form. An instruction has the general format
 //
 //      OpCode [ Opcode Options ] [ target ] [ source ]
 //
-// The disassemble routine will analyze an instruction word and present the instruction
-// portion in the above order. The result is a string with the disassembled instruction.
+// The disassemble routine will analyze an instruction word and present the 
+// instruction portion in the above order. The result is a string with the 
+// disassembled instruction.
 //
 //
 //----------------------------------------------------------------------------------------
@@ -17,15 +18,15 @@
 // T64 - A 64-bit Processor - DisAssembler
 // Copyright (C) 2020 - 2026 Helmut Fieres
 //
-// This program is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or any later version.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should
-//  have received a copy of the GNU General Public License along with this program.  
-// If not, see <http://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #include "T64-InlineAsm.h"
@@ -38,17 +39,18 @@
 namespace {
 
 //----------------------------------------------------------------------------------------
-// The disassemble string consists of two parts. Normally, the string is just one 
-// string with both opCode and operand parts. For an aligned display of opCode and 
-// operand parts, the two constants specify how big the field will get.
+// The disassemble string consists of two parts. Normally, the string is just 
+// one string with both opCode and operand parts. For an aligned display of 
+// opCode and operand parts, the two constants specify how big the field will 
+// get.
 //
 //----------------------------------------------------------------------------------------
 const int LEN_16 = 16;
 const int LEN_32 = 32;
 
 //----------------------------------------------------------------------------------------
-// A little helper function to display the comparison condition codes in human readable
-// form. The function returns the characters written.
+// A little helper function to display the comparison condition codes in human 
+// readable form. The function returns the characters written.
 //
 //----------------------------------------------------------------------------------------
 int printCondField( char *buf, uint32_t cmpCode ) {
@@ -68,8 +70,8 @@ int printCondField( char *buf, uint32_t cmpCode ) {
 }
 
 //----------------------------------------------------------------------------------------
-// A little helper function to display the DW field. Note that we do not display the 
-// "D" option. It is the default and thus will not be shown.
+// A little helper function to display the DW field. Note that we do not display 
+// the "D" option. It is the default and thus will not be shown.
 //
 //----------------------------------------------------------------------------------------
 int printDwField( char *buf, uint32_t dw ) {
@@ -85,8 +87,9 @@ int printDwField( char *buf, uint32_t dw ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Decode the opcode and opcode option portion. An opcode consist of the instruction
-// group and the opcode family. We construct the final opcode for the case statement.
+// Decode the opcode and opcode option portion. An opcode consist of the 
+// instruction group and the opcode family. We construct the final opcode for
+// the case statement.
 //
 //----------------------------------------------------------------------------------------
 int buildOpCodeStr( char *buf, T64Instr instr ) {
@@ -372,21 +375,24 @@ int buildOpCodeStr( char *buf, T64Instr instr ) {
         case ( OPC_GRP_BR * 16 + OPC_CBR ): {
             
             int cursor = snprintf( buf, LEN_16, "CBR" );
-            cursor += printCondField( buf + cursor, extractInstrFieldU( instr, 19, 3 ));
+            cursor += printCondField( buf + cursor, 
+                                      extractInstrFieldU( instr, 19, 3 ));
             return ( cursor );
         }
             
         case ( OPC_GRP_BR * 16 + OPC_MBR ): {
             
             int cursor = snprintf( buf, LEN_16, "MBR" );
-            cursor += printCondField( buf + cursor, extractInstrFieldU( instr, 19, 3 ));
+            cursor += printCondField( buf + cursor, 
+                                      extractInstrFieldU( instr, 19, 3 ));
             return ( cursor );
         }
 
         case ( OPC_GRP_BR * 16 + OPC_ABR ): {
             
             int cursor = snprintf( buf, LEN_16, "ABR" );
-            cursor += printCondField( buf + cursor, extractInstrFieldU( instr, 19, 3 ));
+            cursor += printCondField( buf + cursor, 
+                                     extractInstrFieldU( instr, 19, 3 ));
             return ( cursor );
         }
             
@@ -742,7 +748,8 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
                                     extractInstrSignedImm15( instr ) << 2 );
             }
 
-            cursor += snprintf( buf + cursor, LEN_32, "(R%d)", extractInstrRegB( instr ));
+            cursor += snprintf( buf + cursor, LEN_32, "(R%d)", 
+                                extractInstrRegB( instr ));
             
             if ( extractInstrRegR( instr ) != 0 ) {
 
@@ -987,10 +994,10 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
 
 
 //----------------------------------------------------------------------------------------
-// Format an instruction. An instruction has generally three parts. The opCode, the 
-// opCode options and the operands. An instruction can be formatted as a whole string,
-// or as two groups with opcode and operands separated. We need this split for the 
-// code window to show the date in two aligned fields.
+// Format an instruction. An instruction has generally three parts. The opCode,
+// the opCode options and the operands. An instruction can be formatted as a
+// whole string, or as two groups with opcode and operands separated. We need 
+// this split for the code window to show the date in two aligned fields.
 //
 //----------------------------------------------------------------------------------------
 T64DisAssemble::T64DisAssemble( ) { }
@@ -1013,7 +1020,10 @@ int T64DisAssemble::formatOpCode( char *buf, int bufLen, uint32_t instr ) {
         return ( -1 );
 }
 
-int T64DisAssemble::formatOperands( char *buf, int bufLen, uint32_t instr, int rdx ) {
+int T64DisAssemble::formatOperands( char *buf, 
+                                    int bufLen, 
+                                    uint32_t instr, 
+                                    int rdx ) {
     
     if ( bufLen >= getOperandsFieldWidth( )) 
         return ( buildOperandStr( buf, instr, rdx ));
@@ -1021,7 +1031,10 @@ int T64DisAssemble::formatOperands( char *buf, int bufLen, uint32_t instr, int r
         return ( -1 );
 }
 
-int T64DisAssemble::formatInstr( char *buf, int bufLen, uint32_t instr, int rdx ) {
+int T64DisAssemble::formatInstr( char *buf, 
+                                 int bufLen, 
+                                 uint32_t instr, 
+                                 int rdx ) {
     
     if ( bufLen >= ( getOpCodeFieldWidth( ) + 1 + getOperandsFieldWidth( ))) {
         

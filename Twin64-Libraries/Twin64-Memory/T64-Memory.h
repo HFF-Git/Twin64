@@ -9,8 +9,8 @@
 // the SPA address range for the memory and the HPA address range for control 
 // registers.
 //
-// Access to the memory is protected by a lock. The lock is held during the entire
-// bus operation, including the time it takes to read or write the memory. 
+// Access to the memory is protected by a lock. The lock is held during the 
+// entire bus operation, including the time it takes to read or write the memory. 
 //
 //----------------------------------------------------------------------------------------
 //

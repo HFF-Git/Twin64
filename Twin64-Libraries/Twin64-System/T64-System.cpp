@@ -3,24 +3,24 @@
 // Twin-64 - System
 //
 //----------------------------------------------------------------------------------------
-// "T64System" is the system we simulate. It consist of a set of modules. A module
-// represents a processor, a memory unit, and so on. This of the system as a bus 
-// where the modules are plugged into.
+// "T64System" is the system we simulate. It consist of a set of modules. A 
+// module represents a processor, a memory unit, and so on. This of the system
+// as a bus where the modules are plugged into.
 //
 //----------------------------------------------------------------------------------------
 //
 // Twin-64 - System
 // Copyright (C) 2020 - 2026 Helmut Fieres
 //
-// This program is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or any later version.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should
-//  have received a copy of the GNU General Public License along with this program.  
-// If not, see <http://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #include "T64-System.h"
@@ -252,13 +252,13 @@ int T64System::addModule( T64Module *module ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Remove a module from the module map and system memory and IO module maps. Both
-// maps remain sorted by SPA address. The module pointer is simply removed from
-// the module map. Finally, the module is stopped and deleted.
+// Remove a module from the module map and system memory and IO module maps. 
+// Both maps remain sorted by SPA address. The module pointer is simply removed
+// from the module map. Finally, the module is stopped and deleted.
 //
 // However, before we can delete the module, we need to inform all others about
-// the upcoming purge. There might be modules, such as the processor module, that
-// kept a direct pointer to the module. 
+// the upcoming purge. There might be modules, such as the processor module, 
+// that locally kept a direct pointer to the module. 
 //
 // The function returns 0 on success, -1 if not found.
 //
@@ -424,8 +424,8 @@ void T64System::execModule( int modNum, int units, bool haltOnTrap ) {
 }
 
 //----------------------------------------------------------------------------------------
-// RUN. The simulator can just run the system. We just enter an endless loop which 
-// single steps all modules. 
+// RUN. The simulator can just run the system. We just enter an endless loop 
+// which single steps all modules. 
 //
 //----------------------------------------------------------------------------------------
 void T64System::run( ) {

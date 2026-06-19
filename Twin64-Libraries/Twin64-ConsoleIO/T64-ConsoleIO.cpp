@@ -3,29 +3,29 @@
 // Twin64 - A 64-bit CPU Monitor - Console IO
 //
 //----------------------------------------------------------------------------------------
-// Console IO is the piece of code that provides a single character interface for the
-// terminal screen. For the simulator, it is just plain character IO to the terminal 
-// screen.For the simulator running in CPU mode, the characters are taken from and 
-// place into the virtual console declared on the IO space.
+// Console IO is the piece of code that provides a single character interface 
+// for the terminal screen. For the simulator, it is just plain character IO to
+// the terminal screen.For the simulator running in CPU mode, the characters are
+// taken from and place into the virtual console declared on the IO space.
 //
-// Unfortunately, PCs and Macs differ. The standard system calls typically buffer the
-// input up to the carriage return. To avoid this, the terminal needs to be place in
-// "raw" mode. And this is different for the two platforms.
+// Unfortunately, PCs and Macs differ. The standard system calls typically buffer
+// the input up to the carriage return. To avoid this, the terminal needs to be
+// place in "raw" mode. And this is different for the two platforms.
 //
 //----------------------------------------------------------------------------------------
 //
 // // Twin64 - A 64-bit CPU Monitor - Console IO
 // Copyright (C) 2020 - 2026 Helmut Fieres
 //
-// This program is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or any later version.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should
-//  have received a copy of the GNU General Public License along with this program.  
-// If not, see <http://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #include "T64-Common.h"
@@ -73,7 +73,6 @@ char outputBuffer[ 1024 ];
 
 }; // namespace
 
-
 //----------------------------------------------------------------------------------------
 // Object constructor. We will save the current terminal settings and also
 // register a handler if the program is terminated via an exit call.
@@ -81,42 +80,44 @@ char outputBuffer[ 1024 ];
 //----------------------------------------------------------------------------------------
 SimConsoleIO::SimConsoleIO( ) {
   
-#if __APPLE__
+    #if __APPLE__
+
     tcgetattr( fileno( stdin ), &saveTermSetting );
     atexit( restoreTerminal );
-#endif
-    
+
+    #endif  
 }
 
 SimConsoleIO::~SimConsoleIO( ) {
     
-#if __APPLE__
+    #if __APPLE__
+
     tcsetattr( fileno( stdin ), TCSANOW, &saveTermSetting );
-#endif
     
+    #endif
 }
 
 //----------------------------------------------------------------------------------------
-// The Simulator works in raw character mode. This is to support basic editing features
-// and IO to the simulator console window when the simulation is active. There is a 
-// price to pay in that there is no nice buffering of input and basic line editing 
-// capabilities. On Mac/Linux the terminal needs to be set into raw character mode. On 
-// windows, this seems to work without special setups. Hmm, anyway. This routine will
-// set the raw mode attributes. For a windows system, these methods are a no operation.
+// The Simulator works in raw character mode. This is to support basic editing 
+// features and IO to the simulator console window when the simulation is active. 
+// There is a price to pay in that there is no nice buffering of input and basic 
+// line editing capabilities. On Mac/Linux the terminal needs to be set into raw
+// character mode. On windows, this seems to work without special setups. Hmm, 
+// anyway. This routine will set the raw mode attributes. For a windows system, 
+// these methods are a no operation.
 //
-// There is also a non-blocking IO mode. When the simulator hands over control to the 
-// CPU, the console IO is mapped to the PDC console driver and output is directed to
-// the console window. The console IO becomes part of the periodic processing and a key
-// pressed will set the flags in the PDC console driver data. We act as"true" hardware.
-// Non-blocking mode is enabled on entry to single step and run command and disabled 
-// when we are back to the monitor.
+// There is also a non-blocking IO mode. When the simulator hands over control 
+// to the CPU, the console IO is mapped to the PDC console driver and output is 
+// directed to the console window. The console IO becomes part of the periodic 
+// processing and a key pressed will set the flags in the PDC console driver data.
+// We act as"true" hardware. Non-blocking mode is enabled on entry to single step
+// and run command and disabled when we are back to the monitor.
 //
-//
-// ??? perhaps a place to save the previous settings and restore them ?
 //----------------------------------------------------------------------------------------
 void SimConsoleIO::initConsoleIO( ) {
 
-#if __APPLE__
+    #if __APPLE__
+
     struct termios term;
     tcgetattr( fileno( stdin ), &term );
     term.c_lflag &= ~ ( ICANON | ECHO );
@@ -124,22 +125,27 @@ void SimConsoleIO::initConsoleIO( ) {
     term.c_cc[VTIME] = 0;
     tcsetattr( STDIN_FILENO, TCSANOW, &term );
     tcflush( fileno( stdin ), TCIFLUSH );
-#endif
+    
+    #endif
     
     blockingMode  = true;
 }
 
 //----------------------------------------------------------------------------------------
-// "isConsole" is used by the command interpreter to figure whether we have a true 
-// terminal or just read from a file.
+// "isConsole" is used by the command interpreter to figure whether we have a 
+// true terminal or just read from a file.
 //
 //----------------------------------------------------------------------------------------
 bool  SimConsoleIO::isConsole( ) {
     
     #if __APPLE__
+
     return( isatty( fileno( stdin )));
+    
     #else
+    
     return( _isatty( _fileno( stdin )));
+    
     #endif
 }
 
@@ -165,9 +171,9 @@ int  SimConsoleIO::getConsoleSize( int *rows, int *cols ) {
         *cols = w.ws_col;
         return ( 0 );
     }
-
-    #else
     
+    #else
+
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     if ( GetConsoleScreenBufferInfo( GetStdHandle( STD_OUTPUT_HANDLE ), &csbi ) ) {
 
@@ -181,20 +187,20 @@ int  SimConsoleIO::getConsoleSize( int *rows, int *cols ) {
         *cols = 80;
         return ( -1 );
     }
-    
+
     #endif
 }
 
 //----------------------------------------------------------------------------------------
-// "setBlockingMode" will put the terminal into blocking or non-blocking mode. For
-// the command interpreter we will use the blocking mode, i.e. we wait for character
-// input. When the CPU runs, the console IO must be in non-blocking, and we check 
-// for input on each CPU "tick".
+// "setBlockingMode" will put the terminal into blocking or non-blocking mode.
+// For the command interpreter we will use the blocking mode, i.e. we wait for
+// character input. When the CPU runs, the console IO must be in non-blocking, 
+// and we check for input on each CPU "tick".
 //
 //----------------------------------------------------------------------------------------
 void SimConsoleIO::setBlockingMode( bool enabled ) {
     
-#if __APPLE__
+    #if __APPLE__
     
     int flags = fcntl( STDIN_FILENO, F_GETFL, 0 );
     if ( flags == -1 ) {
@@ -211,34 +217,36 @@ void SimConsoleIO::setBlockingMode( bool enabled ) {
             // ??? error ....
         }
     }
-#endif
+
+    #endif
     
     blockingMode = enabled;
 }
 
 //----------------------------------------------------------------------------------------
-// "readConsoleChar" is the single entry point to get a character from the terminal
-// input. On Mac/Linux, this is the "read" system call. Whether the mode is blocking
-// or non-blocking is set in the terminal settings. The read function is the same. 
-// If there is no character available, a zero is returned, otherwise the character.
+// "readConsoleChar" is the single entry point to get a character from keyboard
+// input. On Mac/Linux, this is the "read" system call. If there is no character 
+// available, a zero is returned, otherwise the character.
 //
-// On Windows there is a similar call, which does just return one character at a 
-// time. However, there seems to be no real waiting function. Instead, the "_kbhit" 
-// tests for a keyboard input. In blocking mode, we will loop for a keyboard input
-// and then get the character. In non-blocking mode, we test the keyboard and return
-// either the character typed or a zero.
+// On Windows there is a similar call, which does just return one character at 
+// a time. However, there seems to be no real waiting function. Instead, the 
+// "_kbhit" tests for a keyboard input. In blocking mode, we will loop for a 
+// keyboard input and then get the character. We also delay a little to avoid a
+// busy loop.In non-blocking mode, we test the keyboard and return either the 
+// character typed or a zero.
 //
-// On Windows, we delay a little to avoid a busy loop.
-// 
 //----------------------------------------------------------------------------------------
 int SimConsoleIO::readChar( ) {
     
-#if __APPLE__
+    #if __APPLE__
+
     char ch;
     if ( read( STDIN_FILENO, &ch, 1 ) == 1 ) return( ch );
     else return ( 0 );
-#else
-    if ( blockingMode ) {
+
+    #else
+    
+     if ( blockingMode ) {
         
         while ( ! _kbhit( )) Sleep( 50 );
         return( _getch( ));
@@ -252,15 +260,15 @@ int SimConsoleIO::readChar( ) {
         }
         else return( 0 );
     }
-#endif
-    
+
+    #endif
 }
 
 //----------------------------------------------------------------------------------------
-// "writeChars" is the single entry point to write to the terminal. On Mac/Linux, 
-// we still try to send out the data in batches to the terminal emulator for better
-// stability. In Windows this does not seems to be an issue, we send a single char
-// at a time.
+// "writeChars" is the single entry point to write to the terminal. On Mac or 
+// Linux, we still try to send out the data in batches to the terminal emulator 
+// for better stability. In Windows this does not seems to be an issue, we send
+// a single char at a time.
 //
 //----------------------------------------------------------------------------------------
 int SimConsoleIO::writeChars( const char *format, ... ) {
@@ -299,7 +307,7 @@ int SimConsoleIO::writeChars( const char *format, ... ) {
 
     #endif
 
-    return len;
+    return ( len );
 }
 
 //****************************************************************************************
@@ -308,12 +316,11 @@ int SimConsoleIO::writeChars( const char *format, ... ) {
 // Console IO Formatter routines.
 //
 //----------------------------------------------------------------------------------------
-// The Simulator features two distinct ways of text output. The first is the console
-// I/O where a character will make its way directly to the terminal screen of the 
-// application. The second output mode is a buffered I/O where all characters are 
-// placed in an output buffer consisting of lines of text. When the command or console
-// window is drawn, the text is taken form the this output buffer. Common to both
-// output methods is the formatter.
+// The Simulator output mode is a buffered I/O where all characters are placed in
+// an output buffer consisting of lines of text. When the command window is drawn,
+// the text is taken form the this output buffer. The formatter class contains 
+// the escape routines to manage the display printing.
+//
 //----------------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------
@@ -401,11 +408,11 @@ void SimFormatter::clearScrollArea( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Console output is also used to print out window forms. A window will consist of lines
-// with lines having fields on them. A field has a set of attributes such as foreground
-// and background colors, bold characters and so on. This routine sets the attributes 
-// based on the format descriptor. If the descriptor is zero, we will just stay where 
-// are with their attributes.
+// Console output is also used to print out window forms. A window will consist
+// of lines with lines having fields on them. A field has a set of attributes 
+// such as foreground and background colors, bold characters and so on. This 
+// routine sets the attributes based on the format descriptor. If the descriptor
+// is zero, we will just stay where we are with the attribute setting.
 //
 //----------------------------------------------------------------------------------------
 void SimFormatter::setFmtAttributes( uint32_t fmtDesc ) {
@@ -463,7 +470,8 @@ int SimFormatter::printBlanks( int len ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Emit a separator line. It will draw a solid line for N columns.
+// Emit a separator line. It will draw a solid line for N columns. The separator
+// is typically used to logically separate sub-windows.
 //
 //----------------------------------------------------------------------------------------
 int SimFormatter::printSeparator( int len, bool light ) {
@@ -509,8 +517,8 @@ int SimFormatter::printText( char *text, int maxLen ) {
 }
 
 //----------------------------------------------------------------------------------------
-// We often need to print a bit of a machine word. If set in upper case, if cleared in 
-// lower case.
+// We often need to print a bit of a machine word. If set in upper case, if 
+// cleared in lower case.
 // 
 //----------------------------------------------------------------------------------------
 char SimFormatter::printBit( T64Word val, int pos, char printChar ) {
@@ -524,10 +532,10 @@ char SimFormatter::printBit( T64Word val, int pos, char printChar ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "printNumber" will print the number in the selected format. There quite a few HEX
-// format to ease the printing of large numbers as we have in 64-bit system. If the 
-// "invalid number" option is set in addition to the number format, the format is filled 
-// with asterisks instead of numbers.
+// "printNumber" will print the number in the selected format. There quite a few
+// formats to ease the printing of large numbers as we have in 64-bit system.
+// If the "invalid number" option is set in addition to the number format, the 
+// format is filled with asterisks instead of numbers.
 //
 //----------------------------------------------------------------------------------------
 int SimFormatter::printNumber( T64Word val, uint32_t fmtDesc ) {
@@ -807,8 +815,10 @@ int SimFormatter::printNumber( T64Word val, uint32_t fmtDesc ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The window system sometimes prints numbers in a field with a given length. This
-// routine returns based format descriptor and optional value the necessary field length.
+// This routine returns the number of character needed for a numeric value 
+// based on the format descriptor. The optional value parameter is only used
+// for decimal numbers with a FNT_DEC formatter option, where the actual value 
+// determines the number of character required.
 //
 //----------------------------------------------------------------------------------------
 int SimFormatter::numberFmtLen( uint32_t fmtDesc, T64Word val ) {

@@ -232,7 +232,8 @@ void T64ProcThreadModule::moduleWorker( ) {
 
                     if (( mTrapCode != NO_TRAP ) && ( enterSimOnTrap )) {
 
-                        mState.store(T64_MOD_STATE_HALTED, std::memory_order_release);
+                        mState.store( T64_MOD_STATE_HALTED, 
+                                      std::memory_order_release );
                         break;
                     }
 

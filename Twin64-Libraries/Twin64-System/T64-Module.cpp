@@ -3,8 +3,8 @@
 // Twin-64 - Module Base Class
 //
 //----------------------------------------------------------------------------------------
-// The T64-System represent the system consisting of several modules. A module is
-// an object plugged into the imaginary system bus. It has a type and a module 
+// The T64-System represent the system consisting of several modules. A module 
+// is an object plugged into the imaginary system bus. It has a type and a module 
 // number, which is the slot in that bus. Each module has a dedicated memory
 // page page in the IO HPA space. The address is easily computed from the slot 
 // number. In addition, a module can have several SPA regions. This is however

@@ -26,8 +26,8 @@
 #include "T64-Common.h"
 
 //----------------------------------------------------------------------------------------
-// Byte order conversion functions. They are different on Mac and Windows and LINUX,
-// GCC and CLANG.
+// Byte order conversion functions. They are different on Mac and Windows and 
+// LINUX, GCC and CLANG.
 //
 //----------------------------------------------------------------------------------------
 #if defined(__APPLE__)
@@ -584,8 +584,8 @@ inline uint8_t tlbInfoPageSize( T64Word tlbInfo ) {
 
 //----------------------------------------------------------------------------------------
 // Address arithmetic. Address are computed using an unsigned 32-bit arithmetic.
-// The address "adr" is a 64 bit address to which we will add in the offset portion
-// the 32-bit signed "ofs" value. 
+// The address "adr" is a 64 bit address to which we will add in the offset 
+// portion the 32-bit signed "ofs" value. 
 //
 //----------------------------------------------------------------------------------------
 inline T64Word addAdrOfs32( T64Word adr, T64Word ofs ) {

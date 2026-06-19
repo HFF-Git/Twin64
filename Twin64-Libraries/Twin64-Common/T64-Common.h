@@ -3,31 +3,32 @@
 //  Twin64Sim - A 64-bit CPU Simulator - Common Declarations
 //
 //----------------------------------------------------------------------------------------
-// ...
+// T64 has a set of fundamental constants and types. Each module should include
+// this file and work with these items.
 //
 //----------------------------------------------------------------------------------------
 //
 // Twin64Sim - A 64-bit CPU Simulator - Common Declarations
 // Copyright (C) 2020 - 2026 Helmut Fieres
 //
-// This program is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or any later version.
+// This program is free software: you can redistribute it and/or modify it under 
+// the terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should
-//  have received a copy of the GNU General Public License along with this program.  
-// If not, see <http://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #pragma once
 
 //----------------------------------------------------------------------------------------
-// Mac and Windows know different include files and procedure names for some POSIX 
-// routines. Learned the hard way that these files better come really early in the
-// project. All libraries and modules depend on these basic type definitions and 
-// include the "T64-Common.h" file early on.
+// Mac and Windows know different include files and procedure names for some 
+// POSIX routines. Learned the hard way that these files better come really early
+// in the project. All libraries and modules depend on these basic constants and
+// type definitions and include the "T64-Common.h" file early on.
 //
 //----------------------------------------------------------------------------------------
 #if __APPLE__
@@ -165,14 +166,13 @@ enum T64TrapCode : int {
     PAGE_REF_TRAP                   = 19,
     BREAK_INSTR_TRAP                = 20,
 
-    USER_DEFINED_TRAP               = 21,
-    
+    USER_DEFINED_TRAP               = 21
 };
 
 //----------------------------------------------------------------------------------------
 // Trap definition. A Trap will consist of a trap code, the trapping instruction 
-// address and up to two additional arguments. On an error condition,tThe processor
-// subsystems throw a trap. 
+// address and up to two additional arguments. On an error condition, the CPU
+// throws a trap. 
 //
 //----------------------------------------------------------------------------------------
 struct T64Trap {
@@ -289,7 +289,7 @@ enum OpCodeFam : uint32_t {
 // the module. 
 //
 //----------------------------------------------------------------------------------------
-
+// ??? what to include here...
 
 //----------------------------------------------------------------------------------------
 // Within a regs set, registers defined. Register set zero has architected 

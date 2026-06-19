@@ -3,8 +3,8 @@
 //  Twin64Sim - A 64-bit CPU Simulator - Common utility functions
 //
 //----------------------------------------------------------------------------------------
-// Helper functions that are not declared inline are in this file. So far the file
-// is a place holder...
+// Helper functions that can not be declared inline are in this file. So far the 
+// file is a place holder.
 //
 //----------------------------------------------------------------------------------------
 //

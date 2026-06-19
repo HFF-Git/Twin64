@@ -3,26 +3,26 @@
 // Twin-64 - System
 //
 //----------------------------------------------------------------------------------------
-// The T64-System represent the system consisting of several modules. Modules are
-// for example processor, memory and I/O modules. The simulator is connected to
-// the system which handles all module functions. A program start, the individual
-// modules are registered to the system. Think of a kind of bus where you plug in
-// boards.  
+// The T64-System represent the system consisting of several modules. Modules 
+// are for example processor, memory and I/O modules. The simulator is connected
+// to the system which handles all module functions. A program start, the all
+// modules are registered to the system. Think of a kind of bus where you plug
+// in boards.  
 //
 //----------------------------------------------------------------------------------------
 //
 //  Twin-64 - System
 // Copyright (C) 2020 - 2026 Helmut Fieres
 //
-// This program is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or any later version.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should
-//  have received a copy of the GNU General Public License along with this program.  
-// If not, see <http://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #pragma once
@@ -35,9 +35,9 @@
 #include <condition_variable>
 
 //----------------------------------------------------------------------------------------
-// The architecture defines 64 module on the system bus so far. Typically the number
-// of imaginary boards is much smaller. However, a board could have several modules on
-// one board. To the software this transparent.
+// The architecture defines 64 module on the system bus so far. Typically the 
+// number of imaginary boards is much smaller. However, a board could have 
+// several modules on one board. To the software this transparent.
 //
 //----------------------------------------------------------------------------------------
 const int MAX_MODULES           = 16;
@@ -222,7 +222,8 @@ struct T64ProcThreadModule : T64Module {
 
 //----------------------------------------------------------------------------------------
 // Each module is stored in the module map. Since module is an abstract class 
-// the module map cannot be just an array of modules. We package it into a struct.
+// the module map cannot be just an array of modules. We package it into a 
+// struct.
 //
 //----------------------------------------------------------------------------------------
 struct T64ModuleMapEntry {
@@ -231,9 +232,10 @@ struct T64ModuleMapEntry {
 };
 
 //----------------------------------------------------------------------------------------
-// A T64 system is a bus where you plug in modules. A module represents an entity
-// such as a processor, a memory module, an I/O module and so on. At program start
-// we create the module objects and add them to the respective maps. 
+// A T64 system is a bus where you plug in modules. A module represents an 
+// entity such as a processor, a memory module, an I/O module and so on. At 
+// program start we create the module objects and add them to the respective 
+// maps. 
 //
 //----------------------------------------------------------------------------------------
 struct T64System {

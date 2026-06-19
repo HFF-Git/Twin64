@@ -3,13 +3,13 @@
 // T64 - A 64-bit Processor - One Line Assembler
 //
 //----------------------------------------------------------------------------------------
-// The one line assembler assembles an instruction without further context. It is 
-// intended to for testing instructions in the monitor. There is no symbol table 
-// or any concept of assembling multiple instructions. The instruction to generate 
-// test is completely self sufficient. The parser is a straightforward recursive 
-// descendant parser, LL1 grammar. It uses the C++ try / catch to escape when an 
-// error is detected. Considering that we only have one line to  parse, there is 
-// no need to implement a better parser error recovery method.
+// The one line assembler assembles an instruction without further context. It 
+// is intended to for testing instructions in the monitor. There is no symbol 
+// table or any concept of assembling multiple instructions. The instruction to
+// generate test is completely self sufficient. The parser is a straightforward 
+// recursive descendant parser, LL1 grammar. It uses the C++ try / catch to
+// escape when an error is detected. Considering that we only have one line to 
+// parse, there is no need to implement a better parser error recovery method.
 //
 //----------------------------------------------------------------------------------------
 //
@@ -20,11 +20,11 @@
 // the terms of the GNU General Public License as published by the Free Software 
 // Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You 
-// should have received a copy of the GNU General Public License along with this 
-// program.  If not, see <http://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with 
+// this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #include "T64-InlineAsm.h"
@@ -220,14 +220,7 @@ enum TokId : int {
     TOK_OP_PICA     = 365,  TOK_OP_PDCA     = 366,  
     TOK_OP_FICA     = 367,  TOK_OP_FDCA     = 368,
     
-    TOK_OP_RFI      = 371,  TOK_OP_DIAG     = 372,  TOK_OP_TRAP     = 373,
-    
-    //------------------------------------------------------------------------------------
-    // Synthetic OP Code Tokens.
-    //
-    // ??? tbd
-    //------------------------------------------------------------------------------------
-   
+    TOK_OP_RFI      = 371,  TOK_OP_DIAG     = 372,  TOK_OP_TRAP     = 373
 };
 
 //----------------------------------------------------------------------------------------
@@ -244,12 +237,13 @@ struct Token {
 };
 
 //----------------------------------------------------------------------------------------
-// An instruction template consists of the instruction group bits ( 31,30 ), the op 
-// code family bits ( 29, 28, 27, 26 ) and the option or mode bits ( 21, 20, 19 ). The
-// mode bits are for some instruction the default and could be changed during the 
-// parsing process. From the defined constants we will build the instruction template 
-// which is stored for the opcode mnemonic in the token value field. The values for the
-// opcode group and the opcode families are in the "T64-Types" include file.
+// An instruction template consists of the instruction group bits ( 31,30 ), 
+// the opcode family bits ( 29, 28, 27, 26 ) and the option or mode bits ( 21,
+// 20, 19 ). The mode bits are for some instruction the default and could be 
+// changed during the parsing process. From the defined constants we will build
+// the instruction template which is stored for the opcode mnemonic in the token 
+// value field. The values for the opcode group and the opcode families are in 
+// the "T64-Types" include file.
 //
 //----------------------------------------------------------------------------------------
 enum InstrTemplate : uint32_t {
@@ -309,10 +303,10 @@ enum InstrTemplate : uint32_t {
 };
 
 //----------------------------------------------------------------------------------------
-// Instruction flags. They are used to keep track of instruction attributes used in 
-// assembling the final instruction word. Examples are the data width encoded in the 
-// opCode and the instruction mask. We define all options and masks for the respective
-// instruction where they are valid.
+// Instruction flags. They are used to keep track of instruction attributes used 
+// in assembling the final instruction word. Examples are the data width encoded
+// in the opCode and the instruction mask. We define all options and masks for 
+// the respective instruction where they are valid.
 //
 //----------------------------------------------------------------------------------------
 enum InstrFlags : uint32_t {
@@ -380,10 +374,11 @@ enum InstrFlags : uint32_t {
 };
 
 //----------------------------------------------------------------------------------------
-// The global token table or the one line assembler. All reserved words are allocated 
-// in this table. Each entry has the token name, the token id, the token type id, i.e.
-// its type, and a value associated with the token. The value allows for a constant 
-// token. The parser can directly use the value in an expression.
+// The global token table or the one line assembler. All reserved words are 
+// allocated in this table. Each entry has the token name, the token id, the
+// token type id, i.e. its type, and a value associated with the token. The 
+// value allows for a constant token. The parser can directly use the value in
+// an expression.
 //
 //----------------------------------------------------------------------------------------
 const Token AsmTokTab[ ] = {
@@ -459,10 +454,10 @@ const Token AsmTokTab[ ] = {
     { .name = "SAR",    .typ = TYP_CREG,    .tid = TOK_CR_4,    .val =  2   },
     
     //------------------------------------------------------------------------------------
-    // Assembler mnemonics. Like all other tokens, we have the name, the type and the 
-    // token Id. In addition, the ".val" field contains the initial instruction mask
-    // with opCode group, opCode family and the bits set in the first option field to
-    // further qualify the instruction.
+    // Assembler mnemonics. Like all other tokens, we have the name, the type 
+    // and the token Id. In addition, the ".val" field contains the initial
+    // instruction mask with opCode group, opCode family and the bits set in the
+    // first option field to further qualify the instruction.
     //
     //------------------------------------------------------------------------------------
     {   .name   = "ADD",        .typ = TYP_OP_CODE, 
@@ -613,24 +608,15 @@ const Token AsmTokTab[ ] = {
         .tid    = TOK_OP_DIAG,  .val = ( OPG_SYS | OPF_DIAG   | OPM_FLD_0 ) },
 
     {   .name   = "NOP",        .typ = TYP_OP_CODE, 
-        .tid    = TOK_OP_NOP,   .val = ( OPG_ALU | OPF_NOP    | OPM_FLD_0 ) },
-    
-    //------------------------------------------------------------------------------------
-    // Assembler synthetic mnemonics. They are like the assembler mnemonics, except 
-    // that they pre decode some bits settings in the option fields and reduce the 
-    // ".<opt>" notation settings through meaningful instruction mnemonics.
-    //
-    // ??? tbd...
-    //------------------------------------------------------------------------------------
-   
+        .tid    = TOK_OP_NOP,   .val = ( OPG_ALU | OPF_NOP    | OPM_FLD_0 ) }
 };
 
 const int MAX_ASM_TOKEN_TAB = sizeof( AsmTokTab ) / sizeof( Token );
 
 //----------------------------------------------------------------------------------------
-// Expression value. The analysis of an expression results in a value. Depending on 
-// the expression type, the values are simple scalar values or a structured value, such
-// as a register pair or virtual address.
+// Expression value. The analysis of an expression results in a value. Depending
+// on the expression type, the values are simple scalar values or a structured 
+// value, such as a register pair or virtual address.
 //
 //----------------------------------------------------------------------------------------
 struct Expr {
@@ -769,7 +755,9 @@ T64Word modOp( Expr *a, Expr *b ) {
 //----------------------------------------------------------------------------------------
 // "parseNum" will parse a number. We accept decimals, hexadecimals and binary 
 // numbers. The numeric string can also contain "_" characters for readability.
-// Hex numbers start with "0x", binary with "0b", decimals just with numeric digits.
+// Hex numbers start with "0x", binary with "0b", decimals just with numeric
+//  digits.
+//
 //----------------------------------------------------------------------------------------
 void parseNum( ) {
     
@@ -852,12 +840,13 @@ void parseNum( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseIdent" parses an identifier. It is a sequence of characters starting with an
-// alpha character. An identifier found in the token table will assume the type and 
-// value of the token found. Any other identifier is just an identifier symbol. There
-// is one more thing. There are qualified constants that begin with a character followed 
-// by a percent character, followed by a numeric value. During the character analysis,
-// We first check for these kind of qualifiers and if found hand over to parse a number.
+// "parseIdent" parses an identifier. It is a sequence of characters starting 
+// with an alpha character. An identifier found in the token table will assume 
+// the type and value of the token found. Any other identifier is just an 
+// identifier symbol. There is one more thing. There are qualified constants 
+// that begin with a character followed by a percent character, followed by a 
+// numeric value. During the character analysis, We first check for these kind
+// of qualifiers and if found hand over to parse a number.
 //
 //----------------------------------------------------------------------------------------
 void parseIdent( ) {
@@ -1278,17 +1267,27 @@ void parseExpr( Expr *rExpr ) {
 // Helper functions for instruction fields.
 //
 //----------------------------------------------------------------------------------------
-inline void depositInstrFieldS( T64Instr *instr, int bitpos, int len, T64Word value ) {
+inline void depositInstrFieldS( T64Instr *instr, 
+                                int bitpos, 
+                                int len, 
+                                T64Word value ) {
     
-    if ( isInRangeForInstrBitFieldS( value, len )) 
+    if ( isInRangeForInstrBitFieldS( value, len )) {
+
         depositInstrField( instr, bitpos, len, value );
+    }
     else throw ( ERR_IMM_VAL_RANGE );
 }
 
-inline void depositInstrFieldU( T64Instr *instr, int bitpos, int len, uint32_t value ) {
+inline void depositInstrFieldU( T64Instr *instr, 
+                                int bitpos,
+                                int len, 
+                                uint32_t value ) {
     
-    if ( isInRangeForInstrBitFieldU( value, len )) 
+    if ( isInRangeForInstrBitFieldU( value, len )) {
+
         depositInstrField( instr, bitpos, len, value );
+    }
     else throw ( ERR_IMM_VAL_RANGE );
 }
 
@@ -1362,8 +1361,9 @@ void setInstrCompareCondField( uint32_t *instr, uint32_t instrFlags ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Set the data width field for memory access type instructions based on the instruction
-// flags. If no date width flags is set, we set the default, which is "D".
+// Set the data width field for memory access type instructions based on the 
+// instruction flags. If no date width flags is set, we set the default, which
+// is "D".
 //
 //----------------------------------------------------------------------------------------
 void setInstrDwField( uint32_t *instr, uint32_t instrFlags ) {
@@ -1377,8 +1377,8 @@ void setInstrDwField( uint32_t *instr, uint32_t instrFlags ) {
 }
 
 //----------------------------------------------------------------------------------------
-// For the indexed addressing mode, the offset needs to be in alignment with the
-// data width.
+// For the indexed addressing mode, the offset needs to be in alignment with 
+// the data width.
 //
 //----------------------------------------------------------------------------------------
 void checkOfsAlignment( int ofs, uint32_t instrFlags ) {
@@ -1396,31 +1396,30 @@ void checkOfsAlignment( int ofs, uint32_t instrFlags ) {
 
 //----------------------------------------------------------------------------------------
 // "parseInstrOptions" will analyze the opCode option string. An opCode option 
-// string is a sequence of characters after the ".". We will look at each char in 
-// the "name" and set the options for the particular instruction. There are also 
-// options where the option is a multi-character sequence. They cannot be in the 
-// same group with a sequence of individual individual characters. Currently only
-// the CMP, CBR and MBR instructions are such cases.
+// string is a sequence of characters after the ".". We will look at each char 
+// in the "name" and set the options for the particular instruction. There are
+// also options where the option is a multi-character sequence. They cannot be 
+// in the same group with a sequence of individual individual characters. 
 //
-// The assembler can handle multiple ".xxx" sequences. One could for example put 
-// each individual character in a separate ".x" location. Once we have all options 
-// seen, we check that there are no conflicting options where only one option out 
-// of an option group can be set.
+// The assembler can handle multiple ".xxx" sequences. One could for example 
+// put each individual character in a separate ".x" location. Once we have all
+// options seen, we check that there are no conflicting options where only one
+// option out of an option group can be set.
 //
-// There are some instruction options that are exclusive to each other. There will 
-// be a check for this case after all options have been analyzed and the option 
-// mask has been created. There are also some instructions that require at least
-// one option from a particular group to be set. And there are instructions that 
-// have a default option if none from a particular group has been set. This will
-// also be handled after all options have been analyzed.
+// There are some instruction options that are exclusive to each other. There 
+// will be a check for this case after all options have been analyzed and the 
+// option mask has been created. There are also some instructions that require 
+// at least one option from a particular group to be set. And there are 
+// instructions that have a default option if none from a particular group has
+// been set. This will also be handled after all options have been analyzed.
 //
-// One more quirk. The branch instruction "B" conflicts with the ".B" option. We
-// need to check the context. The tokenizer recognizes an opCOde, we patch the 
-// token to be an identifier.
+// One more quirk. The branch instruction "B" conflicts with the ".B" option. 
+// We need to check the context. The tokenizer recognizes an opCOde, we patch 
+// the token to be an identifier.
 //
-// Once all instruction options have been analyzed, we do a final check to see if 
-// the options set are valid for the particular instruction. For example, the EXTR  
-// instruction cannot have any data width options set.
+// Once all instruction options have been analyzed, we do a final check to see 
+// if the options set are valid for the particular instruction. For example, 
+// the EXTR instruction cannot have any data width options set.
 //
 //----------------------------------------------------------------------------------------
 void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
@@ -1584,8 +1583,8 @@ void parseInstrOptions( uint32_t *instrFlags, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The following routines parse a general register and store the register ID in the 
-// respective instruction field.
+// The following routines parse a general register and store the register ID
+// in the respective instruction field.
 //
 //----------------------------------------------------------------------------------------
 void acceptRegR( uint32_t *instr ) {
@@ -1628,9 +1627,9 @@ void parseNopInstr( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseModeTypeInstr" parses all instructions of type "mode" based on the syntax, 
-// which will determine the exact instruction layout and option setting. An 
-// exception is the CMP instruction, which is handled in a separate function.
+// "parseModeTypeInstr" parses all instructions of type "mode" based on the 
+// syntax, which will determine the exact instruction layout and option setting.
+// An exception is the CMP instruction, which is handled in a separate function.
 //
 // Instruction group ALU syntax:
 //
@@ -1641,10 +1640,6 @@ void parseNopInstr( uint32_t *instr, uint32_t instrOpToken ) {
 //
 //      opCode [ "." <opt> ] <targetReg> "," [ <num> ]  "(" <baseReg> ")"  
 //      opCode [ "." <opt> ] <targetReg> "," <indexReg> "(" <baseReg> ")"  
-//
-// There are a couple of exceptions to handle. First, the CMP instruction mnemonic
-// needs to be mapped to CMP_A and CMP_B code, depending on the actual instruction 
-// format.
 //
 // When we have the indexed addressing mode, the numeric offset needs to be in 
 // alignment with the data width.
@@ -1729,7 +1724,7 @@ void parseModeTypeInstr( uint32_t *instr, uint32_t instrOpToken ) {
 //----------------------------------------------------------------------------------------
 // "parseInstrCMP" parses the CMP instruction. It is very similar to the mode 
 // type instructions. Since we map the CMP instruction to two different opCodes
-// it is clearer to hav it in a separate function, even if we duplicate a lot. 
+// it is clearer to have it in a separate function, even if we duplicate a lot. 
 //
 // Instruction group ALU syntax:
 //
@@ -1818,9 +1813,10 @@ void parseInstrCMP( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseInstrEXTR" parses the extract instruction. The instruction has two basic 
-// formats. When the "A" bit is set, the position will be obtained from the shift 
-// amount control register. Otherwise, the position it is encoded in the instruction.
+// "parseInstrEXTR" parses the extract instruction. The instruction has two 
+// basic formats. When the "A" bit is set, the position will be obtained from 
+// the shift amount control register. Otherwise, the position it is encoded in
+// the instruction.
 //
 //      EXTR [ ".S“ ]  <targetReg> "," <sourceReg> "," <pos> "," <len"
 //      EXTR [ ".S" ]  <targetReg> "," <sourceReg> ", "SAR", <len"
@@ -1871,10 +1867,10 @@ void parseInstrEXTR( uint32_t *instr, uint32_t instrOpToken ) {
 
 //----------------------------------------------------------------------------------------
 // "parseInstrDEP" parses the deposit instruction. The instruction has two basic 
-// formats. When the "I" option is set, the value to deposit is an immediate value, 
-// else the data comes from a general register. When "SAR" is specified instead of a 
-// bit position, the "A" bit is encoded in the instruction. When the value to deposit 
-// is a numeric value, the "I" bit is set.
+// formats. When the "I" option is set, the value to deposit is an immediate 
+// value, else the data comes from a general register. When "SAR" is specified 
+// instead of a bit position, the "A" bit is encoded in the instruction. When 
+// the value to deposit is a numeric value, the "I" bit is set.
 //
 //      DEP [ ".“ Z ] <targetReg> "," <sourceReg> "," <pos> "," <len>"
 //      DEP [ ".“ Z ] <targetReg> "," <sourceReg> "," "SAR" "," <len>"
@@ -1939,9 +1935,9 @@ void parseInstrDEP( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseInstrDSR" parses the double shift instruction. There are two flavors. If the
-// "length operand is the "SAR" register, the "A" bit is encoded in the instruction, 
-// other wise the instruction "len" field.
+// "parseInstrDSR" parses the double shift instruction. There are two flavors. 
+// If the "length operand is the "SAR" register, the "A" bit is encoded in the 
+// instruction, other wise the instruction "len" field.
 //
 //      DSR <targetReg> "," <sourceRegA> "," <sourceRegB> "," <len>
 //      DSR <targetReg> "," <sourceRegA> "," <sourceRegB> "," SAR
@@ -1974,9 +1970,9 @@ void parseInstrDSR( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The SHLA instruction performs a shift left of "B" by the instruction encoded shift 
-// amount and adds the "A" register to it. If the ".I" option is set, the RegA field is
-// interpreted as a number.
+// The SHLA instruction performs a shift left of "B" by the instruction encoded 
+// shift amount and adds the "A" register to it. If the ".I" option is set, the
+// RegA field is interpreted as a number.
 //
 //      SHLxA       <targetReg> "," <sourceRegB> "," <sourceRegA>
 //      SHLxA ".I"  <targetReg> "," <sourceRegA> "," <val>
@@ -2019,9 +2015,9 @@ void parseInstrSHLxA( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The SHRA instruction performs a shift right of "B" by the instruction encoded shift
-// amount and adds the "A" register to it. for a numeric value instead of RegA, the 
-// register field is a numeric value and the "I" option is set.
+// The SHRA instruction performs a shift right of "B" by the instruction encoded
+// shift amount and adds the "A" register to it. for a numeric value instead of
+// RegA, the register field is a numeric value and the "I" option is set.
 //
 //      SHRxA       <targetReg> "," <sourceRegB> "," <sourceRegA>
 //      SHRxA ".I"  <targetReg> "," <sourceRegA> "," <val>
@@ -2064,9 +2060,9 @@ void parseInstrSHRxA( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The IMM-OP instruction group deals with the loading of immediate subfield and the
-// addition of the ADDIL instruction, which will add the encoded value left shifted to
-// <sourceReg>. The result is in R1.
+// The IMM-OP instruction group deals with the loading of immediate subfield and
+// the addition of the ADDIL instruction, which will add the encoded value left
+// shifted to <sourceReg>. The result is in R1.
 //
 //      LDIL [ .L/S/U ] <targetReg> "," <val>
 //
@@ -2095,9 +2091,9 @@ void parseInstrLDIL( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The ADDIL-OP instruction group deals with the loading of immediate subfield and the
-// addition of the ADDIL instruction, which will add the encoded value left shifted to
-// <sourceReg>. The result is in R1.
+// The ADDIL-OP instruction group deals with the loading of immediate subfield 
+// and the addition of the ADDIL instruction, which will add the encoded value
+// left shifted to <sourceReg>. The result is in R1.
 //
 //      ADDIL <sourceReg> "," <val>
 //
@@ -2121,8 +2117,9 @@ void parseInstrADDIL( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The "LDO" instruction computes the address of an operand, and stores the result
-// in "R". Like the MemOp family, the LDO instruction has a dataWidth field.
+// The "LDO" instruction computes the address of an operand, and stores the 
+// result in "R". Like the MemOp family, the LDO instruction has a dataWidth 
+// field.
 //
 //      LDO [.B/H/W/D] <targetReg> "," [ <ofs> ] "(" <baseReg> ")"
 //      LDO <targetReg> "," [ <indexReg> ] "(" <baseReg> ")"
@@ -2165,9 +2162,10 @@ void parseInstrLDO( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseMemOp" parses the load and store instruction family. The LD and ST family 
-// can have an option for specifying the data width. The LDR and STC instruction do 
-// not have an option. However we set the dataWidth field for them to "D".
+// "parseMemOp" parses the load and store instruction family. The LD and ST 
+// family can have an option for specifying the data width. The LDR and STC 
+// instruction do not have an option. However we set the dataWidth field for 
+// them to "D".
 //
 //       LD  [.B/H/W/D/U ] <targetReg> ","  [ <ofs> ] "(" <baseReg> ")"
 //       LD  [.B/H/W/D/U ] <targetReg> ","  [ <indexReg> ] "(" <baseReg> ")"
@@ -2217,8 +2215,8 @@ void parseMemOp( T64Instr *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseOpB" parses the branch instruction. The branch instruction may have the "gate"
-// option.
+// "parseOpB" parses the branch instruction. The branch instruction may have 
+// the "gate" option.
 //
 //      B [ .G ] <ofs> [ "," <Reg R> ]
 //
@@ -2255,8 +2253,8 @@ void parseInstrB( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseOpBE" is the external branch. We add and offset to RegB which forms the target 
-// offset. Optionally, we can specify a return link register.
+// "parseOpBE" is the external branch. We add and offset to RegB which forms 
+// the target offset. Optionally, we can specify a return link register.
 //
 //      BE  [ <ofs> ] "(" <regB> ")" [ "," <regR> ]
 //
@@ -2295,8 +2293,8 @@ void parseInstrBE( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseOpBR" is the IA-relative branch adding RegB to IA. Optionally, we can specify
-// a return link register.
+// "parseOpBR" is the IA-relative branch adding RegB to IA. Optionally, we can
+// specify a return link register.
 //
 //      BR [.W/D/Q] <regB> [ "," <regR> ]
 //
@@ -2328,8 +2326,8 @@ void parseInstrBR( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseOpBV" is the vectored branch. We add RegX and RegB, which form the target 
-// offset. Optionally, we can specify a return link register.
+// "parseOpBV" is the vectored branch. We add RegX and RegB, which form the 
+// target offset. Optionally, we can specify a return link register.
 //
 //      BV [.W/D/Q] [ <RegX> "," ] "(" <RegB> ")" [ "," <regR> ]
 //
@@ -2473,8 +2471,8 @@ void parseInstrMFCR( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseInstrMTCR" copies a general register to control register and saves the old
-// in a general register.
+// "parseInstrMTCR" copies a general register to control register and saves 
+// the old in a general register.
 //
 //      MTCR <RegB> "," <CReg> [ "," <RegR> ]
 //
@@ -2488,7 +2486,10 @@ void parseInstrMTCR( uint32_t *instr, uint32_t instrOpToken ) {
     acceptComma( );
 
     parseExpr( &rExpr );
-    if (  rExpr.typ == TYP_CREG ) depositInstrField( instr, 0, 6, (uint32_t) rExpr.val );
+    if (  rExpr.typ == TYP_CREG ) {
+
+        depositInstrField( instr, 0, 6, (uint32_t) rExpr.val );
+    }
     else throw ( ERR_EXPECTED_CONTROL_REG );
 
     if ( isToken ( TOK_COMMA )) {
@@ -2592,9 +2593,9 @@ void parseInstrPRB( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseInstrInsertTlbOp" inserts a translation in the TLB. RegB contains the virtual
-// address. RegA contains the info on access rights and physical address. The result
-// is in RegR.
+// "parseInstrInsertTlbOp" inserts a translation in the TLB. RegB contains the
+// virtual address. RegA contains the info on access rights and physical 
+// address fields. The result is in RegR.
 //
 //      IITLB <targetReg> "," <RegB> "," <RegA>
 //      IDTLB <targetReg> "," <RegB> "," <RegA>
@@ -2612,8 +2613,8 @@ void parseInstrInsertTlb( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseInstrPurgeTlbOp" removes a translation in the TLB. RegB contains the virtual
-// address. The result is in RegR.
+// "parseInstrPurgeTlbOp" removes a translation in the TLB. RegB contains the
+// virtual address base and RegX an offset to be added.
 //
 //      PITLB <targetReg> "," [ <RegX> ] "(" <RegB> ")"
 //      PDTLB <targetReg> "," [ <RegX> ] "(" <RegB> ")"
@@ -2640,8 +2641,8 @@ void parseInstrPurgeTlb( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseInstrFlushCacheOp" assemble the cache flush operation. This only applies 
-// to data or unified caches.
+// "parseInstrFlushCacheOp" assemble the cache flush operation. This only 
+// applies to data or unified caches.
 //
 //      FICA <targetReg> "," [ <RegX> ] "(" <RegB> ")"
 //      FDCA <targetReg> "," [ <RegX> ] "(" <RegB> ")"
@@ -2726,8 +2727,8 @@ void parseInstrRFI( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseInstrDIAG" is the general purpose diagnostic instruction. It accepts two 
-// registers and returns a result in the target register.
+// "parseInstrDIAG" is the general purpose diagnostic instruction. It accepts 
+// two registers and returns a result in the target register.
 //
 //      DIAG <RegR> "," <val> "," <RegB> "," <RegA"
 //
@@ -2789,9 +2790,9 @@ void parseInstrTrapOp( uint32_t *instr, uint32_t instrOpToken ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "parseLine" will take the input string and parse the line for an instruction. In 
-// the one-line case, there is only the opCode mnemonic and the argument list. No 
-// labels, comments are ignored.
+// "parseLine" will take the input string and parse the line for an instruction.
+// In the one-line case, there is only the opCode mnemonic and the argument list.
+// No labels, comments are ignored.
 //
 //----------------------------------------------------------------------------------------
 void parseLine( char *inputStr, uint32_t *instr ) {
@@ -2925,5 +2926,5 @@ const char *T64Assemble::getErrStr( int errId ) {
         if ( ErrMsgTable[ i ].msgId == errId ) return ( ErrMsgTable[ i ].msg );
     }
     
-    return ( "Unknown Error Id" );
+    return ( "ASM: Unknown Error Id" );
 }
