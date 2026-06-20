@@ -649,6 +649,7 @@ SimWinMem::SimWinMem( SimGlobals *glb, T64Word adr ) : SimWinScrollable( glb ) {
     this -> adr                 = rounddown( adr, 8 );
     this -> lastWinItemAdr      = 0;
     this -> lastWinRows         = 0;
+    this -> lastWinToggleVal    = 0;
 
     for ( int i = 0; i < sizeof( lastDataBuf ); i++ ) lastDataBuf[ i ] = 0;
 
@@ -658,7 +659,7 @@ SimWinMem::SimWinMem( SimGlobals *glb, T64Word adr ) : SimWinScrollable( glb ) {
 //----------------------------------------------------------------------------------------
 // The default values are the initial settings when windows is brought up the 
 // first time, or for the WDEF command. The memory window is a window where the 
-// number of lines to display can be set. However, the minimum is the default 
+// number of lines to display varies. However, the minimum is the default 
 // number of lines.
 //
 //----------------------------------------------------------------------------------------
@@ -686,8 +687,11 @@ void SimWinMem::setDefaults( ) {
 //----------------------------------------------------------------------------------------
 // In addition to the module and window info, the banner line shows the item 
 // home address. Depending on the current toggleVal, we do some housekeeping
-// for presentation radix, 
-//
+// for presentation radix, and format mode. When the window toggle val, the 
+// number if rows or the window item address changed, we need to reload the
+// lastDataBuffer with the memory content of this range in order to support
+// the highlighting of changed values.
+// 
 //----------------------------------------------------------------------------------------
 void SimWinMem::drawBanner( ) {
 
@@ -770,11 +774,13 @@ void SimWinMem::drawBanner( ) {
     }   
 
     if (( getWinToggleVal( ) < 4 ) && 
-        (( lastWinItemAdr != getCurrentItemAdr( )) ||
-        ( lastWinRows    != getRows( )))) {
+        (( lastWinToggleVal != getWinToggleVal( )) || 
+         ( lastWinItemAdr != getCurrentItemAdr( )) ||
+         ( lastWinRows    != getRows( )))) {
 
-        lastWinItemAdr = getCurrentItemAdr( );
-        lastWinRows    = getRows( );
+        lastWinItemAdr      = getCurrentItemAdr( );
+        lastWinRows         = getRows( );
+        lastWinToggleVal    = getWinToggleVal( );
 
         int numOfBytes = ( getRows( ) - 1 ) * 32;
 
@@ -788,11 +794,254 @@ void SimWinMem::drawBanner( ) {
 }
 
 //----------------------------------------------------------------------------------------
+// "drawMemDataLineHex32" prints out a line of memory in HEX32-bit chunks. We 
+// consult a last data buffer to see if the actual value is different from the
+// last recorded value. If so, we highlight. 
+//
+//----------------------------------------------------------------------------------------
+void SimWinMem::drawMemDataLineHex32( T64Word itemAdr ) {
+
+    uint32_t   fmtDesc  = FMT_DEFAULT;
+    T64Word    limit    = getLineIncrementItemAdr( );
+
+    for ( int i = 0; i < limit; i = i + sizeof( uint32_t) ) {
+
+        uint32_t actualVal = 0;
+        if ( readMem( glb -> system, 
+                      itemAdr + i, 
+                      (uint8_t *)&actualVal, 
+                      sizeof( actualVal ))) {
+
+            T64Word tmpAdr = ( itemAdr + i ) - getCurrentItemAdr( );
+            uint32_t dataVal = 0;
+
+            copyEndianAware((uint8_t *) &dataVal, 
+                            &lastDataBuf[tmpAdr], 
+                            sizeof( dataVal ));
+        
+            if ( dataVal != actualVal ) {
+
+                copyEndianAware(&lastDataBuf[tmpAdr],
+                                (uint8_t *) &actualVal, 
+                                sizeof( actualVal ));
+
+                printNumericField( actualVal, fmtDesc | FMT_HEX_4_4 | FMT_FG_COL_AMBER );
+            } 
+            else printNumericField( actualVal, fmtDesc | FMT_HEX_4_4 );
+        }
+        else printNumericField( actualVal, fmtDesc | FMT_HEX_4_4 | FMT_INVALID_NUM );
+
+        printTextField((char *) "   " );
+    }
+
+    padLine( fmtDesc );
+}
+
+//----------------------------------------------------------------------------------------
+// "drawMemDataLineHex64" prints out a line of memory in HEX64-bit chunks. We 
+// consult a last data buffer to see if the actual value is different from the
+// last recorded value. If so, we highlight. 
+//
+// Note, this code is largely identical to the HEX32 code. Perhaps we could 
+// factor out a little better.
+//----------------------------------------------------------------------------------------
+void SimWinMem::drawMemDataLineHex64( T64Word itemAdr ) {
+
+    uint32_t   fmtDesc  = FMT_DEFAULT;
+    T64Word    limit    = getLineIncrementItemAdr( );
+
+    for ( int i = 0; i < limit; i = i + sizeof( T64Word ) ) {
+
+        T64Word actualVal = 0;
+        if ( readMem( glb -> system, 
+                      itemAdr + i, 
+                      (uint8_t *)&actualVal, 
+                      sizeof( actualVal ))) {
+
+            T64Word tmpAdr  = ( itemAdr + i ) - getCurrentItemAdr( );
+            T64Word dataVal = 0;
+
+            copyEndianAware((uint8_t *) &dataVal, 
+                            &lastDataBuf[tmpAdr], 
+                            sizeof( dataVal ));
+
+            if ( dataVal != actualVal ) {
+
+               copyEndianAware( &lastDataBuf[tmpAdr],
+                                (uint8_t *) &actualVal, 
+                                sizeof( actualVal ));
+
+                printNumericField( actualVal, 
+                                   fmtDesc | FMT_HEX_4_4_4_4 | FMT_FG_COL_AMBER );
+            } 
+            else printNumericField( actualVal, fmtDesc | FMT_HEX_4_4_4_4 );
+        }
+        else printNumericField( actualVal, 
+                                fmtDesc | FMT_HEX_4_4_4_4 | FMT_INVALID_NUM );
+
+        printTextField((char *) "   " );
+    }
+
+    padLine( fmtDesc );
+}
+
+//----------------------------------------------------------------------------------------
+// "drawMemDataLineDec32" prints out a line of memory in DEC32-bit chunks. We 
+// consult a last data buffer to see if the actual value is different from the
+// last recorded value. If so, we highlight. 
+//
+//----------------------------------------------------------------------------------------
+void SimWinMem::drawMemDataLineDec32( T64Word itemAdr ) {
+
+    uint32_t   fmtDesc  = FMT_DEFAULT;
+    T64Word    limit    = getLineIncrementItemAdr( );
+
+    for ( int i = 0; i < limit; i = i + sizeof( uint32_t) ) {
+
+        uint32_t actualVal = 0;
+        if ( readMem( glb -> system, 
+                      itemAdr + i, 
+                      (uint8_t *)&actualVal, 
+                      sizeof( actualVal ))) {
+
+            T64Word tmpAdr  = ( itemAdr + i ) - getCurrentItemAdr( );
+            uint32_t dataVal = 0;
+
+            copyEndianAware((uint8_t *) &dataVal, 
+                            &lastDataBuf[tmpAdr], 
+                            sizeof( dataVal ));
+
+            if ( dataVal != actualVal ) {
+
+                copyEndianAware( &lastDataBuf[tmpAdr],
+                                (uint8_t *) &actualVal, 
+                                sizeof( actualVal ));
+
+                printNumericField( actualVal, fmtDesc | FMT_DEC_32 | FMT_FG_COL_AMBER );
+            } 
+            else printNumericField( actualVal, fmtDesc | FMT_DEC_32 );
+        }
+        else printNumericField( actualVal, fmtDesc | FMT_DEC_32 | FMT_INVALID_NUM );
+
+        printTextField((char *) "   " );
+    }
+
+    padLine( fmtDesc );
+}
+
+//----------------------------------------------------------------------------------------
+// "drawMemDataLineAscii4" prints out a line of memory in 4 byte ASCII chunks. 
+// We consult a last data buffer to see if the actual value is different from 
+// the last recorded value. If so, we highlight. 
+//
+//----------------------------------------------------------------------------------------
+void SimWinMem::drawMemDataLineAscii4( T64Word itemAdr ) {
+
+    uint32_t   fmtDesc  = FMT_DEFAULT;
+    T64Word    limit    = getLineIncrementItemAdr( );
+
+    for ( int i = 0; i < limit; i = i + sizeof( uint32_t) ) {
+
+        uint32_t actualVal = 0;
+        if ( readMem( glb -> system, 
+                      itemAdr + i, 
+                      (uint8_t *)&actualVal, 
+                      sizeof( actualVal ))) {
+
+            T64Word tmpAdr  = ( itemAdr + i ) - getCurrentItemAdr( );
+            uint32_t dataVal = 0;
+
+            copyEndianAware((uint8_t *) &dataVal, 
+                            &lastDataBuf[tmpAdr], 
+                            sizeof( dataVal ));
+
+            if ( dataVal != actualVal ) {
+
+                copyEndianAware( &lastDataBuf[tmpAdr],
+                                (uint8_t *) &actualVal, 
+                                sizeof( actualVal ));
+
+                printNumericField( actualVal, fmtDesc | FMT_ASCII_4 | FMT_FG_COL_AMBER );
+            } 
+            else printNumericField( actualVal, fmtDesc | FMT_ASCII_4 );
+        }
+        else printNumericField( actualVal, fmtDesc | FMT_ASCII_4 | FMT_INVALID_NUM );
+
+        printTextField((char *) "   " );
+    }
+
+    padLine( fmtDesc );
+}
+
+//----------------------------------------------------------------------------------------
+// "drawMemDataLineCode" prints out a memory word as a disassembled instruction.
+// Im contrast to the numeric display of data, we do not highlight a changed 
+// line.
+//
+//----------------------------------------------------------------------------------------
+void SimWinMem::drawMemDataLineCode( T64Word itemAdr ) {
+
+    uint32_t   fmtDesc                      = FMT_DEFAULT;
+    uint32_t   instr                        = 0x0;
+    bool       highLight                    = false;
+    char       buf[ MAX_TEXT_LINE_SIZE ]    = { 0 };
+
+    if ( readMem( glb -> system, 
+                  itemAdr, (uint8_t *) &instr, 
+                  sizeof( uint32_t ))) {
+
+        T64Word tmpAdr  = itemAdr - getCurrentItemAdr( );
+        uint32_t dataVal = 0;
+
+        copyEndianAware((uint8_t *) &dataVal, 
+                        &lastDataBuf[tmpAdr], 
+                        sizeof( dataVal ));
+
+        if ( dataVal != instr ) {
+
+            copyEndianAware( &lastDataBuf[tmpAdr],
+                             (uint8_t *) &instr, 
+                             sizeof( instr ));
+
+            highLight = true;
+        }
+    }
+    else {
+
+        printTextField((char *) "Invalid address", fmtDesc );
+        return;
+    }
+
+    if ( highLight ) {
+
+        fmtDesc |= FMT_FG_COL_AMBER;
+    }
+
+    printNumericField( instr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_8, 12 );
+
+    int pos          = getWinCursorCol( );
+    int opCodeField  = disAsm -> getOpCodeFieldWidth( );
+    int operandField = disAsm -> getOperandsFieldWidth( );
+    
+    clearField( opCodeField );
+    disAsm -> formatOpCode( buf, sizeof( buf ), instr );
+    printTextField( buf, fmtDesc, (int) strlen( buf ));
+    setWinCursor( 0, pos + opCodeField );
+    
+    clearField( operandField );
+    disAsm -> formatOperands( buf, sizeof( buf ), instr, 16 );
+    printTextField( buf, fmtDesc, (int) strlen( buf ));
+    setWinCursor( 0, pos + opCodeField + operandField );
+
+    padLine( fmtDesc );
+}
+
+//----------------------------------------------------------------------------------------
 // A scrollable window needs to implement a routine for displaying a row. We are 
 // passed the item address and need to map this to the actual meaning of the 
 // particular window. The "itemAdr" value is the byte offset into physical memory,
-// the line increment is 8 * 4 = 32 bytes. We show eight 32-bit words or 4 64-bit 
-// words. The toggle value will decide on the format:
+// the line increment 32 bytes, except for the code window toggle, where it is 
+// four. The toggle value will decide on the format:
 //
 // Toggle 0: (0x00_0000_0000) 0x0000_0000             ... 8 times HEX.
 // Toggle 1: (0x00_0000_0000) 0x0000_0000_0000_0000   ... 4 times HEX.
@@ -800,7 +1049,9 @@ void SimWinMem::drawBanner( ) {
 // Toggle 3: (0x00_0000_0000) "...." "...."           ... 8 times ASCII in "" 
 // Toggle 4: --- disassembler string ---
 //
-// 
+//
+// Note: there is perhaps some duplication in the the routines factored out. 
+// There are quite few commonalities, so one day, clean it up a little.
 //----------------------------------------------------------------------------------------
 void SimWinMem::drawLine( T64Word itemAdr ) {
 
@@ -811,97 +1062,12 @@ void SimWinMem::drawLine( T64Word itemAdr ) {
     printNumericField( itemAdr, fmtDesc | FMT_HEX_2_4_4_4 );
     printTextField((char *) "): ", fmtDesc );
 
-    if ( getWinToggleVal( ) == 0 ) {
-
-        for ( int i = 0; i < limit; i = i + 4 ) {
-
-            uint32_t val = 0;
-            if ( readMem( glb -> system, itemAdr + i, (uint8_t *)&val, sizeof( val ))) {
-
-                printNumericField( val, fmtDesc | FMT_HEX_4_4 );
-            }
-            else printNumericField( val, fmtDesc | FMT_HEX_4_4 | FMT_INVALID_NUM );
-
-            printTextField((char *) "   " );
-        }
-
-        padLine( fmtDesc );
-    }
-    else if ( getWinToggleVal( ) == 1 ) {
-
-        for ( int i = 0; i < limit; i = i + 8 ) {
-
-            T64Word val = 0;
-            if ( readMem( glb -> system, itemAdr + i, (uint8_t *)&val, sizeof( val ))) {
-
-                printNumericField( val, fmtDesc | FMT_HEX_4_4_4_4 );
-            }
-            else printNumericField( val, fmtDesc | FMT_HEX_4_4_4_4 | FMT_INVALID_NUM );
-
-            printTextField((char *) "   " );
-        }
-
-        padLine( fmtDesc );
-    }
-    else if ( getWinToggleVal( ) == 2 ) {
-
-        for ( int i = 0; i < limit; i = i + 4 ) {
-
-            uint32_t val = 0;
-            if ( readMem( glb -> system, itemAdr + i, (uint8_t *)&val, sizeof( val ))) {
-
-                printNumericField( val, fmtDesc | FMT_DEC_32 );
-                printTextField((char *) "   " );
-            }
-        }
-
-        padLine( fmtDesc );
-    }
-    else if ( getWinToggleVal( ) == 3 ) {
-
-        for ( int i = 0; i < limit; i = i + 4 ) {
-
-            uint32_t val = 0;
-            if ( readMem( glb -> system, itemAdr + i, (uint8_t *)&val, sizeof( val ))) {
-
-                printNumericField( val, fmtDesc | FMT_ASCII_4 );
-                printTextField((char *) "   " );
-            }
-        }
-
-        padLine( fmtDesc );
-    }
-    else if ( getWinToggleVal( ) == 4 ) {
-
-        uint32_t    instr                       = 0x0;
-        char        buf[ MAX_TEXT_LINE_SIZE ]   = { 0 };
-
-        if ( ! readMem( glb -> system, 
-                        itemAdr, (uint8_t *) &instr, 
-                        sizeof( uint32_t ))) {
-
-            printTextField((char *) "Invalid address", fmtDesc );
-            return;
-        }
-
-        printNumericField( instr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_8, 12 );
-    
-        int pos          = getWinCursorCol( );
-        int opCodeField  = disAsm -> getOpCodeFieldWidth( );
-        int operandField = disAsm -> getOperandsFieldWidth( );
-        
-        clearField( opCodeField );
-        disAsm -> formatOpCode( buf, sizeof( buf ), instr );
-        printTextField( buf, fmtDesc, (int) strlen( buf ));
-        setWinCursor( 0, pos + opCodeField );
-        
-        clearField( operandField );
-        disAsm -> formatOperands( buf, sizeof( buf ), instr, 16 );
-        printTextField( buf, fmtDesc, (int) strlen( buf ));
-        setWinCursor( 0, pos + opCodeField + operandField );
-
-        padLine( fmtDesc );
-    }
+    if      ( getWinToggleVal( ) == 0 ) drawMemDataLineHex32( itemAdr );
+    else if ( getWinToggleVal( ) == 1 ) drawMemDataLineHex64( itemAdr );
+    else if ( getWinToggleVal( ) == 2 ) drawMemDataLineDec32( itemAdr );
+    else if ( getWinToggleVal( ) == 3 ) drawMemDataLineAscii4( itemAdr );
+    else if ( getWinToggleVal( ) == 4 ) drawMemDataLineCode( itemAdr );
+    else printTextField((char *) "Internal Err: toggleVal" );
 }
 
 //****************************************************************************************

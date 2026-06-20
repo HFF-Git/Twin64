@@ -121,13 +121,16 @@ void SimWin::setRows( int arg ) {
     if ( arg < 1 ) arg = 1;
     if ( arg > MAX_WIN_ROW_SIZE ) arg = MAX_WIN_ROW_SIZE;
 
-    int maxRows = winSizes[ winToggleVal ].maxRow;
-    int minRows = winSizes[ winToggleVal ].minRow;
+    for ( int i = 0; i < winToggleLimit; i++ ) {
 
-    if ( arg < minRows ) arg = minRows;
-    if ( arg > maxRows ) arg = maxRows;
+        int maxRows = winSizes[ i ].maxRow;
+        int minRows = winSizes[ i ].minRow;
 
-    winSizes[ winToggleVal ].actualRow = arg;
+        if ( arg < minRows ) arg = minRows;
+        if ( arg > maxRows ) arg = maxRows;
+
+        winSizes[ i ].actualRow = arg;
+    }
 
     winRows = arg;
 }

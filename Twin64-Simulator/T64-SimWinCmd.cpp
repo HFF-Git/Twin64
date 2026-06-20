@@ -2961,7 +2961,8 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                     case CMD_WJ:            winJumpCmd( );                  break;
                     case CMD_WE:            winEnableCmd( true );           break;
                     case CMD_WD:            winEnableCmd( false );          break;
-                    case CMD_WR:            winSetRadixCmd( );              break;    
+                    case CMD_WR:            winSetRadixCmd( );              break;   
+                    
                     case CMD_CWL:           winSetCmdWinRowsCmd( );         break;
                     case CMD_CWC:           winClearCmdWinCmd( );           break;
                     

@@ -1112,11 +1112,18 @@ struct SimWinMem : SimWinScrollable {
 
     private:
 
+    void            drawMemDataLineHex32( T64Word itemAdr );
+    void            drawMemDataLineHex64( T64Word itemAdr );
+    void            drawMemDataLineDec32( T64Word itemAdr );
+    void            drawMemDataLineAscii4( T64Word itemAdr );
+    void            drawMemDataLineCode( T64Word itemAdr );
+
     T64Word         adr;
     T64DisAssemble  *disAsm;
 
     T64Word         lastWinItemAdr;
     T64Word         lastWinRows;
+    int             lastWinToggleVal;
     uint8_t         lastDataBuf[ MAX_WIN_ROW_SIZE * 32 ];
 };
 
