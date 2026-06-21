@@ -1095,7 +1095,6 @@ void SimCommandsWin::addTlbModule( int modNum ) {
     }
 }
 
-
 //----------------------------------------------------------------------------------------
 // "addIoModule" parses the parameters for an IO module. We are entered with the
 // token being the module type keyword. The routine loops over the key/value 
