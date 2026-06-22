@@ -410,7 +410,8 @@ int SimWinProcState::drawCRegSubWindow( int linePos ) {
 // "drawCodeSubWindow" draws the code area in the body of the window. We show a
 // banner and a small number of code lines, with the instruction address and the
 // instruction in hex. We also show the disassembled instruction text. Also, the
-// code line where the instruction address points to is marked.
+// code line where the instruction address points to is marked. And we highlight
+// changed values.
 //
 // Whenever the current instruction address comes near or is is outside the 
 // current code window, we move the code window so that the current instruction 
