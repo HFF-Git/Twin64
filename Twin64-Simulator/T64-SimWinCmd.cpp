@@ -1929,6 +1929,9 @@ void SimCommandsWin::doCmd( ) {
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::redoCmd( ) {
+
+    if ( ! glb -> console -> isConsole( )) 
+        throw( ERR_NOT_INTERACTIVE );
     
     int cmdId = -1;
     

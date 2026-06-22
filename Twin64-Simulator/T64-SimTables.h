@@ -437,6 +437,9 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
     { .errNum = ERR_NOT_IN_WIN_MODE,            
       .errStr = (char *) "Command only valid in Windows mode" },
 
+    { .errNum = ERR_NOT_INTERACTIVE,            
+      .errStr = (char *) "Command only valid in interactive mode" },
+
     { .errNum = ERR_OPEN_EXEC_FILE,             
       .errStr = (char *) "Error while opening file" },
 
