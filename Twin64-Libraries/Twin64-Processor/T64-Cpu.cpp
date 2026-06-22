@@ -345,7 +345,8 @@ int T64Cpu::evalCond( int cond, T64Word val1, T64Word val2 ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Diagnostic operations. None so far.
+// Diagnostic operations. This routine is called by the DIAG instruction to 
+// dispatch to the respective handler. None so far.
 //
 //----------------------------------------------------------------------------------------
 T64Word T64Cpu::diagOpHandler( int opt, T64Word arg1, T64Word arg2 ) {
@@ -597,7 +598,6 @@ bool T64Cpu:: dataWriteRegBOfsRegX( uint32_t instr ) {
 void T64Cpu::instrAluNopOp( T64Instr instr ) {
 
     if ( instr != 0 ) illegalInstrTrap( );
-
     nextInstr( );
 }
 
@@ -672,7 +672,7 @@ void T64Cpu::instrMemAddOp( T64Instr instr ) {
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrAluSubOp( T64Instr instr ) {
 
-    T64Word val1 = getRegR( instr );
+    T64Word val1 = getRegB( instr );
     T64Word val2 = 0;
     
     switch ( extractInstrFieldU( instr, 19, 3 )) {
@@ -705,7 +705,7 @@ void T64Cpu::instrAluSubOp( T64Instr instr ) {
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrMemSubOp( T64Instr instr ) {
 
-    T64Word val1 = getRegR( instr );
+    T64Word val1 = getRegB( instr );
     T64Word val2 = 0;
 
     switch ( extractInstrFieldU( instr, 19, 3 )) {
@@ -1655,10 +1655,9 @@ void T64Cpu::instrSysDiagOp( T64Instr instr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// SYS:TRAP_OP operation.
+// SYS:TRAP_OP operation. We cause a user trap, string the trapping instruction
+// in CR ARG0 and the trap code in CR ARG1.
 //
-//  what exactly do we do here ? Can we pass arguments ? Or do we just move 
-// them to control registers scratch 1 and 2 ????
 //----------------------------------------------------------------------------------------
 void T64Cpu::instrSysTrapOp( T64Instr instr ) {
 

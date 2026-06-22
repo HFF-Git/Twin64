@@ -419,13 +419,14 @@ int SimWinProcState::drawCRegSubWindow( int linePos ) {
 //----------------------------------------------------------------------------------------
 int SimWinProcState::drawCodeSubWindow( int linePos, int linesLeft ) {
 
-    uint32_t    fmtDesc     = FMT_DEFAULT | FMT_BOLD | FMT_INVERSE;
+    uint32_t    fmtDesc     = FMT_DEFAULT;
     T64Word     currentIa   = proc -> getCpuPtr( ) -> getPsrReg( );
     T64Word     windowSize  = linesLeft * 4;
     T64Word     windowEnd   = codeWinBaseAdr + windowSize;
     uint32_t    instr       = 0x0;
+    bool        highLight   = false;
     char        instrBuf[ MAX_TEXT_LINE_SIZE ] = { 0 };
-
+    
     if ( currentIa < codeWinBaseAdr + 4 ) {
 
         codeWinBaseAdr = ( currentIa >= 4 ) ? currentIa - 4 : 0;
@@ -443,10 +444,27 @@ int SimWinProcState::drawCodeSubWindow( int linePos, int linesLeft ) {
         T64Word ia = codeWinBaseAdr + ( i * 4 );
 
         setWinCursor( linePos + i, 1 );
-        printNumericField( ia, fmtDesc | FMT_HEX_2_4_4_4 );
+        printNumericField( ia, FMT_DEFAULT | FMT_HEX_2_4_4_4 );
         printTextField((char *) ": ", fmtDesc );
 
         if ( readMem( glb -> system, ia, (uint8_t *) &instr, sizeof( instr ))) {
+
+            T64Word tmpAdr  = ia - codeWinBaseAdr;
+            uint32_t dataVal = 0;
+
+            copyEndianAware((uint8_t *) &dataVal, 
+                        &lastDataBuf[tmpAdr], 
+                        sizeof( dataVal ));
+
+            if ( dataVal != instr ) {
+
+                copyEndianAware( &lastDataBuf[tmpAdr],
+                                (uint8_t *) &instr, 
+                                sizeof( instr ));
+
+                fmtDesc = FMT_DEFAULT | FMT_FG_COL_AMBER;
+            }
+            else fmtDesc = FMT_DEFAULT;
 
             if ( currentIa ==  ia ) printTextField((char *) "    >", fmtDesc, 5 );
             else                    printTextField((char *) "     ", fmtDesc, 5 );
