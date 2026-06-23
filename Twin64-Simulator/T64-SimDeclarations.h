@@ -222,7 +222,7 @@ enum SimTokId : uint16_t {
     CMD_HALT,                   CMD_ITLB,                   CMD_PTLB, 
     CMD_MR,                     CMD_DM,                     CMD_MB,             
     CMD_MS,                     CMD_MW,                     CMD_MD,     
-    CMD_DWIN,                   CMD_ECHO,
+    CMD_DWIN,                   CMD_ECHO,                   CMD_LOG,
     
     //------------------------------------------------------------------------------------
     // Window Commands Tokens.
@@ -349,6 +349,8 @@ enum SimErrMsgId : int {
     ERR_ENV_PREDEFINED              = 318,
     ERR_ENV_TABLE_FULL              = 319,
     ERR_OPEN_EXEC_FILE              = 320,
+    ERR_OPEN_LOG_FILE               = 321,
+    ERR_NO_LOG_FILE_CONFIGURED      = 322,
     
     ERR_EXPR_TYPE_MATCH             = 400,
     ERR_EXPR_FACTOR                 = 401,
@@ -406,6 +408,9 @@ const char ENV_FALSE[ ]                 = "FALSE";
 const char ENV_PROG_VERSION [ ]         = "PROG_VERSION";
 const char ENV_PATCH_LEVEL [ ]          = "PATCH_LEVEL";
 const char ENV_GIT_BRANCH[ ]            = "GIT_BRANCH";
+
+const char ENV_CONFIG_FILE[ ]           = "CONFIG_FILE";
+const char ENV_LOG_FILE[ ]              = "LOG_FILE";
 
 const char ENV_SHOW_CMD_CNT[ ]          = "SHOW_CMD_CNT" ;
 const char ENV_CMD_CNT[ ]               = "CMD_CNT" ;
@@ -711,8 +716,9 @@ struct SimEnv {
     void            setEnvVar( char *name, bool val );
     void            setEnvVar( char *name, char *str );
     void            removeEnvVar( char *name );
+    void            setEnvAttr( char *name, bool predefined, bool readOnly );
     
-    bool            getEnvVarBool( char *name,bool def = false );
+    bool            getEnvVarBool( char *name, bool def = false );
     T64Word         getEnvVarInt( char *name, T64Word def = 0 );
     char            *getEnvVarStr( char *name, char *def = nullptr );
     SimEnvTabEntry  *getEnvEntry( char *name );
@@ -1213,6 +1219,8 @@ private:
     int             promptYesNoCancel( char *promptStr );
 
     void            configureT64Sim( );
+    void            configureT64Log( );
+    int             writeLog( );
 
     void            ensureWinModeOn( );
     void            printStackInfoField( uint32_t fmtDesc = 0,
@@ -1238,8 +1246,8 @@ private:
     void            doCmd( );
     void            redoCmd( );
 
-    void            assertCmd( );
-    void            checkCmd( );
+    void            assertCheckCmd( bool doExit = false );
+    void            writeLogCmd( );
     
     void            addProcModule( int modNum );
     void            addMemModule( int modNum );
@@ -1415,4 +1423,5 @@ struct SimGlobals {
     bool                verboseFlag                             = false;
     char                configFileName[ MAX_FILE_PATH_SIZE ]    = { 0 };
     char                logFileName[ MAX_FILE_PATH_SIZE ]       = { 0 };
+    FILE                *logFile;
 };

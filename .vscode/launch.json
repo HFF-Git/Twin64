@@ -20,7 +20,10 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/bin/Twin64-Simulator",
-      "args": ["--configfile=${workspaceFolder}/config/T64ConfigFile"],
+      "args": [
+            "--configfile=${workspaceFolder}/config/T64ConfigFile",
+            "--logfile=${workspaceFolder}/log/T64LogFile"
+        ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],

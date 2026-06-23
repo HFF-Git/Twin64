@@ -803,6 +803,31 @@ int SimCommandsWin::promptYesNoCancel( char *promptStr ) {
 }
 
 //----------------------------------------------------------------------------------------
+// "configureT64Log" processes the Logfile option. If there is a file specified
+// we open the file for write mode.
+//
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::configureT64Log( ) {
+
+    if ( strlen( glb -> logFileName ) > 0 ) {
+
+        winOut -> writeChars( "Open Log File: \"%s\"\n", 
+                                  glb -> logFileName );
+
+        rtrim( glb -> logFileName );
+
+        glb -> logFile = fopen( glb -> logFileName, "w+" );
+        if ( glb -> logFile == nullptr ) {
+
+            winOut -> writeChars( "File open error: %s\n", strerror( errno ));
+        }
+
+        glb -> env -> setEnvVar((char *) ENV_LOG_FILE, (char *) glb -> logFileName );
+        glb -> env -> setEnvAttr((char *) ENV_LOG_FILE, true, true );
+    }
+}
+
+//----------------------------------------------------------------------------------------
 // "configureT64Sim" configures the simulator system. If there is a config file 
 // specified, we read it in and process the commands found there. This way, we
 // can set up  the simulator environment before entering the command loop.
@@ -815,11 +840,14 @@ void SimCommandsWin::configureT64Sim( ) {
         if ( strlen( glb -> configFileName ) > 0 ) {
 
             winOut -> writeChars( "Load Config File: \"%s\"\n", 
-                                  glb -> configFileName );
-                                  
+                                    glb -> configFileName );
+                                
             execCmdsFromFile( glb -> configFileName );
         }
     }
+
+    glb -> env -> setEnvVar((char *) ENV_CONFIG_FILE, (char *) glb -> configFileName );
+    glb -> env -> setEnvAttr((char *) ENV_CONFIG_FILE, true, true );
 }
 
 //----------------------------------------------------------------------------------------
@@ -1954,44 +1982,18 @@ void SimCommandsWin::redoCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The "assert" command is primarily intended for writing tests scripts. It will
-// evaluate a boolean expression and of it fails, report an error.
-//
-//  ASSERT <boolExpr> [ "," <msg> ]
-//
-//----------------------------------------------------------------------------------------
-void SimCommandsWin::assertCmd( ) {
-
-    char *msgStr = nullptr;
-    bool bVal = eval -> acceptBoolExpr( ERR_EXPECTED_BOOL_VALUE );
-
-    if ( tok -> isToken( TOK_COMMA )) {
-
-        tok -> nextToken( );
-        msgStr = eval -> acceptStringExpr( ERR_EXPECTED_STRING_VALUE );
-    }
-
-    tok -> checkEOS( );
-
-    if ( ! bVal ) {
-
-        if ( msgStr != nullptr ) winOut -> writeChars( "\"%s\" : ", msgStr );
-        winOut -> writeChars( "FAIL\n" );
-
-        // ??? what is the next action ?
-    }
-}
-
-//----------------------------------------------------------------------------------------
 // The "check" command is similar to the assert command. It will evaluate a 
 // boolean expression and report the outcome. In contrast to "assert" execution
 // continues after reporting the outcome.
 //
-//   CHECK <boolExpr> [ "," <msg> ]
+//  CHECK <boolExpr> [ "," <msg> ]
+//  ASSERT <boolExpr> [ "," <msg> ]
 //
 //----------------------------------------------------------------------------------------
-void SimCommandsWin::checkCmd( ) {
+void SimCommandsWin::assertCheckCmd( bool doExit ) {
 
+    char msgBuf[ MAX_TEXT_LINE_SIZE ];
+    char msgBufLen = 0;
     char *msgStr = nullptr;
     bool bVal = eval -> acceptBoolExpr( ERR_EXPECTED_BOOL_VALUE );
 
@@ -1999,14 +2001,120 @@ void SimCommandsWin::checkCmd( ) {
 
         tok -> nextToken( );
         msgStr = eval -> acceptStringExpr( ERR_EXPECTED_STRING_VALUE );
+
+        msgBufLen += snprintf( msgBuf, sizeof( msgBuf ), "%s", msgStr );
     }
 
     tok -> checkEOS( );
-    
-    if ( msgStr != nullptr ) winOut -> writeChars( "\"%s\":", msgStr );
 
-    if ( bVal ) winOut -> writeChars( "PASS\n" );
-    else        winOut -> writeChars( "FAIL\n" ); 
+    if ( bVal ) {
+
+        msgBufLen += snprintf( msgBuf + msgBufLen, 
+                                msgBufLen - sizeof( msgBuf ), 
+                                " : TRUE " );
+    }
+    else {
+
+        msgBufLen += snprintf( msgBuf + msgBufLen, 
+                                msgBufLen - sizeof( msgBuf ), 
+                                " : FALSE " );
+    }
+
+    // ??? also print to display ? or only to log ?
+
+    if ( msgBufLen > 0 ) winOut -> writeChars( "%s\n", msgBuf );
+
+    if ( glb -> logFile != nullptr ) {
+
+        if ( fprintf( glb -> logFile, "%.*s\n", msgBufLen, msgBuf ) < 0 ) {
+
+            winOut -> writeChars( "Log File write error : %s\n", strerror( errno ));
+        }
+
+        fflush( glb->logFile );
+    }
+    
+    // ??? assert option exits the program ? 
+}
+
+//----------------------------------------------------------------------------------------
+// The writelog command writes a text followed by an optional expression to the 
+// log file. 
+//
+//  LOG <str> [ , <expr> ] 
+// 
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::writeLogCmd( ) {
+
+    if ( glb -> logFile == nullptr ) {
+
+       throw( ERR_NO_LOG_FILE_CONFIGURED );
+    }
+
+    char msgBuf[ MAX_TEXT_LINE_SIZE ];
+    char msgBufLen = 0;
+
+    char *msgStr = eval -> acceptStringExpr( ERR_EXPECTED_STRING_VALUE );
+    msgBufLen = snprintf( msgBuf, sizeof( msgBuf ), "%s", msgStr );
+
+    if ( tok -> isToken( TOK_COMMA )) {
+
+        tok -> nextToken( );
+        
+        SimExpr rExpr;
+        
+        eval -> parseExpr( &rExpr );
+
+        switch ( rExpr.typ ) {
+                
+            case TYP_BOOL: {
+                
+                if ( rExpr.u.bVal == true ) {
+
+                    msgBufLen += snprintf( msgBuf + msgBufLen, 
+                                           msgBufLen - sizeof( msgBuf ), 
+                                           " : TRUE " );
+                }
+                else {
+
+                    msgBufLen += snprintf( msgBuf + msgBufLen, 
+                                           msgBufLen - sizeof( msgBuf ), 
+                                           " : FALSE " );
+                }
+                
+            } break;
+                
+            case TYP_NUM: {
+
+                msgBufLen += snprintf( msgBuf + msgBufLen, 
+                                       msgBufLen - sizeof( msgBuf ), 
+                                       " : %d", rExpr.u.val );
+                
+            } break;
+                
+            case TYP_STR: {
+
+                msgBufLen += snprintf( msgBuf + msgBufLen, 
+                                       msgBufLen - sizeof( msgBuf ), 
+                                           " : \"%s\" ", rExpr.u.str );
+                
+            } break;
+                
+            default: throw (  ERR_INVALID_EXPR );
+        }
+    }
+
+    tok -> checkEOS( );
+
+    if ( glb -> logFile != nullptr ) {
+
+        if ( fprintf( glb -> logFile, "%.*s\n", msgBufLen, msgBuf ) < 0 ) {
+
+            winOut -> writeChars( "Log File write error : %s\n", strerror( errno ));
+        }
+
+        fflush( glb->logFile );
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -2015,7 +2123,7 @@ void SimCommandsWin::checkCmd( ) {
 // length and only check that the offset plus length does not exceed the entire 
 // address space. The format specifier will allow for HEX, DECIMAL and CODE. In
 // the case of the code option, the default number format option is used for 
-//showing the offset value.
+// showing the offset value.
 //
 //  DM <ofs> [ "," <len> [ "," <fmt> ]]
 //
@@ -2917,8 +3025,9 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
                     case CMD_DO:            doCmd( );                       break;
                     case CMD_REDO:          redoCmd( );                     break;
 
-                    case CMD_ASSERT:        assertCmd( );                   break;
-                    case CMD_CHECK:         checkCmd( );                    break;
+                    case CMD_ASSERT:        assertCheckCmd( true );         break;
+                    case CMD_CHECK:         assertCheckCmd( );              break;
+                    case CMD_LOG:           writeLogCmd( );                 break;
                         
                     case CMD_RESET:         resetCmd( );                    break;
                     case CMD_HALT:          haltCmd( );                     break;
@@ -3006,6 +3115,9 @@ void SimCommandsWin::cmdInterpreterLoop( ) {
     glb -> winDisplay -> reDraw( );
 
     configureT64Sim( );
+    glb -> winDisplay -> reDraw( );
+
+    configureT64Log( );
     glb -> winDisplay -> reDraw( );
     
     while ( true ) {

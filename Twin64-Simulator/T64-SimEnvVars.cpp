@@ -252,6 +252,24 @@ void SimEnv::setEnvVar( char *name, char *str )  {
 }
 
 //----------------------------------------------------------------------------------------
+// Sometimes, we need to set a variable, and then mark it as predefined and/or
+// readOnly.
+//
+//----------------------------------------------------------------------------------------
+void SimEnv::setEnvAttr( char *name, bool predefined, bool readOnly ) {
+
+    int index = lookupEntry( name );
+
+    if ( index >= 0 ) {
+
+        SimEnvTabEntry *ptr = &table[ index ];
+
+        ptr -> predefined = predefined;
+        ptr -> readOnly   = readOnly;
+    }
+}
+
+//----------------------------------------------------------------------------------------
 // Environment variables getter functions. Just look up the entry and return the 
 // value. If the entry does not exist, we return an optional default.
 //
@@ -446,7 +464,10 @@ void SimEnv::setupPredefined( ) {
     enterVar((char *) ENV_PROG_VERSION, (char *) SIM_VERSION, true, false );
     enterVar((char *) ENV_GIT_BRANCH, (char *) SIM_GIT_BRANCH, true, false );
     enterVar((char *) ENV_PATCH_LEVEL, (T64Word) SIM_PATCH_LEVEL, true, false );
-    
+
+    enterVar((char *) ENV_CONFIG_FILE, (char *) "", true, false );
+    enterVar((char *) ENV_LOG_FILE, (char *) "", true, false );
+
     enterVar((char *) ENV_SHOW_CMD_CNT, true, true, false );
     enterVar((char *) ENV_CMD_CNT, (T64Word) 0, true, true );
     enterVar((char *) ENV_ECHO_CMD_INPUT, false, true, false );

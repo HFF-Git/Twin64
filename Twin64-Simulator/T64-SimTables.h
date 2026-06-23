@@ -129,6 +129,7 @@ const SimToken cmdTokTab[ ] = {
 
     { .name = "ASSERT",     .typ = TYP_CMD,     .tid = CMD_ASSERT                   },
     { .name = "CHECK",      .typ = TYP_CMD,     .tid = CMD_CHECK                    },
+    { .name = "LOG",        .typ = TYP_CMD,     .tid = CMD_LOG                      },
     
     //------------------------------------------------------------------------------------
     // Window command tokens.
@@ -441,7 +442,13 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
       .errStr = (char *) "Command only valid in interactive mode" },
 
     { .errNum = ERR_OPEN_EXEC_FILE,             
-      .errStr = (char *) "Error while opening file" },
+      .errStr = (char *) "Error while opening exec file" },
+
+    { .errNum = ERR_OPEN_LOG_FILE,             
+      .errStr = (char *) "Error while opening log file" },
+
+    { .errNum = ERR_NO_LOG_FILE_CONFIGURED,             
+      .errStr = (char *) "No log file configured" },
 
     { .errNum = ERR_EXTRA_TOKEN_IN_STR,         
       .errStr = (char *) "Extra tokens in command line" },
@@ -628,6 +635,27 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
         .cmdNameStr     = (char *) "env",
         .cmdSyntaxStr   = (char *) "env [ <var> [ <val> ]] | env <var>",
         .helpStr        = (char *) "lists the env tab, a variable, sets a variable"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ENV,
+        .cmdNameStr     = (char *) "check",
+        .cmdSyntaxStr   = (char *) "check <expr> [ , <str> ]",
+        .helpStr        = (char *) "check a boolean condition"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ENV,
+        .cmdNameStr     = (char *) "assert",
+        .cmdSyntaxStr   = (char *) "assert <expr> [ , <str> ]",
+        .helpStr        = (char *) "assert a boolean condition"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ENV,
+        .cmdNameStr     = (char *) "log",
+        .cmdSyntaxStr   = (char *) "log <str> [ , <expr> ]",
+        .helpStr        = (char *) "log a message to the log file"
     },
     
     {
