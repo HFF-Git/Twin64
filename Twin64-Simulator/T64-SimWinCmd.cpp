@@ -443,6 +443,7 @@ void SimCommandsWin::setDefaults( ) {
 // The banner line for command window. For now, we just label the banner line 
 // and show the system state plus the WIN mode stack info.
 //
+// ??? one day we hook up the system state to PDC data...
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::drawBanner( ) {
     
@@ -450,10 +451,11 @@ void SimCommandsWin::drawBanner( ) {
     uint32_t fmtDescBlack   = fmtDesc | FMT_FG_COL_BLACK;
 
     setWinCursor( 1, 1 );
-    printTextField((char *) "Commands", ( fmtDescBlack | FMT_ALIGN_LFT ), 32 );
+    printTextField((char *) "Commands", ( fmtDescBlack | FMT_ALIGN_LFT ), 16 );
 
     printTextField((char *) "System State: ", fmtDescBlack );
-    printNumericField( glb -> system -> getSystemState( ), fmtDescBlack | FMT_HEX_4 );
+    printNumericField( glb -> system -> getSystemState( ), 
+                       fmtDescBlack | FMT_HEX_4 );
     padLine( fmtDesc ); 
 
     if ( glb -> winDisplay -> isWindowsOn( )) {
@@ -811,19 +813,29 @@ void SimCommandsWin::configureT64Log( ) {
 
     if ( strlen( glb -> logFileName ) > 0 ) {
 
-        winOut -> writeChars( "Open Log File: \"%s\"\n", 
-                                  glb -> logFileName );
+        if ( glb -> console -> isConsole( )) {
+
+            winOut -> writeChars( "Open Log File: \"%s\"\n", 
+                                   glb -> logFileName );
+        }
 
         rtrim( glb -> logFileName );
 
         glb -> logFile = fopen( glb -> logFileName, "w+" );
         if ( glb -> logFile == nullptr ) {
 
-            winOut -> writeChars( "File open error: %s\n", strerror( errno ));
-        }
+            if ( glb -> console -> isConsole( )) {
 
-        glb -> env -> setEnvVar((char *) ENV_LOG_FILE, (char *) glb -> logFileName );
-        glb -> env -> setEnvAttr((char *) ENV_LOG_FILE, true, true );
+                winOut -> writeChars( "File open error: %s\n", 
+                                      strerror( errno ));
+            }
+        }
+        else {
+
+            glb -> env -> setEnvVar((char *) ENV_LOG_FILE, 
+                                    (char *) glb -> logFileName );
+            glb -> env -> setEnvAttr((char *) ENV_LOG_FILE, true, true );
+        }
     }
 }
 
@@ -834,20 +846,21 @@ void SimCommandsWin::configureT64Log( ) {
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::configureT64Sim( ) {     
-    
-    if ( glb -> console -> isConsole( )) {
 
-        if ( strlen( glb -> configFileName ) > 0 ) {
+    if ( strlen( glb -> configFileName ) > 0 ) {
+
+        if ( glb -> console -> isConsole( )) {
 
             winOut -> writeChars( "Load Config File: \"%s\"\n", 
                                     glb -> configFileName );
-                                
-            execCmdsFromFile( glb -> configFileName );
         }
-    }
 
-    glb -> env -> setEnvVar((char *) ENV_CONFIG_FILE, (char *) glb -> configFileName );
-    glb -> env -> setEnvAttr((char *) ENV_CONFIG_FILE, true, true );
+        execCmdsFromFile( glb -> configFileName );
+
+        glb -> env -> setEnvVar((char *) ENV_CONFIG_FILE, 
+                                (char *) glb -> configFileName );
+        glb -> env -> setEnvAttr((char *) ENV_CONFIG_FILE, true, true );
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -2020,9 +2033,10 @@ void SimCommandsWin::assertCheckCmd( bool doExit ) {
                                 " : FALSE " );
     }
 
-    // ??? also print to display ? or only to log ?
+    if ( glb -> console -> isConsole( )) {
 
-    if ( msgBufLen > 0 ) winOut -> writeChars( "%s\n", msgBuf );
+        if ( msgBufLen > 0 ) winOut -> writeChars( "%s\n", msgBuf );
+    }
 
     if ( glb -> logFile != nullptr ) {
 
@@ -2033,8 +2047,11 @@ void SimCommandsWin::assertCheckCmd( bool doExit ) {
 
         fflush( glb->logFile );
     }
-    
-    // ??? assert option exits the program ? 
+
+    if ( doExit ) {
+
+         // ??? assert option exits the program ? 
+    }
 }
 
 //----------------------------------------------------------------------------------------

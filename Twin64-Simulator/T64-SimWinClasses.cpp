@@ -255,6 +255,7 @@ void SimWinProcState::drawBanner( ) {
     uint32_t fmtDesc        = FMT_DEFAULT | FMT_BOLD | FMT_BG_COL_WHITE;
     uint32_t fmtDescBlack   = fmtDesc | FMT_FG_COL_BLACK;
     uint32_t fmtDescRed     = fmtDesc | FMT_FG_COL_RED;
+    uint32_t fmtDescGreen   = fmtDesc | FMT_FG_COL_GREEN;
    
     setWinCursor( 1, 1 );
     printWindowIdField( fmtDesc );
@@ -278,7 +279,13 @@ void SimWinProcState::drawBanner( ) {
     printTextField((char *) "]", fmtDescBlack );
 
     printTextField((char *) " State: ", fmtDescBlack );
-    printTextField( proc -> getProcStateStr( ), fmtDescRed );
+
+    T64ModuleState state = proc -> getModuleState( );
+
+    if ( state == T64_MOD_STATE_EXECUTE ) 
+        printTextField( proc -> getProcStateStr( ), fmtDescGreen );
+    else
+        printTextField( proc -> getProcStateStr( ), fmtDescRed );
 
     padLine( fmtDesc );
     printRadixField( fmtDescBlack | FMT_LAST_FIELD );

@@ -457,9 +457,6 @@ int SimEnv::formatEnvEntry( int index, char *buf, int bufLen ) {
 //
 //----------------------------------------------------------------------------------------
 void SimEnv::setupPredefined( ) {
-
-    enterVar((char *) ENV_TRUE, (bool) true, true, true );
-    enterVar((char *) ENV_FALSE, (bool) false, true, true );
     
     enterVar((char *) ENV_PROG_VERSION, (char *) SIM_VERSION, true, false );
     enterVar((char *) ENV_GIT_BRANCH, (char *) SIM_GIT_BRANCH, true, false );

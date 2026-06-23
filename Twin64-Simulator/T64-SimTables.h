@@ -268,8 +268,21 @@ const SimToken cmdTokTab[ ] = {
       .tid = TOK_MOD_SPA_ADR,               .u = { .val = 0 }},
 
     { .name = "SPA_LEN",                    .typ = TYP_SYM, 
-      .tid = TOK_MOD_SPA_LEN,               .u = { .val = 0 }}
+      .tid = TOK_MOD_SPA_LEN,               .u = { .val = 0 }},
 
+    //------------------------------------------------------------------------------------
+    // Constants.
+    //
+    // ??? we could add numeric constants such as MAX_INT, etc.
+    //
+    // ??? we could add some more architecture specific constants such as page
+    // size, etc.
+    //------------------------------------------------------------------------------------
+    { .name = "TRUE",                        .typ = TYP_BOOL, 
+      .tid  = TOK_TRUE,                      .u = { .val = 1 }},
+
+    { .name = "FALSE",                        .typ = TYP_BOOL, 
+      .tid  = TOK_FALSE,                       .u = { .val = 0 }},
 };
 
 const int MAX_CMD_TOKEN_TAB = sizeof( cmdTokTab ) / sizeof( SimToken );

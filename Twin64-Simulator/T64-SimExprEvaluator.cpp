@@ -361,6 +361,12 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
         }
         else throw ( ERR_EXPR_FACTOR );
     }
+    else if ( tok -> isTokenTyp( TYP_BOOL )) {
+
+        rExpr -> typ = TYP_BOOL;
+        rExpr -> u.bVal = tok -> tokVal( );
+        tok -> nextToken( );
+    }
     else if ( tok -> isTokenTyp( TYP_NUM )) {
         
         rExpr -> typ     = TYP_NUM;

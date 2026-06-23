@@ -209,6 +209,8 @@ enum SimTokId : uint16_t {
     TOK_TLB_FA_16S,             TOK_TLB_FA_32S,             TOK_TLB_FA_64S,             
     TOK_TLB_FA_128S,            TOK_MOD_SPA_ADR,            TOK_MOD_SPA_LEN,
 
+    TOK_TRUE, TOK_FALSE,
+
     //------------------------------------------------------------------------------------
     // Line Commands.
     //
