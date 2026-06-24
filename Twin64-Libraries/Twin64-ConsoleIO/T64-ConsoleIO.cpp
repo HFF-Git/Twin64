@@ -126,8 +126,10 @@ void SimConsoleIO::initConsoleIO( ) {
     tcsetattr( STDIN_FILENO, TCSANOW, &term );
     tcflush( fileno( stdin ), TCIFLUSH );
     
-    #else 
+    #endif
 
+    #ifdef _WIN32
+    
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 
@@ -305,10 +307,38 @@ int SimConsoleIO::writeChars( const char *format, ... ) {
    
     #else
 
+    #if 1
+
     for (int i = 0; i < len; i++) {
 
         _putch((unsigned char)outputBuffer[i]);
     }
+
+    #else
+
+    wchar_t wbuf[4096];
+
+    int wlen = MultiByteToWideChar(
+        CP_UTF8,
+        0,
+        outputBuffer,
+        len,
+        wbuf,
+        sizeof(wbuf)/sizeof(wbuf[0])
+    );
+
+    DWORD written;
+
+    WriteConsoleW(
+
+        GetStdHandle(STD_OUTPUT_HANDLE),
+        wbuf,
+        wlen,
+        &written,
+        NULL
+    );
+
+    #endif
 
     #endif
 

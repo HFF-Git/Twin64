@@ -186,6 +186,8 @@ SimWinProcState::SimWinProcState( SimGlobals *glb, int modNum ) : SimWin( glb ) 
     for ( int i = 0; i < T64_MAX_GREGS; i++ ) lastGRegState[ i ] = 0;
     for ( int i = 0; i < T64_MAX_CREGS; i++ ) lastCRegState[ i ] = 0;
 
+    
+
     T64ModuleType mType = glb -> system -> getModuleType( modNum );
     if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
 
