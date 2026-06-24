@@ -1284,7 +1284,11 @@ void T64Cpu::instrBrBvOp( T64Instr instr ) {
     if ( extractInstrFieldU( instr, 0, 9 ) != 0 ) illegalInstrTrap( );
 
     instrAlignmentCheck( newIA );
-    psrReg = newIA;
+
+    uint64_t uadr   = (uint64_t) psrReg;
+    uint64_t result = (uadr & 0xFFFFFFFF00000000ULL) | (uint64_t)newIA;
+
+    psrReg = (T64Word) result;
     setRegR( instr, rl );
 }
 
