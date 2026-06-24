@@ -465,8 +465,8 @@ void SimEnv::setupPredefined( ) {
     enterVar((char *) ENV_GIT_BRANCH, (char *) SIM_GIT_BRANCH, true, false );
     enterVar((char *) ENV_PATCH_LEVEL, (T64Word) SIM_PATCH_LEVEL, true, false );
 
-    enterVar((char *) ENV_CONFIG_FILE, (char *) "", true, false );
-    enterVar((char *) ENV_LOG_FILE, (char *) "", true, false );
+    enterVar((char *) ENV_CONFIG_FILE, (char *) "T64ConfigFile", true, false );
+    enterVar((char *) ENV_LOG_FILE, (char *) "T64LogFile", true, false );
 
     enterVar((char *) ENV_SHOW_CMD_CNT, true, true, false );
     enterVar((char *) ENV_CMD_CNT, (T64Word) 0, true, true );
