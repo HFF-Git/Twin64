@@ -646,7 +646,7 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ENV,
         .cmdNameStr     = (char *) "env",
-        .cmdSyntaxStr   = (char *) "env [ <var> [ <val> ]] | env <var>",
+        .cmdSyntaxStr   = (char *) "env [ <var> [ , <val> ]] | env <var>",
         .helpStr        = (char *) "lists the env tab, a variable, sets a variable"
     },
 

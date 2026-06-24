@@ -312,6 +312,7 @@ void SimEnv::enterVar( char *name, T64Word  val, bool predefined, bool rOnly ) {
     
         SimEnvTabEntry tmp;
         strcpy ( tmp.name, name );
+        upshiftStr( tmp.name );
         tmp.typ         = TYP_NUM;
         tmp.valid       = true;
         tmp.predefined  = predefined;
@@ -330,6 +331,7 @@ void SimEnv::enterVar( char *name, bool val, bool predefined, bool rOnly ) {
     
         SimEnvTabEntry tmp;
         strcpy ( tmp.name, name );
+        upshiftStr( tmp.name );
         tmp.typ         = TYP_BOOL;
         tmp.valid       = true;
         tmp.predefined  = predefined;
@@ -348,6 +350,7 @@ void SimEnv::enterVar( char *name, char *str, bool predefined, bool rOnly ) {
         
         SimEnvTabEntry tmp;
         strcpy ( tmp.name, name );
+        upshiftStr( tmp.name );
         tmp.valid       = true;
         tmp.typ         = TYP_STR;
         tmp.predefined  = predefined;

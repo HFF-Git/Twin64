@@ -1076,6 +1076,8 @@ struct SimWinProcState : SimWin {
 
     T64Word         lastGRegState[ T64_MAX_GREGS ];
     T64Word         lastCRegState[ T64_MAX_CREGS ];
+    
+    T64Word         lastCodeWinBaseAdr;
     uint8_t         lastDataBuf[ MAX_WIN_ROW_SIZE * 4 ];
 };
 

@@ -54,9 +54,16 @@ void restoreTerminal( ) {
 #endif
 
 //----------------------------------------------------------------------------------------
+// The output buffer. We actually have two buffers. The first is the standard
+// output buffer used with MAC and Linux, the second is the wide character 
+// buffer for windows.
 //
 //----------------------------------------------------------------------------------------
-char outputBuffer[ 1024 ];
+char        outputBuffer[ 1024 ];
+
+#ifdef _WIN32
+wchar_t     wideBuf[ 1024 ];
+#endif
 
 //----------------------------------------------------------------------------------------
 // Sometimes we need to delay a little, and sure enough WIN and Mac have different 
@@ -274,8 +281,8 @@ int SimConsoleIO::readChar( ) {
 //----------------------------------------------------------------------------------------
 // "writeChars" is the single entry point to write to the terminal. On Mac or 
 // Linux, we still try to send out the data in batches to the terminal emulator 
-// for better stability. In Windows this does not seems to be an issue, we send
-// a single char at a time.
+// for better stability. In Windows we additionally face the issue handling
+// wide characters. The code below uses UTF16 characters when printing.
 //
 //----------------------------------------------------------------------------------------
 int SimConsoleIO::writeChars( const char *format, ... ) {
@@ -307,38 +314,22 @@ int SimConsoleIO::writeChars( const char *format, ... ) {
    
     #else
 
-    #if 1
-
-    for (int i = 0; i < len; i++) {
-
-        _putch((unsigned char)outputBuffer[i]);
-    }
-
-    #else
-
-    wchar_t wbuf[4096];
-
-    int wlen = MultiByteToWideChar(
-        CP_UTF8,
-        0,
-        outputBuffer,
-        len,
-        wbuf,
-        sizeof(wbuf)/sizeof(wbuf[0])
+    int wlen = MultiByteToWideChar( CP_UTF8,
+                                    0,
+                                    outputBuffer,
+                                    len,
+                                    wideBuf,
+                                    sizeof(wideBuf) / sizeof( wideBuf[0] )
     );
 
     DWORD written;
 
-    WriteConsoleW(
-
-        GetStdHandle(STD_OUTPUT_HANDLE),
-        wbuf,
-        wlen,
-        &written,
-        NULL
-    );
-
-    #endif
+    WriteConsoleW( GetStdHandle(STD_OUTPUT_HANDLE),
+                   wideBuf,
+                   wlen,
+                   &written,
+                   NULL
+                 );
 
     #endif
 

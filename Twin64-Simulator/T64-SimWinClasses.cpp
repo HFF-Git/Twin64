@@ -186,8 +186,6 @@ SimWinProcState::SimWinProcState( SimGlobals *glb, int modNum ) : SimWin( glb ) 
     for ( int i = 0; i < T64_MAX_GREGS; i++ ) lastGRegState[ i ] = 0;
     for ( int i = 0; i < T64_MAX_CREGS; i++ ) lastCRegState[ i ] = 0;
 
-    
-
     T64ModuleType mType = glb -> system -> getModuleType( modNum );
     if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
 
@@ -208,12 +206,14 @@ SimWinProcState::SimWinProcState( SimGlobals *glb, int modNum ) : SimWin( glb ) 
 //----------------------------------------------------------------------------------------
 void SimWinProcState::setDefaults( ) {
 
-    const int MIN_ROW_BANNERS               = 2; // ??? we only have one banner ....
-    const int MIN_ROW_GREG_SUBWINDOW        = 4; 
-    const int MIN_ROW_CREG_SUBWINDOW        = 4; 
-    const int MIN_ROW_CODE_SUBWINDOW        = 7; 
-    const int MAX_ROWS                      = 32;
-    const int MAX_COLS                      = 98;
+    const int ROW_BANNERS               = 2;
+    const int ROW_REG_SUBWINDOW         = 4; 
+    const int MIN_ROW_CODE_SUBWINDOW    = 7; 
+    const int MAX_ROWS                  = 32;
+    const int MAX_COLS                  = 98;
+
+
+    T64Cpu    *cpu                      = proc -> getCpuPtr( );
     
     setWinType( WT_CPU_WIN );
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
@@ -222,16 +222,16 @@ void SimWinProcState::setDefaults( ) {
     setWinToggleVal( 0 );
 
     setWinLimitsForToggle( 0, 
-                           MIN_ROW_BANNERS + 
-                           MIN_ROW_GREG_SUBWINDOW + 
+                           ROW_BANNERS + 
+                           ROW_REG_SUBWINDOW + 
                            MIN_ROW_CODE_SUBWINDOW,
                            MAX_ROWS,
                            MAX_COLS, 
                            MAX_COLS );
 
     setWinLimitsForToggle( 1, 
-                           MIN_ROW_BANNERS + 
-                           MIN_ROW_CREG_SUBWINDOW + 
+                           ROW_BANNERS + 
+                           ROW_REG_SUBWINDOW + 
                            MIN_ROW_CODE_SUBWINDOW,
                            MAX_ROWS,
                            MAX_COLS, 
@@ -239,6 +239,40 @@ void SimWinProcState::setDefaults( ) {
 
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).minCol );
+
+     if ( getWinToggleVal( ) == 0 ) {
+
+        for ( int i = 0; i < T64_MAX_GREGS; i++ ) {
+
+            lastGRegState[ i ] = cpu -> getGeneralReg( i ); 
+        }
+    }
+    else if ( getWinToggleVal( ) == 1 ) {
+
+        for ( int i = 0; i < T64_MAX_GREGS; i++ ) {
+
+            lastGRegState[ i ] = cpu -> getControlReg( i ); 
+        }
+    }
+
+    lastCodeWinBaseAdr = codeWinBaseAdr;
+
+    int linesLeft = getRows( ) - ROW_BANNERS - ROW_REG_SUBWINDOW;
+
+    for ( int i = 0; i < linesLeft; i++ ) {
+
+        T64Word  ia = codeWinBaseAdr + ( i * 4 );
+        uint32_t instr;
+       
+        if ( readMem( glb -> system, ia, (uint8_t *) &instr, sizeof( instr ))) {
+
+            copyEndianAware( &lastDataBuf[ ia - codeWinBaseAdr ],
+                            (uint8_t *) &instr, 
+                            sizeof( instr ));
+
+        }
+    }
+
     setEnable( true );
 }
 
@@ -258,6 +292,7 @@ void SimWinProcState::drawBanner( ) {
     uint32_t fmtDescBlack   = fmtDesc | FMT_FG_COL_BLACK;
     uint32_t fmtDescRed     = fmtDesc | FMT_FG_COL_RED;
     uint32_t fmtDescGreen   = fmtDesc | FMT_FG_COL_GREEN;
+    T64Cpu   *cpu           = proc -> getCpuPtr( );
    
     setWinCursor( 1, 1 );
     printWindowIdField( fmtDesc );
@@ -434,7 +469,6 @@ int SimWinProcState::drawCodeSubWindow( int linePos, int linesLeft ) {
     T64Word     windowSize  = linesLeft * 4;
     T64Word     windowEnd   = codeWinBaseAdr + windowSize;
     uint32_t    instr       = 0x0;
-    bool        highLight   = false;
     char        instrBuf[ MAX_TEXT_LINE_SIZE ] = { 0 };
     
     if ( currentIa < codeWinBaseAdr + 4 ) {

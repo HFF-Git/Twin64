@@ -1501,6 +1501,7 @@ void SimCommandsWin::envCmd( ) {
 
             if ( tok -> isToken( TOK_MINUS )) {
 
+                tok -> nextToken( );
                 env -> removeEnvVar( envName );
             }
             else {
