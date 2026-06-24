@@ -2015,7 +2015,7 @@ void SimCommandsWin::assertCheckCmd( bool doExit ) {
         tok -> nextToken( );
         msgStr = eval -> acceptStringExpr( ERR_EXPECTED_STRING_VALUE );
 
-        msgBufLen += snprintf( msgBuf, sizeof( msgBuf ), "%s", msgStr );
+        msgBufLen += snprintf( msgBuf, sizeof( msgBuf ), "%s : ", msgStr );
     }
 
     tok -> checkEOS( );
@@ -2024,13 +2024,13 @@ void SimCommandsWin::assertCheckCmd( bool doExit ) {
 
         msgBufLen += snprintf( msgBuf + msgBufLen, 
                                 msgBufLen - sizeof( msgBuf ), 
-                                " : TRUE " );
+                                "PASS" );
     }
     else {
 
         msgBufLen += snprintf( msgBuf + msgBufLen, 
                                 msgBufLen - sizeof( msgBuf ), 
-                                " : FALSE " );
+                                "FAIL" );
     }
 
     if ( glb -> console -> isConsole( )) {

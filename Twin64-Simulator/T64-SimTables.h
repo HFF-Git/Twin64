@@ -651,21 +651,21 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ENV,
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_CHECK,
         .cmdNameStr     = (char *) "check",
         .cmdSyntaxStr   = (char *) "check <expr> [ , <str> ]",
         .helpStr        = (char *) "check a boolean condition"
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ENV,
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ASSERT,
         .cmdNameStr     = (char *) "assert",
         .cmdSyntaxStr   = (char *) "assert <expr> [ , <str> ]",
         .helpStr        = (char *) "assert a boolean condition"
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_ENV,
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_LOG,
         .cmdNameStr     = (char *) "log",
         .cmdSyntaxStr   = (char *) "log <str> [ , <expr> ]",
         .helpStr        = (char *) "log a message to the log file"

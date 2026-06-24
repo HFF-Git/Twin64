@@ -126,6 +126,11 @@ void SimConsoleIO::initConsoleIO( ) {
     tcsetattr( STDIN_FILENO, TCSANOW, &term );
     tcflush( fileno( stdin ), TCIFLUSH );
     
+    #else 
+
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+
     #endif
     
     blockingMode  = true;
