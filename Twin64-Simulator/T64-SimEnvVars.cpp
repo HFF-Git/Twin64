@@ -31,13 +31,22 @@
 //----------------------------------------------------------------------------------------
 namespace {
 
-    void upshiftStr( char *s ) {
+void copyStr( char *dst, const char *src, int maxSize, bool upshift ) {
 
-    while ( *s ) {
+    if ( !dst || !src || maxSize <= 0 ) return;
 
-        *s = toupper((unsigned char) *s );
-        s++;
+    int i = 0;
+
+    while (( i < maxSize - 1 ) && ( src[ i ] != '\0' )) {
+    
+        char c = src[ i ];
+        if ( upshift ) c = toupper( c );
+
+        dst[ i ] = c;
+        i++;
     }
+
+    dst[ i ] = '\0';
 }
 
 }; // namespace
@@ -122,7 +131,8 @@ int SimEnv::getEnvHwm( ) {
 
 //----------------------------------------------------------------------------------------
 // Look a variable. We just do a linear search up to the HWM. If not found, a 
-// -1 is returned. Straightforward.
+// -1 is returned. We create local upshifted copy, truncated to the maximum
+// name size, if the name is too large.
 //
 //----------------------------------------------------------------------------------------
 int SimEnv::lookupEntry( char *name ) {
@@ -130,10 +140,8 @@ int SimEnv::lookupEntry( char *name ) {
     SimEnvTabEntry *entry = table;
 
     char tmp[ MAX_ENV_NAME_SIZE ];
-    strncpy( tmp, name, MAX_ENV_NAME_SIZE );
+    copyStr( tmp, name, sizeof( tmp ), true );
 
-    upshiftStr( tmp );
-    
     while ( entry < hwm ) {
         
         if (( entry -> valid ) && ( strcmp( entry -> name, tmp ) == 0 )) 
@@ -194,6 +202,7 @@ void SimEnv::setEnvVar( char *name, T64Word val ) {
         if (( ptr -> typ == TYP_STR ) && ( ptr -> u.strVal != nullptr )) {
             
             free( ptr -> u.strVal );
+            ptr -> u.strVal = nullptr;
         }
          
         ptr -> typ      = TYP_NUM;
@@ -218,6 +227,7 @@ void SimEnv::setEnvVar( char *name, bool val )  {
         if (( ptr -> typ == TYP_STR ) && ( ptr -> u.strVal != nullptr )) {
             
             free( ptr -> u.strVal );
+            ptr -> u.strVal = nullptr;
         }
          
         ptr -> typ      = TYP_BOOL;
@@ -239,11 +249,10 @@ void SimEnv::setEnvVar( char *name, char *str )  {
             throw ( ERR_ENV_VALUE_EXPR );
         }
 
-        if (( ptr -> typ == TYP_STR ) && 
-            ( ptr -> u.strVal != nullptr ) &&
-            ( strlen( ptr -> u.strVal ) > 0 )) {
+        if (( ptr -> typ == TYP_STR ) && ( ptr -> u.strVal != nullptr )) {
             
             free( ptr -> u.strVal );
+            ptr -> u.strVal = nullptr;
         }
         
         ptr -> typ      = TYP_STR;
@@ -313,8 +322,7 @@ void SimEnv::enterVar( char *name, T64Word  val, bool predefined, bool rOnly ) {
     if ( index >= 0 ) {
     
         SimEnvTabEntry tmp;
-        strcpy ( tmp.name, name );
-        upshiftStr( tmp.name );
+        copyStr( tmp.name, name, sizeof( tmp.name ), true );
         tmp.typ         = TYP_NUM;
         tmp.valid       = true;
         tmp.predefined  = predefined;
@@ -332,8 +340,7 @@ void SimEnv::enterVar( char *name, bool val, bool predefined, bool rOnly ) {
     if ( index >= 0 ) {
     
         SimEnvTabEntry tmp;
-        strcpy ( tmp.name, name );
-        upshiftStr( tmp.name );
+        copyStr( tmp.name, name, sizeof( tmp.name ), true );
         tmp.typ         = TYP_BOOL;
         tmp.valid       = true;
         tmp.predefined  = predefined;
@@ -351,15 +358,14 @@ void SimEnv::enterVar( char *name, char *str, bool predefined, bool rOnly ) {
     if ( index >= 0 ) {
         
         SimEnvTabEntry tmp;
-        strcpy ( tmp.name, name );
-        upshiftStr( tmp.name );
+        copyStr( tmp.name, name, sizeof( tmp.name ), true );
         tmp.valid       = true;
         tmp.typ         = TYP_STR;
         tmp.predefined  = predefined;
         tmp.readOnly    = rOnly;
         if ( strlen ( str ) > 0 ) {
 
-            tmp.u.strVal    = (char *) calloc( strlen( str ), sizeof( char ));
+            tmp.u.strVal    = (char *) calloc( strlen( str ) + 1, sizeof( char ));
             strcpy( tmp.u.strVal, str );        
         }
         else tmp.u.strVal = nullptr;
