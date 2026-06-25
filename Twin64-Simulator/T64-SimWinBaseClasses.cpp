@@ -460,9 +460,7 @@ void SimWin::printBitField( T64Word val,
 void SimWin::printRadixField( uint32_t fmtDesc, int fLen, int row, int col ) {
     
     glb -> console -> setFmtAttributes( fmtDesc );
-    
-   // if ( fmtDesc & FMT_LAST_FIELD ) col = getColumns( ) - fLen;
-
+ 
     switch ( winRadix ) {
             
         case 10: printTextField((char *) "dec", fmtDesc, 3, row, col ); break;

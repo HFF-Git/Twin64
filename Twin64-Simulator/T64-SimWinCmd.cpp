@@ -432,7 +432,7 @@ void SimCommandsWin::setDefaults( ) {
     setRadix( glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT ));
 
     setWinToggleLimit( 1 );
-    setWinLimitsForToggle( 0, 10, MAX_WIN_ROW_SIZE, 100, MAX_WIN_COL_SIZE );
+    setWinLimitsForToggle( 0, 10, MAX_WIN_ROW_SIZE, 104, MAX_WIN_COL_SIZE );
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
     setWinToggleVal( 0 );
@@ -1158,7 +1158,7 @@ void SimCommandsWin::addIoModule( int modNum ) {
 // boundary. We display the data in words.
 //
 //----------------------------------------------------------------------------------------
-void  SimCommandsWin::displayMemContent( T64Word ofs, T64Word len, int rdx ) {
+void  SimCommandsWin::displayMemContent( T64Word ofs, T64Word len, SimTokId fmtOpt ) {
     
     T64Word index        = rounddown( ofs, sizeof( T64Word ));
     T64Word limit        = roundup(( index + len ), sizeof( T64Word ));
@@ -1176,10 +1176,12 @@ void  SimCommandsWin::displayMemContent( T64Word ofs, T64Word len, int rdx ) {
                 T64Word val = 0;
                 if ( readMem( glb -> system, index, (uint8_t *) &val, sizeof( val )) ) {
 
-                    if ( rdx == 16 )
+                    if ( fmtOpt == TOK_HEX )
                         winOut -> printNumber( val, FMT_HEX_4_4_4_4 );
-                    else if ( rdx == 10 )
-                        winOut -> printNumber( val, FMT_DEC_32 );
+                    else if ( fmtOpt == TOK_DEC )
+                        winOut -> printNumber( val, FMT_DEC_64 );
+                    else if ( fmtOpt == TOK_ASCII )
+                        winOut -> printNumber( val, FMT_ASCII_8 );  
                     else 
                         winOut -> printNumber( val, FMT_INVALID_NUM | FMT_HEX_4_4_4_4 );
 
@@ -1833,7 +1835,7 @@ void SimCommandsWin::runCmd( ) {
             throw( ERR_EXPCTED_PROC_MODULE );
         }
 
-        // ??? check if halted then put into RUN state.
+        // ??? check if module is in halted state then put into RUN state.
         glb -> system -> runModule( modNum );
     }
     else {
@@ -2106,7 +2108,7 @@ void SimCommandsWin::writeLogCmd( ) {
 
                 msgBufLen += snprintf( msgBuf + msgBufLen, 
                                        msgBufLen - sizeof( msgBuf ), 
-                                       " : %d", rExpr.u.val );
+                                       " : %" PRId64, ( int64_t) rExpr.u.val );
                 
             } break;
                 
@@ -2149,10 +2151,10 @@ void SimCommandsWin::writeLogCmd( ) {
 void SimCommandsWin::displayMemCmd( ) {
     
     int         rdx     = glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT );
+    SimTokId    fmtOpt  = ( rdx == 10 ) ? TOK_DEC : TOK_HEX;
     T64Word     ofs     = 0;
     T64Word     len     = sizeof( T64Word );
-    bool        asCode  = false;
-
+    
     ofs = eval -> acceptNumExpr( ERR_EXPECTED_START_OFS, 0, T64_MAX_VIRT_MEM_LIMIT );
     
     if ( tok -> isToken( TOK_COMMA )) {
@@ -2165,16 +2167,14 @@ void SimCommandsWin::displayMemCmd( ) {
     if ( tok -> isToken( TOK_COMMA )) {
         
         tok -> nextToken( );
-        switch(  tok -> tokId( )) {
+        if (( tok -> tokId( ) == TOK_HEX   ) ||
+            ( tok -> tokId( ) == TOK_DEC   ) ||
+            ( tok -> tokId( ) == TOK_ASCII ) ||
+            ( tok -> tokId( ) == TOK_CODE  )) {
 
-            case TOK_HEX: 
-            case TOK_DEC:   rdx = tok -> tokVal( );  break;
-            
-            case TOK_CODE:  asCode = true; break;
-            
-            case TOK_EOS: 
-            default:        throw ( ERR_INVALID_FMT_OPT );
+            fmtOpt = tok -> tokId( );
         }
+        else throw ( ERR_INVALID_FMT_OPT );
 
         tok -> nextToken( );
     }
@@ -2183,8 +2183,8 @@ void SimCommandsWin::displayMemCmd( ) {
     
     if (((T64Word) ofs + len ) <= T64_MAX_VIRT_MEM_LIMIT ) { 
         
-        if ( asCode ) displayMemContentAsCode( ofs, len );
-        else          displayMemContent( ofs, len, rdx );
+        if ( fmtOpt == TOK_CODE ) displayMemContentAsCode( ofs, len );
+        else                      displayMemContent( ofs, len, fmtOpt );
     }
     else throw ( ERR_OFS_LEN_LIMIT_EXCEEDED );
 }

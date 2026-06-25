@@ -1231,7 +1231,10 @@ private:
                                          int row = 0,
                                          int col = 0 );
   
-    void            displayMemContent( T64Word ofs, T64Word len, int rdx = 16 );
+    void            displayMemContent( T64Word ofs, 
+                                       T64Word len, 
+                                       SimTokId fmtOpt = TOK_HEX );
+                                       
     void            displayMemContentAsCode( T64Word ofs, T64Word len );
 
     void            parseWinNumRange( int *winNumStart, int *winNumEnd );

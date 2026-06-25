@@ -767,7 +767,7 @@ int SimFormatter::printNumber( T64Word val, uint32_t fmtDesc ) {
     }
     else  if ((( fmtDesc >> 12 ) & 0xF ) > 0 ) {
 
-         switch (( fmtDesc >> 12 ) & 0xF ) {
+        switch (( fmtDesc >> 12 ) & 0xF ) {
 
             case 1: { // DEC as is
 
@@ -777,14 +777,14 @@ int SimFormatter::printNumber( T64Word val, uint32_t fmtDesc ) {
 
             case 2: { // DEC_32
 
-                return ( writeChars((char *) "%10d", val ));
+                return ( writeChars((char *) "%10" PRId32, (int64_t) val ));
 
             } break;
 
 
             case 3: { // DEC_64
 
-                // to do ...
+                return ( writeChars((char *) "%20" PRId64, (int64_t) val ));
 
             } break;
 
@@ -811,7 +811,7 @@ int SimFormatter::printNumber( T64Word val, uint32_t fmtDesc ) {
 
             } break; 
 
-            case 9: {
+            case 9: { // ASCII_8
 
                 int           len = 0;
                 unsigned char bytes[ 8 ];
@@ -834,8 +834,7 @@ int SimFormatter::printNumber( T64Word val, uint32_t fmtDesc ) {
             } break;
 
             default: return ( writeChars ((char *) "*num*" ));
-         }
-
+        }
     }
     else return( writeChars( "*num*" ));
 }
@@ -905,6 +904,8 @@ int SimFormatter::numberFmtLen( uint32_t fmtDesc, T64Word val ) {
             } break;
 
             case 2:  return( 10 ); // FMT_DEC_32
+
+            case 3:  return( 20 ); // FMT_DEC_64; 
 
             case 8:  return( 6 );  // ASCII_4
 

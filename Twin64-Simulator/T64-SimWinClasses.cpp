@@ -292,7 +292,6 @@ void SimWinProcState::drawBanner( ) {
     uint32_t fmtDescBlack   = fmtDesc | FMT_FG_COL_BLACK;
     uint32_t fmtDescRed     = fmtDesc | FMT_FG_COL_RED;
     uint32_t fmtDescGreen   = fmtDesc | FMT_FG_COL_GREEN;
-    T64Cpu   *cpu           = proc -> getCpuPtr( );
    
     setWinCursor( 1, 1 );
     printWindowIdField( fmtDesc );
@@ -340,8 +339,13 @@ void SimWinProcState::drawGRegDataLine( int from, int to ) {
 
     uint32_t fmtDesc        = FMT_DEFAULT | FMT_ALIGN_LFT;
     T64Cpu   *cpu           = proc -> getCpuPtr( );
-    int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 );
-     uint32_t numFmtField   = fmtDesc | FMT_HEX_4_4_4_4;
+    uint32_t rdxFmt         = FMT_DEFAULT;
+
+    if      ( getRadix( ) == 10 )  rdxFmt = FMT_DEC_64;
+    else if ( getRadix( ) == 16 )  rdxFmt = FMT_HEX_4_4_4_4;
+
+    int      numFlen        = glb -> console -> numberFmtLen( rdxFmt );
+    uint32_t numFmtField   = fmtDesc | rdxFmt;
 
     for ( int i = from; i <= to; i++ ) {
 
@@ -370,8 +374,13 @@ void SimWinProcState::drawCRegDataLine( int from, int to ) {
 
     uint32_t fmtDesc        = FMT_DEFAULT | FMT_ALIGN_LFT;
     T64Cpu   *cpu           = proc -> getCpuPtr( );
-    int      numFlen        = glb -> console -> numberFmtLen( FMT_HEX_4_4_4_4 );
-     uint32_t numFmtField   = fmtDesc | FMT_HEX_4_4_4_4;
+    uint32_t rdxFmt         = FMT_DEFAULT;
+
+    if      ( getRadix( ) == 10 )  rdxFmt = FMT_DEC_64;
+    else if ( getRadix( ) == 16 )  rdxFmt = FMT_HEX_4_4_4_4;
+
+    int      numFlen        = glb -> console -> numberFmtLen( rdxFmt );
+    uint32_t numFmtField   = fmtDesc | rdxFmt;
 
     for ( int i = from; i <= to; i++ ) {
 
