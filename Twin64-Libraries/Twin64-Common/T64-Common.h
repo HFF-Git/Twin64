@@ -78,26 +78,24 @@ typedef uint32_t    T64Instr;
 const   int     T64_MAX_GREGS               = 16;
 const   int     T64_MAX_CREGS               = 16;
 
-const   T64Word T64_IO_MEM_START            = 0xF0000000;
-const   T64Word T64_IO_MEM_LIMIT            = 0xFFFFFFFF;
+const   T64Word T64_IO_MEM_START            = 0xFF00000000;
+const   T64Word T64_IO_MEM_LIMIT            = 0xFFFFFFFFFF;
 
-const   T64Word T64_PDC_MEM_START           = 0xF0000000;
-const   T64Word T64_PDC_MEM_LIMIT           = 0xF0FFFFFF;  
+const   T64Word T64_PDC_MEM_START           = 0xFF00000000;
+const   T64Word T64_PDC_MEM_LIMIT           = 0xFF0FFFFFFF;  
 
-const   T64Word T64_IO_SPA_MEM_START        = 0xF1000000;
-const   T64Word T64_IO_SPA_MEM_LIMIT        = 0xFFFBFFFF;
+const   T64Word T64_IO_SPA_MEM_START        = 0xFF10000000;
+const   T64Word T64_IO_SPA_MEM_LIMIT        = 0xFFFFFBFFFF;
 
-const   T64Word T64_IO_HPA_MEM_START        = 0xFFFC0000;
-const   T64Word T64_IO_HPA_MEM_LIMIT        = 0xFFFFFFFF;
+const   T64Word T64_IO_HPA_MEM_START        = 0xFFFFFC0000;
+const   T64Word T64_IO_HPA_MEM_LIMIT        = 0xFFFFFFFFFF;
 
-const   T64Word T64_IO_BCAST_MEM_START      = 0xFFFFF000;
-const   T64Word T64_IO_BCAST_MEM_LIMIT      = 0xFFFFFFFF;
+const   T64Word T64_IO_BCAST_MEM_START      = 0xFFFFFFF000;
+const   T64Word T64_IO_BCAST_MEM_LIMIT      = 0xFFFFFFFFFF;
 
-const   T64Word T64_DEF_PHYS_MEM_SIZE       = 1LL << 32;
-const   T64Word T64_DEF_PHYS_MEM_LIMIT      = 0xEFFFFFFF;
 const   T64Word T64_MAX_PHYS_MEM_LIMIT      = 0xFFFFFFFFFF;
 
-const   T64Word T64_MAX_REGION_ID           = 0xFFFFF;
+const   T64Word T64_MAX_REGION_ID           = 0xFFFFFF;
 const   T64Word T64_VIRT_MEM_START          = T64_MAX_PHYS_MEM_LIMIT + 1;
 const   T64Word T64_MAX_VIRT_MEM_LIMIT      = 0xFFFFFFFFFFFFF;
 

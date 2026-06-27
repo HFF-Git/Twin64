@@ -491,8 +491,9 @@ int SimWinProcState::drawCodeSubWindow( int linePos, int linesLeft ) {
 
     setWinCursor( linePos, 1 );
 
-    fmtDesc = FMT_DEFAULT;
     for ( int i = 0; i < linesLeft; i++ ) {
+
+        fmtDesc = FMT_DEFAULT;
 
         T64Word ia = codeWinBaseAdr + ( i * 4 );
 

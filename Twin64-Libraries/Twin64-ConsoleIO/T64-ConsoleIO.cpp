@@ -733,7 +733,7 @@ int SimFormatter::printNumber( T64Word val, uint32_t fmtDesc ) {
                 if ( fmtDesc & FMT_INVALID_NUM ) 
                     len += writeChars((char *) "**_****_****_****" );
                 else
-                    len += writeChars((char *) "%02X_%04x_%04x_%04x", 
+                    len += writeChars((char *) "%02x_%04x_%04x_%04x", 
                                       (( val >> 48 ) & 0xFF   ),
                                       (( val >> 32 ) & 0xFFFF ),
                                       (( val >> 16 ) & 0xFFFF ),
