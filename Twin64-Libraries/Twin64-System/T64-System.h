@@ -40,8 +40,7 @@
 // several modules on one board. To the software this transparent.
 //
 //----------------------------------------------------------------------------------------
-const int MAX_MODULES           = 16;
-const int MAX_MOD_MAP_ENTRIES   = MAX_MODULES;
+const int MAX_MOD_MAP_ENTRIES   = T64_IO_MAX_MODULES;
 
 //----------------------------------------------------------------------------------------
 // Modules have a type, submodules a subtype.

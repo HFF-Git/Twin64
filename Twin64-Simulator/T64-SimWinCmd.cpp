@@ -1566,7 +1566,7 @@ void SimCommandsWin::addModuleCmd( ) {
     tok -> nextToken( );
     tok -> acceptComma( );
 
-    modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MODULES );
+    modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, T64_IO_MAX_MODULES );
     
     switch ( moduleTyp ) {
 
@@ -1593,7 +1593,7 @@ void SimCommandsWin::removeModuleCmd( ) {
 
      if ( tok -> tokTyp( ) == TYP_NUM ) {
 
-        modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MODULES );    
+        modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, T64_IO_MAX_MODULES );    
     }
     else if ( tok -> isToken( TOK_ALL )) {
 
@@ -1606,7 +1606,7 @@ void SimCommandsWin::removeModuleCmd( ) {
 
     if ( modNum == -1 ) {
 
-        for ( int i = 0; i < MAX_MODULES; i++ ) {
+        for ( int i = 0; i < T64_IO_MAX_MODULES; i++ ) {
 
             T64Module *m = glb -> system -> lookupByModNum( i );
             if ( m != nullptr ) {
@@ -1642,7 +1642,7 @@ void SimCommandsWin::displayModuleCmd( ) {
 
      if ( tok -> tokTyp( ) == TYP_NUM ) {
 
-        modNum = eval -> acceptNumExpr( ERR_EXPECTED_WIN_ID, 1, MAX_MODULES );
+        modNum = eval -> acceptNumExpr( ERR_EXPECTED_WIN_ID, 1, T64_IO_MAX_MODULES );
         tok -> checkEOS( );
     }
     else if ( ! tok -> isToken( TOK_EOS )) {
@@ -1789,7 +1789,8 @@ void SimCommandsWin::stepCmd( ) {
     if ( tok -> isToken( TOK_COMMA )) {
         
             tok -> nextToken( );
-            modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MODULES - 1 );
+            modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 
+                                            0, T64_IO_MAX_MODULES - 1 );
     }
     else modNum = glb -> winDisplay -> getCurrentWinModNum( );
 
@@ -1828,7 +1829,8 @@ void SimCommandsWin::runCmd( ) {
     
     if ( tok -> tokTyp( ) == TYP_NUM ) {
 
-        modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MODULES - 1 );
+        modNum = eval -> acceptNumExpr( ERR_EXPECTED_MOD_NUM, 
+                                        0, T64_IO_MAX_MODULES - 1 );
 
         if ( glb -> system -> getModuleType( modNum ) != MT_PROC ) {
 

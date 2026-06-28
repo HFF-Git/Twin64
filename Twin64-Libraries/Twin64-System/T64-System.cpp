@@ -320,7 +320,7 @@ T64Module *T64System::lookupByAdr ( T64Word adr ) const {
 
     if (( adr >= T64_IO_HPA_MEM_START ) && ( adr < T64_IO_HPA_MEM_LIMIT )) {
 
-        int modNum = extractField64( adr, 12, 6 );
+        int modNum = extractField64( adr, 12, 8 );
 
         if ( modNum > MAX_MOD_MAP_ENTRIES - 1 ) return( nullptr );
 
