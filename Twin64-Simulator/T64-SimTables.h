@@ -227,6 +227,25 @@ const SimToken cmdTokTab[ ] = {
     { .name = "C14",        .typ = TYP_CREG,    .tid = CR_14,    .u = { .val =  14 }},
     { .name = "C15",        .typ = TYP_CREG,    .tid = CR_15,    .u = { .val =  15 }},
 
+    { .name = "CR0",        .typ = TYP_CREG,    .tid = CR_0,     .u = { .val =  0  }},
+    { .name = "CR1",        .typ = TYP_CREG,    .tid = CR_1,     .u = { .val =  1  }},
+    { .name = "CR2",        .typ = TYP_CREG,    .tid = CR_2,     .u = { .val =  2  }},
+    { .name = "CR3",        .typ = TYP_CREG,    .tid = CR_3,     .u = { .val =  3  }},
+    { .name = "CR4",        .typ = TYP_CREG,    .tid = CR_4,     .u = { .val =  4  }},
+    { .name = "CR5",        .typ = TYP_CREG,    .tid = CR_5,     .u = { .val =  5  }},
+    { .name = "CR6",        .typ = TYP_CREG,    .tid = CR_6,     .u = { .val =  6  }},
+    { .name = "CR7",        .typ = TYP_CREG,    .tid = CR_7,     .u = { .val =  7  }},
+    { .name = "CR8",        .typ = TYP_CREG,    .tid = CR_8,     .u = { .val =  8  }},
+    { .name = "CR9",        .typ = TYP_CREG,    .tid = CR_9,     .u = { .val =  9  }},
+    { .name = "CR10",       .typ = TYP_CREG,    .tid = CR_10,    .u = { .val =  10 }},
+    { .name = "CR11",       .typ = TYP_CREG,    .tid = CR_11,    .u = { .val =  11 }},
+    { .name = "CR12",       .typ = TYP_CREG,    .tid = CR_12,    .u = { .val =  12 }},
+    { .name = "CR13",       .typ = TYP_CREG,    .tid = CR_13,    .u = { .val =  13 }},
+    { .name = "CR14",       .typ = TYP_CREG,    .tid = CR_14,    .u = { .val =  14 }},
+    { .name = "CR15",       .typ = TYP_CREG,    .tid = CR_15,    .u = { .val =  15 }},
+
+    // ???  name the control registers... watch out for name clashes though.
+
     //------------------------------------------------------------------------------------
     // Program State Register
     //

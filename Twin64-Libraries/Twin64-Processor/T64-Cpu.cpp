@@ -209,6 +209,11 @@ void T64Cpu::illegalInstrTrap( ) {
     throw( T64Trap( ILLEGAL_INSTR_TRAP, psrReg, instrReg, 0 ));
 }
 
+void T64Cpu::recoveryCounterTrap( ) {
+
+    throw( T64Trap( RECOVERY_COUNTER_TRAP, psrReg, instrReg, 0 ));
+}
+
 //----------------------------------------------------------------------------------------
 // Check routines that generate traps. We check for the condition and if not
 // met, raise the corresponding trap. There are  couple of checks. The first
@@ -315,6 +320,17 @@ void T64Cpu::addOverFlowCheck( T64Word val1, T64Word val2 ) {
 void T64Cpu::subUnderFlowCheck( T64Word val1, T64Word val2 ) {
 
     if ( willSubOverflow( val1, val2 )) overFlowTrap( );
+}
+
+void T64Cpu::recoveryCounterCheck( ) {
+
+    uint8_t enb = extractPsrRbit( psrReg );
+
+    if ( enb ) {
+
+        cRegFile[ 1 ] -= 1;
+        if ( cRegFile[ 1 ] < 0 ) recoveryCounterTrap( );
+    }
 }
 
 void T64Cpu::nextInstr( ) {
@@ -1732,6 +1748,8 @@ T64TrapCode T64Cpu::executeInstr( ) {
             
             default: illegalInstrTrap( );
         }
+
+        recoveryCounterCheck( );
 
         return ( NO_TRAP );
     }

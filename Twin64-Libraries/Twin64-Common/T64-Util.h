@@ -504,6 +504,11 @@ inline bool extractPsrTbit( T64Word psr ) {
     return( extractBit64( psr, 58 ));
 }
 
+inline bool extractPsrJbit( T64Word psr ) {
+
+    return( extractBit64( psr, 57 ));
+}
+
 inline bool extractPsrIbit( T64Word psr ) {
 
     return( extractBit64( psr, 52 ));

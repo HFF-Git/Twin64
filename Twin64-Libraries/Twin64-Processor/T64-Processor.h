@@ -194,6 +194,7 @@ struct T64Cpu {
 
     void            overFlowTrap( );
     void            illegalInstrTrap( );
+    void            recoveryCounterTrap( );
 
     void            privModeCheck( );
     bool            regionIdCheck( uint32_t pId, bool wMode );
@@ -204,6 +205,7 @@ struct T64Cpu {
     void            dataWriteAccCheck( T64Word vAdr, uint16_t tlbInfo );
     void            addOverFlowCheck( T64Word val1, T64Word val2 );
     void            subUnderFlowCheck( T64Word val1, T64Word val2 );
+    void            recoveryCounterCheck( );
 
     void            nextInstr( );
 
