@@ -82,10 +82,10 @@ const   T64Word T64_IO_MEM_START            = 0xFF00000000;
 const   T64Word T64_IO_MEM_LIMIT            = 0xFFFFFFFFFF;
 
 const   T64Word T64_PDC_MEM_START           = 0xFF00000000;
-const   T64Word T64_PDC_MEM_LIMIT           = 0xFF0FFFFFFF;  
+const   T64Word T64_PDC_MEM_LIMIT           = 0xFF00FFFFFF;  
 
-const   T64Word T64_IO_SPA_MEM_START        = 0xFF10000000;
-const   T64Word T64_IO_SPA_MEM_LIMIT        = 0xFFFFFEFFFF;
+const   T64Word T64_IO_SPA_MEM_START        = 0xFF01000000;
+const   T64Word T64_IO_SPA_MEM_LIMIT        = 0xFFFFEFFFFF;
 
 const   T64Word T64_IO_HPA_MEM_START        = 0xFFFFF00000;
 const   T64Word T64_IO_HPA_MEM_LIMIT        = 0xFFFFFFFFFF;

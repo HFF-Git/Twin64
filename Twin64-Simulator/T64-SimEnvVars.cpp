@@ -494,4 +494,17 @@ void SimEnv::setupPredefined( ) {
     enterVar((char *) ENV_WIN_TEXT_TAB_SIZE, (T64Word) 4, true, false );
 
     enterVar((char *) ENV_HALT_ON_TRAPS, (bool) false, true, false );
+
+    enterVar((char *) ENV_IO_MEM_START, T64_IO_MEM_START, true, true );
+    enterVar((char *) ENV_IO_MEM_LIMIT, T64_IO_MEM_LIMIT, true, true );
+
+    enterVar((char *) ENV_PDC_MEM_START, T64_PDC_MEM_START, true, true );
+    enterVar((char *) ENV_PDC_MEM_LIMIT, T64_PDC_MEM_LIMIT, true, true );
+
+    enterVar((char *) ENV_HPA_MEM_START, T64_IO_HPA_MEM_START, true, true );
+    enterVar((char *) ENV_HPA_MEM_LIMIT, T64_IO_HPA_MEM_LIMIT, true, true );
+
+    enterVar((char *) ENV_SPA_MEM_START, T64_IO_SPA_MEM_START, true, true );
+    enterVar((char *) ENV_SPA_MEM_LIMIT, T64_IO_SPA_MEM_LIMIT, true, true );
+
 }

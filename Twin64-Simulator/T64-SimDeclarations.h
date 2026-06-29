@@ -430,6 +430,18 @@ const char ENV_CHECK_DEF_MSG[ ]         = "CHECK_DEF_MSG";
 
 const char ENV_HALT_ON_TRAPS[ ]         = "HALT_ON_TRAPS";
 
+const char ENV_IO_MEM_START[ ]          = "IO_MEM_START";
+const char ENV_IO_MEM_LIMIT[ ]          = "IO_MEM_LIMIT";
+
+const char ENV_PDC_MEM_START[ ]         = "PDC_MEM_START";
+const char ENV_PDC_MEM_LIMIT[ ]         = "PDC_MEM_LIMIT";
+
+const char ENV_SPA_MEM_START[ ]          = "SPA_MEM_START";
+const char ENV_SPA_MEM_LIMIT[ ]         = "SPA_MEM_LIMIT";
+
+const char ENV_HPA_MEM_START[ ]         = "HPA_MEM_START";
+const char ENV_HPA_MEM_LIMIT[ ]         = "HPA_MEM_LIMIT";
+
 //----------------------------------------------------------------------------------------
 // Forward declaration of the globals structure. Every object will have access to 
 // the globals structure, so we do not have to pass around references to all the
