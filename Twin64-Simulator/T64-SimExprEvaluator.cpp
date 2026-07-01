@@ -478,6 +478,7 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
         if ( entry == nullptr ) throw( ERR_ENV_VAR_NOT_FOUND );
             
         rExpr -> typ = entry -> typ;
+        rExpr -> u.str = entry -> u.strVal;
             
         switch( rExpr -> typ ) {
                     
