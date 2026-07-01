@@ -62,6 +62,7 @@ void SimWinDisplay::setupWinDisplay( ) {
 //----------------------------------------------------------------------------------------
 void SimWinDisplay::startWinDisplay( ) {
     
+    cmdWin -> cmdInterpreterSetup( );
     cmdWin -> cmdInterpreterLoop( );
 }
 

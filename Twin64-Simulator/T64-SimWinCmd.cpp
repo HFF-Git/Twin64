@@ -821,7 +821,7 @@ void SimCommandsWin::configureT64Log( ) {
 
         rtrim( glb -> logFileName );
 
-        glb -> logFile = fopen( glb -> logFileName, "w+" );
+        glb -> logFile = fopen( glb -> logFileName, "w" );
         if ( glb -> logFile == nullptr ) {
 
             if ( glb -> console -> isConsole( )) {
@@ -2025,17 +2025,43 @@ void SimCommandsWin::assertCheckCmd( bool doExit ) {
 
     tok -> checkEOS( );
 
+    char *passEnvName = nullptr;
+    char *failEnvName = nullptr;
+    char *totaCntName = nullptr;
+
+    if ( doExit ) {
+
+        passEnvName = (char *) ENV_ASSERT_PASS_CNT;
+        failEnvName = (char *) ENV_ASSERT_FAIL_CNT;
+        totaCntName = (char *) ENV_ASSERT_TOTAL_CNT;
+
+    }
+    else {
+        passEnvName = (char *) ENV_CHECK_PASS_CNT;
+        failEnvName = (char *) ENV_CHECK_FAIL_CNT;
+        totaCntName = (char *) ENV_CHECK_TOTAL_CNT;
+    }
+
+    glb -> env -> setEnvVar( totaCntName, 
+                        glb -> env ->getEnvVarInt( totaCntName) + 1 );
+
     if ( bVal ) {
 
         msgBufLen += snprintf( msgBuf + msgBufLen, 
                                 msgBufLen - sizeof( msgBuf ), 
                                 "PASS" );
+
+        glb -> env -> setEnvVar( passEnvName, 
+                        glb -> env ->getEnvVarInt( passEnvName) + 1 );
     }
     else {
 
         msgBufLen += snprintf( msgBuf + msgBufLen, 
                                 msgBufLen - sizeof( msgBuf ), 
                                 "FAIL" );
+
+        glb -> env -> setEnvVar( failEnvName, 
+                        glb -> env ->getEnvVarInt( failEnvName  ) + 1 );
     }
 
     if ( glb -> console -> isConsole( )) {
@@ -2060,7 +2086,7 @@ void SimCommandsWin::assertCheckCmd( bool doExit ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The writelog command writes a text followed by an optional expression to the 
+// The log command writes a text followed by an optional expression to the 
 // log file. 
 //
 //  LOG <str> [ , <expr> ] 
@@ -3118,15 +3144,11 @@ void SimCommandsWin::evalInputLine( char *cmdBuf ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "cmdLoop" is the command line input interpreter. The basic loop is to prompt 
-// for the next input, read the input and evaluates it. If we are in windows mode,
-// we also redraw the screen.
+// "cmdInterpreterSetup" sets up the command line interpreter. It is called once
+// at the start of the simulator.
 //
 //----------------------------------------------------------------------------------------
-void SimCommandsWin::cmdInterpreterLoop( ) {
-    
-    char cmdLineBuf[ MAX_CMD_LINE_SIZE ];
-    char cmdPrompt[ MAX_CMD_LINE_SIZE ];
+void SimCommandsWin::cmdInterpreterSetup( ) {
 
     glb -> winDisplay -> setWinReFormat( );
     glb -> winDisplay -> reDraw( );
@@ -3139,7 +3161,19 @@ void SimCommandsWin::cmdInterpreterLoop( ) {
 
     configureT64Log( );
     glb -> winDisplay -> reDraw( );
+}
+
+//----------------------------------------------------------------------------------------
+// "cmdLoop" is the command line input interpreter. The basic loop is to prompt 
+// for the next input, read the input and evaluates it. If we are in windows mode,
+// we also redraw the screen.
+//
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::cmdInterpreterLoop( ) {
     
+    char cmdLineBuf[ MAX_CMD_LINE_SIZE ];
+    char cmdPrompt[ MAX_CMD_LINE_SIZE ];
+
     while ( true ) {
         
         buildCmdPrompt( cmdPrompt, sizeof( cmdPrompt ));

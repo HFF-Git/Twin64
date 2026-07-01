@@ -428,6 +428,14 @@ const char ENV_WIN_TEXT_TAB_SIZE[ ]     = "WIN_TEXT_TAB_SIZE";
 const char ENV_ASSERT_DEF_MSG[ ]        = "ASSERT_DEF_MSG";
 const char ENV_CHECK_DEF_MSG[ ]         = "CHECK_DEF_MSG";
 
+const char ENV_CHECK_PASS_CNT[ ]        = "CHECK_PASS_CNT";
+const char ENV_CHECK_FAIL_CNT[ ]        = "CHECK_FAIL_CNT";
+const char ENV_CHECK_TOTAL_CNT[ ]       = "CHECK_TOTAL_CNT";
+
+const char ENV_ASSERT_PASS_CNT[ ]       = "ASSERT_PASS_CNT";
+const char ENV_ASSERT_FAIL_CNT[ ]       = "ASSERT_FAIL_CNT";
+const char ENV_ASSERT_TOTAL_CNT[ ]      = "ASSERT_TOTAL_CNT";
+
 const char ENV_HALT_ON_TRAPS[ ]         = "HALT_ON_TRAPS";
 
 const char ENV_IO_MEM_START[ ]          = "IO_MEM_START";
@@ -1223,6 +1231,7 @@ public:
     void            drawBody( );
     void            clearCmdWin( );
     SimTokId        getCurrentCmd( );
+    void            cmdInterpreterSetup( ); 
     void            cmdInterpreterLoop( );
 
 private:

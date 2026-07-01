@@ -481,6 +481,14 @@ void SimEnv::setupPredefined( ) {
     enterVar((char *) ENV_CONFIG_FILE, (char *) "", true, false );
     enterVar((char *) ENV_LOG_FILE, (char *) "", true, false );
 
+    enterVar((char *) ENV_CHECK_PASS_CNT, (T64Word) 0, true, false );  
+    enterVar((char *) ENV_CHECK_FAIL_CNT, (T64Word) 0, true, false );
+    enterVar((char *) ENV_CHECK_TOTAL_CNT, (T64Word) 0, true, false );
+
+    enterVar((char *) ENV_ASSERT_PASS_CNT, (T64Word) 0, true, false );
+    enterVar((char *) ENV_ASSERT_FAIL_CNT, (T64Word) 0, true, false );
+    enterVar((char *) ENV_ASSERT_TOTAL_CNT, (T64Word) 0, true, false );
+
     enterVar((char *) ENV_SHOW_CMD_CNT, true, true, false );
     enterVar((char *) ENV_CMD_CNT, (T64Word) 0, true, true );
     enterVar((char *) ENV_ECHO_CMD_INPUT, false, true, false );
