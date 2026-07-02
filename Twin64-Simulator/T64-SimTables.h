@@ -259,7 +259,10 @@ const SimToken cmdTokTab[ ] = {
     //------------------------------------------------------------------------------------
     { .name = "ASM",        .typ = TYP_P_FUNC, .tid = PF_ASSEMBLE, .u = { .val = 0 }},
     { .name = "DISASM",     .typ = TYP_P_FUNC, .tid = PF_DIS_ASM,  .u = { .val = 0 }},
-    { .name = "HASH",       .typ = TYP_P_FUNC, .tid = PF_HASH,     .u = { .val = 0 }},
+    { .name = "ADD_OFS",    .typ = TYP_P_FUNC, .tid = PF_ADD_OFS,  .u = { .val = 0 }},
+    { .name = "REGION",     .typ = TYP_P_FUNC, .tid = PF_REGION,   .u = { .val = 0 }},
+    { .name = "OFS",        .typ = TYP_P_FUNC, .tid = PF_OFS,      .u = { .val = 0 }},
+    { .name = "PAGE",       .typ = TYP_P_FUNC, .tid = PF_PAGE,     .u = { .val = 0 }},
 
     //------------------------------------------------------------------------------------
     // TLB and Cache configuration types.
@@ -999,6 +1002,33 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
         .cmdSyntaxStr   = (char *) "disasm ( <instr> )",
         .helpStr        = (char *) "returns the assemble string for an instruction value"
     },
+
+    {
+        .helpTypeId = TYP_P_FUNC,  .helpTokId  = PF_REGION,
+        .cmdNameStr     = (char *) "region",
+        .cmdSyntaxStr   = (char *) "region ( <addr> )",
+        .helpStr        = (char *) "returns the virtual region portion of an address"
+    },
+
+    {
+        .helpTypeId = TYP_P_FUNC,  .helpTokId  = PF_PAGE,
+        .cmdNameStr     = (char *) "page",
+        .cmdSyntaxStr   = (char *) "page ( <addr> )",
+        .helpStr        = (char *) "returns the virtual page portion of an address"
+    },
+
+    {
+        .helpTypeId = TYP_P_FUNC,  .helpTokId  = PF_OFS,
+        .cmdNameStr     = (char *) "ofs",
+        .cmdSyntaxStr   = (char *) "ofs ( <addr> )",
+        .helpStr        = (char *) "returns the virtual offset portion of an address"
+    },
+
+    {   .helpTypeId = TYP_P_FUNC,  .helpTokId  = PF_ADD_OFS,
+        .cmdNameStr     = (char *) "add_ofs",
+        .cmdSyntaxStr   = (char *) "add_ofs ( <addr> )",
+        .helpStr        = (char *) "returns the address with the offset added"
+    }
    
 };
 

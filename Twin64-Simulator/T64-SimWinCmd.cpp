@@ -1523,6 +1523,7 @@ void SimCommandsWin::envCmd( ) {
         }
         else throw ( ERR_EXPECTED_COMMA );
     }
+    else throw ( ERR_INVALID_ARG );
 }
 
 //----------------------------------------------------------------------------------------

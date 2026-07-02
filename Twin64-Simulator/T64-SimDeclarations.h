@@ -244,7 +244,9 @@ enum SimTokId : uint16_t {
     //
     //------------------------------------------------------------------------------------
     PF_SET,                     PF_ASSEMBLE,                PF_DIS_ASM,
-    PF_HASH,                    PF_S32,
+    PF_ADD_OFS,                 PF_REGION,                  PF_OFS,
+    PF_PAGE,
+                        
 
     //------------------------------------------------------------------------------------
     // General, Control and PSW Register Tokens.
@@ -691,6 +693,10 @@ struct SimExprEvaluator {
     void            parsePredefinedFunction( SimToken funcId, SimExpr *rExpr );    
     void            pFuncAssemble( SimExpr *rExpr );
     void            pFuncDisAssemble( SimExpr *rExpr );
+    void            pFuncAddOffset( SimExpr *rExpr );
+    void            pFuncRegion( SimExpr *rExpr );
+    void            pFuncOffset( SimExpr *rExpr );
+    void            pFuncPage( SimExpr *rExpr );  
     
     SimGlobals      *glb        = nullptr;
     SimTokenizer    *tok        = nullptr;

@@ -127,6 +127,120 @@ void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr ) {
 }
 
 //----------------------------------------------------------------------------------------
+// Add Offset function. We take the value and return the virtual address plus 
+// the offset.
+//
+//----------------------------------------------------------------------------------------
+void SimExprEvaluator::pFuncAddOffset( SimExpr *rExpr ) {
+    
+    SimExpr     lExpr;
+    T64Word     base   = 0;
+    T64Word     offset = 0;
+    
+    tok -> nextToken( );
+    if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
+    else throw ( ERR_EXPECTED_LPAREN );
+    
+    parseExpr( &lExpr );
+    if ( lExpr.typ == TYP_NUM ) {
+        
+        base = lExpr.u.val;
+    }
+    else throw ( ERR_EXPECTED_AN_OFFSET_VAL );
+
+    if ( tok -> isToken( TOK_COMMA )) tok -> nextToken( );
+    else throw ( ERR_EXPECTED_COMMA );
+
+    parseExpr( &lExpr );
+    if ( lExpr.typ == TYP_NUM ) {
+        
+        offset = lExpr.u.val;
+        
+        if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
+        else throw ( ERR_EXPECTED_RPAREN );
+        
+        rExpr -> typ   = TYP_NUM;
+        rExpr -> u.val = addAdrOfs32( base, offset );
+    }
+    else throw ( ERR_EXPECTED_AN_OFFSET_VAL );
+}
+
+//----------------------------------------------------------------------------------------
+// Region function. We take the value and return the virtual region portion.
+//
+//----------------------------------------------------------------------------------------
+void SimExprEvaluator::pFuncRegion( SimExpr *rExpr ) {
+    
+    SimExpr lExpr;
+    
+    tok -> nextToken( );
+    if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
+    else throw ( ERR_EXPECTED_LPAREN );
+    
+    parseExpr( &lExpr );
+    
+    if ( lExpr.typ == TYP_NUM ) {
+        
+        if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
+        else throw ( ERR_EXPECTED_RPAREN );
+        
+        rExpr -> typ   = TYP_NUM;
+        rExpr -> u.val = vAdrRegionId( lExpr.u.val );
+    }
+    else throw ( ERR_EXPECTED_NUM_VALUE );
+}
+
+//----------------------------------------------------------------------------------------
+// Offset function. We take the value and return the virtual offset portion.
+//
+//----------------------------------------------------------------------------------------
+void SimExprEvaluator::pFuncOffset( SimExpr *rExpr ) {
+    
+    SimExpr lExpr;
+    
+    tok -> nextToken( );
+    if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
+    else throw ( ERR_EXPECTED_LPAREN );
+    
+    parseExpr( &lExpr );
+    
+    if ( lExpr.typ == TYP_NUM ) {
+    
+        if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
+        else throw ( ERR_EXPECTED_RPAREN );
+        
+        rExpr -> typ   = TYP_NUM;
+        rExpr -> u.val = vAdrRegionOfs( lExpr.u.val );
+    }
+    else throw ( ERR_EXPECTED_AN_OFFSET_VAL );
+}
+
+//----------------------------------------------------------------------------------------
+// Page function. We take the value and return the virtual page portion.
+//
+//----------------------------------------------------------------------------------------
+void SimExprEvaluator::pFuncPage( SimExpr *rExpr ) {
+    
+    SimExpr lExpr;
+   
+    tok -> nextToken( );
+    if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
+    else throw ( ERR_EXPECTED_LPAREN );
+    
+    parseExpr( &lExpr );
+    
+    if ( lExpr.typ == TYP_NUM ) {
+      
+        if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
+        else throw ( ERR_EXPECTED_RPAREN );
+        
+        rExpr -> typ   = TYP_NUM;
+        rExpr -> u.val = vAdrPageNum( lExpr.u.val );
+    }
+    else throw ( ERR_EXPECTED_NUM_VALUE );
+}
+
+//----------------------------------------------------------------------------------------
 // Entry point to the predefined functions. We dispatch based on the predefined function
 // token Id.
 //
@@ -137,6 +251,10 @@ void SimExprEvaluator::parsePredefinedFunction( SimToken funcId, SimExpr *rExpr 
             
         case PF_ASSEMBLE:       pFuncAssemble( rExpr );     break;
         case PF_DIS_ASM:        pFuncDisAssemble( rExpr );  break;
+        case PF_ADD_OFS:        pFuncAddOffset( rExpr );    break;
+        case PF_REGION:         pFuncRegion( rExpr );       break;
+        case PF_OFS:            pFuncOffset( rExpr );       break;
+        case PF_PAGE:           pFuncPage( rExpr );         break;
             
         default: throw ( ERR_UNDEFINED_PFUNC );
     }
