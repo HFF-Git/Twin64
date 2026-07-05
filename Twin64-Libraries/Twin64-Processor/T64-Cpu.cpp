@@ -426,8 +426,7 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt, bool rsv ) {
 
     T64Word pAdr    = 0;
     T64Word data    = 0;
-    int     wordOfs = sizeof( T64Word ) - len;
-
+ 
     dataAlignmentCheck( vAdr, len );
            
     if ( vAdr < physMemSize ) { 
@@ -454,23 +453,21 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt, bool rsv ) {
 
     if ( rsv ) {
 
-        if ( ! proc -> busOpReadRsv( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
+        if ( ! proc -> busOpReadRsv( pAdr, ((uint8_t *) &data ), len )) {
 
             machineCheckTrap( pAdr );
         }
     }
     else {
            
-        if ( ! proc -> busOpRead( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
+        if ( ! proc -> busOpRead( pAdr, ((uint8_t *) &data ), len )) {
 
             machineCheckTrap( pAdr );
         }
 
     }
 
-    copyEndianAware(((uint8_t *) &data ) + wordOfs, 
-                    ((uint8_t *) &data ) + wordOfs, 
-                    len );
+    copyEndianAware(((uint8_t *) &data ), ((uint8_t *) &data ), len );
 
     if ( sExt ) {
 
@@ -496,14 +493,11 @@ T64Word T64Cpu::dataRead( T64Word vAdr, int len, bool sExt, bool rsv ) {
 //----------------------------------------------------------------------------------------
 bool T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len, bool cond ) {
 
-    T64Word pAdr    = 0;
-    int     wordOfs = sizeof( T64Word ) - len;
+    T64Word pAdr = 0;
 
     dataAlignmentCheck( vAdr, len );
 
-    copyEndianAware(((uint8_t *) &data ) + wordOfs, 
-                    ((uint8_t *) &data ) + wordOfs, 
-                    len );
+    copyEndianAware(((uint8_t *) &data ), ((uint8_t *) &data ), len );
   
     if ( vAdr < physMemSize ) {
         
@@ -529,14 +523,14 @@ bool T64Cpu::dataWrite( T64Word vAdr, T64Word data, int len, bool cond ) {
 
     if ( cond ) {
 
-        if ( ! proc -> busOpWriteCond( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
+        if ( ! proc -> busOpWriteCond( pAdr, ((uint8_t *) &data ), len )) {
 
             machineCheckTrap( pAdr );
         }
     }
     else {
 
-        if ( ! proc -> busOpWrite( pAdr, ((uint8_t *) &data ) + wordOfs, len )) {
+        if ( ! proc -> busOpWrite( pAdr, ((uint8_t *) &data ), len )) {
 
             machineCheckTrap( pAdr );
         }
@@ -663,7 +657,7 @@ void T64Cpu::instrMemAddOp( T64Instr instr ) {
                    
         case 0: { 
             
-            val2 = extractInstrSignedScaledImm13( instr );
+            val2 = dataReadRegBOfsImm13( instr, true );
          
         } break;
 
@@ -728,7 +722,7 @@ void T64Cpu::instrMemSubOp( T64Instr instr ) {
                    
         case 0: { 
             
-            val2 = extractInstrSignedScaledImm13( instr );
+            val2 = dataReadRegBOfsImm13( instr, true );
          
         } break;
 
