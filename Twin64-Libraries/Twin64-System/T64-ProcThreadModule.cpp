@@ -199,7 +199,7 @@ void T64ProcThreadModule::moduleWorker( ) {
 
             case T64_MOD_STATE_RESET: {
 
-                resetModule( );
+               // resetModule( );
 
                 mTrapCode = NO_TRAP;
                 mState.store( T64_MOD_STATE_HALTED, 

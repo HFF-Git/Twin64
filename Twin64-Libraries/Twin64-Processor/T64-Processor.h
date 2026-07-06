@@ -297,9 +297,9 @@ struct T64Processor : T64ProcThreadModule {
     
     virtual         ~ T64Processor( );
 
-    void            initModule( );
-    void            resetModule( );
-    T64TrapCode     executeUnit( );
+    void            initModule( ) override;
+    void            resetModule( ) override;
+    T64TrapCode     executeUnit( ) override;
 
     bool            busOpRead( T64Word adr, uint8_t *data, int len );
     bool            busOpReadRsv( T64Word adr, uint8_t *data, int len );
@@ -310,12 +310,17 @@ struct T64Processor : T64ProcThreadModule {
                                   T64Word            arg1, 
                                   T64Word            arg2 );
 
-    bool            busOpReadEvent( T64Word pAdr, uint8_t *data, int len );
-    bool            busOpWriteEvent( T64Word pAdr, uint8_t *data, int len );  
+    bool            busOpReadEvent( T64Word pAdr, 
+                                    uint8_t *data, 
+                                    int len ) override;
+
+    bool            busOpWriteEvent( T64Word pAdr, 
+                                     uint8_t *data, 
+                                     int len ) override; 
 
     bool            busOpControlEvent( T64BBusOpControlEvents id, 
                                        T64Word            arg1, 
-                                       T64Word            arg2 );
+                                       T64Word            arg2 ) override;
                         
     T64Cpu          *getCpuPtr( );
     T64LocalTlb     *getLocalTlbPtr( );
