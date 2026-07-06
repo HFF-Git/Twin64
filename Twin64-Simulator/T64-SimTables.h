@@ -518,6 +518,9 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
     { .errNum = ERR_CMD_LINE_TOO_LONG,    
       .errStr = (char *) "Command line input too long" },
 
+    { .errNum = ERR_OUT_OF_HIST_BOUNDS, 
+      .errStr = (char *) "Command Id out of history buffer bounds" },
+
     { .errNum = ERR_OFS_LEN_LIMIT_EXCEEDED,     
       .errStr = (char *) "Offset/Length exceeds limit" },
 

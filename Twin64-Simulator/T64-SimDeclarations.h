@@ -286,7 +286,6 @@ enum SimErrMsgId : int {
     ERR_INVALID_CHAR_IN_TOKEN_LINE  = 7,
     ERR_INVALID_CHAR_IN_IDENT       = 8,
     ERR_NUMERIC_OVERFLOW            = 9,
-
     ERR_INVALID_CMD                 = 10,
     ERR_INVALID_EXPR                = 20,
     ERR_INVALID_ARG                 = 11,
@@ -355,7 +354,8 @@ enum SimErrMsgId : int {
     ERR_OPEN_EXEC_FILE              = 320,
     ERR_OPEN_LOG_FILE               = 321,
     ERR_NO_LOG_FILE_CONFIGURED      = 322,
-    
+    ERR_OUT_OF_HIST_BOUNDS          = 323,
+
     ERR_EXPR_TYPE_MATCH             = 400,
     ERR_EXPR_FACTOR                 = 401,
     ERR_IN_ASM_PFUNC                = 402,
@@ -805,7 +805,7 @@ struct SimCmdHistory {
     
     SimCmdHistory( );
     
-    void addCmdLine( char *cmdStr );
+    void addCmdLine( const char *cmdStr );
     char *getCmdLine( int cmdRef, int *cmdId = nullptr );
     int  getCmdCount( );
     int  getCmdNum( );

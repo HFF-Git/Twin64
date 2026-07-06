@@ -1,0 +1,455 @@
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+Test add R6,R2,111
+Test add.W R6,20(R1)
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+Test sub R6,R2,111
+EXTRACT
+###############
+Test extr r6,r2,28,8
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS
+###############
+Testing ADD
+###############
+Test add R6,R2,R3
+PASS
+Test add R6,R2,111
+PASS
+Test add.W R6,20(R1)
+PASS
+###############
+Testing SUB
+###############
+Test sub R6,R2,R3
+PASS
+Test sub R6,R2,111
+PASS
+EXTRACT
+###############
+Test extr r6,r2,28,8
+PASS

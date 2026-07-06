@@ -325,13 +325,13 @@ SimCmdHistory::SimCmdHistory( ) {
 // The head index points to the next entry for allocation.
 //
 //----------------------------------------------------------------------------------------
-void SimCmdHistory::addCmdLine( char *cmdStr ) {
+void SimCmdHistory::addCmdLine( const char *cmdStr ) {
     
     SimCmdHistEntry *ptr = &history[ head ];
     
     ptr -> cmdId = nextCmdNum;
-    strncpy( ptr -> cmdLine, cmdStr, 256 );
-    
+    snprintf(ptr->cmdLine, MAX_CMD_LINE_SIZE, "%s", cmdStr);
+
     if ( count == MAX_CMD_HIST ) tail = ( tail + 1 ) % MAX_CMD_HIST;
     else count++;
     
@@ -342,44 +342,43 @@ void SimCmdHistory::addCmdLine( char *cmdStr ) {
 //----------------------------------------------------------------------------------------
 // Get a command line from the command history. If the command reference is 
 // negative, the entry relative to the top is used. "head - 1" refers to the last
-// entry entered. If the command ID is positive, we search for the entry with the 
-// matching command id, if still in the history buffer. Optionally, we return the
-// absolute command Id.
+// entry entered. If the command reference is positive, we search for the entry 
+// with the matching command id, if still in the history buffer. Optionally, we
+// return the absolute command Id.
 //
 //----------------------------------------------------------------------------------------
 char *SimCmdHistory::getCmdLine( int cmdRef, int *cmdId ) {
-    
-    if (( cmdRef >= 0 ) && (( nextCmdNum - cmdRef ) > MAX_CMD_HIST ))
-         return ( nullptr );
 
-    if (( cmdRef < 0  ) && ( - cmdRef > nextCmdNum )) return ( nullptr );
-    
     if ( count == 0 ) return ( nullptr );
-    
+
     if ( cmdRef >= 0 ) {
-        
+
+        if ( cmdRef < nextCmdNum - count ) return ( nullptr );
+
+        if ( cmdRef >= nextCmdNum ) return ( nullptr );
+
         for ( int i = 0; i < count; i++ ) {
-            
+
             int pos = ( tail + i ) % MAX_CMD_HIST;
+
             if ( history[ pos ].cmdId == cmdRef ) {
-                
-                if ( cmdId != nullptr ) *cmdId = history[ pos ].cmdId;
+
+                if ( cmdId ) *cmdId = history[pos].cmdId;
                 return ( history[ pos ].cmdLine );
             }
         }
-        
+
         return ( nullptr );
     }
     else {
+
+        int offset = -cmdRef;
+        if ( offset > count ) return ( nullptr );
+
+        int pos = ( head - offset + MAX_CMD_HIST ) % MAX_CMD_HIST;
+        if ( cmdId ) *cmdId = history[ pos ].cmdId;
         
-        int pos = ( head + cmdRef + MAX_CMD_HIST ) % MAX_CMD_HIST;
-        
-        if (( pos < head ) && ( pos >= tail )) {
-            
-            if ( cmdId != nullptr ) *cmdId = history[ pos ].cmdId;
-            return history[ pos ].cmdLine;
-        }
-        else return ( nullptr );
+        return history[ pos ].cmdLine;
     }
 }
 
@@ -1955,13 +1954,14 @@ void SimCommandsWin::doCmd( ) {
     
     if ( tok -> tokId( ) != TOK_EOS ) {
 
-        cmdId = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, MAX_CMD_HIST );
+        cmdId = eval -> acceptNumExpr( ERR_INVALID_NUM, INT_MIN, INT_MAX );
         tok -> checkEOS( );
     }
     
     char *cmdStr = hist -> getCmdLine( cmdId );
     
     if ( cmdStr != nullptr ) evalInputLine( cmdStr );
+    else throw ( ERR_OUT_OF_HIST_BOUNDS );
 }
 
 //----------------------------------------------------------------------------------------
