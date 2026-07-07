@@ -385,7 +385,7 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
 
         SimTokTypeId regType    = tok -> tokTyp( );
         int          regId      = tok -> tokVal( );
-        int          modNum     = glb -> winDisplay -> getCurrentWinModNum( );
+        int          modNum     = -1;
 
         tok -> nextToken( );
         if ( tok -> isToken( TOK_COLON )) {
@@ -396,6 +396,7 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
 
             tok -> nextToken( );
         }
+        else modNum = glb -> winDisplay -> getCurrentWinModNum( );
             
         T64ModuleType mType = glb -> system -> getModuleType( modNum );
         if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );

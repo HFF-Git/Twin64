@@ -36,7 +36,8 @@ namespace {
 //----------------------------------------------------------------------------------------
 // Assemble function.
 //
-// ASSEMBLE "(" <str> ")"
+//  ASSEMBLE "(" <str> ")"
+//  ASM "(" <str> ")"
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::pFuncAssemble( SimExpr *rExpr ) {
     
@@ -212,7 +213,7 @@ void SimExprEvaluator::pFuncOffset( SimExpr *rExpr ) {
         rExpr -> typ   = TYP_NUM;
         rExpr -> u.val = vAdrRegionOfs( lExpr.u.val );
     }
-    else throw ( ERR_EXPECTED_AN_OFFSET_VAL );
+    else throw ( ERR_EXPECTED_NUM_VALUE );
 }
 
 //----------------------------------------------------------------------------------------
