@@ -1,0 +1,15 @@
+# load registers for instruction tests
+########################################
+reset all
+mr r1, 0x00
+mr r2, 512
+mr r3, 20
+mr r4, 0xaaaabbbbccccdddd
+mr r5, 0x7fff
+
+# load memory location for instruction test
+##########################################
+
+mw 20,0x30
+mw 24,1024
+mw 28,0x3333_4444
