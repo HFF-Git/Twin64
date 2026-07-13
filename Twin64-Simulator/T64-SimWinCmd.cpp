@@ -2013,8 +2013,8 @@ void SimCommandsWin::assertCheckCmd( bool doExit ) {
 
     char msgBuf[ MAX_TEXT_LINE_SIZE ];
     char msgBufLen = 0;
-    char *msgStr = nullptr;
-    bool bVal = eval -> acceptBoolExpr( ERR_EXPECTED_BOOL_VALUE );
+    char *msgStr   = nullptr;
+    bool bVal      = eval -> acceptBoolExpr( ERR_EXPECTED_BOOL_VALUE );
 
     if ( tok -> isToken( TOK_COMMA )) {
 
@@ -2026,21 +2026,32 @@ void SimCommandsWin::assertCheckCmd( bool doExit ) {
 
     tok -> checkEOS( );
 
+    char *textMsgName = nullptr;
     char *passEnvName = nullptr;
     char *failEnvName = nullptr;
     char *totaCntName = nullptr;
 
     if ( doExit ) {
 
+        textMsgName = (char *) ENV_ASSERT_DEF_MSG;
         passEnvName = (char *) ENV_ASSERT_PASS_CNT;
         failEnvName = (char *) ENV_ASSERT_FAIL_CNT;
         totaCntName = (char *) ENV_ASSERT_TOTAL_CNT;
 
     }
     else {
+
+        textMsgName = (char *) ENV_CHECK_DEF_MSG;
         passEnvName = (char *) ENV_CHECK_PASS_CNT;
         failEnvName = (char *) ENV_CHECK_FAIL_CNT;
         totaCntName = (char *) ENV_CHECK_TOTAL_CNT;
+    }
+
+    if ( msgStr == nullptr ) {
+
+        msgStr = glb -> env -> getEnvVarStr( textMsgName );
+        if ( strlen( msgStr ) > 0 )
+            msgBufLen += snprintf( msgBuf, sizeof( msgBuf ), "%s : ", msgStr );
     }
 
     glb -> env -> setEnvVar( totaCntName, 

@@ -306,7 +306,7 @@ char *SimEnv::getEnvVarStr( char *name, char *def ) {
     int index = lookupEntry( name );
     
     if ( index >= 0 )   return( table[ index ].u.strVal );
-    else                return (def );
+    else                return ( def );
 }
 
 //----------------------------------------------------------------------------------------
@@ -363,12 +363,8 @@ void SimEnv::enterVar( char *name, char *str, bool predefined, bool rOnly ) {
         tmp.typ         = TYP_STR;
         tmp.predefined  = predefined;
         tmp.readOnly    = rOnly;
-        if ( strlen ( str ) > 0 ) {
-
-            tmp.u.strVal    = (char *) calloc( strlen( str ) + 1, sizeof( char ));
-            strcpy( tmp.u.strVal, str );        
-        }
-        else tmp.u.strVal = nullptr;
+        tmp.u.strVal    = (char *) calloc( strlen( str ) + 1, sizeof( char ));
+        strcpy( tmp.u.strVal, str );  
             
         table[ index ]  = tmp;
     }
@@ -481,10 +477,12 @@ void SimEnv::setupPredefined( ) {
     enterVar((char *) ENV_CONFIG_FILE, (char *) "", true, false );
     enterVar((char *) ENV_LOG_FILE, (char *) "", true, false );
 
+    enterVar((char *) ENV_CHECK_DEF_MSG, (char *) "", true, false );
     enterVar((char *) ENV_CHECK_PASS_CNT, (T64Word) 0, true, false );  
     enterVar((char *) ENV_CHECK_FAIL_CNT, (T64Word) 0, true, false );
     enterVar((char *) ENV_CHECK_TOTAL_CNT, (T64Word) 0, true, false );
 
+    enterVar((char *) ENV_ASSERT_DEF_MSG, (char *) "", true, false );
     enterVar((char *) ENV_ASSERT_PASS_CNT, (T64Word) 0, true, false );
     enterVar((char *) ENV_ASSERT_FAIL_CNT, (T64Word) 0, true, false );
     enterVar((char *) ENV_ASSERT_TOTAL_CNT, (T64Word) 0, true, false );

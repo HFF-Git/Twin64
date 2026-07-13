@@ -191,7 +191,8 @@ enum SimTokId : uint16_t {
     TOK_REM,                    TOK_NEG,                    TOK_AND,
     TOK_OR,                     TOK_XOR,                    TOK_EQ,
     TOK_NE,                     TOK_LT,                     TOK_GT,
-    TOK_LE,                     TOK_GE,
+    TOK_LE,                     TOK_GE,                     TOK_LAND, 
+    TOK_LOR,                    TOK_LNOT, 
 
     //------------------------------------------------------------------------------------
     // Token symbols.
@@ -203,8 +204,10 @@ enum SimTokId : uint16_t {
     TOK_STATS,                  TOK_TEXT,                   TOK_SYS,        
     TOK_PROC,                   TOK_CPU,                    TOK_IO,
     TOK_TLB,                    TOK_MEM_ROM,                TOK_MEM_RAM,  
-    TOK_BYTE,                   TOK_SHORT,                  TOK_WORD,               
-    TOK_DWORD,                  TOK_DOUBLE,                 TOK_HALF,   
+    TOK_BYTE,                   TOK_UBYTE,                  TOK_SHORT,  
+    TOK_USHORT,                 TOK_HALF,                   TOK_UHALF, 
+    TOK_WORD,                   TOK_UWORD,                  TOK_DWORD,      
+    TOK_DOUBLE,                    
     
     TOK_TLB_FA_16S,             TOK_TLB_FA_32S,             TOK_TLB_FA_64S,             
     TOK_TLB_FA_128S,            TOK_MOD_SPA_ADR,            TOK_MOD_SPA_LEN,

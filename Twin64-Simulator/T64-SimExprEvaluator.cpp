@@ -424,7 +424,8 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
     }
     else if ( tok -> isToken( TOK_LBRACK )) {
 
-        int len = sizeof( T64Word );
+        int  len  = sizeof( T64Word );
+        bool sExt = true;
 
         tok -> nextToken( );
 
@@ -438,6 +439,15 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
             len = tok -> tokVal( );
             tok -> nextToken( );
         }
+        else if ( tok -> isToken( TOK_UBYTE ) ||
+                  tok -> isToken( TOK_USHORT  ) ||
+                  tok -> isToken( TOK_UHALF ) ||
+                  tok -> isToken( TOK_UWORD  )) {
+
+            sExt = false;
+            len  = tok -> tokVal( );
+            tok -> nextToken( );
+        }
         
         parseExpr( rExpr );
         if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
@@ -446,6 +456,9 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
 
         T64Word data = 0;
         if ( readMem( glb -> system, rExpr -> u.val, (uint8_t *) &data, len )) {
+
+            // ??? how do w e exactly do sign extend ? 
+            // ??? check what readMem actually returns ( just the number of bytes ? )
 
             rExpr -> typ = TYP_NUM;
             rExpr -> u.val = data;      
@@ -506,6 +519,7 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
 //      <termOp>    ->  "*" | "/" | "%" | "&"
 //
 // ??? type mix options ?
+// ??? support for LAND ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::parseTerm( SimExpr *rExpr ) {
     
@@ -542,6 +556,7 @@ void SimExprEvaluator::parseTerm( SimExpr *rExpr ) {
 //      <exprOp>        ->  "+" | "-" | "|" | "^"
 //
 // ??? type mix options ?
+// ??? support for LOR ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::parseSimpleExpr( SimExpr *rExpr ) {
     
@@ -593,6 +608,8 @@ void SimExprEvaluator::parseSimpleExpr( SimExpr *rExpr ) {
 //      <relOp>    ->  "==" | "!=" | "<" | "<=" | ">" | ">=" 
 //
 // ??? type mix options ?
+// ??? support for logical operations ( LAND, LOR, LNOT ) ?
+// ?? support for short circuit evaluation ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::parseExpr( SimExpr *rExpr ) {
     
