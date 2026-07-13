@@ -448,7 +448,7 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
             len  = tok -> tokVal( );
             tok -> nextToken( );
         }
-        
+
         parseExpr( rExpr );
         if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
 
@@ -457,11 +457,32 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
         T64Word data = 0;
         if ( readMem( glb -> system, rExpr -> u.val, (uint8_t *) &data, len )) {
 
-            // ??? how do w e exactly do sign extend ? 
-            // ??? check what readMem actually returns ( just the number of bytes ? )
-
             rExpr -> typ = TYP_NUM;
-            rExpr -> u.val = data;      
+            rExpr -> u.val = data;   
+            
+             if ( sExt ) {
+
+                switch ( len ) {
+
+                    case 1: {
+
+                        rExpr -> u.val = signExtend( rExpr -> u.val, 7 );
+                        
+                    } break;
+
+                    case 2: {
+
+                        rExpr -> u.val = signExtend( rExpr -> u.val, 15 );
+                        
+                    } break;
+
+                    case 4: { 
+
+                        rExpr -> u.val = signExtend( rExpr -> u.val, 31 );
+                        
+                    } break;
+                }
+            }
         }
         else throw ( ERR_MEM_OP_FAILED );
                                                  
