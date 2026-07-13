@@ -1,0 +1,23 @@
+############################################
+# Test Framework TWIN64
+############################################
+
+log "Version", prog_version
+log "git_branch", git_branch
+log "patch_level", patch_level
+
+# Enable Windows
+############################################
+won
+wn mem,0
+wn cpu,4
+
+
+# result register is always > r6
+# result memory location is always location 0x0000_0000_0000_0010
+
+############################################
+log "Test TWIN64 instructions"
+############################################
+
+xf "..\\TestScript\\InstructionTest.txt"
