@@ -69,6 +69,10 @@ const SimToken cmdTokTab[ ] = {
     { .name = "OR",         .typ = TYP_SYM,     .tid = TOK_OR                       },
     { .name = "XOR",        .typ = TYP_SYM,     .tid = TOK_XOR                      },
 
+    { .name = "&&",         .typ = TYP_SYM,     .tid = TOK_LAND                     },
+    { .name = "||",         .typ = TYP_SYM,     .tid = TOK_LOR                      },
+    { .name = "!",          .typ = TYP_SYM,     .tid = TOK_LNOT                     },
+
     { .name = "DEC",        .typ = TYP_SYM,     .tid = TOK_DEC,   .u = { .val = 10 }},
     { .name = "HEX",        .typ = TYP_SYM,     .tid = TOK_HEX,   .u = { .val = 16 }},
     { .name = "HEX32",      .typ = TYP_SYM,     .tid = TOK_HEX32,                   },
@@ -77,10 +81,14 @@ const SimToken cmdTokTab[ ] = {
     { .name = "CODE",       .typ = TYP_SYM,     .tid = TOK_CODE                     },
 
     { .name = "BYTE",       .typ = TYP_SYM,     .tid = TOK_BYTE,   .u = { .val = 1  }},
+    { .name = "UBYTE",      .typ = TYP_SYM,     .tid = TOK_UBYTE,  .u = { .val = 1  }},
     { .name = "SHORT",      .typ = TYP_SYM,     .tid = TOK_SHORT,  .u = { .val = 2  }},
+    { .name = "USHORT",     .typ = TYP_SYM,     .tid = TOK_USHORT, .u = { .val = 2  }},
     { .name = "HALF",       .typ = TYP_SYM,     .tid = TOK_HALF,   .u = { .val = 2  }},
+    { .name = "UHALF",      .typ = TYP_SYM,     .tid = TOK_UHALF,  .u = { .val = 2  }},
     { .name = "WORD",       .typ = TYP_SYM,     .tid = TOK_WORD,   .u = { .val = 4  }},
-    { .name = "DWORD",      .typ = TYP_SYM,     .tid = TOK_DWORD,  .u = { .val = 4  }},
+    { .name = "UWORD",      .typ = TYP_SYM,     .tid = TOK_UWORD,  .u = { .val = 4  }},
+    { .name = "DWORD",      .typ = TYP_SYM,     .tid = TOK_DWORD,  .u = { .val = 8  }},
     { .name = "DOUBLE",     .typ = TYP_SYM,     .tid = TOK_DOUBLE, .u = { .val = 8  }},
    
     { .name = "COMMANDS",   .typ = TYP_CMD,     .tid = CMD_SET                      },
@@ -252,7 +260,12 @@ const SimToken cmdTokTab[ ] = {
     //------------------------------------------------------------------------------------
     { .name = "IA",         .typ = TYP_PREG,    .tid = PR_IA,    .u = { .val =  1  }},
     { .name = "ST",         .typ = TYP_PREG,    .tid = PR_ST,    .u = { .val =  2  }},
-    
+    { .name = "RL",         .typ = TYP_PREG,    .tid = GR_13,    .u = { .val =  13 }},
+    { .name = "SP",         .typ = TYP_PREG,    .tid = GR_14,    .u = { .val =  14 }},
+    { .name = "DP",         .typ = TYP_PREG,    .tid = GR_15,    .u = { .val =  15 }},
+    { .name = "SAR",        .typ = TYP_CREG,    .tid = CR_2,     .u = { .val =  2 }},
+    { .name = "IVA_ADR",    .typ = TYP_CREG,    .tid = CR_8,     .u = { .val =  8 }},
+
     //------------------------------------------------------------------------------------
     // Predefined functions.
     //

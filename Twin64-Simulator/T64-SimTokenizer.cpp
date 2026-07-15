@@ -678,21 +678,45 @@ void SimTokenizer::nextToken( ) {
         nextChar( );
     }
     else if ( currentChar == '&' ) {
-        
-        currentToken.typ    = TYP_SYM;
-        currentToken.tid    = TOK_AND;
+
         nextChar( );
+        if ( currentChar == '&' ) {
+
+            currentToken.typ   = TYP_SYM;
+            currentToken.tid   = TOK_LAND;
+            nextChar( );
+        }
+        else {
+        
+            currentToken.typ   = TYP_SYM;
+            currentToken.tid   = TOK_AND;
+        }
     }
     else if ( currentChar == '|' ) {
-        
-        currentToken.typ    = TYP_SYM;
-        currentToken.tid    = TOK_OR;
+      
         nextChar( );
+        if ( currentChar == '|' ) {
+
+            currentToken.typ   = TYP_SYM;
+            currentToken.tid   = TOK_LOR;
+            nextChar( );
+        }
+        else {
+        
+            currentToken.typ   = TYP_SYM;
+            currentToken.tid   = TOK_OR;
+        }
     }
     else if ( currentChar == '^' ) {
         
         currentToken.typ    = TYP_SYM;
         currentToken.tid    = TOK_XOR;
+        nextChar( );
+    }
+    else if ( currentChar == '!' ) {
+        
+        currentToken.typ    = TYP_SYM;
+        currentToken.tid    = TOK_LNOT;
         nextChar( );
     }
     else if ( currentChar == '~' ) {

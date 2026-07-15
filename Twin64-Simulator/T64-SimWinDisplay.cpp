@@ -490,7 +490,8 @@ void SimWinDisplay::windowsOff( ) {
 //----------------------------------------------------------------------------------------
 void SimWinDisplay::windowDefaults( int winNumStart, int winNumEnd ) {
 
-    if (( winNumStart < 0 ) || ( winNumEnd >= MAX_WINDOWS ))  return;
+    if (( winNumStart < 0 ) || ( winNumEnd >= MAX_WINDOWS )) return;
+
     if ( winNumStart > winNumEnd ) winNumEnd = winNumStart;
 
     if (( ! validWindowNum( winNumStart )) && ( ! validWindowNum( winNumEnd ))) 
