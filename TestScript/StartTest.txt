@@ -20,4 +20,4 @@ wn cpu,4
 log "Test TWIN64 instructions"
 ############################################
 
-xf "..\\TestScript\\InstructionTest.txt"
+xf "..//TestScript//InstructionTest.txt"
