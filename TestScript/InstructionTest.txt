@@ -5,26 +5,26 @@ log "---------------"
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("add r6,r2,r3")
 mr ia:4,0
-s
+s,4
 check r6:4 == 532, "Test add R6,R2,R3"
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("add r6,r2,111")
 mr ia:4,0
-s
+s,4
 check r6:4:4 == 623,"Test add R6,R2,111"
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("add.W R6,20(R1)")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0x30, "Test add.W R6,20(R1)"
 
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("add.H R6,22(R1)")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0x30, "Test add.H R6,22(R1)"
 
 log "---------------"
@@ -33,19 +33,19 @@ log "---------------"
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("sub r6,r2,r3")
 mr ia:4,0
-s
+s,4
 check r6:4 == 492, "Test sub R6,R2,R3"
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("sub r6,r2,111")
 mr ia:4,0
-s
+s,4
 check r6:4 == 401, "Test sub R6,R2,111"
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("sub.W R6,20(R1)")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0xffff_ffff_ffff_ffd0, "Test sub.W R6,20(R1)"
 
 log "---------------"
@@ -54,22 +54,22 @@ log "---------------"
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("and r6,r4,r5")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0x5ddd,"Test and R6,R4,R5"
 
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("and R6,R4,0x7f")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0x5d,"Test and R6,R4,0x7f"
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("and.W R4,20(R2)")
 mw 0x200,0xabcd_efab_cdef_abcd
 mr ia:4,0
-s
-check R4 == 0x0, "Test and.W R4,20(R1)"
+s,4
+check R4:4 == 0x0, "Test and.W R4,20(R1)"
 
 log "---------------"
 log "Testing OR"
@@ -77,20 +77,20 @@ log "---------------"
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("or r6,r4,r5")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0xaaaa_bbbb_cccc_ffff,"Test or R6,R4,R5"
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("or R6,R4,0x7f")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0xaaaa_bbbb_cccc_ddff, "Test or R6,R4,0x7f"
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("OR.W R5,20(R1)")
 mr ia:4,0
-s
-check R5 == 0x30, "Test OR.W R5,20(R1)"
+s,4
+check R5:4 == 0x30, "Test OR.W R5,20(R1)"
 
 log "---------------"
 log "Testing XOR"
@@ -98,20 +98,20 @@ log "---------------"
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("XOR r6,r4,r5")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0xaaaa_bbbb_cccc_a222, "Test XOR R6,R4,R5"
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("XOR R6,R4,0x7f")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0xaaaa_bbbb_cccc_dda2, "Test XOR R6,R4,0x7f"
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("XOR.W R5,20(R1)")
 mr ia:4,0
-s
-check R5 == 0x30, "Test XOR.W R5,20(R1)"
+s,4
+check R5:4 == 0x30, "Test XOR.W R5,20(R1)"
 
 log "---------------"
 log "Testing CMP"
@@ -120,49 +120,49 @@ xf "../TestScript/InitOperands.txt"
 mr r6:4,0xffff
 mw 0,asm("CMP.EQ r6,r4,r5")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0, "Test CMP.EQ R6,R4,R5"
 
 xf "../TestScript/InitOperands.txt"
 mr r6:4,0xffff
 mw 0,asm("CMP.LT r6,r4,r5")
 mr ia:4,0
-s
+s,4
 check r6:4 == 1,"Test CMP.LT R6,R4,R5"
 
 xf "../TestScript/InitOperands.txt"
 mr r6:4,0xffff
 mw 0,asm("CMP.GT r6,r4,r5")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0, "Test CMP.GT R6,R4,R5"
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("CMP.NE r6,r4,r5")
 mr r6:4,0xffff
 mr ia:4,0
-s
+s,4
 check r6:4 == 1,"Test CMP.NE R6,R4,R5"
 
 xf "../TestScript/InitOperands.txt"
 mr r6:4,0xffff
 mw 0,asm("CMP.LE r6,r4,r5")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0,"Test CMP.LE R6,R4,R5"
 
 xf "../TestScript/InitOperands.txt"
 mr r6:4,0xffff
 mw 0,asm("CMP.GE r6,r4,r5")
 mr ia:4,0
-s
+s,4
 check r6:4 == 1,"Test CMP.GE R6,R4,R5"
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("CMP.EQ r6,r5,16383")
 mr r6:4,0xffff
 mr ia:4,0
-s
+s,4
 check r6:4 == 0,"Test CMP.EQ R6,R5,16383"
 
 
@@ -171,42 +171,42 @@ xf "../TestScript/InitOperands.txt"
 mr r6:4,0xffff
 mw 0,asm("CMP.LT R6,R5,16383")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0,"Test CMP.LT R6,R5,16383"
 
 xf "../TestScript/InitOperands.txt"
 mr r6:4,0xffff
 mw 0,asm("CMP.GT R6,R5,16383")
 mr ia:4,0
-s
+s,4
 check r6:4 == 1,"Test CMP.GT R6,R5,16383"
 
 xf "../TestScript/InitOperands.txt"
 mr r6:4,0xffff
 mw 0,asm("CMP.NE R6,R5,16383")
 mr ia:4,0
-s
+s,4
 check r6:4 == 1,"Test CMP.NE R6,R5,16383"
 
 xf "../TestScript/InitOperands.txt"
 mr r6:4,0xffff
 mw 0,asm("CMP.LE R6,R5,16383")
 mr ia:4,0
-s
+s,4
 check r6:4 == 1,"Test CMP.LE R6,R5,16383"
 
 xf "../TestScript/InitOperands.txt"
 mr r6:4,0xffff
 mw 0,asm("CMP.GE R6,R5,16383")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0,"Test CMP.GE R6,R5,16383"
 
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("CMP.W.EQ r6,20(R1)")
 mr r6:4,0xffff
 mr ia:4,0
-s
+s,4
 check r6:4 == 0, "Test CMP.EQ R6,20(R1)"
 
 
@@ -216,7 +216,7 @@ log "---------------"
 xf "../TestScript/InitOperands.txt"
 mw 0,asm("extr r6,r4,28,8")
 mr ia:4,0
-s
+s,4
 check r6:4 == 0xbc,"Test extr r6,r2,28,8"
 
 
