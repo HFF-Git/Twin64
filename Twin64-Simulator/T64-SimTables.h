@@ -747,7 +747,7 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_STEP,
         .cmdNameStr     = (char *) "step",
-        .cmdSyntaxStr   = (char *) "s [ <steps>, [ <modNum>]]",
+        .cmdSyntaxStr   = (char *) "s [ <steps> [ , <modNum> ]]",
         .helpStr        = (char *) "single step a module"
     },
 

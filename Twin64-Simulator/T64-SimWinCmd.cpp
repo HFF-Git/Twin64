@@ -1972,7 +1972,7 @@ void SimCommandsWin::doCmd( ) {
 // command itself is not added to the command history stack. If the cmdNum is 
 // omitted, REDO will take the last command entered.
 //
-//  REDO <cmdNum>
+//  REDO [ <cmdNum> ]
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::redoCmd( ) {
@@ -1984,7 +1984,7 @@ void SimCommandsWin::redoCmd( ) {
     
     if ( tok -> tokId( ) != TOK_EOS ) {
         
-        cmdId = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, MAX_CMD_HIST );
+        cmdId = eval -> acceptNumExpr( ERR_INVALID_NUM, INT_MIN, INT_MAX );
     }
     
     char *cmdStr = hist -> getCmdLine( cmdId );
