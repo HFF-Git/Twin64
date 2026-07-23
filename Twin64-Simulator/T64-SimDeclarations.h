@@ -655,13 +655,9 @@ struct SimTokenizerFromFile : public SimTokenizer {
 // Expression value. The analysis of an expression results in a value. Depending on 
 // the expression type, the values are simple scalar values or a structured values.
 //
-// ??? enhance for short circuit evaluation...
 //----------------------------------------------------------------------------------------
 struct SimExpr {
 
-    bool         skipEval;
-    bool         negated;
-    
     SimTokTypeId typ;
    
     union {
@@ -673,10 +669,7 @@ struct SimExpr {
     } u;
 };
 
-const SimExpr INIT_EXPR = { .skipEval   = false,
-                            .negated    = false,
-                            .typ        = TYP_NIL,
-                            .u.val      = 0    };
+const SimExpr INIT_EXPR = { .typ = TYP_NIL, .u.val = 0 };
 
 //----------------------------------------------------------------------------------------
 // The expression evaluator object. We use the "parseExpr" routine wherever we expect
@@ -697,27 +690,30 @@ struct SimExprEvaluator {
 
     bool            acceptBoolExpr( SimErrMsgId errCode );
     char            *acceptStringExpr( SimErrMsgId errCode );
-    void            parseExpr( SimExpr *rExpr );
+    void            parseExpr( SimExpr *rExpr, bool evalEnabled = true );
     
     private:
     
-    void            parseOrExpr( SimExpr *rExpr );
-    void            parseAndExpr( SimExpr *rExpr );
-    void            parseNotExpr( SimExpr *rExpr );
-    void            parseRelationExpr( SimExpr *rExpr );
-    void            parseSimpleExpr( SimExpr *rExpr );
-    void            parseTerm( SimExpr *rExpr );
-    void            parseFactor( SimExpr *rExpr );
-    void            parseRegister( SimExpr *rExpr );
-    void            parseMemData( SimExpr *rExpr );
+    void            parseOrExpr( SimExpr *rExpr, bool evalEnabled );
+    void            parseAndExpr( SimExpr *rExpr, bool evalEnabled );
+    void            parseNotExpr( SimExpr *rExpr, bool evalEnabled );
+    void            parseRelationExpr( SimExpr *rExpr, bool evalEnabled );
+    void            parseSimpleExpr( SimExpr *rExpr, bool evalEnabled );
+    void            parseTerm( SimExpr *rExpr, bool evalEnabled );
+    void            parseFactor( SimExpr *rExpr, bool evalEnabled );
+    void            parseRegister( SimExpr *rExpr, bool evalEnabled );
+    void            parseMemData( SimExpr *rExpr, bool evalEnabled );
 
-    void            parsePredefinedFunction( SimToken funcId, SimExpr *rExpr );    
-    void            pFuncAssemble( SimExpr *rExpr );
-    void            pFuncDisAssemble( SimExpr *rExpr );
-    void            pFuncAddOffset( SimExpr *rExpr );
-    void            pFuncRegion( SimExpr *rExpr );
-    void            pFuncOffset( SimExpr *rExpr );
-    void            pFuncPage( SimExpr *rExpr );  
+    void            parsePredefinedFunction( SimToken funcId, 
+                                             SimExpr *rExpr, 
+                                             bool evalEnabled );    
+
+    void            pFuncAssemble( SimExpr *rExpr, bool evalEnabled );
+    void            pFuncDisAssemble( SimExpr *rExpr, bool evalEnabled );
+    void            pFuncAddOffset( SimExpr *rExpr, bool evalEnabled );
+    void            pFuncRegion( SimExpr *rExpr, bool evalEnabled );
+    void            pFuncOffset( SimExpr *rExpr, bool evalEnabled );
+    void            pFuncPage( SimExpr *rExpr, bool evalEnabled );  
     
     SimGlobals      *glb        = nullptr;
     SimTokenizer    *tok        = nullptr;

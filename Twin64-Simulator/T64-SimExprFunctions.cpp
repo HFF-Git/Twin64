@@ -39,9 +39,8 @@ namespace {
 //  ASSEMBLE "(" <str> ")"
 //  ASM "(" <str> ")"
 // 
-// ??? skipEval ?
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::pFuncAssemble( SimExpr *rExpr ) {
+void SimExprEvaluator::pFuncAssemble( SimExpr *rExpr, bool evalEnabled ) {
     
     SimExpr     lExpr   = INIT_EXPR;
     T64Instr    instr   = 0;
@@ -51,9 +50,12 @@ void SimExprEvaluator::pFuncAssemble( SimExpr *rExpr ) {
     if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
     else throw ( ERR_EXPECTED_LPAREN );
         
-    parseExpr( &lExpr );
-    if ( lExpr.typ == TYP_STR ) {
-        
+    parseExpr( &lExpr, evalEnabled );
+
+    if ( evalEnabled ) {
+
+        if ( lExpr.typ != TYP_STR ) throw ( ERR_EXPECTED_STR );
+
         ret = inlineAsm -> assembleInstr( lExpr.u.str, &instr );
         
         if ( ret == 0 ) {
@@ -67,8 +69,7 @@ void SimExprEvaluator::pFuncAssemble( SimExpr *rExpr ) {
             throw ( ERR_IN_ASM_PFUNC );
         }
     }
-    else throw ( ERR_EXPECTED_STR );
-
+    
     if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
     else throw ( ERR_EXPECTED_RPAREN );
 }
@@ -84,9 +85,8 @@ void SimExprEvaluator::pFuncAssemble( SimExpr *rExpr ) {
 //
 // DISASSEMBLE "(" <str> [ "," <rdx> ] ")"
 //
-// ??? skipEval ?
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr ) {
+void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr, bool evalEnabled ) {
     
     SimExpr     lExpr = INIT_EXPR;
     uint32_t    instr = 0;
@@ -97,47 +97,49 @@ void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr ) {
     if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
     else throw ( ERR_EXPECTED_LPAREN );
     
-    parseExpr( &lExpr );
-    
-    if ( lExpr.typ == TYP_NUM ) {
-        
+    parseExpr( &lExpr, evalEnabled );
+
+    if ( evalEnabled ) {
+
+        if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_INSTR_VAL );
         instr = lExpr.u.val;
-        
-        if ( tok -> tokId( ) == TOK_COMMA ) {
+    }
+   
+    if ( tok -> tokId( ) == TOK_COMMA ) {
             
+        tok -> nextToken( );
+            
+        if (( tok -> tokId( ) == TOK_HEX ) ||
+            ( tok -> tokId( ) == TOK_DEC )) {
+                
+            rdx = tok -> tokVal( );
             tok -> nextToken( );
-            
-            if (( tok -> tokId( ) == TOK_HEX ) ||
-                ( tok -> tokId( ) == TOK_DEC )) {
-                
-                rdx = tok -> tokVal( );
-                tok -> nextToken( );
-            }
-            else if ( tok -> tokId( ) == TOK_EOS ) {
-                
-                throw ( ERR_UNEXPECTED_EOS );
-            }
-            else throw ( ERR_INVALID_FMT_OPT );
         }
+        else if ( tok -> tokId( ) == TOK_EOS ) {
+                
+            throw ( ERR_UNEXPECTED_EOS );
+        }
+        else throw ( ERR_INVALID_FMT_OPT );
+    }
         
-        if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
-        else throw ( ERR_EXPECTED_RPAREN );
-        
+    if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
+    else throw ( ERR_EXPECTED_RPAREN );
+    
+    if ( evalEnabled ) {
+
         disAsm -> formatInstr( asmStr, sizeof( asmStr ), instr, rdx );
         
         rExpr -> typ   = TYP_STR;
         rExpr -> u.str = asmStr; 
     }
-    else throw ( ERR_EXPECTED_INSTR_VAL );
 }
 
 //----------------------------------------------------------------------------------------
 // Add Offset function. We take the value and return the virtual address plus 
 // the offset.
 //
-// ??? skipEval ?
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::pFuncAddOffset( SimExpr *rExpr ) {
+void SimExprEvaluator::pFuncAddOffset( SimExpr *rExpr, bool evalEnabled ) {
     
     SimExpr     lExpr   = INIT_EXPR;
     T64Word     base    = 0;
@@ -148,27 +150,29 @@ void SimExprEvaluator::pFuncAddOffset( SimExpr *rExpr ) {
     else throw ( ERR_EXPECTED_LPAREN );
     
     parseExpr( &lExpr );
-    if ( lExpr.typ == TYP_NUM ) {
-        
+
+    if ( evalEnabled ) {
+
+        if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_AN_OFFSET_VAL );
         base = lExpr.u.val;
     }
-    else throw ( ERR_EXPECTED_AN_OFFSET_VAL );
-
+   
     if ( tok -> isToken( TOK_COMMA )) tok -> nextToken( );
     else throw ( ERR_EXPECTED_COMMA );
 
-    parseExpr( &lExpr );
-    if ( lExpr.typ == TYP_NUM ) {
-        
+    parseExpr( &lExpr, evalEnabled );
+
+    if ( evalEnabled ) {
+
+        if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_AN_OFFSET_VAL );
         offset = lExpr.u.val;
-        
-        if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
-        else throw ( ERR_EXPECTED_RPAREN );
-        
+
         rExpr -> typ   = TYP_NUM;
         rExpr -> u.val = addAdrOfs32( base, offset );
     }
-    else throw ( ERR_EXPECTED_AN_OFFSET_VAL );
+
+    if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
+    else throw ( ERR_EXPECTED_RPAREN );
 }
 
 //----------------------------------------------------------------------------------------
@@ -176,7 +180,7 @@ void SimExprEvaluator::pFuncAddOffset( SimExpr *rExpr ) {
 //
 // ??? skipEval ?
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::pFuncRegion( SimExpr *rExpr ) {
+void SimExprEvaluator::pFuncRegion( SimExpr *rExpr, bool evalEnabled ) {
     
     SimExpr lExpr = INIT_EXPR;
     
@@ -185,16 +189,17 @@ void SimExprEvaluator::pFuncRegion( SimExpr *rExpr ) {
     else throw ( ERR_EXPECTED_LPAREN );
     
     parseExpr( &lExpr );
-    
-    if ( lExpr.typ == TYP_NUM ) {
-        
-        if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
-        else throw ( ERR_EXPECTED_RPAREN );
-        
+
+    if ( evalEnabled ) {
+
+        if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
+
         rExpr -> typ   = TYP_NUM;
         rExpr -> u.val = vAdrRegionId( lExpr.u.val );
     }
-    else throw ( ERR_EXPECTED_NUM_VALUE );
+    
+    if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
+    else throw ( ERR_EXPECTED_RPAREN );
 }
 
 //----------------------------------------------------------------------------------------
@@ -202,7 +207,7 @@ void SimExprEvaluator::pFuncRegion( SimExpr *rExpr ) {
 //
 // ??? skipEval ?
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::pFuncOffset( SimExpr *rExpr ) {
+void SimExprEvaluator::pFuncOffset( SimExpr *rExpr, bool evalEnabled ) {
     
     SimExpr lExpr = INIT_EXPR;
     
@@ -211,16 +216,16 @@ void SimExprEvaluator::pFuncOffset( SimExpr *rExpr ) {
     else throw ( ERR_EXPECTED_LPAREN );
     
     parseExpr( &lExpr );
-    
-    if ( lExpr.typ == TYP_NUM ) {
-    
-        if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
-        else throw ( ERR_EXPECTED_RPAREN );
-        
+
+    if ( evalEnabled ) {
+
+        if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
         rExpr -> typ   = TYP_NUM;
         rExpr -> u.val = vAdrRegionOfs( lExpr.u.val );
     }
-    else throw ( ERR_EXPECTED_NUM_VALUE );
+
+    if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
+    else throw ( ERR_EXPECTED_RPAREN );
 }
 
 //----------------------------------------------------------------------------------------
@@ -228,7 +233,7 @@ void SimExprEvaluator::pFuncOffset( SimExpr *rExpr ) {
 //
 // ??? skipEval ?
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::pFuncPage( SimExpr *rExpr ) {
+void SimExprEvaluator::pFuncPage( SimExpr *rExpr, bool evalEnabled ) {
     
     SimExpr lExpr = INIT_EXPR;
    
@@ -236,17 +241,18 @@ void SimExprEvaluator::pFuncPage( SimExpr *rExpr ) {
     if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
     else throw ( ERR_EXPECTED_LPAREN );
     
-    parseExpr( &lExpr );
-    
-    if ( lExpr.typ == TYP_NUM ) {
-      
-        if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
-        else throw ( ERR_EXPECTED_RPAREN );
+    parseExpr( &lExpr, evalEnabled );
+
+    if ( evalEnabled ) {
+
+        if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
         
         rExpr -> typ   = TYP_NUM;
         rExpr -> u.val = vAdrPageNum( lExpr.u.val );
     }
-    else throw ( ERR_EXPECTED_NUM_VALUE );
+    
+    if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
+    else throw ( ERR_EXPECTED_RPAREN );
 }
 
 //----------------------------------------------------------------------------------------
@@ -254,16 +260,18 @@ void SimExprEvaluator::pFuncPage( SimExpr *rExpr ) {
 // token Id.
 //
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parsePredefinedFunction( SimToken funcId, SimExpr *rExpr ) {
+void SimExprEvaluator::parsePredefinedFunction( SimToken funcId, 
+                                                SimExpr *rExpr,
+                                                bool evalEnabled  ) {
     
     switch( funcId.tid ) {
             
-        case PF_ASSEMBLE:       pFuncAssemble( rExpr );     break;
-        case PF_DIS_ASM:        pFuncDisAssemble( rExpr );  break;
-        case PF_ADD_OFS:        pFuncAddOffset( rExpr );    break;
-        case PF_REGION:         pFuncRegion( rExpr );       break;
-        case PF_OFS:            pFuncOffset( rExpr );       break;
-        case PF_PAGE:           pFuncPage( rExpr );         break;
+        case PF_ASSEMBLE:       pFuncAssemble( rExpr, evalEnabled );     break;
+        case PF_DIS_ASM:        pFuncDisAssemble( rExpr, evalEnabled );  break;
+        case PF_ADD_OFS:        pFuncAddOffset( rExpr, evalEnabled );    break;
+        case PF_REGION:         pFuncRegion( rExpr, evalEnabled );       break;
+        case PF_OFS:            pFuncOffset( rExpr, evalEnabled );       break;
+        case PF_PAGE:           pFuncPage( rExpr, evalEnabled );         break;
             
         default: throw ( ERR_UNDEFINED_PFUNC );
     }

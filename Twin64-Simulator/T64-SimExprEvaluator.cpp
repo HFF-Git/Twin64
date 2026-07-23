@@ -350,9 +350,9 @@ SimExprEvaluator::SimExprEvaluator( SimGlobals *glb, SimTokenizer *tok ) {
 
 //----------------------------------------------------------------------------------------
 //
-//  ??? skipEval ? What exactly to bypass ?
+//
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parseRegister( SimExpr *rExpr ) {
+void SimExprEvaluator::parseRegister( SimExpr *rExpr, bool evalEnabled ) {
 
     SimTokTypeId regType    = tok -> tokTyp( );
     int          regId      = tok -> tokVal( );
@@ -400,9 +400,9 @@ void SimExprEvaluator::parseRegister( SimExpr *rExpr ) {
 
 //----------------------------------------------------------------------------------------
 //
-// ??? skipEval ? What exactly to bypass ?
+// 
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parseMemData( SimExpr *rExpr ) {
+void SimExprEvaluator::parseMemData( SimExpr *rExpr, bool evalEnabled ) {
 
     int  len  = sizeof( T64Word );
     bool sExt = true;
@@ -430,33 +430,37 @@ void SimExprEvaluator::parseMemData( SimExpr *rExpr ) {
     }
     else ;
 
-    parseExpr( rExpr );
-    if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
+    parseExpr( rExpr, evalEnabled );
 
-    if ( ! isAlignedAdr( rExpr -> u.val, len )) throw ( ERR_UNALIGNED_ADDR );
+    if ( evalEnabled ) {
 
-    T64Word data = 0;
-    if ( readMem( glb -> system, rExpr -> u.val, (uint8_t *) &data, len )) {
+        if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
 
-        rExpr -> typ = TYP_NUM;
-        rExpr -> u.val = data;   
-        
-            if ( sExt ) {
+        if ( ! isAlignedAdr( rExpr -> u.val, len )) throw ( ERR_UNALIGNED_ADDR );
 
-            switch ( len ) {
+        T64Word data = 0;
+        if ( readMem( glb -> system, rExpr -> u.val, (uint8_t *) &data, len )) {
 
-                case 1: rExpr -> u.val = signExtend( rExpr -> u.val, 7 );
-                        break;
+            rExpr -> typ = TYP_NUM;
+            rExpr -> u.val = data;   
+            
+                if ( sExt ) {
 
-                case 2: rExpr -> u.val = signExtend( rExpr -> u.val, 15 );
-                        break;
+                switch ( len ) {
 
-                case 4: rExpr -> u.val = signExtend( rExpr -> u.val, 31 );
-                        break;
+                    case 1: rExpr -> u.val = signExtend( rExpr -> u.val, 7 );
+                            break;
+
+                    case 2: rExpr -> u.val = signExtend( rExpr -> u.val, 15 );
+                            break;
+
+                    case 4: rExpr -> u.val = signExtend( rExpr -> u.val, 31 );
+                            break;
+                }
             }
         }
+        else throw ( ERR_MEM_OP_FAILED );
     }
-    else throw ( ERR_MEM_OP_FAILED );
                                                 
     if ( tok -> isToken( TOK_RBRACK )) tok -> nextToken( );
     else throw ( ERR_EXPECTED_RBRACK );
@@ -477,18 +481,13 @@ void SimExprEvaluator::parseMemData( SimExpr *rExpr ) {
 //
 // ??? how to handle skipEval and negated ?
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
+void SimExprEvaluator::parseFactor( SimExpr *rExpr, bool evalEnabled ) {
 
-    rExpr -> typ       = TYP_NIL;
-    rExpr -> u.val    = 0;
+    *rExpr = INIT_EXPR;
 
     if ( tok -> isTokenTyp( TYP_NIL )) {
 
-        if ( tok -> isToken( TOK_NIL )) {
-
-            rExpr -> typ = TYP_NIL;
-            rExpr -> u.val    = 0;
-        }
+        if ( tok -> isToken( TOK_NIL )) *rExpr = INIT_EXPR;
         else throw ( ERR_EXPR_FACTOR );
     }
     else if ( tok -> isTokenTyp( TYP_BOOL )) {
@@ -513,41 +512,31 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
              ( tok -> isTokenTyp( TYP_CREG )) ||
              ( tok -> isTokenTyp( TYP_PREG )))  {
 
-        parseRegister( rExpr );
+        parseRegister( rExpr, evalEnabled );
     }
     else if ( tok -> isToken( TOK_LBRACK )) {
 
-        parseMemData( rExpr );
+        parseMemData( rExpr, evalEnabled );
     }
     else if ( tok -> isToken( TOK_NEG )) {
         
         tok -> nextToken( );
-        parseFactor( rExpr );
+        parseFactor( rExpr, evalEnabled );
 
         if ( rExpr -> typ != TYP_BOOL ) throw( ERR_EXPECTED_BOOL_VALUE );
-        rExpr -> u.bVal = ! rExpr -> u.bVal;
-    }
-    else if ( tok -> isToken( TOK_LNOT )) {
-
-        // ??? maybe we do not need this... NEG converts already a bool value ...
-
-        tok -> nextToken( );
-        parseExpr( rExpr );
-        if ( rExpr -> typ != TYP_BOOL ) throw( ERR_EXPECTED_BOOL_VALUE ); 
-
         rExpr -> u.bVal = ! rExpr -> u.bVal;
     }
     else if ( tok -> isToken( TOK_LPAREN )) {
         
         tok -> nextToken( );
-        parseExpr( rExpr );
+        parseExpr( rExpr, evalEnabled );
             
         if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
         else throw ( ERR_EXPECTED_RPAREN );
     }
      else if ( tok -> isTokenTyp( TYP_P_FUNC )) {
 
-        parsePredefinedFunction( tok -> token( ), rExpr );
+        parsePredefinedFunction( tok -> token( ), rExpr, evalEnabled );
     }
     else if ( tok -> isToken( TOK_IDENT )) {
     
@@ -569,8 +558,8 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
         tok -> nextToken( );
     }
     else if ( tok -> isToken( TOK_EOS )) {
-        
-        rExpr -> typ = TYP_NIL;
+
+        *rExpr = INIT_EXPR;
     }
     else throw ( ERR_EXPR_FACTOR );
 }
@@ -584,11 +573,11 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
 // ??? type mix options ?
 // ??? skipEval ? What exactly to bypass ?
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parseTerm( SimExpr *rExpr ) {
+void SimExprEvaluator::parseTerm( SimExpr *rExpr, bool evalEnabled ) {
     
     SimExpr lExpr = INIT_EXPR;
 
-    parseFactor( rExpr );
+    parseFactor( rExpr, evalEnabled );
     
     while (( tok -> tokId( ) == TOK_MULT )   ||
            ( tok -> tokId( ) == TOK_DIV  )   ||
@@ -601,40 +590,40 @@ void SimExprEvaluator::parseTerm( SimExpr *rExpr ) {
             case TOK_MULT:   {
 
                 tok -> nextToken( );
-                parseFactor( &lExpr );
+                parseFactor( &lExpr, evalEnabled );
                 if ( lExpr.typ == TYP_NIL ) throw ( ERR_UNEXPECTED_EOS );
                 
-                multOp( rExpr, &lExpr );   
+                if ( evalEnabled ) multOp( rExpr, &lExpr );   
                            
             } break;
 
             case TOK_DIV:   {
 
                 tok -> nextToken( );
-                parseFactor( &lExpr );
+                parseFactor( &lExpr, evalEnabled );
                 if ( lExpr.typ == TYP_NIL ) throw ( ERR_UNEXPECTED_EOS );
                 
-                divOp( rExpr, &lExpr ); 
+                if ( evalEnabled ) divOp( rExpr, &lExpr ); 
 
             } break;
 
             case TOK_MOD:   {
 
                 tok -> nextToken( );
-                parseFactor( &lExpr );
+                parseFactor( &lExpr, evalEnabled );
                 if ( lExpr.typ == TYP_NIL ) throw ( ERR_UNEXPECTED_EOS );
                 
-                modOp( rExpr, &lExpr ); 
+                if ( evalEnabled ) modOp( rExpr, &lExpr ); 
 
             } break;
 
             case TOK_AND:   {
 
                 tok -> nextToken( );
-                parseFactor( &lExpr );
+                parseFactor( &lExpr, evalEnabled );
                 if ( lExpr.typ == TYP_NIL ) throw ( ERR_UNEXPECTED_EOS );
                 
-                bitOp( rExpr, &lExpr, AND_OP );
+                if ( evalEnabled ) bitOp( rExpr, &lExpr, AND_OP );
 
             } break;
 
@@ -651,72 +640,76 @@ void SimExprEvaluator::parseTerm( SimExpr *rExpr ) {
 //
 // ??? type mix options ?
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parseSimpleExpr( SimExpr *rExpr ) {
+void SimExprEvaluator::parseSimpleExpr( SimExpr *rExpr, bool evalEnabled ) {
     
     SimExpr lExpr = INIT_EXPR;
     
     if ( tok -> isToken( TOK_PLUS )) {
         
         tok -> nextToken( );
-        parseTerm( rExpr );
+        parseTerm( rExpr, evalEnabled );
         
         if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
     }
     else if ( tok -> isToken( TOK_MINUS )) {
         
         tok -> nextToken( );
-        parseTerm( rExpr );
+        parseTerm( rExpr, evalEnabled );
         
         if ( rExpr -> typ == TYP_NUM ) rExpr -> u.val = - (int32_t) rExpr -> u.val;
         else throw ( ERR_EXPECTED_NUM_VALUE );
     }
-    else parseTerm( rExpr );
+    else parseTerm( rExpr, evalEnabled );
 
-    // ??? isn't that a while loop ?
+    while (( tok -> isToken( TOK_PLUS )) ||
+           ( tok -> isToken( TOK_MINUS )) ||
+           ( tok -> isToken( TOK_OR )) ||
+           ( tok -> isToken( TOK_XOR ))) {
 
-    switch ( tok -> tokId( )) {
+        switch ( tok -> tokId( )) {
 
-        case TOK_PLUS: {
+            case TOK_PLUS: {
 
-            tok -> nextToken( );
-            parseTerm( &lExpr );
-            if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
+                tok -> nextToken( );
+                parseTerm( &lExpr, evalEnabled );
+                if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
 
-            addOp( rExpr, &lExpr );
+                if ( evalEnabled ) addOp( rExpr, &lExpr );
 
-        } break;
+            } break;
 
-        case TOK_MINUS: {
+            case TOK_MINUS: {
 
-            tok -> nextToken( );
-            parseTerm( &lExpr );
-            if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
+                tok -> nextToken( );
+                parseTerm( &lExpr, evalEnabled );
+                if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
 
-            subOp( rExpr, &lExpr );
+                if ( evalEnabled ) subOp( rExpr, &lExpr );
 
-        } break;
+            } break;
 
-        case TOK_OR: {
+            case TOK_OR: {
 
-            tok -> nextToken( );
-            parseTerm( &lExpr );
-            if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
+                tok -> nextToken( );
+                parseTerm( &lExpr, evalEnabled );
+                if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
 
-            bitOp( rExpr, &lExpr, OR_OP );
+                if ( evalEnabled ) bitOp( rExpr, &lExpr, OR_OP );
 
-        } break;
+            } break;
 
-        case TOK_XOR: {
+            case TOK_XOR: {
 
-            tok -> nextToken( );
-            parseTerm( &lExpr );
-            if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
+                tok -> nextToken( );
+                parseTerm( &lExpr, evalEnabled );
+                if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
 
-            bitOp( rExpr, &lExpr, XOR_OP );
+                if ( evalEnabled ) bitOp( rExpr, &lExpr, XOR_OP );
 
-        } break;
+            } break;
 
-        default: ;
+            default: ;
+        }
     }
 }
 
@@ -726,12 +719,12 @@ void SimExprEvaluator::parseSimpleExpr( SimExpr *rExpr ) {
 //  <relOp>.        ->  "==" | "!=" | "<" | "<=" | ">" | ">=" 
 //
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parseRelationExpr( SimExpr *rExpr ) {
+void SimExprEvaluator::parseRelationExpr( SimExpr *rExpr, bool evalEnabled ) {
 
     SimExpr     lExpr = INIT_EXPR;
     SimTokId    relOp;
 
-    parseSimpleExpr( rExpr );
+    parseSimpleExpr( rExpr, evalEnabled );
 
     relOp = tok -> tokId( );
 
@@ -742,10 +735,8 @@ void SimExprEvaluator::parseRelationExpr( SimExpr *rExpr ) {
         ( relOp != TOK_GT ) && 
         ( relOp != TOK_GE )) return;
 
-    // ??? set skipEval flag ?
-
     tok -> nextToken( );
-    parseSimpleExpr( &lExpr );
+    parseSimpleExpr( &lExpr, evalEnabled );
 
     if ( ! ( equalTypes( rExpr, &lExpr ))) throw ( ERR_EXPR_TYPE_MATCH );
 
@@ -811,14 +802,14 @@ void SimExprEvaluator::parseRelationExpr( SimExpr *rExpr ) {
 //  <notExpr> -> <notOp> <relationExpr>
 //  <notOp>   -> "NOT" | "!"
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parseNotExpr( SimExpr *rExpr ) {
+void SimExprEvaluator::parseNotExpr( SimExpr *rExpr, bool evalEnabled ) {
 
     if ( tok -> tokId( ) == TOK_LNOT ) {
 
-        parseNotExpr( rExpr );
-        if ( ! rExpr -> skipEval ) rExpr -> u.bVal = ! rExpr -> u.bVal;
+        parseNotExpr( rExpr, evalEnabled );
+        if (evalEnabled ) rExpr -> u.bVal = ! rExpr -> u.bVal;
     }
-    else parseRelationExpr( rExpr );
+    else parseRelationExpr( rExpr, evalEnabled );
 }
 
 //----------------------------------------------------------------------------------------
@@ -828,22 +819,21 @@ void SimExprEvaluator::parseNotExpr( SimExpr *rExpr ) {
 //  <andExpr> -> <notExpr> <andOP> <notExpr>
 //  <andOp>   -> "AND" | "&&"
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parseAndExpr( SimExpr *rExpr ) {
+void SimExprEvaluator::parseAndExpr( SimExpr *rExpr, bool evalEnabled ) {
 
     SimExpr lExpr = INIT_EXPR;
 
-    parseNotExpr( rExpr );
+    parseNotExpr( rExpr, evalEnabled );
 
-    if ( ! rExpr -> u.bVal ) lExpr.skipEval = true;
-    
     while ( tok -> tokId( ) == TOK_LAND ) {
 
-        tok -> nextToken( );
-        parseNotExpr( &lExpr );
-                    
-        *rExpr = lExpr;
-    }
+        bool rhsEval = ( evalEnabled && rExpr -> u.bVal );
 
+        tok -> nextToken( );
+        parseNotExpr( &lExpr, rhsEval );
+      
+        if ( evalEnabled ) rExpr -> u.bVal = rExpr -> u.bVal && lExpr.u.bVal;
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -853,19 +843,20 @@ void SimExprEvaluator::parseAndExpr( SimExpr *rExpr ) {
 //  <orExpr> -> <andExpr> <orOP> <andExpr>
 //  <orOp>   -> "OR" | "||"
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parseOrExpr( SimExpr *rExpr ) {
+void SimExprEvaluator::parseOrExpr( SimExpr *rExpr, bool evalEnabled ) {
 
     SimExpr lExpr = INIT_EXPR;
 
-    parseAndExpr( rExpr );
-     if ( ! rExpr -> u.bVal ) lExpr.skipEval = true;
+    parseAndExpr( rExpr, evalEnabled );
     
     while ( tok -> tokId( ) == TOK_LOR ) {
 
+        bool rhsEval = (( evalEnabled ) && ( ! ( rExpr -> u.bVal )));
+
         tok -> nextToken( );
-        parseAndExpr( &lExpr );
-       
-        *rExpr = lExpr;
+        parseAndExpr( &lExpr, rhsEval );
+
+        if ( evalEnabled ) rExpr -> u.bVal = ( rExpr -> u.bVal || lExpr.u.bVal );
     }
 }
 
@@ -888,9 +879,9 @@ void SimExprEvaluator::parseOrExpr( SimExpr *rExpr ) {
 // without effect.
 //
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parseExpr( SimExpr *rExpr ) {
+void SimExprEvaluator::parseExpr( SimExpr *rExpr, bool evalEnabled ) {
 
-    parseOrExpr( rExpr );
+    parseOrExpr( rExpr, evalEnabled );
 }
 
 //----------------------------------------------------------------------------------------
