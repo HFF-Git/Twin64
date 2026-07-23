@@ -164,9 +164,10 @@ enum SimWinType : int {
 enum SimTokTypeId : int {
 
     TYP_NIL,                    TYP_NUM,                    TYP_STR,
-    TYP_BOOL,                   TYP_SYM,                    TYP_IDENT,
-    TYP_CMD,                    TYP_WCMD,                   TYP_P_FUNC,
-    TYP_GREG,                   TYP_CREG,                   TYP_PREG
+    TYP_BOOL,                   TYP_COND,                   TYP_SYM,       
+    TYP_IDENT,                  TYP_CMD,                    TYP_WCMD,                   
+    TYP_P_FUNC,                 TYP_GREG,                   TYP_CREG,                   
+    TYP_PREG
 };
 
 //----------------------------------------------------------------------------------------
@@ -228,6 +229,8 @@ enum SimTokId : uint16_t {
     CMD_MR,                     CMD_DM,                     CMD_MB,             
     CMD_MS,                     CMD_MW,                     CMD_MD,     
     CMD_DWIN,                   CMD_ECHO,                   CMD_LOG,
+    CMD_IF,                     CMD_ELSEIF,                 CMD_ELSE,
+    CMD_ENDIF,                  CMD_WHILE,                  CMD_ENDWHILE,
     
     //------------------------------------------------------------------------------------
     // Window Commands Tokens.
@@ -250,7 +253,6 @@ enum SimTokId : uint16_t {
     PF_ADD_OFS,                 PF_REGION,                  PF_OFS,
     PF_PAGE,
                         
-
     //------------------------------------------------------------------------------------
     // General, Control and PSW Register Tokens.
     //
@@ -653,8 +655,12 @@ struct SimTokenizerFromFile : public SimTokenizer {
 // Expression value. The analysis of an expression results in a value. Depending on 
 // the expression type, the values are simple scalar values or a structured values.
 //
+// ??? enhance for short circuit evaluation...
 //----------------------------------------------------------------------------------------
 struct SimExpr {
+
+    bool         skipEval;
+    bool         negated;
     
     SimTokTypeId typ;
    
@@ -666,6 +672,11 @@ struct SimExpr {
 
     } u;
 };
+
+const SimExpr INIT_EXPR = { .skipEval   = false,
+                            .negated    = false,
+                            .typ        = TYP_NIL,
+                            .u.val      = 0    };
 
 //----------------------------------------------------------------------------------------
 // The expression evaluator object. We use the "parseExpr" routine wherever we expect
@@ -679,19 +690,26 @@ struct SimExprEvaluator {
     SimExprEvaluator( SimGlobals *glb, SimTokenizer *tok );
     
     void            setTokenizer( SimTokenizer *tok );
-    void            parseExpr( SimExpr *rExpr );
+    
     T64Word         acceptNumExpr( SimErrMsgId errCode, 
                                    T64Word low = INT64_MIN, 
                                    T64Word high = INT64_MAX );
 
     bool            acceptBoolExpr( SimErrMsgId errCode );
     char            *acceptStringExpr( SimErrMsgId errCode );
+    void            parseExpr( SimExpr *rExpr );
     
     private:
     
+    void            parseOrExpr( SimExpr *rExpr );
+    void            parseAndExpr( SimExpr *rExpr );
+    void            parseNotExpr( SimExpr *rExpr );
+    void            parseRelationExpr( SimExpr *rExpr );
     void            parseSimpleExpr( SimExpr *rExpr );
     void            parseTerm( SimExpr *rExpr );
     void            parseFactor( SimExpr *rExpr );
+    void            parseRegister( SimExpr *rExpr );
+    void            parseMemData( SimExpr *rExpr );
 
     void            parsePredefinedFunction( SimToken funcId, SimExpr *rExpr );    
     void            pFuncAssemble( SimExpr *rExpr );

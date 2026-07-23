@@ -138,6 +138,14 @@ const SimToken cmdTokTab[ ] = {
     { .name = "ASSERT",     .typ = TYP_CMD,     .tid = CMD_ASSERT                   },
     { .name = "CHECK",      .typ = TYP_CMD,     .tid = CMD_CHECK                    },
     { .name = "LOG",        .typ = TYP_CMD,     .tid = CMD_LOG                      },
+
+    { .name = "IF",         .typ = TYP_CMD,     .tid = CMD_IF                       },
+    { .name = "ELSEIF",     .typ = TYP_CMD,     .tid = CMD_ELSEIF                   },
+    { .name = "ELSE",       .typ = TYP_CMD,     .tid = CMD_ELSE                     },
+    { .name = "ENDIF",      .typ = TYP_CMD,     .tid = CMD_ENDIF                    },
+
+    { .name = "WHILE",      .typ = TYP_CMD,     .tid = CMD_WHILE                    },
+    { .name = "ENDWHILE",   .typ = TYP_CMD,     .tid = CMD_ENDWHILE                 },
     
     //------------------------------------------------------------------------------------
     // Window command tokens.

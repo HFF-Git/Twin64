@@ -3,60 +3,62 @@
 // Twin64Sim - A 64-bit CPU Simulator - Command line expression parser
 //
 //----------------------------------------------------------------------------------------
-// The command interpreter features expression evaluation for command arguments. It is
-// a straightforward recursive top down interpreter.
+// The command interpreter features expression evaluation for command arguments. 
+// It is a straightforward recursive top down interpreter.
 //
 //----------------------------------------------------------------------------------------
 //
 // Twin64Sim - A 64-bit CPU Simulator - Command line expression parser
 // Copyright (C) 2020 - 2026 Helmut Fieres
 //
-// This program is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or any later version.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should
-//  have received a copy of the GNU General Public License along with this program.  
-// If not, see <http://www.gnu.org/licenses/>.
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+// A PARTICULAR PURPOSE.  See the GNU General Public License for more details. 
+// You should  have received a copy of the GNU General Public License along with
+// this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #include "T64-SimDeclarations.h"
 #include "T64-SimTables.h"
 
 //----------------------------------------------------------------------------------------
-// The command line features an expression evaluator for the arguments. The overall 
-// syntax is as follows:
+// The command line features an expression evaluator for the arguments. The 
+// overall syntax is as follows:
 //
 //      <command>   ->  <cmdId> [ <argList> ]
-//      <function>  ->  <funcId> “(“ [ <argList> ] ")"
 //      <argList>   ->  <expr> { <expr> }
 //
-// Expression have a type, which are NUM, ADR, STR, SREG, GREG and CREG.
+// Expression have a type, which are NUM, BOOL, STR, SREG, GREG and CREG.
 //
 //      <factor> -> <number>                        |
+//                  <boolean>                       |
 //                  <string>                        |
 //                  <envId>                         |
 //                  <pswId>  [ ":" <proc> ]         |     
 //                  <gregId> [ ":" <proc> ]         |
 //                  <cregId> [ ":" <proc> ]         |
 //                  "~" <factor>                    |
+//                  <funcId> “(“ [ <argList> ] ")"  |
 //                  "(" <expr> ")"
 //
-//      <term>      ->  <factor> { <termOp> <factor> }
-//      <termOp>    ->  "*" | "/" | "%" | "&"
+//      <term>          ->  <factor> { <termOp> <factor> }
+//      <termOp>        ->  "*" | "/" | "%" | "&"
 //
-//      <expr>      ->  [ ( "+" | "-" ) ] <term> { <exprOp> <term> }
-//      <exprOp>    ->  "+" | "-" | "|" | "^"
+//      <simpleExpr>    ->  [ ( "+" | "-" ) ] <term> { <exprOp> <term> }
+//      <simpleExprOp>  ->  "+" | "-" | "|" | "^"
 //
-// If a command is called, there is no output other than what the command was issuing.
-// If a function is called in the command place, the function result will be printed. 
-// If an argument represents a function, its return value will be the argument in the
-//  command.
+//      <expr>          -> <simpleExpr> <relOp> <simpleExpr>
+//      <relOp>         -> "==" | "!=" | "<" | "<=" | ">" | ">="   
 //
-// The token table becomes a kind of dictionary with name, type and values. The 
-// environment table needs to enhanced to allow for user defined variables.
+// Most of the arguments to a command are evaluated as expressions. Boolean
+// expressions are evaluated in short circuit form. For example, and "&&"
+// operator will evaluate the left side and if false skip the right side of 
+// the logical and operation. However, the parsing of the non-evaluated side
+// still needs to take place, as we may have nested boolean operations.
 //
 //----------------------------------------------------------------------------------------
 
@@ -66,7 +68,11 @@
 //----------------------------------------------------------------------------------------
 namespace {
 
-enum logicalOpId : int {
+//----------------------------------------------------------------------------------------
+// BitOp operation.
+//
+//----------------------------------------------------------------------------------------
+enum BitOpId : int {
     
     AND_OP  = 0,
     OR_OP   = 1,
@@ -224,10 +230,10 @@ void modOp( SimExpr *rExpr, SimExpr *lExpr ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Logical operation.
+// Boolean operation.
 //
 //----------------------------------------------------------------------------------------
-void logicalOp( SimExpr *rExpr, SimExpr *lExpr, logicalOpId op ) {
+void bitOp( SimExpr *rExpr, SimExpr *lExpr, BitOpId op ) {
     
     switch ( rExpr -> typ ) {
             
@@ -268,6 +274,15 @@ void logicalOp( SimExpr *rExpr, SimExpr *lExpr, logicalOpId op ) {
             
         default: throw ( ERR_EXPR_TYPE_MATCH );
     }
+}
+
+//----------------------------------------------------------------------------------------
+// A little helper for comparing types.
+//
+//----------------------------------------------------------------------------------------
+bool equalTypes( SimExpr *rExpr, SimExpr *lExpr ) {
+
+    return ( rExpr -> typ == lExpr -> typ );
 }
 
 //----------------------------------------------------------------------------------------
@@ -334,6 +349,120 @@ SimExprEvaluator::SimExprEvaluator( SimGlobals *glb, SimTokenizer *tok ) {
 }
 
 //----------------------------------------------------------------------------------------
+//
+//  ??? skipEval ? What exactly to bypass ?
+//----------------------------------------------------------------------------------------
+void SimExprEvaluator::parseRegister( SimExpr *rExpr ) {
+
+    SimTokTypeId regType    = tok -> tokTyp( );
+    int          regId      = tok -> tokVal( );
+    int          modNum     = -1;
+
+    rExpr -> typ      = TYP_NIL;
+    rExpr -> u.val    = 0;
+
+    tok -> nextToken( );
+    if ( tok -> isToken( TOK_COLON )) {
+
+        tok -> nextToken( );
+        if ( tok -> isTokenTyp( TYP_NUM )) modNum = tok -> tokVal( );
+        else throw( ERR_EXPECTED_NUM_VALUE ); 
+
+        tok -> nextToken( );
+    }
+    else modNum = glb -> winDisplay -> getCurrentWinModNum( );
+        
+    T64ModuleType mType = glb -> system -> getModuleType( modNum );
+    if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
+
+    T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
+    if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
+
+    if ( regType == TYP_GREG ) {
+
+        rExpr -> u.val =  proc -> getCpuPtr( ) -> getGeneralReg( regId );
+        rExpr -> typ = TYP_NUM;
+    }
+    else if ( regType == TYP_CREG ) {
+
+        rExpr -> u.val =  proc -> getCpuPtr( ) -> getControlReg( regId );
+        rExpr -> typ = TYP_NUM;
+    }
+    else if ( regType == TYP_PREG ) {
+
+        T64Word tmp = proc -> getCpuPtr( ) -> getPsrReg( );
+        if      ( regId == 1 ) rExpr -> u.val = extractField64( tmp, 0, 52 );
+        else if ( regId == 2 ) rExpr -> u.val = extractField64( tmp, 52, 12 );  
+        rExpr -> typ = TYP_NUM;
+    }
+    else ;
+}
+
+//----------------------------------------------------------------------------------------
+//
+// ??? skipEval ? What exactly to bypass ?
+//----------------------------------------------------------------------------------------
+void SimExprEvaluator::parseMemData( SimExpr *rExpr ) {
+
+    int  len  = sizeof( T64Word );
+    bool sExt = true;
+
+    tok -> nextToken( );
+
+    if ( tok -> isToken( TOK_BYTE ) ||
+         tok -> isToken( TOK_SHORT  ) ||
+         tok -> isToken( TOK_HALF ) ||
+         tok -> isToken( TOK_WORD  ) ||
+         tok -> isToken( TOK_DWORD ) ||
+         tok -> isToken( TOK_DOUBLE )) {
+
+        len = tok -> tokVal( );
+        tok -> nextToken( );
+    }
+    else if ( tok -> isToken( TOK_UBYTE ) ||
+                tok -> isToken( TOK_USHORT  ) ||
+                tok -> isToken( TOK_UHALF ) ||
+                tok -> isToken( TOK_UWORD  )) {
+
+        sExt = false;
+        len  = tok -> tokVal( );
+        tok -> nextToken( );
+    }
+    else ;
+
+    parseExpr( rExpr );
+    if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
+
+    if ( ! isAlignedAdr( rExpr -> u.val, len )) throw ( ERR_UNALIGNED_ADDR );
+
+    T64Word data = 0;
+    if ( readMem( glb -> system, rExpr -> u.val, (uint8_t *) &data, len )) {
+
+        rExpr -> typ = TYP_NUM;
+        rExpr -> u.val = data;   
+        
+            if ( sExt ) {
+
+            switch ( len ) {
+
+                case 1: rExpr -> u.val = signExtend( rExpr -> u.val, 7 );
+                        break;
+
+                case 2: rExpr -> u.val = signExtend( rExpr -> u.val, 15 );
+                        break;
+
+                case 4: rExpr -> u.val = signExtend( rExpr -> u.val, 31 );
+                        break;
+            }
+        }
+    }
+    else throw ( ERR_MEM_OP_FAILED );
+                                                
+    if ( tok -> isToken( TOK_RBRACK )) tok -> nextToken( );
+    else throw ( ERR_EXPECTED_RBRACK );
+}
+
+//----------------------------------------------------------------------------------------
 // "parseFactor" parses the factor syntax part of an expression. The expression directly
 // ties into the value providers, i.e. a register of a processor or an environment 
 // variable.
@@ -346,9 +475,10 @@ SimExprEvaluator::SimExprEvaluator( SimGlobals *glb, SimTokenizer *tok ) {
 //                  "~" <factor>                    |
 //                  "(" <expr> ")"
 //
+// ??? how to handle skipEval and negated ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
-    
+
     rExpr -> typ       = TYP_NIL;
     rExpr -> u.val    = 0;
 
@@ -383,117 +513,29 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
              ( tok -> isTokenTyp( TYP_CREG )) ||
              ( tok -> isTokenTyp( TYP_PREG )))  {
 
-        SimTokTypeId regType    = tok -> tokTyp( );
-        int          regId      = tok -> tokVal( );
-        int          modNum     = -1;
-
-        tok -> nextToken( );
-        if ( tok -> isToken( TOK_COLON )) {
-
-            tok -> nextToken( );
-            if ( tok -> isTokenTyp( TYP_NUM )) modNum = tok -> tokVal( );
-            else throw( ERR_EXPECTED_NUM_VALUE ); 
-
-            tok -> nextToken( );
-        }
-        else modNum = glb -> winDisplay -> getCurrentWinModNum( );
-            
-        T64ModuleType mType = glb -> system -> getModuleType( modNum );
-        if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
-
-        T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
-        if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
-
-        if ( regType == TYP_GREG ) {
-
-            rExpr -> u.val =  proc -> getCpuPtr( ) -> getGeneralReg( regId );
-            rExpr -> typ = TYP_NUM;
-        }
-        else if ( regType == TYP_CREG ) {
-
-            rExpr -> u.val =  proc -> getCpuPtr( ) -> getControlReg( regId );
-            rExpr -> typ = TYP_NUM;
-        }
-        else if ( regType == TYP_PREG ) {
-
-            T64Word tmp = proc -> getCpuPtr( ) -> getPsrReg( );
-            if      ( regId == 1 ) rExpr -> u.val = extractField64( tmp, 0, 52 );
-            else if ( regId == 2 ) rExpr -> u.val = extractField64( tmp, 52, 12 );  
-            rExpr -> typ = TYP_NUM;
-        }
+        parseRegister( rExpr );
     }
     else if ( tok -> isToken( TOK_LBRACK )) {
 
-        int  len  = sizeof( T64Word );
-        bool sExt = true;
-
-        tok -> nextToken( );
-
-        if ( tok -> isToken( TOK_BYTE ) ||
-             tok -> isToken( TOK_SHORT  ) ||
-             tok -> isToken( TOK_HALF ) ||
-             tok -> isToken( TOK_WORD  ) ||
-             tok -> isToken( TOK_DWORD ) ||
-             tok -> isToken( TOK_DOUBLE )) {
-
-            len = tok -> tokVal( );
-            tok -> nextToken( );
-        }
-        else if ( tok -> isToken( TOK_UBYTE ) ||
-                  tok -> isToken( TOK_USHORT  ) ||
-                  tok -> isToken( TOK_UHALF ) ||
-                  tok -> isToken( TOK_UWORD  )) {
-
-            sExt = false;
-            len  = tok -> tokVal( );
-            tok -> nextToken( );
-        }
-
-        parseExpr( rExpr );
-        if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
-
-         if ( ! isAlignedAdr( rExpr -> u.val, len )) throw ( ERR_UNALIGNED_ADDR );
-
-        T64Word data = 0;
-        if ( readMem( glb -> system, rExpr -> u.val, (uint8_t *) &data, len )) {
-
-            rExpr -> typ = TYP_NUM;
-            rExpr -> u.val = data;   
-            
-             if ( sExt ) {
-
-                switch ( len ) {
-
-                    case 1: {
-
-                        rExpr -> u.val = signExtend( rExpr -> u.val, 7 );
-                        
-                    } break;
-
-                    case 2: {
-
-                        rExpr -> u.val = signExtend( rExpr -> u.val, 15 );
-                        
-                    } break;
-
-                    case 4: { 
-
-                        rExpr -> u.val = signExtend( rExpr -> u.val, 31 );
-                        
-                    } break;
-                }
-            }
-        }
-        else throw ( ERR_MEM_OP_FAILED );
-                                                 
-        if ( tok -> isToken( TOK_RBRACK )) tok -> nextToken( );
-        else throw ( ERR_EXPECTED_RBRACK );
+        parseMemData( rExpr );
     }
     else if ( tok -> isToken( TOK_NEG )) {
         
         tok -> nextToken( );
         parseFactor( rExpr );
-        rExpr -> u.val = ~ rExpr -> u.val;
+
+        if ( rExpr -> typ != TYP_BOOL ) throw( ERR_EXPECTED_BOOL_VALUE );
+        rExpr -> u.bVal = ! rExpr -> u.bVal;
+    }
+    else if ( tok -> isToken( TOK_LNOT )) {
+
+        // ??? maybe we do not need this... NEG converts already a bool value ...
+
+        tok -> nextToken( );
+        parseExpr( rExpr );
+        if ( rExpr -> typ != TYP_BOOL ) throw( ERR_EXPECTED_BOOL_VALUE ); 
+
+        rExpr -> u.bVal = ! rExpr -> u.bVal;
     }
     else if ( tok -> isToken( TOK_LPAREN )) {
         
@@ -540,48 +582,78 @@ void SimExprEvaluator::parseFactor( SimExpr *rExpr ) {
 //      <termOp>    ->  "*" | "/" | "%" | "&"
 //
 // ??? type mix options ?
-// ??? support for LAND ?
+// ??? skipEval ? What exactly to bypass ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::parseTerm( SimExpr *rExpr ) {
     
-    SimExpr lExpr;
-   
+    SimExpr lExpr = INIT_EXPR;
+
     parseFactor( rExpr );
     
     while (( tok -> tokId( ) == TOK_MULT )   ||
            ( tok -> tokId( ) == TOK_DIV  )   ||
            ( tok -> tokId( ) == TOK_MOD  )   ||
-           ( tok -> tokId( ) == TOK_AND  ))  {
-        
-        uint8_t op = tok -> tokId( );
-        
-        tok -> nextToken( );
-        parseFactor( &lExpr );
-        
-        if ( lExpr.typ == TYP_NIL ) throw ( ERR_UNEXPECTED_EOS );
-        
-        switch( op ) {
+           ( tok -> tokId( ) == TOK_AND  )   ||
+           ( tok -> tokId( ) == TOK_LAND ))  {
+
+        switch ( tok -> tokId( )) {
+
+            case TOK_MULT:   {
+
+                tok -> nextToken( );
+                parseFactor( &lExpr );
+                if ( lExpr.typ == TYP_NIL ) throw ( ERR_UNEXPECTED_EOS );
                 
-            case TOK_MULT:   multOp( rExpr, &lExpr );               break;
-            case TOK_DIV:    divOp( rExpr, &lExpr );                break;
-            case TOK_MOD:    modOp( rExpr, &lExpr );                break;
-            case TOK_AND:    logicalOp( rExpr, &lExpr, AND_OP );    break;
+                multOp( rExpr, &lExpr );   
+                           
+            } break;
+
+            case TOK_DIV:   {
+
+                tok -> nextToken( );
+                parseFactor( &lExpr );
+                if ( lExpr.typ == TYP_NIL ) throw ( ERR_UNEXPECTED_EOS );
+                
+                divOp( rExpr, &lExpr ); 
+
+            } break;
+
+            case TOK_MOD:   {
+
+                tok -> nextToken( );
+                parseFactor( &lExpr );
+                if ( lExpr.typ == TYP_NIL ) throw ( ERR_UNEXPECTED_EOS );
+                
+                modOp( rExpr, &lExpr ); 
+
+            } break;
+
+            case TOK_AND:   {
+
+                tok -> nextToken( );
+                parseFactor( &lExpr );
+                if ( lExpr.typ == TYP_NIL ) throw ( ERR_UNEXPECTED_EOS );
+                
+                bitOp( rExpr, &lExpr, AND_OP );
+
+            } break;
+
+            default: ;
         }
     }
 }
 
 //----------------------------------------------------------------------------------------
-// "parseExpr" parses the expression syntax. 
+// "parseSimpleExpr" parses the expression syntax. 
 //
 //      <simpleExpr>    ->  [ ( "+" | "-" ) ] <term> { <exprOp> <term> }
 //      <exprOp>        ->  "+" | "-" | "|" | "^"
 //
 // ??? type mix options ?
-// ??? support for LOR ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::parseSimpleExpr( SimExpr *rExpr ) {
     
-    SimExpr lExpr;
+    SimExpr lExpr = INIT_EXPR;
     
     if ( tok -> isToken( TOK_PLUS )) {
         
@@ -599,42 +671,64 @@ void SimExprEvaluator::parseSimpleExpr( SimExpr *rExpr ) {
         else throw ( ERR_EXPECTED_NUM_VALUE );
     }
     else parseTerm( rExpr );
-    
-    while (( tok -> isToken( TOK_PLUS   )) ||
-           ( tok -> isToken( TOK_MINUS  )) ||
-           ( tok -> isToken( TOK_OR     )) ||
-           ( tok -> isToken( TOK_XOR    ))) {
-        
-        uint8_t op = tok -> tokId( );
-        
-        tok -> nextToken( );
-        parseTerm( &lExpr );
-        
-        if ( lExpr.typ == TYP_NIL ) throw ( ERR_UNEXPECTED_EOS );
-        
-        switch ( op ) {
-                
-            case TOK_PLUS:   addOp( rExpr, &lExpr );                break;
-            case TOK_MINUS:  subOp( rExpr, &lExpr );                break;
-            case TOK_OR:     logicalOp( rExpr, &lExpr, OR_OP );     break;
-            case TOK_XOR:    logicalOp( rExpr, &lExpr, XOR_OP );    break;
-        }
+
+    // ??? isn't that a while loop ?
+
+    switch ( tok -> tokId( )) {
+
+        case TOK_PLUS: {
+
+            tok -> nextToken( );
+            parseTerm( &lExpr );
+            if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
+
+            addOp( rExpr, &lExpr );
+
+        } break;
+
+        case TOK_MINUS: {
+
+            tok -> nextToken( );
+            parseTerm( &lExpr );
+            if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
+
+            subOp( rExpr, &lExpr );
+
+        } break;
+
+        case TOK_OR: {
+
+            tok -> nextToken( );
+            parseTerm( &lExpr );
+            if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
+
+            bitOp( rExpr, &lExpr, OR_OP );
+
+        } break;
+
+        case TOK_XOR: {
+
+            tok -> nextToken( );
+            parseTerm( &lExpr );
+            if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
+
+            bitOp( rExpr, &lExpr, XOR_OP );
+
+        } break;
+
+        default: ;
     }
 }
 
 //----------------------------------------------------------------------------------------
-// "parseExpr" parses the expression syntax. 
 //
-//      <expr>      ->  <simpleExpr> <relOp> <simpleExpr>
-//      <relOp>    ->  "==" | "!=" | "<" | "<=" | ">" | ">=" 
+//  <relationExpr>  ->  <simpleExpr> <relOp> <simpleExpr>
+//  <relOp>.        ->  "==" | "!=" | "<" | "<=" | ">" | ">=" 
 //
-// ??? type mix options ?
-// ??? support for logical operations ( LAND, LOR, LNOT ) ?
-// ?? support for short circuit evaluation ?
 //----------------------------------------------------------------------------------------
-void SimExprEvaluator::parseExpr( SimExpr *rExpr ) {
-    
-    SimExpr     lExpr;
+void SimExprEvaluator::parseRelationExpr( SimExpr *rExpr ) {
+
+    SimExpr     lExpr = INIT_EXPR;
     SimTokId    relOp;
 
     parseSimpleExpr( rExpr );
@@ -648,10 +742,14 @@ void SimExprEvaluator::parseExpr( SimExpr *rExpr ) {
         ( relOp != TOK_GT ) && 
         ( relOp != TOK_GE )) return;
 
+    // ??? set skipEval flag ?
+
     tok -> nextToken( );
     parseSimpleExpr( &lExpr );
 
-    if ( rExpr -> typ != lExpr.typ ) throw ( ERR_EXPR_TYPE_MATCH );
+    if ( ! ( equalTypes( rExpr, &lExpr ))) throw ( ERR_EXPR_TYPE_MATCH );
+
+    // ??? check that both are numerics ?
    
     switch ( relOp ) {
 
@@ -707,12 +805,103 @@ void SimExprEvaluator::parseExpr( SimExpr *rExpr ) {
 }
 
 //----------------------------------------------------------------------------------------
+// "parseNotExpr" implements the NOT operator. Not operators can be repeated,
+// which result in a recursive call to this routine.
+//
+//  <notExpr> -> <notOp> <relationExpr>
+//  <notOp>   -> "NOT" | "!"
+//----------------------------------------------------------------------------------------
+void SimExprEvaluator::parseNotExpr( SimExpr *rExpr ) {
+
+    if ( tok -> tokId( ) == TOK_LNOT ) {
+
+        parseNotExpr( rExpr );
+        if ( ! rExpr -> skipEval ) rExpr -> u.bVal = ! rExpr -> u.bVal;
+    }
+    else parseRelationExpr( rExpr );
+}
+
+//----------------------------------------------------------------------------------------
+// "parseAndExpr" implements the logical AND operation. If the left hand side
+// evaluates to "false", the right side is not evaluated but still parsed. 
+//
+//  <andExpr> -> <notExpr> <andOP> <notExpr>
+//  <andOp>   -> "AND" | "&&"
+//----------------------------------------------------------------------------------------
+void SimExprEvaluator::parseAndExpr( SimExpr *rExpr ) {
+
+    SimExpr lExpr = INIT_EXPR;
+
+    parseNotExpr( rExpr );
+
+    if ( ! rExpr -> u.bVal ) lExpr.skipEval = true;
+    
+    while ( tok -> tokId( ) == TOK_LAND ) {
+
+        tok -> nextToken( );
+        parseNotExpr( &lExpr );
+                    
+        *rExpr = lExpr;
+    }
+
+}
+
+//----------------------------------------------------------------------------------------
+// "parseOrExpr" implements the logical OR operation. If the left hand side
+// evaluates to "true", the right side is not evaluated but still parsed. 
+//
+//  <orExpr> -> <andExpr> <orOP> <andExpr>
+//  <orOp>   -> "OR" | "||"
+//----------------------------------------------------------------------------------------
+void SimExprEvaluator::parseOrExpr( SimExpr *rExpr ) {
+
+    SimExpr lExpr = INIT_EXPR;
+
+    parseAndExpr( rExpr );
+     if ( ! rExpr -> u.bVal ) lExpr.skipEval = true;
+    
+    while ( tok -> tokId( ) == TOK_LOR ) {
+
+        tok -> nextToken( );
+        parseAndExpr( &lExpr );
+       
+        *rExpr = lExpr;
+    }
+}
+
+//----------------------------------------------------------------------------------------
+// "parseExpr" is the entry point to parse the expression syntax. The overall
+// hierarchy is:
+//
+//  <expr>
+//      <orExpr>
+//          <andExpr>
+//              <notExpr>
+//                  <relationExpr>
+//                      <simpleExpr>
+//                          <term>
+//                              <factor>
+//
+// The evaluation of logical "OR", "AND" and "NOT" is implemented as a short
+// circuit evaluation. That is, when for example and AND operation evaluates
+// the left hand side as false, the right side is not evaluated but still parsed
+// without effect.
+//
+//----------------------------------------------------------------------------------------
+void SimExprEvaluator::parseExpr( SimExpr *rExpr ) {
+
+    parseOrExpr( rExpr );
+}
+
+//----------------------------------------------------------------------------------------
 // We often expect expressions of a certain type. Little helper functions.
 //
 //----------------------------------------------------------------------------------------
-T64Word SimExprEvaluator::acceptNumExpr( SimErrMsgId errCode, T64Word low, T64Word high ) {
+T64Word SimExprEvaluator::acceptNumExpr( SimErrMsgId errCode, 
+                                         T64Word low, 
+                                         T64Word high ) {
 
-     SimExpr rExpr;
+     SimExpr rExpr = INIT_EXPR;
      parseExpr( &rExpr );
      
      if ( rExpr.typ == TYP_NUM ) {
@@ -725,7 +914,7 @@ T64Word SimExprEvaluator::acceptNumExpr( SimErrMsgId errCode, T64Word low, T64Wo
 
 bool SimExprEvaluator::acceptBoolExpr( SimErrMsgId errCode ) {
 
-    SimExpr rExpr;
+    SimExpr rExpr = INIT_EXPR;
     parseExpr( &rExpr );
 
     if ( rExpr.typ == TYP_BOOL ) {
@@ -737,7 +926,7 @@ bool SimExprEvaluator::acceptBoolExpr( SimErrMsgId errCode ) {
 
 char *SimExprEvaluator::acceptStringExpr( SimErrMsgId errCode ) {
 
-    SimExpr rExpr;
+    SimExpr rExpr = INIT_EXPR;
     parseExpr( &rExpr );
 
     if ( rExpr.typ == TYP_STR ) {

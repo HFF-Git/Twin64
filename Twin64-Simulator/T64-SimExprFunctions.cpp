@@ -38,10 +38,12 @@ namespace {
 //
 //  ASSEMBLE "(" <str> ")"
 //  ASM "(" <str> ")"
+// 
+// ??? skipEval ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::pFuncAssemble( SimExpr *rExpr ) {
     
-    SimExpr     lExpr;
+    SimExpr     lExpr   = INIT_EXPR;
     T64Instr    instr   = 0;
     int         ret     = 0;
     
@@ -81,10 +83,12 @@ void SimExprEvaluator::pFuncAssemble( SimExpr *rExpr ) {
 // variable.
 //
 // DISASSEMBLE "(" <str> [ "," <rdx> ] ")"
+//
+// ??? skipEval ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr ) {
     
-    SimExpr     lExpr;
+    SimExpr     lExpr = INIT_EXPR;
     uint32_t    instr = 0;
     int         rdx   = glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT );
     static char        asmStr[ MAX_CMD_LINE_SIZE ];
@@ -131,12 +135,13 @@ void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr ) {
 // Add Offset function. We take the value and return the virtual address plus 
 // the offset.
 //
+// ??? skipEval ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::pFuncAddOffset( SimExpr *rExpr ) {
     
-    SimExpr     lExpr;
-    T64Word     base   = 0;
-    T64Word     offset = 0;
+    SimExpr     lExpr   = INIT_EXPR;
+    T64Word     base    = 0;
+    T64Word     offset  = 0;
     
     tok -> nextToken( );
     if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
@@ -169,10 +174,11 @@ void SimExprEvaluator::pFuncAddOffset( SimExpr *rExpr ) {
 //----------------------------------------------------------------------------------------
 // Region function. We take the value and return the virtual region portion.
 //
+// ??? skipEval ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::pFuncRegion( SimExpr *rExpr ) {
     
-    SimExpr lExpr;
+    SimExpr lExpr = INIT_EXPR;
     
     tok -> nextToken( );
     if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
@@ -194,10 +200,11 @@ void SimExprEvaluator::pFuncRegion( SimExpr *rExpr ) {
 //----------------------------------------------------------------------------------------
 // Offset function. We take the value and return the virtual offset portion.
 //
+// ??? skipEval ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::pFuncOffset( SimExpr *rExpr ) {
     
-    SimExpr lExpr;
+    SimExpr lExpr = INIT_EXPR;
     
     tok -> nextToken( );
     if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
@@ -219,10 +226,11 @@ void SimExprEvaluator::pFuncOffset( SimExpr *rExpr ) {
 //----------------------------------------------------------------------------------------
 // Page function. We take the value and return the virtual page portion.
 //
+// ??? skipEval ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::pFuncPage( SimExpr *rExpr ) {
     
-    SimExpr lExpr;
+    SimExpr lExpr = INIT_EXPR;
    
     tok -> nextToken( );
     if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );

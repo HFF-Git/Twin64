@@ -1507,7 +1507,7 @@ void SimCommandsWin::envCmd( ) {
             }
             else {
 
-                SimExpr rExpr;
+                SimExpr rExpr = INIT_EXPR;
                 eval -> parseExpr( &rExpr );
 
                 if ( rExpr.typ == TYP_NUM )       
@@ -1859,8 +1859,8 @@ void SimCommandsWin::runCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::writeLineCmd( ) {
     
-    SimExpr  rExpr;
-    int      rdx;
+    SimExpr  rExpr = INIT_EXPR;
+    int      rdx   = glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT );
     
     eval -> parseExpr( &rExpr );
     
@@ -1874,7 +1874,6 @@ void SimCommandsWin::writeLineCmd( ) {
         }
         else throw ( ERR_INVALID_FMT_OPT );
     }
-    else rdx = glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT );
     
     tok -> checkEOS( );
     
@@ -2121,7 +2120,7 @@ void SimCommandsWin::writeLogCmd( ) {
 
         tok -> nextToken( );
         
-        SimExpr rExpr;
+        SimExpr rExpr = INIT_EXPR;
         
         eval -> parseExpr( &rExpr );
 
