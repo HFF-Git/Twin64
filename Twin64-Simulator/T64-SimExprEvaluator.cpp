@@ -582,8 +582,7 @@ void SimExprEvaluator::parseTerm( SimExpr *rExpr, bool evalEnabled ) {
     while (( tok -> tokId( ) == TOK_MULT )   ||
            ( tok -> tokId( ) == TOK_DIV  )   ||
            ( tok -> tokId( ) == TOK_MOD  )   ||
-           ( tok -> tokId( ) == TOK_AND  )   ||
-           ( tok -> tokId( ) == TOK_LAND ))  {
+           ( tok -> tokId( ) == TOK_AND  ))  {
 
         switch ( tok -> tokId( )) {
 
@@ -806,6 +805,7 @@ void SimExprEvaluator::parseNotExpr( SimExpr *rExpr, bool evalEnabled ) {
 
     if ( tok -> tokId( ) == TOK_LNOT ) {
 
+        tok -> nextToken( );
         parseNotExpr( rExpr, evalEnabled );
         if (evalEnabled ) rExpr -> u.bVal = ! rExpr -> u.bVal;
     }
@@ -832,7 +832,7 @@ void SimExprEvaluator::parseAndExpr( SimExpr *rExpr, bool evalEnabled ) {
         tok -> nextToken( );
         parseNotExpr( &lExpr, rhsEval );
       
-        if ( evalEnabled ) rExpr -> u.bVal = rExpr -> u.bVal && lExpr.u.bVal;
+        if ( rhsEval ) rExpr -> u.bVal = rExpr -> u.bVal && lExpr.u.bVal;
     }
 }
 
@@ -856,7 +856,7 @@ void SimExprEvaluator::parseOrExpr( SimExpr *rExpr, bool evalEnabled ) {
         tok -> nextToken( );
         parseAndExpr( &lExpr, rhsEval );
 
-        if ( evalEnabled ) rExpr -> u.bVal = ( rExpr -> u.bVal || lExpr.u.bVal );
+        if ( rhsEval ) rExpr -> u.bVal = ( rExpr -> u.bVal || lExpr.u.bVal );
     }
 }
 

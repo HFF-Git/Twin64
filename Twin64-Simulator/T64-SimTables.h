@@ -65,10 +65,6 @@ const SimToken cmdTokTab[ ] = {
     { .name = "IO",         .typ = TYP_SYM,     .tid = TOK_IO                       },
     { .name = "TEXT",       .typ = TYP_SYM,     .tid = TOK_TEXT                     },
 
-    { .name = "AND",        .typ = TYP_SYM,     .tid = TOK_AND                      },
-    { .name = "OR",         .typ = TYP_SYM,     .tid = TOK_OR                       },
-    { .name = "XOR",        .typ = TYP_SYM,     .tid = TOK_XOR                      },
-
     { .name = "&&",         .typ = TYP_SYM,     .tid = TOK_LAND                     },
     { .name = "||",         .typ = TYP_SYM,     .tid = TOK_LOR                      },
     { .name = "!",          .typ = TYP_SYM,     .tid = TOK_LNOT                     },

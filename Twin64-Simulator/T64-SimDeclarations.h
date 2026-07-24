@@ -186,7 +186,7 @@ enum SimTokId : uint16_t {
     TOK_NIL,                    TOK_ERR,                    TOK_EOS,
     TOK_COMMA,                  TOK_PERIOD,                 TOK_COLON,
     TOK_LPAREN,                 TOK_RPAREN,                 TOK_LBRACK,
-    TOK_RBRACK,                 TOK_QUOTE,                  TOK_EX_MARK,
+    TOK_RBRACK,                 TOK_QUOTE,                 
     TOK_EQUAL,                  TOK_PLUS,                   TOK_MINUS,
     TOK_MULT,                   TOK_DIV,                    TOK_MOD,
     TOK_REM,                    TOK_NEG,                    TOK_AND,

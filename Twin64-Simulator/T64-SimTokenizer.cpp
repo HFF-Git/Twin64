@@ -614,7 +614,7 @@ void SimTokenizer::nextToken( ) {
         else {
         
             currentToken.typ   = TYP_SYM;
-            currentToken.tid   = TOK_EX_MARK;
+            currentToken.tid   = TOK_LNOT;
         }
     }
     else if ( currentChar == '<' ) {
@@ -711,12 +711,6 @@ void SimTokenizer::nextToken( ) {
         
         currentToken.typ    = TYP_SYM;
         currentToken.tid    = TOK_XOR;
-        nextChar( );
-    }
-    else if ( currentChar == '!' ) {
-        
-        currentToken.typ    = TYP_SYM;
-        currentToken.tid    = TOK_LNOT;
         nextChar( );
     }
     else if ( currentChar == '~' ) {
