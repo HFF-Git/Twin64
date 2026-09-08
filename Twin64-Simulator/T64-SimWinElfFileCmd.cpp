@@ -85,7 +85,7 @@ bool elfioValidate( elfio *reader, char* msg, size_t msg_len ) {
 // Write a word to the simulator memory.
 //
 //----------------------------------------------------------------------------------------
-bool writeMem( T64System *sys, int32_t ofs, uint32_t val ) {
+bool writeMem( T64System *sys, T64Word ofs, uint32_t val ) {
 
     if ( ! sys -> busOpWrite( nullptr, ofs, (uint8_t *) &val, sizeof( uint32_t ))) {
 
@@ -151,7 +151,9 @@ void loadSegmentIntoMemory( segment         *segment,
 
         for ( Elf64_Addr i = 0; i < memorySize; i += 4  ) {
             
-           if ( ! writeMem( sys, uint32_t( vAdr + i ), 0U )) {
+           if ( ! writeMem( sys, 
+                            static_cast<T64Word> ( vAdr + i ), 
+                            0U )) {
 
                 throw( ERR_MEM_OP_FAILED ); 
            }
@@ -159,7 +161,9 @@ void loadSegmentIntoMemory( segment         *segment,
         
         for ( Elf64_Addr i = 0; i < fileSize; i += 4  ) {
             
-           if ( ! writeMem( sys, vAdr + i, wordPtr[ i / 4 ] )) {
+           if ( ! writeMem( sys, 
+                            static_cast<T64Word> ( vAdr + i ), 
+                            wordPtr[ i / 4 ] )) {
 
                 throw( ERR_MEM_OP_FAILED ); 
            }

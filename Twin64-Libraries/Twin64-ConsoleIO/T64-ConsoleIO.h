@@ -156,32 +156,32 @@ enum FmtDescOptions : uint32_t {
 //----------------------------------------------------------------------------------------
 struct SimFormatter {
 
-    virtual int     writeChars( const char *format, ... ) = 0;
+    virtual size_t  writeChars( const char *format, ... ) = 0;
     
     void            writeCarriageReturn( );
     void            eraseChar( );
     void            writeCursorLeft( );
     void            writeCursorRight( );
-    void            writeScrollUp( int n );
-    void            writeScrollDown( int n );
-    void            writeCharAtLinePos( int ch, int pos );
+    void            writeScrollUp( size_t n );
+    void            writeScrollDown( size_t n );
+    void            writeCharAtLinePos( int ch, size_t pos );
   
     void            clearScreen( );
     void            clearLine( );
     void            clearToEndOfLine( );
-    void            setAbsCursor( int row, int col );
-    void            setCursorInLine( int col ); 
-    void            setWindowSize( int row, int col );
-    void            setScrollArea( int start, int end );
+    void            setAbsCursor( size_t row, size_t col );
+    void            setCursorInLine( size_t col ); 
+    void            setWindowSize( size_t row, size_t col );
+    void            setScrollArea( size_t start, size_t end );
     void            clearScrollArea( );
 
     void            setFmtAttributes( uint32_t fmtDesc );
-    int             printBlanks( int len );
-    int             printSeparator( int len, bool light = false );
-    int             printText( char *text, int len );
-    int             printNumber( T64Word val, uint32_t fmtDesc );
-    int             numberFmtLen( uint32_t fmtDesc, T64Word val = 0 );
-    char            printBit( T64Word val, int pos, char printChar );
+    size_t          printBlanks( size_t len );
+    size_t          printSeparator( size_t len, bool light = false );
+    size_t          printText( char *text, size_t len );
+    size_t          printNumber( T64Word val, uint32_t fmtDesc );
+    size_t          numberFmtLen( uint32_t fmtDesc, T64Word val = 0 );
+    char            printBit( T64Word val, size_t pos, char printChar );
 };
 
 //----------------------------------------------------------------------------------------
@@ -203,9 +203,9 @@ struct SimConsoleIO : SimFormatter {
     void    initConsoleIO( );
     void    setBlockingMode( bool enabled );
     bool    isConsole( );
-    int     getConsoleSize( int *rows, int *cols );
+    size_t  getConsoleSize( size_t *rows, size_t *cols );
     int     readChar( );
-    int     writeChars( const char *format, ... );
+    size_t  writeChars( const char *format, ... );
     
     private:
     

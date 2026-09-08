@@ -168,7 +168,7 @@ bool  SimConsoleIO::isConsole( ) {
 // and columns. Of course there are platform differences.
 //
 //----------------------------------------------------------------------------------------
-int  SimConsoleIO::getConsoleSize( int *rows, int *cols ) {
+size_t SimConsoleIO::getConsoleSize( size_t *rows, size_t *cols ) {
     
     #if __APPLE__
 
@@ -285,7 +285,7 @@ int SimConsoleIO::readChar( ) {
 // wide characters. The code below uses UTF16 characters when printing.
 //
 //----------------------------------------------------------------------------------------
-int SimConsoleIO::writeChars( const char *format, ... ) {
+size_t SimConsoleIO::writeChars( const char *format, ... ) {
 
     va_list args;
     va_start( args, format );
@@ -368,12 +368,12 @@ void SimFormatter::writeCursorRight( ) {
     writeChars( "\033[C" );
 }
 
-void SimFormatter::writeScrollUp( int n ) {
+void SimFormatter::writeScrollUp( size_t n ) {
     
     writeChars( "\033[%dS", n );
 }
 
-void SimFormatter::writeScrollDown( int n ) {
+void SimFormatter::writeScrollDown( size_t n ) {
     
     writeChars( "\033[%dT", n );
 }
@@ -387,7 +387,7 @@ void SimFormatter::writeCarriageReturn( ) {
     #endif
 }
 
-void SimFormatter::writeCharAtLinePos( int ch, int pos ) {
+void SimFormatter::writeCharAtLinePos( int ch, size_t pos ) {
     
     writeChars( "\033[%dG\033[1@%c", pos, ch );
 }
@@ -408,22 +408,22 @@ void SimFormatter::clearToEndOfLine( ) {
     writeChars((char *) "\x1b[K" );
 }
 
-void SimFormatter::setAbsCursor( int row, int col ) {
+void SimFormatter::setAbsCursor( size_t row, size_t col ) {
     
     writeChars((char *) "\x1b[%d;%dH", row, col );
 }
 
-void SimFormatter::setCursorInLine( int col ) {
+void SimFormatter::setCursorInLine( size_t col ) {
     
     writeChars((char *) "\x1b[%dG", col );
 }
 
-void SimFormatter::setWindowSize( int row, int col ) {
+void SimFormatter::setWindowSize( size_t row, size_t col ) {
     
     writeChars((char *) "\x1b[8;%d;%dt", row, col );
 }
 
-void SimFormatter::setScrollArea( int start, int end ) {
+void SimFormatter::setScrollArea( size_t start, size_t end ) {
     
     writeChars((char *) "\x1b[%d;%dr", start, end );
 }
@@ -489,9 +489,9 @@ void SimFormatter::setFmtAttributes( uint32_t fmtDesc ) {
 // Just emit blanks.
 //
 //----------------------------------------------------------------------------------------
-int SimFormatter::printBlanks( int len ) {
+size_t SimFormatter::printBlanks( size_t len ) {
 
-    for ( int i = 0; i < len; i++ ) writeChars((char *) " " );
+    for ( size_t i = 0; i < len; i++ ) writeChars((char *) " " );
     return( len );
 }
 
@@ -500,7 +500,7 @@ int SimFormatter::printBlanks( int len ) {
 // is typically used to logically separate sub-windows.
 //
 //----------------------------------------------------------------------------------------
-int SimFormatter::printSeparator( int len, bool light ) {
+size_t SimFormatter::printSeparator( size_t len, bool light ) {
 
     writeChars((char *) "\033[90m");
     
@@ -519,7 +519,7 @@ int SimFormatter::printSeparator( int len, bool light ) {
 // in the range of what the text size could be.
 //
 //----------------------------------------------------------------------------------------
-int SimFormatter::printText( char *text, int maxLen ) {
+size_t SimFormatter::printText( char *text, size_t maxLen ) {
     
     if ( strlen( text ) <= maxLen ) {
         
@@ -547,7 +547,7 @@ int SimFormatter::printText( char *text, int maxLen ) {
 // cleared in lower case.
 // 
 //----------------------------------------------------------------------------------------
-char SimFormatter::printBit( T64Word val, int pos, char printChar ) {
+char SimFormatter::printBit( T64Word val, size_t pos, char printChar ) {
 
     if ( isInRange( pos, 0, 63 )) {
 
@@ -564,7 +564,7 @@ char SimFormatter::printBit( T64Word val, int pos, char printChar ) {
 // format is filled with asterisks instead of numbers.
 //
 //----------------------------------------------------------------------------------------
-int SimFormatter::printNumber( T64Word val, uint32_t fmtDesc ) {
+size_t SimFormatter::printNumber( T64Word val, uint32_t fmtDesc ) {
 
     if ((( fmtDesc >> 8 ) & 0xF ) > 0 ) {
 
@@ -846,7 +846,7 @@ int SimFormatter::printNumber( T64Word val, uint32_t fmtDesc ) {
 // determines the number of character required.
 //
 //----------------------------------------------------------------------------------------
-int SimFormatter::numberFmtLen( uint32_t fmtDesc, T64Word val ) {
+size_t SimFormatter::numberFmtLen( uint32_t fmtDesc, T64Word val ) {
     
     if ((( fmtDesc >> 8 ) & 0xF ) > 0 ) {
 

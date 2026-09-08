@@ -246,9 +246,9 @@ void sanitizeLine( const char *inputStr, char *outputStr ) {
 // making sure that the buffer is large enough.
 //
 //----------------------------------------------------------------------------------------
-inline int appendPrintf( char *buf, 
+inline size_t appendPrintf( char *buf, 
                           size_t bufSize, 
-                          int& bufLen,
+                          size_t& bufLen,
                           const char *format, ... ) {
 
     if (( bufLen < 0 ) || ( static_cast<size_t>( bufLen ) >= bufSize )) {
@@ -270,7 +270,7 @@ inline int appendPrintf( char *buf,
         throw(ERR_STRING_TOO_LONG);
     }
 
-    bufLen += n;
+    bufLen += static_cast<size_t>( n );
 
     return( bufLen );
 }
@@ -415,7 +415,7 @@ void SimCmdHistory::addCmdLine( const char *cmdStr ) {
 // return the absolute command Id.
 //
 //----------------------------------------------------------------------------------------
-char *SimCmdHistory::getCmdLine( int cmdRef, int *cmdId ) {
+char *SimCmdHistory::getCmdLine( size_t cmdRef, size_t *cmdId ) {
 
     if ( count == 0 ) return ( nullptr );
 
@@ -425,9 +425,9 @@ char *SimCmdHistory::getCmdLine( int cmdRef, int *cmdId ) {
 
         if ( cmdRef >= nextCmdNum ) return ( nullptr );
 
-        for ( int i = 0; i < count; i++ ) {
+        for ( size_t i = 0; i < count; i++ ) {
 
-            int pos = ( tail + i ) % MAX_CMD_HIST;
+            size_t pos = ( tail + i ) % MAX_CMD_HIST;
 
             if ( history[ pos ].cmdId == cmdRef ) {
 
@@ -440,10 +440,10 @@ char *SimCmdHistory::getCmdLine( int cmdRef, int *cmdId ) {
     }
     else {
 
-        int offset = -cmdRef;
+        size_t offset = -cmdRef;
         if ( offset > count ) return ( nullptr );
 
-        int pos = ( head - offset + MAX_CMD_HIST ) % MAX_CMD_HIST;
+        size_t pos = ( head - offset + MAX_CMD_HIST ) % MAX_CMD_HIST;
         if ( cmdId ) *cmdId = history[ pos ].cmdId;
         
         return history[ pos ].cmdLine;
@@ -455,12 +455,12 @@ char *SimCmdHistory::getCmdLine( int cmdRef, int *cmdId ) {
 //here.
 //
 //----------------------------------------------------------------------------------------
-int SimCmdHistory::getCmdNum( ) {
+size_t SimCmdHistory::getCmdNum( ) {
     
     return ( nextCmdNum );
 }
 
-int  SimCmdHistory::getCmdCount( ) {
+size_t SimCmdHistory::getCmdCount( ) {
     
     return ( count );
 }
@@ -547,11 +547,11 @@ void SimCommandsWin::drawBody( ) {
     
     glb -> console ->setFmtAttributes( FMT_DEFAULT );
   
-    int rowsToShow = getRows( ) - 2;
+    size_t rowsToShow = getRows( ) - 2;
     winOut -> setScrollWindowSize( rowsToShow );
     setWinCursor( rowsToShow + 1, 1 );
     
-    for ( int i = 0; i < rowsToShow; i++ ) {
+    for ( size_t i = 0; i < rowsToShow; i++ ) {
         
         char *lineBufPtr = winOut -> getLineRelative( i );
         if ( lineBufPtr != nullptr ) {
@@ -961,11 +961,13 @@ SimWinOutBuffer *SimCommandsWin::getWinOutHandle( ) {
 // stacks are current used, regardless whether they a visible or not.
 //
 //----------------------------------------------------------------------------------------
-void SimCommandsWin::printStackInfoField( uint32_t fmtDesc, int row, int col ) {
+void SimCommandsWin::printStackInfoField( uint32_t fmtDesc, 
+                                          size_t row, 
+                                          size_t col ) {
 
-    int  stacks[ MAX_WIN_STACKS ] = { 0 };
-    char stackStr[ 16 ]           = { 0 };
-    int  stackStrLen              = 0;
+    size_t stacks[ MAX_WIN_STACKS ] = { 0 };
+    char   stackStr[ 16 ]           = { 0 };
+    size_t stackStrLen              = 0;
 
     if ( ! glb -> winDisplay -> isWindowsOn( )) return;
 
@@ -975,7 +977,7 @@ void SimCommandsWin::printStackInfoField( uint32_t fmtDesc, int row, int col ) {
         if ( stackNum >= 0 ) stacks[ stackNum ] ++;
     }
 
-    for ( int i = 0; i < MAX_WIN_STACKS; i++ ) {
+    for ( size_t i = 0; i < MAX_WIN_STACKS; i++ ) {
 
         if ( stacks[ i ] > 0 ) { 
 
@@ -984,7 +986,7 @@ void SimCommandsWin::printStackInfoField( uint32_t fmtDesc, int row, int col ) {
         }
     }
 
-    for ( int i = 0; i < MAX_WIN_STACKS; i++ ) {
+    for ( size_t i = 0; i < MAX_WIN_STACKS; i++ ) {
         
         if ( stacks[ i ] > 0 ) {
 
@@ -1034,18 +1036,18 @@ void SimCommandsWin::printWelcome( ) {
 // "promptCmdLine" lists out the prompt string.
 //
 //----------------------------------------------------------------------------------------
-int SimCommandsWin::buildCmdPrompt( char  *promptStr, 
+size_t SimCommandsWin::buildCmdPrompt( char  *promptStr, 
                                     size_t promptStrLen, 
                                     char   prefix ) {
     
-    int len = 0;
+    size_t len = 0;
     
     if ( prefix == ' ' ) {
 
         if ( glb -> env -> getEnvVarBool((char *) ENV_SHOW_CMD_CNT )) {
 
             return( appendPrintf( promptStr, promptStrLen, len, "(%d) ->",
-                                glb -> env -> getEnvVarInt( ENV_CMD_CNT )));
+                                  glb -> env -> getEnvVarInt( ENV_CMD_CNT )));
         }
         else return ( appendPrintf( promptStr, promptStrLen, len, "->" ));
     }
@@ -2021,8 +2023,8 @@ void SimCommandsWin::writeLineCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::histCmd( ) {
     
-    int     depth = 0;
-    int     cmdCount = hist -> getCmdCount( );
+    size_t  depth = 0;
+    size_t  cmdCount = hist -> getCmdCount( );
     
     if ( tok -> tokId( ) != TOK_EOS ) {
 
@@ -2031,10 +2033,10 @@ void SimCommandsWin::histCmd( ) {
     
     if (( depth == 0 ) || ( depth > cmdCount )) depth = cmdCount;
     
-    for ( int i = - depth; i < 0; i++ ) {
+    for ( size_t i = - depth; i < 0; i++ ) {
         
-        int  cmdRef = 0;
-        char *cmdLine = hist -> getCmdLine( i, &cmdRef );
+        size_t cmdRef = 0;
+        char   *cmdLine = hist -> getCmdLine( i, &cmdRef );
         
         if ( cmdLine != nullptr )
             winOut -> writeChars( "[%d]: %s\n", cmdRef, cmdLine );
@@ -2274,7 +2276,7 @@ void SimCommandsWin::ifCmd( ) {
 void SimCommandsWin::assertCheckCmd( bool doExit ) {
 
     char    msgBuf[ MAX_TEXT_LINE_SIZE ];
-    int     msgBufLen = 0;
+    size_t  msgBufLen = 0;
     char    *msgStr   = nullptr;
     bool    bVal      = eval -> acceptBoolExpr( ERR_EXPECTED_BOOL_VALUE );
 
@@ -2370,8 +2372,8 @@ void SimCommandsWin::writeLogCmd( ) {
        throw( ERR_NO_LOG_FILE_CONFIGURED );
     }
 
-    char msgBuf[ MAX_TEXT_LINE_SIZE ];
-    int  msgBufLen = 0;
+    char    msgBuf[ MAX_TEXT_LINE_SIZE ];
+    size_t  msgBufLen = 0;
 
     char *msgStr = eval -> acceptStringExpr( ERR_EXPECTED_STRING_VALUE );
     appendPrintf( msgBuf, sizeof( msgBuf ), msgBufLen, "%s", msgStr );

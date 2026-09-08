@@ -3,27 +3,28 @@
 //  Twin64Sim - A 64-bit CPU Simulator - Declarations
 //
 //----------------------------------------------------------------------------------------
-// The Twin-64 Simulator is an interactive program for simulating a running Twin-64
-// system. A simulation consist of modules, such as a processor, memory and I/O 
-// module components, which together build the Twin-64 system. The system is created
-// during simulator program start and can also be changed later on. Interaction is
-// done via a terminal window environment, where windows represent the individual
-// components. This file includes all the window environment related declarations.
+// The Twin-64 Simulator is an interactive program for simulating a running 
+// Twin-64 system. A simulation consist of modules, such as a processor, memory
+// and I/O module components, which together build the Twin-64 system. The 
+// system is created during simulator program start and can also be changed 
+// later on. Interaction is done via a terminal window environment, where 
+// windows represent the individual components. This file includes all the 
+// window environment related declarations.
 // 
 //----------------------------------------------------------------------------------------
 //
 // Twin64Sim - A 64-bit CPU Simulator - Declarations
 // Copyright (C) 2020 - 2026 Helmut Fieres
 //
-// This program is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or any later version.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You should
-//  have received a copy of the GNU General Public License along with this program.  
-// If not, see <http://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details. 
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #pragma once
@@ -122,28 +123,28 @@
 // Fundamental constants for the T64 window system.
 //
 //----------------------------------------------------------------------------------------
-const int MAX_FILE_PATH_SIZE        = 256;
-const int MAX_TEXT_FIELD_LEN        = 132;
-const int MAX_TEXT_LINE_SIZE        = 256;
+const size_t MAX_FILE_PATH_SIZE         = 256;
+const size_t MAX_TEXT_FIELD_LEN         = 132;
+const size_t MAX_TEXT_LINE_SIZE         = 256;
 
-const int MAX_WINDOWS               = 32;
-const int MAX_WIN_STACKS            = 4;
-const int MAX_WIN_ROW_SIZE          = 64;
-const int MAX_WIN_COL_SIZE          = 1024;
-const int MAX_WIN_OUT_LINES         = 256;
-const int MAX_WIN_OUT_LINE_SIZE     = 256;
-const int MAX_WIN_NAME              = 8;
-const int MAX_WIN_TOGGLES           = 8;
+const int    MAX_WINDOWS                = 32;
+const int    MAX_WIN_STACKS             = 4;
+const size_t MAX_WIN_ROW_SIZE           = 64;
+const size_t MAX_WIN_COL_SIZE           = 1024;
+const size_t MAX_WIN_OUT_LINES          = 256;
+const size_t MAX_WIN_OUT_LINE_SIZE      = 256;
+const size_t MAX_WIN_NAME               = 8;
+const size_t MAX_WIN_TOGGLES            = 8;
 
-const int MAX_CMD_HIST              = 64;
-const int MAX_CMD_LINES             = 64;
-const int MAX_CMD_LINE_SIZE         = 256;
+const size_t MAX_CMD_HIST               = 64;
+const size_t MAX_CMD_LINES              = 64;
+const size_t MAX_CMD_LINE_SIZE          = 256;
 
-const int MAX_TOK_STR_SIZE          = 256;
-const int MAX_TOK_NAME_SIZE         = 32;
+const size_t MAX_TOK_STR_SIZE           = 256;
+const size_t MAX_TOK_NAME_SIZE          = 32;
 
-const int MAX_ENV_NAME_SIZE         = 32;
-const int MAX_ENV_VARIABLES         = 256;
+const size_t MAX_ENV_NAME_SIZE          = 32;
+const size_t MAX_ENV_VARIABLES          = 256;
 
 //----------------------------------------------------------------------------------------
 // Windows have a type. The type is primarily used to specify what type of window
@@ -171,10 +172,10 @@ enum SimTokTypeId : uint16_t {
 };
 
 //----------------------------------------------------------------------------------------
-// Tokens are the labels for reserved words and symbols recognized by the tokenizer 
-// objects. Tokens have a name, a token id, a token type and an optional value with 
-// further data. See also the "SimTables" include file how types and token Id are 
-// used to build the command and expression tokens.
+// Tokens are the labels for reserved words and symbols recognized by the 
+// tokenizer objects. Tokens have a name, a token id, a token type and an 
+// optional value with further data. See also the "SimTables" include file how
+// types and token Id are used to build the command and expression tokens.
 //
 //----------------------------------------------------------------------------------------
 enum SimTokId : uint16_t {
@@ -406,8 +407,8 @@ enum SimErrMsgId : uint16_t {
 };
 
 //----------------------------------------------------------------------------------------
-// Predefined environment variable names. When you create another one, put its name
-// here.
+// Predefined environment variable names. When you create another one, put its 
+// name here.
 //
 //----------------------------------------------------------------------------------------
 const char ENV_NIL[ ]                   = "NIL";
@@ -458,10 +459,10 @@ const char ENV_HPA_MEM_START[ ]         = "HPA_MEM_START";
 const char ENV_HPA_MEM_LIMIT[ ]         = "HPA_MEM_LIMIT";
 
 //----------------------------------------------------------------------------------------
-// Forward declaration of the globals structure. Every object will have access to 
-// the globals structure, so we do not have to pass around references to all the
-// individual objects. The globals structure contains references to all the important
-// objects in the simulator. 
+// Forward declaration of the globals structure. Every object will have access
+// to the globals structure, so we do not have to pass around references to all
+// the individual objects. The globals structure contains references to all the
+// important objects in the simulator. 
 //
 //----------------------------------------------------------------------------------------
 struct SimGlobals;
@@ -473,8 +474,8 @@ struct SimGlobals;
 void processCmdLineOptions( SimGlobals *glb, int argc, char *argv[ ] );
 
 //----------------------------------------------------------------------------------------
-// Command line option argument types and structure. This is the argc, argv parser
-// used to parse long options (e.g. --option=value).
+// Command line option argument types and structure. This is the "argc", "argv"
+// parser used to parse long options (e.g. --option=value).
 //
 //----------------------------------------------------------------------------------------
 enum SimCmdLineArgOptions : int {
@@ -564,7 +565,6 @@ struct SimTokenizer {
     void            setupTokenizer( char *lineBuf, SimToken *tokTab );
 
     void            nextToken( );
-    
     bool            isToken( SimTokId tokId );
     bool            isTokenTyp( SimTokTypeId typId );
     bool            isTokenIdent( char *name );  
@@ -603,9 +603,9 @@ struct SimTokenizer {
 };
 
 //----------------------------------------------------------------------------------------
-// Tokenizer from string. The command line interface parse their input buffer line.
-// The tokenizer will return the tokens found in the line. The tokenizer raises 
-// exceptions.
+// Tokenizer from string. The command line interface parse their input buffer 
+// line. The tokenizer will return the tokens found in the line. The tokenizer
+// raises exceptions.
 //
 //----------------------------------------------------------------------------------------
 struct SimTokenizerFromString : public SimTokenizer {
@@ -619,7 +619,7 @@ struct SimTokenizerFromString : public SimTokenizer {
  
     void            nextChar( );
 
-    int             currentCharIndex    = 0;
+    size_t          currentCharIndex    = 0;
     size_t          currentLineLen      = 0;
     char            tokenLine[ 256 ]    = { 0 };
 
@@ -646,14 +646,15 @@ struct SimTokenizerFromFile : public SimTokenizer {
     void    closeFile( );
     void    nextChar( );
     
-    int    currentLineIndex     = 0;
-    int    currentCharIndex     = 0;
+    size_t  currentLineIndex    = 0;
+    size_t  currentCharIndex    = 0;
     FILE   *srcFile             = nullptr;
 };
 
 //----------------------------------------------------------------------------------------
-// Expression value. The analysis of an expression results in a value. Depending on 
-// the expression type, the values are simple scalar values or a structured values.
+// Expression value. The analysis of an expression results in a value. Depending
+// on the expression type, the values are simple scalar values or a structured 
+// values.
 //
 //----------------------------------------------------------------------------------------
 struct SimExpr {
@@ -672,8 +673,8 @@ struct SimExpr {
 const SimExpr INIT_EXPR = { .typ = TYP_NIL, .u = { .val = 0 }};
 
 //----------------------------------------------------------------------------------------
-// The expression evaluator object. We use the "parseExpr" routine wherever we expect
-// an expression in the command line. The evaluator raises exceptions.
+// The expression evaluator object. We use the "parseExpr" routine wherever we 
+// expect an expression in the command line. The evaluator raises exceptions.
 //
 //----------------------------------------------------------------------------------------
 struct SimExprEvaluator {
@@ -776,8 +777,8 @@ struct SimEnv {
     SimEnvTabEntry  *getEnvEntry( int index );
 
     int             getEnvHwm( );
-    int             formatEnvEntry( const char *name, char *buf, int bufLen );
-    int             formatEnvEntry( int index, char *buf, int bufLen );
+    int             formatEnvEntry( const char *name, char *buf, size_t bufLen );
+    int             formatEnvEntry( int index, char *buf, size_t bufLen );
     
     bool            isValid( const char *name );
     bool            isReadOnly( const char *name );
@@ -810,16 +811,16 @@ struct SimEnv {
 };
 
 //----------------------------------------------------------------------------------------
-// Command History. The simulator command interpreter features a simple command history.
-// It is a circular buffer that holds the last commands. There are functions to show
-// the command history, re-execute a previous command and to retrieve a previous 
-// command for editing.
+// Command History. The simulator command interpreter features a simple command
+// history. It is a circular buffer that holds the last commands. There are 
+// functions to show the command history, re-execute a previous command and to
+// retrieve a previous command for editing.
 //
 //----------------------------------------------------------------------------------------
 struct SimCmdHistEntry {
     
-    int  cmdId;
-    char cmdLine[ MAX_CMD_LINE_SIZE ];
+    size_t  cmdId;
+    char    cmdLine[ MAX_CMD_LINE_SIZE ];
 };
 
 struct SimCmdHistory {
@@ -828,34 +829,35 @@ struct SimCmdHistory {
     
     SimCmdHistory( );
     
-    void enableHistory( bool enable );
-    void disableHistory( );
-    bool isHistoryEnabled( );
+    void    enableHistory( bool enable );
+    void    disableHistory( );
+    bool    isHistoryEnabled( );
     
-    void addCmdLine( const char *cmdStr );
-    char *getCmdLine( int cmdRef, int *cmdId = nullptr );
-    int  getCmdCount( );
-    int  getCmdNum( );
+    void    addCmdLine( const char *cmdStr );
+    char    *getCmdLine( size_t cmdRef, size_t *cmdId = nullptr );
+    size_t  getCmdCount( );
+    size_t  getCmdNum( );
    
     private:
     
-    bool historyEnabled     = true;
-    int nextCmdNum          = 0;
-    int head                = 0;
-    int tail                = 0;
-    int count               = 0;
+    bool    historyEnabled  = true;
+    size_t  nextCmdNum      = 0;
+    size_t  head            = 0;
+    size_t  tail            = 0;
+    size_t  count           = 0;
     
     SimCmdHistEntry history[ MAX_CMD_HIST ];
 };
 
 //----------------------------------------------------------------------------------------
-// Command and Console Window output buffer. The output buffer will store all output
-// from the command window to support scrolling. This is the price you pay when normal
-// terminal scrolling is restricted to an area of the screen. The buffer offers a
-// simple interface. Any character added will be stored in a line, a "\n" will advance
-// to the next line to store. The buffer itself is a circular buffer. Each time a 
-// command line is entered, the display will show the last N lines entered. A cursor
-// is defined which is manipulated by the cursor up or down routines.
+// Command and Console Window output buffer. The output buffer will store all 
+// output from the command window to support scrolling. This is the price you 
+// pay when normal terminal scrolling is restricted to an area of the screen. 
+// The buffer offers a simple interface. Any character added will be stored in 
+// a line, a "\n" will advance to the next line to store. The buffer itself is
+// a circular buffer. Each time a command line is entered, the display will 
+// show the last N lines entered. A cursor is defined which is manipulated by 
+// the cursor up or down routines.
 //
 //----------------------------------------------------------------------------------------
 struct SimWinOutBuffer : SimFormatter {
@@ -866,25 +868,25 @@ struct SimWinOutBuffer : SimFormatter {
     
     void        initBuffer( );
     void        addToBuffer( const char *data );
-    int         writeChars( const char *format, ... );
-    int         writeChar( const char ch );
-    void        setScrollWindowSize( int size );
+    size_t      writeChars( const char *format, ... );
+    size_t      writeChar( const char ch );
+    void        setScrollWindowSize( size_t size );
     
     void        resetLineCursor( );
-    char        *getLineRelative( int lineBelowTop );
-    int         getCursorIndex( );
-    int         getTopIndex( );
+    char        *getLineRelative( size_t lineBelowTop );
+    size_t      getCursorIndex( );
+    size_t      getTopIndex( );
     
-    void        scrollUp( int lines = 1 );
-    void        scrollDown( int lines = 1 );
+    void        scrollUp( size_t lines = 1 );
+    void        scrollDown( size_t lines = 1 );
     
     private:
     
     char        buffer[ MAX_WIN_OUT_LINES ] [ MAX_WIN_OUT_LINE_SIZE ];
-    int         topIndex    = 0; // Index of the next line to use.
-    int         cursorIndex = 0; // Index of the last line currently shown.
-    int         screenLines = 0; // Number of lines displayed in the window.
-    int         charPos     = 0; // Current character position in the line.
+    size_t      topIndex    = 0; // Index of the next line to use.
+    size_t      cursorIndex = 0; // Index of the last line currently shown.
+    size_t      screenLines = 0; // Number of lines displayed in the window.
+    size_t      charPos     = 0; // Current character position in the line.
 };
 
 //----------------------------------------------------------------------------------------
@@ -894,13 +896,13 @@ struct SimWinOutBuffer : SimFormatter {
 //----------------------------------------------------------------------------------------
 struct SimWinSize {
 
-    int minCol = 0;
-    int maxCol = 0;
-    int minRow = 0;
-    int maxRow = 0;
+    size_t minCol = 0;
+    size_t maxCol = 0;
+    size_t minRow = 0;
+    size_t maxRow = 0;
 
-    int actualRow = 0;
-    int actualCol = 0;
+    size_t actualRow = 0;
+    size_t actualCol = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -930,8 +932,8 @@ struct SimWin {
     void            setWinType( SimWinType type );
     SimWinType      getWinType( );
     
-    void            setWinIndex( int index );
-    int             getWinIndex( );
+    void            setWinIndex( size_t index );
+    size_t          getWinIndex( );
 
     void            setWinName( char *name );
     char            *getWinName( );
@@ -942,80 +944,82 @@ struct SimWin {
     void            setEnable( bool arg );
     bool            isEnabled( );
     
-    void            setRadix( int radix );
-    int             getRadix( );
+    void            setRadix( size_t radix );
+    size_t          getRadix( );
     
-    int             getDefRows( );
-    int             getRows( );
-    void            setRows( int arg );
+    size_t          getDefRows( );
+    size_t          getRows( );
+    void            setRows( size_t arg );
     
-    int             getDefColumns( );
-    int             getColumns( );
-    void            setColumns( int arg );
+    size_t          getDefColumns( );
+    size_t          getColumns( );
+    void            setColumns( size_t arg );
 
     void            setWinOrigin( size_t row, size_t col );
     void            setWinCursor( size_t row, size_t col );
     
-    int             getWinCursorRow( );
-    int             getWinCursorCol( );
+    size_t          getWinCursorRow( );
+    size_t          getWinCursorCol( );
     
     int             getWinStack( );
     void            setWinStack( int wStack );
 
-    void            setWinToggleLimit( int limit );
-    int             getWinToggleLimit( );
+    void            setWinToggleLimit( size_t limit );
+    size_t          getWinToggleLimit( );
 
-    int             getWinToggleVal( );
-    void            setWinToggleVal( int val );
+    size_t          getWinToggleVal( );
+    void            setWinToggleVal( size_t val );
 
-    SimWinSize      getWinSize( int toggleVal );
+    SimWinSize      getWinSize( size_t toggleVal );
     
-    void            setWinLimitsForToggle( int toggleVal, 
-                                           int minRow, 
-                                           int maxRow,
-                                           int minCol,
-                                           int maxCol );
+    void            setWinLimitsForToggle( size_t toggleVal, 
+                                           size_t minRow, 
+                                           size_t maxRow,
+                                           size_t minCol,
+                                           size_t maxCol );
 
-    void            setWinSizeForToggle( int toggleVal, int row, int col );
+    void            setWinSizeForToggle( size_t toggleVal, 
+                                         size_t row, 
+                                         size_t col );
 
     void            initWinToggleSizes( );
     
     void            printNumericField(  T64Word val,
-                                        uint32_t fmtDesc = 0,
-                                        int len = 0,
-                                        int row = 0,
-                                        int col = 0 );
+                                        uint32_t fmtDesc = FMT_DEFAULT,
+                                        size_t len = 0,
+                                        size_t row = 0,
+                                        size_t col = 0 );
     
     void            printTextField( char *text,
-                                    uint32_t fmtDesc = 0,
-                                    int len = 0,
-                                    int row = 0,
-                                    int col = 0 );
+                                    uint32_t fmtDesc = FMT_DEFAULT,
+                                    size_t len = 0,
+                                    size_t row = 0,
+                                    size_t col = 0 );
 
     void            printBitField(  T64Word val, 
-                                    int pos,
+                                    size_t pos,
                                     int printChar,
-                                    uint32_t fmtDesc = 0,
-                                    int len = 0,
-                                    int row = 0,
-                                    int col = 0 ); 
+                                    uint32_t fmtDesc = FMT_DEFAULT,
+                                    size_t len = 0,
+                                    size_t row = 0,
+                                    size_t col = 0 ); 
     
-    void            printRadixField( uint32_t fmtDesc = 0,
-                                     int len = 0,
-                                     int row = 0,
-                                     int col = 0 );
+    void            printRadixField( uint32_t fmtDesc = FMT_DEFAULT,
+                                     size_t len = 0,
+                                     size_t row = 0,
+                                     size_t col = 0 );
     
-    void            printWindowIdField( uint32_t fmtDesc = 0,
-                                        int row = 0,
-                                        int col = 0 );
+    void            printWindowIdField( uint32_t fmtDesc = FMT_DEFAULT,
+                                        size_t row = 0,
+                                        size_t col = 0 );
     
-    void            padLine( uint32_t fmtDesc = 0 );
-    void            padField( int dLen, int fLen );
-    void            clearField( int len, uint32_t fmtDesc = 0 ); 
+    void            padLine( uint32_t fmtDesc = FMT_DEFAULT );
+    void            padField( size_t dLen, size_t fLen );
+    void            clearField( size_t len, uint32_t fmtDesc = FMT_DEFAULT ); 
     
     void            reDraw( );
     
-    virtual void    toggleWin( int toggleVal = 0 );
+    virtual void    toggleWin( size_t toggleVal = 0 );
     virtual void    setDefaults( )  = 0;
     virtual void    drawBanner( )   = 0;
     virtual void    drawBody( )     = 0;
@@ -1027,17 +1031,17 @@ struct SimWin {
     private:
     
     SimWinType      winType             = WT_NIL;
-    int             winIndex            = 0;
-    int             winModNum           = -1;
-    char            winName[ MAX_WIN_NAME];
+    size_t          winIndex            = 0;
+    int             winModNum           = 0;
+    char            winName[ MAX_WIN_NAME ];
     SimWinSize      winSizes[ MAX_WIN_TOGGLES ];
     
     bool            winEnabled          = false;
-    int             winRadix            = 16;
+    size_t          winRadix            = 16;
     int             winStack            = 0;
     
-    int             winToggleLimit      = 0;
-    int             winToggleVal        = 0;
+    size_t          winToggleLimit      = 0;
+    size_t          winToggleVal        = 0;
     
     size_t          winColumns          = 0;
     size_t          winRows             = 0;       
@@ -1272,7 +1276,10 @@ public:
 private:
     
     void            printWelcome( );
-    int             buildCmdPrompt( char *promptStr, size_t promptStrLen, char prefix = ' ' );
+    size_t          buildCmdPrompt( char *promptStr, 
+                                    size_t promptStrLen, 
+                                    char prefix = ' ' );
+
     int             readCmdLine( char *cmdBuf, size_t cmdBufLen, char *promptStr );
     void            processCmdLine( char *cmdBuf );
     SimTokId        peekAtInputLine( char *cmdBuf );
@@ -1286,8 +1293,8 @@ private:
 
     void            ensureWinModeOn( );
     void            printStackInfoField( uint32_t fmtDesc = 0,
-                                         int row = 0,
-                                         int col = 0 );
+                                         size_t row = 0,
+                                         size_t col = 0 );
   
     void            displayMemContent( T64Word ofs, 
                                        T64Word len, 
@@ -1416,9 +1423,9 @@ public:
     void            windowCurrent( int winNum );
     void            windowEnable( int winNumStart, int winNumEnd, bool enable );
     void            winStacksEnable( int stackNum, bool enable );
-    void            windowRadix( int rdx, int winNum );
-    void            windowSetRows( int rows, int winNum );
-    void            windowSetCmdWinRows( int rows );
+    void            windowRadix( size_t rdx, int winNum );
+    void            windowSetRows( size_t rows, int winNum );
+    void            windowSetCmdWinRows( size_t rows );
     void            windowClearCmdWin( );
     
     void            windowHome( T64Word amt, int winNum );
@@ -1435,7 +1442,7 @@ public:
 
     void            windowKill( int winNumStart, int winNumEnd );
     void            windowKillByModNum( int modNum );
-    void            windowSetStack( int winStack, int winNumStart, int winNumEnd );
+    void            windowSetStack( size_t winStack, int winNumStart, int winNumEnd );
     
     int             getCurrentWindow( );
     void            setCurrentWindow( int winNum );    
@@ -1460,10 +1467,12 @@ public:
     private:
     
     int             getFreeWindowSlot( );
-    int             computeColumnsNeeded( int winStack );
-    int             computeRowsNeeded( int winStack );
-    void            setWindowColumns( int winStack, int columns );
-    void            setWindowOrigins( int winStack, int rowOfs = 1, int colOfs = 1 );
+    int             computeColumnsNeeded( size_t winStack );
+    int             computeRowsNeeded( size_t winStack );
+    void            setWindowColumns( size_t winStack, size_t columns );
+    void            setWindowOrigins( size_t winStack, 
+                                      size_t rowOfs = 1, 
+                                      size_t colOfs = 1 );
    
     int             currentWinNum                   = -1;
     int             previousWinNum                  = -1;

@@ -426,21 +426,23 @@ void SimEnv::removeEnvVar( const char *name ) {
 // Format the ENV entry. 
 //
 //----------------------------------------------------------------------------------------
-int SimEnv::formatEnvEntry( const char *name, char *buf, int bufLen ) {
+int SimEnv::formatEnvEntry( const char *name, char *buf, size_t bufLen ) {
 
     int index = lookupEntry( name );
     return( formatEnvEntry( index, buf, bufLen ));
 }
 
-int SimEnv::formatEnvEntry( int index, char *buf, int bufLen ) {
+int SimEnv::formatEnvEntry( int index, char *buf, size_t bufLen ) {
 
     // ??? how to check that we fit in "bufLen" ?
-
+   
     if (( index >= 0 ) && ( index < ( hwm - table ))) {
 
         SimEnvTabEntry *e = &table[ index ];
 
         if ( e -> valid ) {
+
+            // ??? appendPrintf candidates ?
 
             int len = snprintf( buf, 128, "%-32s", e -> name );
     
