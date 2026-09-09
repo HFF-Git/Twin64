@@ -49,6 +49,12 @@ int toInt32( T64Word val ) {
     return ( static_cast<int> ( val ));
 }
 
+uint32_t toUInt32( T64Word val ) {
+
+    if ( val > UINT32_MAX ) throw( ERR_NUMERIC_OVERFLOW );
+    return ( static_cast<uint32_t> ( val ));
+}
+
 //----------------------------------------------------------------------------------------
 // We think outside in window numbers starting at one. Internally, there is an 
 // array of windows starting at zero. When parsing a command, we map right there.
@@ -421,15 +427,15 @@ char *SimCmdHistory::getCmdLine( int cmdRef, size_t *cmdId ) {
 
     if ( cmdRef >= 0 ) {
 
-        if ( cmdRef < nextCmdNum - count ) return ( nullptr );
+        if ( toUInt32( cmdRef ) < nextCmdNum - count ) return ( nullptr );
 
-        if ( cmdRef >= nextCmdNum ) return ( nullptr );
+        if ( toUInt32( cmdRef ) >= nextCmdNum ) return ( nullptr );
 
         for ( size_t i = 0; i < count; i++ ) {
 
             size_t pos = ( tail + i ) % MAX_CMD_HIST;
 
-            if ( history[ pos ].cmdId == cmdRef ) {
+            if ( history[ pos ].cmdId == toUInt32( cmdRef )) {
 
                 if ( cmdId ) *cmdId = history[pos].cmdId;
                 return ( history[ pos ].cmdLine );
@@ -440,7 +446,7 @@ char *SimCmdHistory::getCmdLine( int cmdRef, size_t *cmdId ) {
     }
     else {
 
-        size_t offset = -cmdRef;
+        size_t offset = toUInt32( -cmdRef );
         if ( offset > count ) return ( nullptr );
 
         size_t pos = ( head - offset + MAX_CMD_HIST ) % MAX_CMD_HIST;
@@ -496,7 +502,7 @@ SimCommandsWin::SimCommandsWin( SimGlobals *glb ) : SimWin( glb ) {
 void SimCommandsWin::setDefaults( ) {
     
     setWinType( WT_CMD_WIN );
-    setRadix( glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT ));
+    setRadix( toUInt32( glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT )));
 
     setWinToggleLimit( 1 );
     setWinLimitsForToggle( 0, 10, MAX_WIN_ROW_SIZE, 104, MAX_WIN_COL_SIZE );
@@ -694,7 +700,7 @@ size_t SimCommandsWin::readCmdLine( char   *cmdBuf,
                         winOut -> addToBuffer( cmdBuf );
                         winOut -> addToBuffer( "\n" );
                         cmdBufLen = removeComment( cmdBuf );
-                        return ( static_cast<int> ( cmdBufLen ));
+                        return ( cmdBufLen );
                     }
                 }
                 else if ( isBackSpaceChar( ch )) {
@@ -2026,12 +2032,14 @@ void SimCommandsWin::histCmd( ) {
     
     if ( tok -> tokId( ) != TOK_EOS ) {
 
-        depth = eval -> acceptIntExpr( ERR_INVALID_NUM, 0, MAX_CMD_HIST );
+        depth = toUInt32( 
+                    eval -> acceptIntExpr( 
+                        ERR_INVALID_NUM, 0, static_cast<int>( MAX_CMD_HIST )));
     }
     
     if (( depth == 0 ) || ( depth > cmdCount )) depth = cmdCount;
     
-    for ( size_t i = - depth; i < 0; i++ ) {
+    for ( int i = - static_cast<int>( depth ); i < 0; i++ ) {
         
         size_t cmdRef = 0;
         char   *cmdLine = hist -> getCmdLine( i, &cmdRef );
@@ -2118,7 +2126,7 @@ void SimCommandsWin::skipIfCmd( ) {
 
         buildCmdPrompt( cmdPrompt, sizeof( cmdPrompt ), 'F');
 
-        int cmdLen = readCmdLine( cmdLineBuf, 0, cmdPrompt );
+        size_t cmdLen = readCmdLine( cmdLineBuf, 0, cmdPrompt );
 
         if ( cmdLen <= 0 )  continue;
 
@@ -2163,7 +2171,7 @@ void SimCommandsWin::ifCmd( ) {
 
         buildCmdPrompt( cmdPrompt, sizeof( cmdPrompt ), prefixChar );
 
-        int cmdLen = readCmdLine( cmdLineBuf, 0, cmdPrompt );
+        size_t cmdLen = readCmdLine( cmdLineBuf, 0, cmdPrompt );
 
         if ( cmdLen <= 0 ) {
 
@@ -2342,7 +2350,8 @@ void SimCommandsWin::assertCheckCmd( bool doExit ) {
 
     if ( glb -> logFile != nullptr ) {
 
-        if ( fprintf( glb -> logFile, "%.*s\n", msgBufLen, msgBuf ) < 0 ) {
+        if ( fprintf( glb -> logFile, "%.*s\n", 
+                      static_cast<int>( msgBufLen ), msgBuf ) < 0 ) {
 
             winOut -> writeChars( "Log File write error : %s\n", strerror( errno ));
         }
@@ -2413,7 +2422,8 @@ void SimCommandsWin::writeLogCmd( ) {
 
     if ( glb -> logFile != nullptr ) {
 
-        if ( fprintf( glb -> logFile, "%.*s\n", msgBufLen, msgBuf ) < 0 ) {
+        if ( fprintf( glb->logFile, "%.*s\n", 
+                      static_cast<int>(msgBufLen), msgBuf) < 0) {
 
             winOut -> writeChars( "Log File write error : %s\n", strerror( errno ));
         }
@@ -2842,8 +2852,8 @@ void SimCommandsWin::winEnableCmd( bool enable ) {
 void SimCommandsWin::winSetRadixCmd( ) {
 
    
-    int rdx     = glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT );
-    int winNum  = -1;
+    size_t rdx     = toUInt32( glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT ));
+    int    winNum  = -1;
    
     if ( tok -> isToken( TOK_EOS )) {
         
@@ -2852,7 +2862,7 @@ void SimCommandsWin::winSetRadixCmd( ) {
     }
     else if ( tok -> isToken( TOK_COMMA )) {
         
-        rdx = glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT );
+        rdx = toUInt32( glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT ));
         tok -> nextToken( );
 
         winNum = eval -> acceptIntExpr( ERR_EXPECTED_WIN_ID, 1, MAX_WINDOWS );
@@ -3008,8 +3018,8 @@ void SimCommandsWin::winSetRowsCmd( ) {
     }
     else {
 
-        int winLines = eval -> acceptIntExpr( ERR_INVALID_NUM ) + 1;
-        int winNum   = -1;
+        size_t winLines = toUInt32( eval -> acceptIntExpr( ERR_INVALID_NUM )) + 1;
+        int    winNum   = -1;
     
         if ( tok -> isToken( TOK_COMMA )) {
         
@@ -3036,11 +3046,13 @@ void SimCommandsWin::winSetRowsCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winSetCmdWinRowsCmd( ) {
 
-    int winLines = 0;
+    size_t winLines = 0;
 
     if ( tok -> isToken( TOK_NUM )) {
 
-        winLines = eval -> acceptIntExpr( ERR_INVALID_NUM, 0, MAX_CMD_LINES ) + 1;      
+        winLines = toUInt32( eval -> acceptIntExpr( ERR_INVALID_NUM, 
+                                                    0, 
+                                                    MAX_CMD_LINES ) + 1 );      
     }
 
     tok -> checkEOS( );
@@ -3456,7 +3468,7 @@ void SimCommandsWin::executeCommand( ) {
     char cmdPrompt[ MAX_CMD_LINE_SIZE ];
 
     buildCmdPrompt( cmdPrompt, sizeof( cmdPrompt ));
-    int cmdLen = readCmdLine( cmdLineBuf, 0, cmdPrompt );
+    size_t cmdLen = readCmdLine( cmdLineBuf, 0, cmdPrompt );
 
     if ( cmdLen > 0 ) processCmdLine( cmdLineBuf );
 }

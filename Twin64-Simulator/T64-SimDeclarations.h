@@ -1443,7 +1443,7 @@ public:
 
     void            windowKill( int winNumStart, int winNumEnd );
     void            windowKillByModNum( int modNum );
-    void            windowSetStack( size_t winStack, int winNumStart, int winNumEnd );
+    void            windowSetStack( int winStack, int winNumStart, int winNumEnd );
     
     int             getCurrentWindow( );
     void            setCurrentWindow( int winNum );    
@@ -1468,10 +1468,10 @@ public:
     private:
     
     int             getFreeWindowSlot( );
-    int             computeColumnsNeeded( size_t winStack );
-    int             computeRowsNeeded( size_t winStack );
-    void            setWindowColumns( size_t winStack, size_t columns );
-    void            setWindowOrigins( size_t winStack, 
+    size_t          computeColumnsNeeded( int winStack );
+    size_t          computeRowsNeeded( int winStack );
+    void            setWindowColumns( int winStack, size_t columns );
+    void            setWindowOrigins( int winStack, 
                                       size_t rowOfs = 1, 
                                       size_t colOfs = 1 );
    

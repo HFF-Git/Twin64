@@ -35,13 +35,6 @@ namespace {
 //
 //
 //----------------------------------------------------------------------------------------
-int toInt32( T64Word val ) {
-
-    if ( val < INT32_MIN ) throw( ERR_NUMERIC_OVERFLOW );
-    if ( val > INT32_MAX ) throw( ERR_NUMERIC_OVERFLOW );
-    return ( static_cast<int> ( val ));
-}
-
 uint32_t toUInt32( T64Word val ) {
 
     if ( val > UINT32_MAX ) throw( ERR_NUMERIC_OVERFLOW );

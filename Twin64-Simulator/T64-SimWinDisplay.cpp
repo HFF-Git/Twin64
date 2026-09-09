@@ -32,6 +32,16 @@
 //----------------------------------------------------------------------------------------
 namespace {
 
+//----------------------------------------------------------------------------------------
+//
+//
+//----------------------------------------------------------------------------------------
+uint32_t toUInt32( T64Word val ) {
+
+    if ( val > UINT32_MAX ) throw( ERR_NUMERIC_OVERFLOW );
+    return ( static_cast<uint32_t> ( val ));
+}
+
 }; // namespace
 
 //----------------------------------------------------------------------------------------
@@ -239,7 +249,7 @@ bool SimWinDisplay::isWindowsOn( ) {
 // column of a window.
 //
 //----------------------------------------------------------------------------------------
-int SimWinDisplay::computeColumnsNeeded( size_t winStack ) {
+size_t SimWinDisplay::computeColumnsNeeded( int winStack ) {
     
     size_t columnSize = 0;
     
@@ -249,7 +259,7 @@ int SimWinDisplay::computeColumnsNeeded( size_t winStack ) {
             ( windowList[ i ] -> isEnabled( )) &&
             ( windowList[ i ] -> getWinStack( ) == winStack )) {
             
-            int columns = windowList[ i ] -> getDefColumns( );
+            size_t columns = windowList[ i ] -> getDefColumns( );
             if ( columns > columnSize ) columnSize = columns;
         }
     }
@@ -263,7 +273,7 @@ int SimWinDisplay::computeColumnsNeeded( size_t winStack ) {
 // end of line picture.
 //
 //----------------------------------------------------------------------------------------
-void SimWinDisplay::setWindowColumns( size_t winStack, size_t columnSize ) {
+void SimWinDisplay::setWindowColumns( int winStack, size_t columnSize ) {
     
     for ( size_t i = 0; i < MAX_WINDOWS; i++ ) {
         
@@ -283,9 +293,9 @@ void SimWinDisplay::setWindowColumns( size_t winStack, size_t columnSize ) {
 // stack.
 //
 //----------------------------------------------------------------------------------------
-int SimWinDisplay::computeRowsNeeded( size_t winStack ) {
+size_t SimWinDisplay::computeRowsNeeded( int winStack ) {
     
-    int rowSize = 0;
+    size_t rowSize = 0;
     
     for ( size_t i = 0; i < MAX_WINDOWS; i++ ) {
         
@@ -307,7 +317,7 @@ int SimWinDisplay::computeRowsNeeded( size_t winStack ) {
 // absolute row and column position for the window in the terminal screen.
 //
 //----------------------------------------------------------------------------------------
-void SimWinDisplay::setWindowOrigins( size_t winStack, 
+void SimWinDisplay::setWindowOrigins( int winStack, 
                                       size_t rowOffset, 
                                       size_t colOffset ) {
     
@@ -362,13 +372,13 @@ void SimWinDisplay::setWindowOrigins( size_t winStack,
 //----------------------------------------------------------------------------------------
 void SimWinDisplay::reDraw( ) {
     
-    int winStackColumns[ MAX_WIN_STACKS ]   = { 0 };
-    int winStackRows[ MAX_WIN_STACKS ]      = { 0 };
-    int stackCount                          = 0;
-    int maxRowsNeeded                       = 0;
-    int maxColumnsNeeded                    = 0;
-    int stackColumnGap                      = 2;
-    int minRowSize = glb -> env -> getEnvVarNum((char *) ENV_WIN_MIN_ROWS );
+    size_t winStackColumns[ MAX_WIN_STACKS ]   = { 0 };
+    size_t winStackRows[ MAX_WIN_STACKS ]      = { 0 };
+    size_t stackCount                          = 0;
+    size_t maxRowsNeeded                       = 0;
+    size_t maxColumnsNeeded                    = 0;
+    size_t stackColumnGap                      = 2;
+    size_t minRowSize = toUInt32( glb -> env -> getEnvVarNum((char *) ENV_WIN_MIN_ROWS ));
     
     if ( winModeOn ) {
        
@@ -405,8 +415,8 @@ void SimWinDisplay::reDraw( ) {
             }
         }  
 
-        int curColumn = 1;
-        int curRows   = 1;
+        size_t curColumn = 1;
+        size_t curRows   = 1;
         
         for ( int i = 0; i < MAX_WIN_STACKS; i++ ) {
 
@@ -558,7 +568,7 @@ void SimWinDisplay::winStacksEnable( int stackNum, bool enable ) {
 // screen. The last window moved to a stack is made the current window.
 //
 //----------------------------------------------------------------------------------------
-void SimWinDisplay::windowSetStack( size_t winStack, 
+void SimWinDisplay::windowSetStack( int winStack, 
                                     int winNumStart, 
                                     int winNumEnd ) {
 

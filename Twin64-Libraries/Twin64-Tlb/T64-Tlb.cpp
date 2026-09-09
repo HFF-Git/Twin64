@@ -242,7 +242,7 @@ bool T64GlobalTlb::removeTlbEntry( T64Word vAdr ) {
 // Routines for the simulator concerning the global TLB:
 //
 //----------------------------------------------------------------------------------------
-int T64GlobalTlb::getTlbSize( ) {
+size_t T64GlobalTlb::getTlbSize( ) {
 
     return( tlbSize );
 }

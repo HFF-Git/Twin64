@@ -668,7 +668,7 @@ void SimWinTlb::setDefaults( ) {
 
     setCurrentItemAdr( 0 );
     setLineIncrementItemAdr( 1 );
-    setLimitItemAdr( tlb -> getTlbSize( ));
+    setLimitItemAdr( static_cast<T64Word>( tlb -> getTlbSize( )));
     setWinToggleVal( 0 );
     setEnable( true );
 }
