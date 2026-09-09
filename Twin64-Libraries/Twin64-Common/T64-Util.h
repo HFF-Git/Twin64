@@ -145,7 +145,7 @@ inline bool isAlignedOfs( T64Word ofs,  T64Word align ) {
 // little endian machine. Only lengths of 1, 2, 4, or 8 are supported.
 //
 //----------------------------------------------------------------------------------------
-inline bool copyEndianAware( uint8_t *dst, uint8_t *src, size_t len ) {
+inline bool copyEndianAware( uint8_t *dst, const uint8_t *src, size_t len ) {
 
     if (( len != 1 ) && ( len != 2 ) && 
         ( len != 4 ) && ( len != 8 )) return( false );     

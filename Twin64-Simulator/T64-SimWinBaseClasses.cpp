@@ -318,7 +318,7 @@ void SimWin::padField( size_t dLen, size_t fLen ) {
     
     while ( fLen > dLen ) {
         
-        glb -> console -> writeChars((char *) " " );
+        glb -> console -> writeChars( " " );
         fLen --;
     }
 }
@@ -375,7 +375,7 @@ void SimWin::printNumericField( T64Word   val,
 // ??? add a check that we do not go past the window column size ?
 // ??? use calculateStrLen vs. strlen ?
 //----------------------------------------------------------------------------------------
-void SimWin::printTextField( char       *text, 
+void SimWin::printTextField( const char       *text, 
                              uint32_t   fmtDesc, 
                              size_t     fLen, 
                              size_t     row, 

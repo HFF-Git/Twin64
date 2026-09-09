@@ -519,7 +519,7 @@ size_t SimFormatter::printSeparator( size_t len, bool light ) {
 // in the range of what the text size could be.
 //
 //----------------------------------------------------------------------------------------
-size_t SimFormatter::printText( char *text, size_t maxLen ) {
+size_t SimFormatter::printText( const char *text, size_t maxLen ) {
     
     if ( strlen( text ) <= maxLen ) {
         

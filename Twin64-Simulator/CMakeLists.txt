@@ -42,7 +42,7 @@ target_compile_options(Twin64-Simulator PRIVATE
         -Wconversion
         -Wsign-conversion
         -Wpedantic
-        # -Wold-style-cast
+        -Wold-style-cast
     >
 
     # Microsoft Visual C++

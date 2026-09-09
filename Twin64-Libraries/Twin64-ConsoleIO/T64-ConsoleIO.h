@@ -178,7 +178,7 @@ struct SimFormatter {
     void            setFmtAttributes( uint32_t fmtDesc );
     size_t          printBlanks( size_t len );
     size_t          printSeparator( size_t len, bool light = false );
-    size_t          printText( char *text, size_t len );
+    size_t          printText( const char *text, size_t len );
     size_t          printNumber( T64Word val, uint32_t fmtDesc );
     size_t          numberFmtLen( uint32_t fmtDesc, T64Word val = 0 );
     char            printBit( T64Word val, size_t pos, char printChar );
