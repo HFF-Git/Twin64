@@ -87,7 +87,10 @@ bool elfioValidate( elfio *reader, char* msg, size_t msg_len ) {
 //----------------------------------------------------------------------------------------
 bool writeMem( T64System *sys, T64Word ofs, uint32_t val ) {
 
-    if ( ! sys -> busOpWrite( nullptr, ofs, (uint8_t *) &val, sizeof( uint32_t ))) {
+    if ( ! sys -> busOpWrite( nullptr, 
+                              ofs, 
+                              reinterpret_cast<uint8_t *> ( &val ), 
+                              sizeof( uint32_t ))) {
 
         throw( ERR_MEM_OP_FAILED );
     }
@@ -175,9 +178,9 @@ void loadSegmentIntoMemory( segment         *segment,
 
 
 //----------------------------------------------------------------------------------------
-// Loading a basic ELF file. This routine is rather simple. All we do is to locate 
-// the segments and load them into physical memory. Could be refined and do more 
-// checking one day.
+// Loading a basic ELF file. This routine is rather simple. All we do is to 
+// locate the segments and load them into physical memory. Could be refined and
+// do more checking one day.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::loadElfFile( char *fileName ) {
@@ -210,10 +213,8 @@ void SimCommandsWin::loadElfFile( char *fileName ) {
         
         winOut -> writeChars( "Set entry: 0x%08x\n", entry );
     
-        // ??? to do ....
-        // glb -> cpu -> setReg( RC_FD_PSTAGE, PSTAGE_REG_ID_PSW_0, (uint32_t) 0 );
-        // glb -> cpu -> setReg( RC_FD_PSTAGE, PSTAGE_REG_ID_PSW_1, (uint32_t) entry );
-        
+        // ??? what to set ?
+
         winOut -> writeChars( "Done\n" );
 
         if ( reader != nullptr ) closeElfFile( reader );

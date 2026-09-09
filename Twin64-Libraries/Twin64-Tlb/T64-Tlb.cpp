@@ -338,7 +338,7 @@ T64GlobalTlb::busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len )  {
     // int     regSetIndex         = wordIndex / T64_IO_REG_SET_SIZE;
     // int     wordInRegSetIndex   = wordIndex % T64_IO_REG_SET_SIZE;
     // int     wordOfs             = pAdr % sizeof( T64Word );
-    T64Word tmp                 = 0;
+    // T64Word tmp                 = 0;
     
     // ??? what registers can we write ?
 

@@ -104,7 +104,7 @@ void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr, bool evalEnabled ) {
     
     SimExpr     lExpr = INIT_EXPR;
     uint32_t    instr = 0;
-    size_t      rdx   = toUInt32( glb -> env -> getEnvVarNum((char *) ENV_RDX_DEFAULT ));
+    size_t      rdx   = toUInt32( glb -> env -> getEnvVarNum( ENV_RDX_DEFAULT ));
     static char        asmStr[ MAX_CMD_LINE_SIZE ];
     
     tok -> nextToken( );

@@ -318,7 +318,9 @@ bool translateAdr( T64System *sys, T64Word virtAdr, T64Word *physAdr ) {
     }
     else {
 
-        T64GlobalTlb *tlbModule = (T64GlobalTlb *)sys -> lookupByModuleType( MT_GTLB );
+        T64GlobalTlb *tlbModule = 
+        reinterpret_cast<T64GlobalTlb *>( sys -> lookupByModuleType( MT_GTLB ));
+        
         if ( tlbModule == nullptr ) return ( false );
 
         return ( tlbModule -> translateAdr( virtAdr, physAdr ));
@@ -339,9 +341,14 @@ bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
 
     if ( ! translateAdr( sys, adr, &physAdr )) return ( false );
 
-    if ( sys -> busOpRead( nullptr, physAdr, (uint8_t *)val, size )) {
+    if ( sys -> busOpRead( nullptr, 
+                           physAdr, 
+                           reinterpret_cast<uint8_t *>( val ), 
+                           size )) {
 
-        copyEndianAware((uint8_t *) val, (uint8_t *) val, size );
+        copyEndianAware( reinterpret_cast<uint8_t *>( val ), 
+                         reinterpret_cast<uint8_t *>( val ), 
+                         size );
         return ( true );    
     }
 
@@ -364,7 +371,13 @@ SimExprEvaluator::SimExprEvaluator( SimGlobals *glb, SimTokenizer *tok ) {
 }
 
 //----------------------------------------------------------------------------------------
+// "parseRegister" analyses a register syntax. When we have a current window
+// processor type, the name of the register is sufficient. However, when we 
+// have no current processor window or want to talk about another processor's
+// window while have another processor as current window, we need to specify
+// the processor module number.
 //
+//      <regId> [ ":" <modNum> ]
 //
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::parseRegister( SimExpr *rExpr, bool evalEnabled ) {
@@ -387,7 +400,9 @@ void SimExprEvaluator::parseRegister( SimExpr *rExpr, bool evalEnabled ) {
     T64ModuleType mType = glb -> system -> getModuleType( modNum );
     if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
 
-    T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
+    T64Processor *proc = 
+    reinterpret_cast<T64Processor *>( glb -> system -> lookupByModNum( modNum ));
+    
     if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
 
     if ( regType == TYP_GREG ) {
@@ -454,7 +469,11 @@ void SimExprEvaluator::parseMemData( SimExpr *rExpr, bool evalEnabled ) {
         }
 
         T64Word data = 0;
-        if ( readMem( glb -> system, rExpr -> u.val, (uint8_t *) &data, len )) {
+
+        if ( readMem( glb -> system, 
+                      rExpr -> u.val, 
+                      reinterpret_cast<uint8_t *>( &data ), 
+                      len )) {
 
             rExpr -> typ = TYP_NUM;
             rExpr -> u.val = data;   
@@ -669,7 +688,7 @@ void SimExprEvaluator::parseSimpleExpr( SimExpr *rExpr, bool evalEnabled ) {
         tok -> nextToken( );
         parseTerm( rExpr, evalEnabled );
         
-        if ( rExpr -> typ == TYP_NUM ) rExpr -> u.val = - (int32_t) rExpr -> u.val;
+        if ( rExpr -> typ == TYP_NUM ) rExpr -> u.val = - rExpr -> u.val;
         else throw ( ERR_EXPECTED_NUM_VALUE );
     }
     else parseTerm( rExpr, evalEnabled );

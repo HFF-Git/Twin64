@@ -50,8 +50,9 @@ void upshiftStr( char *str ) {
     if ( len > 0 ) {
         
         for ( size_t i = 0; i < len; i++ ) {
-            
-            str[ i ] = static_cast<char> ( toupper((int) str[ i ] ));
+
+            str[i] = static_cast<char>(
+                            toupper(static_cast<unsigned char>(str[i])));
         }
     }
 }
@@ -60,7 +61,7 @@ void upshiftStr( char *str ) {
 // The lookup function. We just do a linear search for now.
 //
 //----------------------------------------------------------------------------------------
-int lookupToken( char *inputStr, SimToken *tokTab ) {
+int lookupToken( char *inputStr, const SimToken *tokTab ) {
 
     char tempStr[ TOK_NAME_SIZE + 1 ] = { 0 };
     strncpy( tempStr, inputStr, TOK_NAME_SIZE );
@@ -826,7 +827,7 @@ SimTokenizerFromString::SimTokenizerFromString(  ) : SimTokenizer( ) { }
 // called.
 //
 //----------------------------------------------------------------------------------------
-void SimTokenizerFromString::setupTokenizer( char *lineBuf, SimToken *tTab ) {
+void SimTokenizerFromString::setupTokenizer( char *lineBuf, const SimToken *tTab ) {
 
     strncpy( tokenLine, lineBuf, strlen( lineBuf ) + 1 );
     
@@ -869,7 +870,7 @@ SimTokenizerFromFile::~SimTokenizerFromFile( ) {
 // called.
 //
 //----------------------------------------------------------------------------------------
-void SimTokenizerFromFile::setupTokenizer( char *filePath, SimToken *tTab ) {
+void SimTokenizerFromFile::setupTokenizer( char *filePath, const SimToken *tTab ) {
 
     this -> tokTab          = tTab;
     this -> currentChar     = ' ';
@@ -925,7 +926,7 @@ void SimTokenizerFromFile::nextChar( ) {
         else {
             
             currentCharIndex ++;
-            currentChar = (char) ch;
+            currentChar = static_cast<char>( ch );
         }
     }
     else currentChar = EOS_CHAR;

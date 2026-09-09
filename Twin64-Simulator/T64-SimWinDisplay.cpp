@@ -187,20 +187,20 @@ char *SimWinDisplay::getWinName( int winNum ) {
     else throw( ERR_INVALID_WIN_ID );
 }   
 
-char *SimWinDisplay::getWinTypeName( int winNum ) {  
+const char *SimWinDisplay::getWinTypeName( int winNum ) {  
 
     if ( validWindowNum( winNum )) {
 
         switch ( windowList[ winNum ]->getWinType( )) {
         
-            case WT_CMD_WIN:       return((char *) "Command" );
-            case WT_CONSOLE_WIN:   return((char *) "Console" );
-            case WT_TEXT_WIN:      return((char *) "Text" );
-            case WT_CPU_WIN:       return((char *) "CPU" );
-            case WT_TLB_WIN:       return((char *) "TLB" );
-            case WT_MEM_WIN:       return((char *) "Memory" );
+            case WT_CMD_WIN:       return( "Command" );
+            case WT_CONSOLE_WIN:   return( "Console" );
+            case WT_TEXT_WIN:      return( "Text" );
+            case WT_CPU_WIN:       return( "CPU" );
+            case WT_TLB_WIN:       return( "TLB" );
+            case WT_MEM_WIN:       return( "Memory" );
             
-            default:               return((char *) "N/A" );
+            default:               return( "N/A" );
         }
     }
     else throw( ERR_INVALID_WIN_ID );
@@ -378,7 +378,7 @@ void SimWinDisplay::reDraw( ) {
     size_t maxRowsNeeded                       = 0;
     size_t maxColumnsNeeded                    = 0;
     size_t stackColumnGap                      = 2;
-    size_t minRowSize = toUInt32( glb -> env -> getEnvVarNum((char *) ENV_WIN_MIN_ROWS ));
+    size_t minRowSize = toUInt32( glb -> env -> getEnvVarNum( ENV_WIN_MIN_ROWS ));
     
     if ( winModeOn ) {
        
@@ -694,7 +694,7 @@ void SimWinDisplay::windowHome( T64Word pos, int winNum ) {
     if ( winNum == -1 ) winNum = getCurrentWindow( );
     if ( ! validWindowNum( winNum )) throw ( ERR_INVALID_WIN_ID );
 
-    ((SimWinScrollable *) windowList[ winNum ] ) -> winHome( pos );
+    reinterpret_cast<SimWinScrollable *> ( windowList[ winNum ]) -> winHome( pos );
 
     previousWinNum = currentWinNum;
     currentWinNum  = winNum;
@@ -844,8 +844,8 @@ void SimWinDisplay::windowNewMem( T64Word adr, int toggleVal ) {
 
     int slot = getFreeWindowSlot( );
 
-    windowList[ slot ] = (SimWin *) new SimWinMem( glb, adr );
-    windowList[ slot ] -> setWinName(( char *) "MEM" );
+    windowList[ slot ] = reinterpret_cast<SimWin *>( new SimWinMem( glb, adr ));
+    windowList[ slot ] -> setWinName( "MEM" );
     windowList[ slot ] -> setWinIndex( slot );
     windowList[ slot ] -> setWinStack( 0 );
     
@@ -862,8 +862,8 @@ void SimWinDisplay::windowNewProcState( int modNum ) {
 
     int slot = getFreeWindowSlot( );
 
-    windowList[ slot ] = (SimWin *) new SimWinProcState( glb, modNum  );
-    windowList[ slot ] -> setWinName(( char *) "PROC" );
+    windowList[ slot ] = reinterpret_cast<SimWin *>( new SimWinProcState( glb, modNum ));
+    windowList[ slot ] -> setWinName( "PROC" );
     windowList[ slot ] -> setWinModNum( modNum );
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
@@ -875,8 +875,8 @@ void SimWinDisplay::windowNewTlb( int modNum ) {
 
     int slot = getFreeWindowSlot( );
 
-    windowList[ slot ] = (SimWin *) new SimWinTlb( glb, modNum );
-    windowList[ slot ] -> setWinName(( char *) "GTLB" );
+    windowList[ slot ] = reinterpret_cast<SimWin *>( new SimWinTlb( glb, modNum ));
+    windowList[ slot ] -> setWinName( "GTLB" );
     windowList[ slot ] -> setWinModNum( modNum );
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
@@ -888,8 +888,8 @@ void SimWinDisplay::windowNewText( char *pathStr ) {
 
     int slot = getFreeWindowSlot( );
 
-    windowList[ slot ] = (SimWin *) new SimWinText( glb, pathStr );
-    windowList[ slot ] -> setWinName(( char *) "TEXT" );
+    windowList[ slot ] = reinterpret_cast<SimWin *>( new SimWinText( glb, pathStr ));
+    windowList[ slot ] -> setWinName( "TEXT" );
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );
     windowList[ slot ] -> setWinStack( 0 );
@@ -912,12 +912,12 @@ void SimWinDisplay::windowKill( int winNumStart, int winNumEnd ) {
     
     for ( int i = winNumStart; i <= winNumEnd; i++ ) {
 
-        delete ( SimWin * ) windowList[ i ];
+        delete reinterpret_cast<SimWin *>( windowList[ i ] );
         windowList[ i ] = nullptr;
                 
         if ( currentWinNum == i ) {
                  
-            for ( int j = 0; j < static_cast<int> ( MAX_WINDOWS ); j++ ) {
+            for ( int j = 0; j < MAX_WINDOWS; j++ ) {
                         
                 if ( validWindowNum( j )) {
                             
@@ -942,7 +942,7 @@ void SimWinDisplay::windowKillByModNum( int modNum ) {
         if (( windowList[ i ] != nullptr ) && 
             ( windowList[ i ] -> getWinModNum( ) == modNum )) {
 
-            delete ( SimWin * ) windowList[ i ];
+            delete reinterpret_cast<SimWin *>( windowList[ i ] );
             windowList[ i ] = nullptr;
                 
             if ( currentWinNum == i ) {

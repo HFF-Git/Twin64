@@ -278,7 +278,6 @@ enum SimTokId : uint32_t {
 //----------------------------------------------------------------------------------------
 // Our error messages IDs. There is a routine that maps the ID to a text string.
 //
-// ??? clean up, keep the ones we need...
 //----------------------------------------------------------------------------------------
 enum SimErrMsgId : uint32_t {
     
@@ -562,7 +561,7 @@ struct SimTokenizer {
 
     SimTokenizer( );
 
-    void            setupTokenizer( char *lineBuf, SimToken *tokTab );
+    void            setupTokenizer( char *lineBuf, const SimToken *tokTab );
 
     void            nextToken( );
     bool            isToken( SimTokId tokId );
@@ -597,7 +596,7 @@ struct SimTokenizer {
     protected:
 
     char            currentChar     = ' ';
-    SimToken        *tokTab         = nullptr;   
+    const SimToken  *tokTab         = nullptr;   
     SimToken        currentToken;
      
 };
@@ -613,7 +612,7 @@ struct SimTokenizerFromString : public SimTokenizer {
     public:
     
     SimTokenizerFromString( );
-    void setupTokenizer( char *lineBuf, SimToken *tokTab ); 
+    void setupTokenizer( char *lineBuf, const SimToken *tokTab ); 
    
     private:
  
@@ -637,7 +636,7 @@ struct SimTokenizerFromFile : public SimTokenizer {
     SimTokenizerFromFile( );
     virtual ~SimTokenizerFromFile( );
 
-    void    setupTokenizer( char *filePath, SimToken *tokTab );
+    void    setupTokenizer( char *filePath, const SimToken *tokTab );
     int     getCurrentLineIndex( );
     
     private:
@@ -936,7 +935,7 @@ struct SimWin {
     void            setWinIndex( int index );
     int             getWinIndex( );
 
-    void            setWinName( char *name );
+    void            setWinName( const char *name );
     char            *getWinName( );
 
     void            setWinModNum( int modNum );
@@ -1281,7 +1280,10 @@ private:
                                     size_t promptStrLen, 
                                     char prefix = ' ' );
 
-    size_t          readCmdLine( char *cmdBuf, size_t cmdBufLen, char *promptStr );
+    size_t          readCmdLine( char *cmdBuf, 
+                                 size_t cmdBufLen, 
+                                 const char *promptStr );
+
     void            processCmdLine( char *cmdBuf );
     SimTokId        peekAtInputLine( char *cmdBuf );
     void            cmdLineError( SimErrMsgId errNum, char *argStr = nullptr );
@@ -1459,7 +1461,7 @@ public:
     bool            validWindowStackNum( int winNum );
 
     char            *getWinName( int winNum );
-    char            *getWinTypeName( int winNum );  
+    const char      *getWinTypeName( int winNum );  
     int             getWinStackNum( int winNum );
     int             getWinModNum( int winNum );
 

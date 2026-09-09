@@ -166,14 +166,15 @@ int SimEnv::findFreeEntry( ) {
     
     while ( entry < hwm ) {
         
-        if ( ! entry -> valid ) return((int) ( entry - table ));
+        if ( ! entry -> valid ) 
+            return ( static_cast<int>( entry - table ));
         else entry ++;
     }
     
     if ( hwm < limit ) {
         
         hwm ++;
-        return((int) ( entry - table ));
+        return ( static_cast<int>( entry - table ));
     }
     else throw( ERR_ENV_TABLE_FULL );
 }
@@ -263,7 +264,8 @@ void SimEnv::setEnvVar( const char *name, const char *str )  {
         }
         
         ptr -> typ      = TYP_STR;
-        ptr -> u.strVal = (char *) calloc( strlen( str ) + 1, sizeof( char ));
+        ptr -> u.strVal = reinterpret_cast<char *>( 
+                                calloc( strlen( str ) + 1, sizeof( char )));
         strcpy( ptr -> u.strVal, str );
     }
     else enterVar( name, str );
@@ -385,7 +387,8 @@ void SimEnv::enterVar( const char *name,
         tmp.typ         = TYP_STR;
         tmp.predefined  = predefined;
         tmp.readOnly    = rOnly;
-        tmp.u.strVal    = (char *) calloc( strlen( str ) + 1, sizeof( char ));
+        tmp.u.strVal    = 
+            reinterpret_cast<char *>( calloc( strlen( str ) + 1, sizeof( char )));
         strcpy( tmp.u.strVal, str );  
             
         table[ index ]  = tmp;
@@ -444,7 +447,7 @@ int SimEnv::formatEnvEntry( int index, char *buf, size_t bufLen ) {
 
             // ??? appendPrintf candidates ?
 
-            int len = snprintf( buf, 128, "%-32s", e -> name );
+            int len = snprintf( buf, bufLen, "%-32s", e -> name );
     
             switch ( e -> typ ) {
             
@@ -452,12 +455,12 @@ int SimEnv::formatEnvEntry( int index, char *buf, size_t bufLen ) {
 
                     if (( e -> u.iVal >= INT_MIN ) && ( e -> u.iVal <= INT_MAX )) {
 
-                        len += snprintf( buf + len, 128, "NUM:     %i", 
-                                        (int) e -> u.iVal ); 
+                        len += snprintf( buf + len, 128, "NUM:     %" PRId64, 
+                                         e -> u.iVal ); 
                     }
                     else {
 
-                        len += snprintf( buf + len, 128, "NUM:     %llx.", 
+                        len += snprintf( buf + len, 128, "NUM:     %llx", 
                                          e -> u.iVal ); 
                     } 
 

@@ -101,10 +101,13 @@ bool isLeftBracketChar( int ch ) {
 // Trim trailing blanks from a string. 
 //
 //----------------------------------------------------------------------------------------
-void rtrim( char *s ) {
+void rtrim(char *s)
+{
+    char *end = s + strlen(s);
 
-    char *end = s + strlen( s );
-    while (( end > s ) && ( isspace((unsigned char) *(end - 1)))) end--;
+    while (end > s && isspace(static_cast<unsigned char>(*(end - 1))))
+        --end;
+
     *end = '\0';
 }
 
@@ -318,7 +321,9 @@ bool translateAdr( T64System *sys, T64Word virtAdr, T64Word *physAdr ) {
     }
     else {
 
-        T64GlobalTlb *tlbModule = (T64GlobalTlb *)sys -> lookupByModuleType( MT_GTLB );
+        T64GlobalTlb *tlbModule = 
+        reinterpret_cast<T64GlobalTlb *>( sys -> lookupByModuleType( MT_GTLB ));
+        
         if ( tlbModule == nullptr ) return ( false );
 
         return ( tlbModule -> translateAdr( virtAdr, physAdr ));
@@ -339,9 +344,14 @@ bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
 
     if ( ! translateAdr( sys, adr, &physAdr )) return ( false );
 
-    if ( sys -> busOpRead( nullptr, physAdr, (uint8_t *)val, size )) {
+    if ( sys -> busOpRead( nullptr,
+                           physAdr, 
+                           reinterpret_cast<uint8_t *>( val ), 
+                           size )) {
 
-        copyEndianAware((uint8_t *) val, (uint8_t *) val, size );
+        copyEndianAware( reinterpret_cast<uint8_t *>( val ), 
+                         reinterpret_cast<uint8_t *>( val ), 
+                         size );
         return ( true );    
     }
 
@@ -524,9 +534,9 @@ void SimCommandsWin::drawBanner( ) {
     uint32_t fmtDescBlack   = fmtDesc | FMT_FG_COL_BLACK;
 
     setWinCursor( 1, 1 );
-    printTextField((char *) "Commands", ( fmtDescBlack | FMT_ALIGN_LFT ), 16 );
+    printTextField( "Commands", ( fmtDescBlack | FMT_ALIGN_LFT ), 16 );
 
-    printTextField((char *) "System State: ", fmtDescBlack );
+    printTextField( "System State: ", fmtDescBlack );
     printNumericField( glb -> system -> getSystemState( ), 
                        fmtDescBlack | FMT_HEX_4 );
     padLine( fmtDesc ); 
@@ -627,7 +637,7 @@ void SimCommandsWin::clearCmdWin( ) {
 //----------------------------------------------------------------------------------------
 size_t SimCommandsWin::readCmdLine( char   *cmdBuf, 
                                     size_t initialCmdBufLen, 
-                                    char   *promptBuf ) {
+                                    const char   *promptBuf ) {
     
     enum CharType : uint16_t { 
         
@@ -905,9 +915,8 @@ void SimCommandsWin::configureT64Log( ) {
         }
         else {
 
-            glb -> env -> setEnvVar((char *) ENV_LOG_FILE, 
-                                    (char *) glb -> logFileName );
-            glb -> env -> setEnvAttr((char *) ENV_LOG_FILE, true, true );
+            glb -> env -> setEnvVar( ENV_LOG_FILE, glb -> logFileName );
+            glb -> env -> setEnvAttr( ENV_LOG_FILE, true, true );
         }
     }
 }
@@ -930,9 +939,8 @@ void SimCommandsWin::configureT64Sim( ) {
 
         execCmdsFromFile( glb -> configFileName );
 
-        glb -> env -> setEnvVar((char *) ENV_CONFIG_FILE, 
-                                (char *) glb -> configFileName );
-        glb -> env -> setEnvAttr((char *) ENV_CONFIG_FILE, true, true );
+        glb -> env -> setEnvVar( ENV_CONFIG_FILE, glb -> configFileName );
+        glb -> env -> setEnvAttr( ENV_CONFIG_FILE, true, true );
     }
 }
 
@@ -1010,16 +1018,16 @@ void SimCommandsWin::printStackInfoField( uint32_t fmtDesc,
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::printWelcome( ) {
     
-    glb -> env -> setEnvVar((char *) ENV_EXIT_CODE, (T64Word) 0 );
+    glb -> env -> setEnvVar( ENV_EXIT_CODE, 0 );
     
     if ( glb -> console -> isConsole( )) {
         
         winOut -> writeChars( "Twin-64 Simulator, Version: %s, Patch Level: %d\n",
-                              glb -> env -> getEnvVarStr((char *) ENV_PROG_VERSION ),
-                              glb -> env -> getEnvVarStr((char *) ENV_PATCH_LEVEL ));
+                              glb -> env -> getEnvVarStr( ENV_PROG_VERSION ),
+                              glb -> env -> getEnvVarStr( ENV_PATCH_LEVEL ));
         
         winOut -> writeChars( "Git Branch: %s\n",
-                              glb -> env -> getEnvVarStr((char *) ENV_GIT_BRANCH ));
+                              glb -> env -> getEnvVarStr( ENV_GIT_BRANCH ));
 
         if ( glb -> verboseFlag ) {
 
@@ -1048,7 +1056,7 @@ size_t SimCommandsWin::buildCmdPrompt( char  *promptStr,
     
     if ( prefix == ' ' ) {
 
-        if ( glb -> env -> getEnvVarBool((char *) ENV_SHOW_CMD_CNT )) {
+        if ( glb -> env -> getEnvVarBool(ENV_SHOW_CMD_CNT )) {
 
             return( appendPrintf( promptStr, promptStrLen, len, "(%d) ->",
                                   glb -> env -> getEnvVarInt( ENV_CMD_CNT )));
@@ -1057,7 +1065,7 @@ size_t SimCommandsWin::buildCmdPrompt( char  *promptStr,
     }
     else {
 
-         if ( glb -> env -> getEnvVarBool((char *) ENV_SHOW_CMD_CNT )) {
+         if ( glb -> env -> getEnvVarBool(ENV_SHOW_CMD_CNT )) {
  
         return ( appendPrintf( promptStr, promptStrLen, len,
                                "%c(%i) ->",
@@ -1271,7 +1279,10 @@ void  SimCommandsWin::displayMemContent( T64Word ofs, T64Word len, SimTokId fmtO
             if ( index < limit ) {
 
                 T64Word val = 0;
-                if ( readMem( glb -> system, index, (uint8_t *) &val, sizeof( val )) ) {
+                if ( readMem( glb -> system, 
+                              index, 
+                              reinterpret_cast<uint8_t *>( &val ), 
+                              sizeof( val )) ) {
 
                     if ( fmtOpt == TOK_HEX )
                         winOut -> printNumber( val, FMT_HEX_4_4_4_4 );
@@ -1318,7 +1329,10 @@ void SimCommandsWin::displayMemContentAsCode( T64Word adr, T64Word len ) {
         winOut -> printNumber( index, FMT_HEX_2_4_4 );
         winOut -> writeChars( ": " );
 
-        if ( readMem( glb -> system, index, (uint8_t *) &instr, sizeof( instr )) ) {
+        if ( readMem( glb -> system, 
+                      index, 
+                      reinterpret_cast<uint8_t *>( &instr ), 
+                      sizeof( instr )) ) {
 
             disAsm -> formatInstr( buf, sizeof( buf ), instr, 16 );
             winOut -> writeChars( "%s\n", buf ); 
@@ -1438,7 +1452,7 @@ void SimCommandsWin::execCmdsFromFile( char* fileName ) {
 
             if ( continuation ) continue;
 
-            if ( glb -> env -> getEnvVarBool((char*) ENV_ECHO_CMD_INPUT )) {
+            if ( glb -> env -> getEnvVarBool( ENV_ECHO_CMD_INPUT )) {
 
                 winOut -> writeChars( "%s\n", cmdLineBuf );
             }
@@ -1525,7 +1539,7 @@ void SimCommandsWin::helpCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::echoCmd( char *cmdBuf ) {
 
-    winOut -> writeChars( "%s\n", (char *) &cmdBuf[ 5 ] );
+    winOut -> writeChars( "%s\n", &cmdBuf[ 5 ] );
 }
 
 //----------------------------------------------------------------------------------------
@@ -1723,7 +1737,7 @@ void SimCommandsWin::removeModuleCmd( ) {
     else {  
 
         T64Module *m = glb -> system -> lookupByModNum( modNum );
-        if ( m == nullptr ) throw((SimErrMsgId) ERR_INVALID_MOD_NUM );
+        if ( m == nullptr ) throw( ERR_INVALID_MOD_NUM );
 
         glb -> winDisplay -> windowKillByModNum( modNum );
         glb -> winDisplay -> setWinReFormat( );
@@ -1769,7 +1783,7 @@ void SimCommandsWin::displayModuleCmd( ) {
             if ( mPtr -> getModuleType( ) == MT_PROC ) {
 
                 winOut -> writeChars( "%-8s", 
-                    ((T64Processor *) mPtr ) -> getProcStateStr( ));
+                reinterpret_cast<T64Processor *>( mPtr ) -> getProcStateStr( ));
             }
             else {
 
@@ -1908,7 +1922,7 @@ void SimCommandsWin::stepCmd( ) {
 
     if ( m -> getModuleType( ) != MT_PROC ) throw( ERR_EXPCTED_PROC_MODULE );
 
-    bool haltOnTrap = glb -> env -> getEnvVarBool((char *) ENV_HALT_ON_TRAPS );
+    bool haltOnTrap = glb -> env -> getEnvVarBool(ENV_HALT_ON_TRAPS );
 
     tok -> checkEOS( );
     glb -> system -> execModule( modNum, numOfSteps, haltOnTrap );
@@ -1969,7 +1983,7 @@ void SimCommandsWin::runCmd( ) {
 void SimCommandsWin::writeLineCmd( ) {
     
     SimExpr  rExpr = INIT_EXPR;
-    int      rdx   = glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT );
+    int      rdx   = glb -> env -> getEnvVarInt(ENV_RDX_DEFAULT );
     
     eval -> parseExpr( &rExpr );
     
@@ -2105,7 +2119,7 @@ void SimCommandsWin::redoCmd( ) {
         strncpy( tmpCmd, cmdStr, sizeof( tmpCmd ));
         
         glb -> console -> writeChars( "%s", tmpCmd );
-        if ( readCmdLine( tmpCmd, strlen( tmpCmd ), (char *)"" ))
+        if ( readCmdLine( tmpCmd, strlen( tmpCmd ), "" ))
              processCmdLine( tmpCmd );
     }
 }
@@ -2130,7 +2144,7 @@ void SimCommandsWin::skipIfCmd( ) {
 
         if ( cmdLen <= 0 )  continue;
 
-        tok -> setupTokenizer( cmdLineBuf, (SimToken *) cmdTokTab );
+        tok -> setupTokenizer( cmdLineBuf, cmdTokTab );
         tok -> nextToken( );
 
         if      ( tok -> isToken( CMD_IF ))     skipIfCmd( );
@@ -2179,7 +2193,7 @@ void SimCommandsWin::ifCmd( ) {
             continue;
         }
             
-        tok -> setupTokenizer( cmdLineBuf, (SimToken *) cmdTokTab );
+        tok -> setupTokenizer( cmdLineBuf, cmdTokTab );
         tok -> nextToken( );
 
         if ( branchTaken ) {
@@ -2296,25 +2310,25 @@ void SimCommandsWin::assertCheckCmd( bool doExit ) {
 
     tok -> checkEOS( );
 
-    char *textMsgName = nullptr;
-    char *passEnvName = nullptr;
-    char *failEnvName = nullptr;
-    char *totalCntName = nullptr;
+    const char *textMsgName = nullptr;
+    const char *passEnvName = nullptr;
+    const char *failEnvName = nullptr;
+    const char *totalCntName = nullptr;
 
     if ( doExit ) {
 
-        textMsgName = (char *) ENV_ASSERT_DEF_MSG;
-        passEnvName = (char *) ENV_ASSERT_PASS_CNT;
-        failEnvName = (char *) ENV_ASSERT_FAIL_CNT;
-        totalCntName = (char *) ENV_ASSERT_TOTAL_CNT;
+        textMsgName = ENV_ASSERT_DEF_MSG;
+        passEnvName = ENV_ASSERT_PASS_CNT;
+        failEnvName = ENV_ASSERT_FAIL_CNT;
+        totalCntName = ENV_ASSERT_TOTAL_CNT;
 
     }
     else {
 
-        textMsgName = (char *) ENV_CHECK_DEF_MSG;
-        passEnvName = (char *) ENV_CHECK_PASS_CNT;
-        failEnvName = (char *) ENV_CHECK_FAIL_CNT;
-        totalCntName = (char *) ENV_CHECK_TOTAL_CNT;
+        textMsgName = ENV_CHECK_DEF_MSG;
+        passEnvName = ENV_CHECK_PASS_CNT;
+        failEnvName = ENV_CHECK_FAIL_CNT;
+        totalCntName = ENV_CHECK_TOTAL_CNT;
     }
 
     if ( msgStr == nullptr ) {
@@ -2445,7 +2459,7 @@ void SimCommandsWin::writeLogCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::displayMemCmd( ) {
     
-    int         rdx     = glb -> env -> getEnvVarInt((char *) ENV_RDX_DEFAULT );
+    int         rdx     = glb -> env -> getEnvVarInt(ENV_RDX_DEFAULT );
     SimTokId    fmtOpt  = ( rdx == 10 ) ? TOK_DEC : TOK_HEX;
     T64Word     ofs     = 0;
     T64Word     len     = sizeof( T64Word );
@@ -2476,7 +2490,7 @@ void SimCommandsWin::displayMemCmd( ) {
     
     tok -> checkEOS( );
     
-    if (((T64Word) ofs + len ) <= T64_MAX_VIRT_MEM_LIMIT ) { 
+    if (( ofs + len ) <= T64_MAX_VIRT_MEM_LIMIT ) { 
         
         if ( fmtOpt == TOK_CODE ) displayMemContentAsCode( ofs, len );
         else                      displayMemContent( ofs, len, fmtOpt );
@@ -2609,7 +2623,9 @@ void SimCommandsWin::modifyRegCmd( ) {
 
     tok -> checkEOS( );
 
-    T64Processor *proc = (T64Processor *) glb -> system -> lookupByModNum( modNum );
+    T64Processor *proc = 
+    reinterpret_cast<T64Processor *>( glb -> system -> lookupByModNum( modNum ));
+
     if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
     if ( proc -> getModuleType( ) != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
 
@@ -3324,7 +3340,7 @@ SimTokId SimCommandsWin::peekAtInputLine( char *cmdBuf ) {
 
     if ( strlen( cmdBuf ) > 0 ) return( TOK_NIL );
     
-    tok -> setupTokenizer( cmdBuf, (SimToken *) cmdTokTab );
+    tok -> setupTokenizer( cmdBuf, cmdTokTab );
     tok -> nextToken( );
             
     if (( tok -> isTokenTyp( TYP_CMD )) || 
@@ -3348,15 +3364,15 @@ void SimCommandsWin::processCmdLine( char *cmdBuf ) {
         
         if ( strlen( cmdBuf ) <= 0 ) return;
         
-        tok -> setupTokenizer( cmdBuf, (SimToken *) cmdTokTab );
+        tok -> setupTokenizer( cmdBuf, cmdTokTab );
         tok -> nextToken( );
             
         if ( ! (( tok -> isTokenTyp( TYP_CMD )) || 
                 ( tok -> isTokenTyp( TYP_WCMD )))) {
 
             hist -> addCmdLine( cmdBuf );
-            glb -> env -> setEnvVar((char *) ENV_CMD_CNT, 
-                                    (T64Word) hist -> getCmdNum( ));
+            glb -> env -> setEnvVar( ENV_CMD_CNT, 
+                                  static_cast<T64Word>( hist -> getCmdNum( )));
 
             throw ( ERR_INVALID_CMD );
         }      
@@ -3369,8 +3385,8 @@ void SimCommandsWin::processCmdLine( char *cmdBuf ) {
             ( currentCmd != CMD_REDO )) {
             
             hist -> addCmdLine( cmdBuf );
-            glb -> env -> setEnvVar((char *) ENV_CMD_CNT, 
-                                    (T64Word) hist -> getCmdNum( ));
+            glb -> env -> setEnvVar( ENV_CMD_CNT, 
+                                static_cast<T64Word>( hist -> getCmdNum( )));
         }
 
         switch( currentCmd ) {
@@ -3452,7 +3468,7 @@ void SimCommandsWin::processCmdLine( char *cmdBuf ) {
     }
     catch ( SimErrMsgId errNum ) {
         
-        glb -> env -> setEnvVar((char *) ENV_EXIT_CODE, (T64Word) -1 );
+        glb -> env -> setEnvVar(ENV_EXIT_CODE, -1 );
         cmdLineError( errNum, cmdBuf );
     }
 }

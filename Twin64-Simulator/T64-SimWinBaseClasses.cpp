@@ -76,7 +76,7 @@ void SimWin::setWinIndex( int arg ) {
     winIndex = arg; 
 }
 
-void SimWin::setWinName( char *name ) {
+void SimWin::setWinName( const char *name ) {
 
     strncpy( winName, name, MAX_WIN_NAME );
 }
@@ -410,13 +410,13 @@ void SimWin::printTextField( const char       *text,
         
         if ( fmtDesc & FMT_TRUNC_LFT ) {
             
-            glb -> console -> printText(( char *) "...", 3 );
+            glb -> console -> printText( "...", 3 );
             glb -> console -> printText( text + ( dLen - fLen ) + 3, fLen - 3 );
         }
         else {
             
             glb -> console -> printText( text, fLen - 3 );
-            glb -> console -> printText(( char *) "...", 3 );
+            glb -> console -> printText( "...", 3 );
         }
     }
     else glb -> console -> printText( text, dLen );
@@ -450,7 +450,7 @@ void SimWin::printBitField( T64Word val,
 
         printTextField( buf, fmtDesc, fLen, row, col );
     }
-    else printTextField((char *) "*", fmtDesc, fLen, row, col );
+    else printTextField( "*", fmtDesc, fLen, row, col );
 }
 
 //----------------------------------------------------------------------------------------
@@ -465,9 +465,9 @@ void SimWin::printRadixField( uint32_t fmtDesc, size_t row, size_t col ) {
  
     switch ( winRadix ) {
             
-        case 10: printTextField((char *) "dec", fmtDesc, 3, row, col ); break;
-        case 16: printTextField((char *) "hex", fmtDesc, 3, row, col ); break;
-        default: printTextField((char *) "***", fmtDesc, 3, row, col );
+        case 10: printTextField( "dec", fmtDesc, 3, row, col ); break;
+        case 16: printTextField( "hex", fmtDesc, 3, row, col ); break;
+        default: printTextField( "***", fmtDesc, 3, row, col );
     }
 }
 
@@ -489,15 +489,16 @@ void SimWin::printWindowIdField( uint32_t fmtDesc, size_t row, size_t col ) {
     
     if ( winIndex <= MAX_WINDOWS ) {
 
-        if ( isCurrent ) len += glb -> console -> writeChars((char *) "*(" ); 
-        else             len += glb -> console -> writeChars((char *) " (" );
+        if ( isCurrent ) len += glb -> console -> writeChars( "*(" ); 
+        else             len += glb -> console -> writeChars( " (" );
 
-        len += glb -> console -> writeChars((char *) "%1d:%02d)", 
-                                            winStack + 1, winIndex + 1); 
+        len += glb -> console -> writeChars( "%1d:%02d)", 
+                                             winStack + 1, 
+                                             winIndex + 1); 
     }    
-    else len = glb -> console -> writeChars((char *) "(-***-)" );
+    else len = glb -> console -> writeChars( "(-***-)" );
 
-    len += glb -> console -> writeChars((char *) " %.8s  ", winName );
+    len += glb -> console -> writeChars( " %.8s  ", winName );
    
     lastRowPos  = row;
     lastColPos  = col + len;
