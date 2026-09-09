@@ -38,14 +38,31 @@
 namespace {
 
 //----------------------------------------------------------------------------------------
-// Line sanitizing. We cannot just print out whatever is in the line buffer, since 
-// it may contains dangerous escape sequences, which would garble our terminal 
-// screen layout. In the command window we just allow "safe" escape sequences, 
-// such as changing the font color and so on. When we encounter an escape character 
-// followed by a "[" character we scan the escape sequence until the final character,
-// which lies between 0x40 and 0x7E. Based on the last character, we distinguish 
-// between "safe" and "unsafe" escape sequences. In the other cases, we just copy
-// input to output.
+//
+//
+//----------------------------------------------------------------------------------------
+int toInt32( T64Word val ) {
+
+    if ( val < INT32_MIN ) throw( ERR_NUMERIC_OVERFLOW );
+    if ( val > INT32_MAX ) throw( ERR_NUMERIC_OVERFLOW );
+    return ( static_cast<int> ( val ));
+}
+
+uint32_t toUInt32( T64Word val ) {
+
+    if ( val > UINT32_MAX ) throw( ERR_NUMERIC_OVERFLOW );
+    return ( static_cast<uint32_t> ( val ));
+}
+
+//----------------------------------------------------------------------------------------
+// Line sanitizing. We cannot just print out whatever is in the line buffer, 
+// since it may contains dangerous escape sequences, which would garble our 
+// terminal screen layout. In the command window we just allow "safe" escape 
+// sequences, such as changing the font color and so on. When we encounter an 
+// escape character followed by a "[" character we scan the escape sequence 
+// until the final character, which lies between 0x40 and 0x7E. Based on the 
+// last character, we distinguish between "safe" and "unsafe" escape sequences. 
+// In the other cases, we just copy input to output.
 //
 //----------------------------------------------------------------------------------------
 bool isSafeFinalByte( char finalByte ) {
@@ -96,13 +113,13 @@ void sanitizeLine( const char *inputStr, char *outputStr ) {
 
 //----------------------------------------------------------------------------------------
 // "calculateStrLen" calculates the length of a string, taking into account that
-// tabs are not just one character, but they move the cursor to the next tab stop.
-// The tab stops are every "tabWidth" columns. So if we are at column 3 and we 
-// encounter a tab, we move to column 8, which means that the tab has a length 
-// of 5 in this case.
+// tabs are not just one character, but they move the cursor to the next tab 
+// stop. The tab stops are every "tabWidth" columns. So if we are at column 3 
+// and we encounter a tab, we move to column 8, which means that the tab has a 
+// length of 5 in this case.
 //
 //----------------------------------------------------------------------------------------
-int calculateStrLen( const char *s, size_t tabWidth  ) {
+size_t calculateStrLen( const char *s, size_t tabWidth  ) {
 
     size_t col = 0;
 
@@ -114,7 +131,7 @@ int calculateStrLen( const char *s, size_t tabWidth  ) {
         s++;
     }
 
-    return ( static_cast<int> ( col ));
+    return ( col );
 }
 
 //----------------------------------------------------------------------------------------
@@ -135,7 +152,9 @@ bool translateAdr( T64System *sys, T64Word virtAdr, T64Word *physAdr ) {
     }
     else {
 
-        T64GlobalTlb *tlbModule = (T64GlobalTlb *)sys -> lookupByModuleType( MT_GTLB );
+        T64GlobalTlb *tlbModule = 
+                (T64GlobalTlb *)sys -> lookupByModuleType( MT_GTLB );
+
         if ( tlbModule == nullptr ) return ( false );
 
         return ( tlbModule -> translateAdr( virtAdr, physAdr ));
@@ -206,17 +225,16 @@ SimWinProcState::SimWinProcState( SimGlobals *glb, int modNum ) : SimWin( glb ) 
 //----------------------------------------------------------------------------------------
 void SimWinProcState::setDefaults( ) {
 
-    const int ROW_BANNERS               = 2;
-    const int ROW_REG_SUBWINDOW         = 4; 
-    const int MIN_ROW_CODE_SUBWINDOW    = 7; 
-    const int MAX_ROWS                  = 32;
-    const int MAX_COLS                  = 98;
+    const size_t ROW_BANNERS               = 2;
+    const size_t ROW_REG_SUBWINDOW         = 4; 
+    const size_t MIN_ROW_CODE_SUBWINDOW    = 7; 
+    const size_t MAX_ROWS                  = 32;
+    const size_t MAX_COLS                  = 98;
 
-
-    T64Cpu    *cpu                      = proc -> getCpuPtr( );
+    T64Cpu       *cpu                      = proc -> getCpuPtr( );
     
     setWinType( WT_CPU_WIN );
-    setRadix( glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT ));
+    setRadix( toUInt32( glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT )));
 
     setWinToggleLimit( 2 );
     setWinToggleVal( 0 );
@@ -263,11 +281,11 @@ void SimWinProcState::setDefaults( ) {
 
     lastCodeWinBaseAdr = codeWinBaseAdr;
 
-    int linesLeft = getRows( ) - ROW_BANNERS - ROW_REG_SUBWINDOW;
+    size_t linesLeft = getRows( ) - ROW_BANNERS - ROW_REG_SUBWINDOW;
 
-    for ( int i = 0; i < linesLeft; i++ ) {
+    for ( size_t i = 0; i < linesLeft; i++ ) {
 
-        T64Word  ia = codeWinBaseAdr + ( i * 4 );
+        T64Word  ia = codeWinBaseAdr + static_cast<T64Word> ( i * 4 );
         uint32_t instr;
        
         if ( readMem( glb -> system, ia, (uint8_t *) &instr, sizeof( instr ))) {
@@ -350,12 +368,12 @@ void SimWinProcState::drawGRegDataLine( size_t from, size_t to ) {
     if      ( getRadix( ) == 10 )  rdxFmt = FMT_DEC_64;
     else if ( getRadix( ) == 16 )  rdxFmt = FMT_HEX_4_4_4_4;
 
-    int      numFlen        = glb -> console -> numberFmtLen( rdxFmt );
-    uint32_t numFmtField   = fmtDesc | rdxFmt;
+    size_t   numFlen        = glb -> console -> numberFmtLen( rdxFmt );
+    uint32_t numFmtField    = fmtDesc | rdxFmt;
 
     for ( size_t i = from; i <= to; i++ ) {
 
-        T64Word dataVal = cpu -> getGeneralReg( i );
+        T64Word dataVal = cpu -> getGeneralReg( static_cast<int> ( i ));
 
         if ( dataVal != lastGRegState[ i ] ) {
 
@@ -385,12 +403,12 @@ void SimWinProcState::drawCRegDataLine( size_t from, size_t to ) {
     if      ( getRadix( ) == 10 )  rdxFmt = FMT_DEC_64;
     else if ( getRadix( ) == 16 )  rdxFmt = FMT_HEX_4_4_4_4;
 
-    int      numFlen        = glb -> console -> numberFmtLen( rdxFmt );
-    uint32_t numFmtField   = fmtDesc | rdxFmt;
+    size_t   numFlen        = glb -> console -> numberFmtLen( rdxFmt );
+    uint32_t numFmtField    = fmtDesc | rdxFmt;
 
     for ( size_t i = from; i <= to; i++ ) {
 
-        T64Word dataVal = cpu -> getControlReg( i );
+        T64Word dataVal = cpu -> getControlReg( static_cast<int>( i ));
 
         if ( dataVal != lastCRegState[ i ] ) {
 
@@ -406,14 +424,16 @@ void SimWinProcState::drawCRegDataLine( size_t from, size_t to ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "drawGeneralRegSubWindow" draws the general registers set in the body of the 
-// window. We show 4 registers per line, with the format "GRn=0x0000_0000_0000_0000". 
+// "drawGeneralRegSubWindow" draws the general registers set in the body of 
+// the window. We show 4 registers per line, with the format 
+// 
+//      "GRn=0x0000_0000_0000_0000". 
 //
 //----------------------------------------------------------------------------------------
 size_t SimWinProcState::drawGRegSubWindow( size_t linePos ) {
 
     uint32_t fmtDesc        = FMT_DEFAULT | FMT_ALIGN_LFT;
-    int      labelFlen      = 8;
+    size_t   labelFlen      = 8;
     uint32_t labelFmtField  = fmtDesc | FMT_BOLD;
     
     setWinCursor( linePos, 1 );
@@ -443,7 +463,7 @@ size_t SimWinProcState::drawGRegSubWindow( size_t linePos ) {
 size_t SimWinProcState::drawCRegSubWindow( size_t linePos ) {
 
     uint32_t fmtDesc        = FMT_DEFAULT | FMT_ALIGN_LFT;
-    int      labelFlen      = 8;
+    size_t   labelFlen      = 8;
     uint32_t labelFmtField  = fmtDesc | FMT_BOLD;
 
     setWinCursor( linePos, 1 );
@@ -481,7 +501,7 @@ size_t SimWinProcState::drawCodeSubWindow( size_t linePos, size_t linesLeft ) {
 
     uint32_t    fmtDesc     = FMT_DEFAULT;
     T64Word     currentIa   = proc -> getCpuPtr( ) -> getPsrReg( );
-    T64Word     windowSize  = linesLeft * 4;
+    T64Word     windowSize  = static_cast<T64Word> ( linesLeft * 4 );
     T64Word     windowEnd   = codeWinBaseAdr + windowSize;
     uint32_t    instr       = 0x0;
     char        instrBuf[ MAX_TEXT_LINE_SIZE ] = { 0 };
@@ -532,18 +552,18 @@ size_t SimWinProcState::drawCodeSubWindow( size_t linePos, size_t linesLeft ) {
             printNumericField( instr, fmtDesc | FMT_HEX_8 );
             printTextField((char *) "    ", fmtDesc );
 
-            int pos          = getWinCursorCol( );
-            int opCodeField  = disAsm -> getOpCodeFieldWidth( );
-            int operandField = disAsm -> getOperandsFieldWidth( );
+            size_t pos          = getWinCursorCol( );
+            size_t opCodeField  = disAsm -> getOpCodeFieldWidth( );
+            size_t operandField = disAsm -> getOperandsFieldWidth( );
             
             clearField( opCodeField );
             disAsm -> formatOpCode( instrBuf, sizeof( instrBuf ), instr );
-            printTextField( instrBuf, fmtDesc, (int) strlen( instrBuf ));
+            printTextField( instrBuf, fmtDesc, strlen( instrBuf ));
             setWinCursor( 0, pos + opCodeField );
             
             clearField( operandField );
             disAsm -> formatOperands( instrBuf, sizeof( instrBuf ), instr, 16 );
-            printTextField( instrBuf, fmtDesc, (int) strlen( instrBuf ));
+            printTextField( instrBuf, fmtDesc, strlen( instrBuf ));
             setWinCursor( 0, pos + opCodeField + operandField );
 
             padLine( fmtDesc );
@@ -570,7 +590,7 @@ size_t SimWinProcState::drawCodeSubWindow( size_t linePos, size_t linesLeft ) {
 void SimWinProcState::drawBody( ) {
     
     int     toggleVal = getWinToggleVal( );
-    int     linePos   = 2;
+    size_t  linePos   = 2;
 
     if ( toggleVal == 0 ) {
 
@@ -595,7 +615,7 @@ void SimWinProcState::drawBody( ) {
         linePos += 1;
     }
 
-    int linesLeft = getRows( ) - linePos + 1;
+    size_t linesLeft = getRows( ) - linePos + 1;
     drawCodeSubWindow( linePos, linesLeft );
 }
 
@@ -634,10 +654,14 @@ SimWinTlb::SimWinTlb( SimGlobals    *glb,
 void SimWinTlb::setDefaults( ) {
     
     setWinType( WT_TLB_WIN );
-    setRadix( glb -> env -> getEnvVarNum((char *) ENV_RDX_DEFAULT ));
+    setRadix( toUInt32( glb -> env -> getEnvVarNum((char *) ENV_RDX_DEFAULT )));
 
     setWinToggleLimit( 1 );
-    setWinLimitsForToggle( 0, 8, tlb -> getTlbSize( ) + 1, 96, 96 );
+    setWinLimitsForToggle( 0, 
+                           8, 
+                           tlb -> getTlbSize( ) + 1, 
+                           96, 
+                           96 );
     
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).actualCol );
@@ -706,7 +730,7 @@ void SimWinTlb::drawTlbEntry( T64TlbEntry *ePtr ) {
 void SimWinTlb::drawLine( T64Word index ) {
 
     uint32_t    fmtDesc     = FMT_DEFAULT;
-    T64TlbEntry *ePtr       = tlb -> getTlbEntry( index );
+    T64TlbEntry *ePtr       = tlb -> getTlbEntry( toInt32( index ));
 
     printTextField((char *) "(", fmtDesc );
     printNumericField( index, fmtDesc | FMT_HEX_4 );
@@ -735,7 +759,7 @@ SimWinMem::SimWinMem( SimGlobals *glb, T64Word adr ) : SimWinScrollable( glb ) {
     this -> lastWinRows         = 0;
     this -> lastWinToggleVal    = 0;
 
-    for ( int i = 0; i < sizeof( lastDataBuf ); i++ ) lastDataBuf[ i ] = 0;
+    for ( size_t i = 0; i < sizeof( lastDataBuf ); i++ ) lastDataBuf[ i ] = 0;
 
     setDefaults( );
  }
@@ -750,7 +774,7 @@ SimWinMem::SimWinMem( SimGlobals *glb, T64Word adr ) : SimWinScrollable( glb ) {
 void SimWinMem::setDefaults( ) {
     
     setWinType( WT_MEM_WIN );
-    setRadix( glb -> env -> getEnvVarNum((char *) ENV_RDX_DEFAULT ));
+    setRadix( toUInt32( glb -> env -> getEnvVarNum((char *) ENV_RDX_DEFAULT )));
 
     setWinToggleLimit( 5 );
     setWinLimitsForToggle( 0, 5, MAX_WIN_ROW_SIZE, 124, 124 );
@@ -859,16 +883,16 @@ void SimWinMem::drawBanner( ) {
 
     if (( getWinToggleVal( ) < 4 ) && 
         (( lastWinToggleVal != getWinToggleVal( )) || 
-         ( lastWinItemAdr != getCurrentItemAdr( )) ||
-         ( lastWinRows    != getRows( )))) {
+         ( lastWinItemAdr   != getCurrentItemAdr( )) ||
+         ( lastWinRows      != static_cast<T64Word>( getRows( ))))) {
 
         lastWinItemAdr      = getCurrentItemAdr( );
-        lastWinRows         = getRows( );
+        lastWinRows         = static_cast<T64Word>( getRows( ));
         lastWinToggleVal    = getWinToggleVal( );
 
-        int numOfBytes = ( getRows( ) - 1 ) * 32;
+        T64Word numOfBytes = ( static_cast<T64Word> ( getRows( ) - 1 ) * 32 );
 
-        for ( int i = 0; i < numOfBytes; i ++ ) {
+        for ( T64Word i = 0; i < numOfBytes; i ++ ) {
 
             readMem( glb -> system, 
                      lastWinItemAdr + i, 
@@ -1036,12 +1060,12 @@ void SimWinMem::drawMemDataLineCode( T64Word itemAdr ) {
     
     clearField( opCodeField );
     disAsm -> formatOpCode( buf, sizeof( buf ), instr );
-    printTextField( buf, fmtDesc, (int) strlen( buf ));
+    printTextField( buf, fmtDesc, strlen( buf ));
     setWinCursor( 0, pos + opCodeField );
     
     clearField( operandField );
     disAsm -> formatOperands( buf, sizeof( buf ), instr, 16 );
-    printTextField( buf, fmtDesc, (int) strlen( buf ));
+    printTextField( buf, fmtDesc, strlen( buf ));
     setWinCursor( 0, pos + opCodeField + operandField );
 
     padLine( fmtDesc );
@@ -1109,7 +1133,8 @@ SimWinText:: ~SimWinText( ) {
 //----------------------------------------------------------------------------------------
 void SimWinText::setDefaults( ) {
 
-    int txWidth = glb -> env -> getEnvVarInt((char *) ENV_WIN_TEXT_LINE_WIDTH );
+    size_t txWidth = 
+        toUInt32( glb -> env -> getEnvVarInt((char *) ENV_WIN_TEXT_LINE_WIDTH ));
     
     setWinType( WT_TEXT_WIN );
     
@@ -1168,17 +1193,21 @@ void SimWinText::drawBanner( ) {
 void SimWinText::drawLine( T64Word index ) {
     
     uint32_t    fmtDesc = FMT_DEFAULT;
-    int         tabSize = glb -> env -> getEnvVarInt((char *) ENV_WIN_TEXT_TAB_SIZE );
-    char        lineBuf[ MAX_TEXT_LINE_SIZE ];
-    int         lineSize = 0;
-
+     char       lineBuf[ MAX_TEXT_LINE_SIZE ];
+    size_t      lineSize = 0;
+    
+    size_t tabSize = 
+        toUInt32( glb -> env -> getEnvVarInt((char *) ENV_WIN_TEXT_TAB_SIZE ));
+   
     if ( openTextFile( )) {
 
         printNumericField( index + 1, ( fmtDesc | FMT_DEC ));
         printTextField((char *) ": " );
         setWinCursor( 0, 8 );
   
-        lineSize = readTextFileLine( index + 1, lineBuf, sizeof( lineBuf ));
+        lineSize = readTextFileLine( toUInt32( index + 1 ), 
+                                     lineBuf, 
+                                     sizeof( lineBuf ));
         if ( lineSize > 0 ) {
 
             lineSize = calculateStrLen( lineBuf, tabSize ); 
@@ -1216,7 +1245,7 @@ bool SimWinText::openTextFile( ) {
             
             lastLinePos = 0;
             rewind( textFile );
-            setLimitItemAdr( fileSizeLines );
+            setLimitItemAdr( static_cast<T64Word>( fileSizeLines ));
         }
     }
     
@@ -1233,7 +1262,9 @@ bool SimWinText::openTextFile( ) {
 // line.
 //
 //----------------------------------------------------------------------------------------
-int SimWinText::readTextFileLine( int linePos, char *lineBuf, int bufLen  ) {
+size_t SimWinText::readTextFileLine( size_t linePos, 
+                                  char *lineBuf, 
+                                  size_t bufLen ) {
  
     if ( textFile != nullptr ) {
         
@@ -1242,7 +1273,7 @@ int SimWinText::readTextFileLine( int linePos, char *lineBuf, int bufLen  ) {
             while ( lastLinePos < linePos ) {
                 
                 lastLinePos ++;
-                fgets( lineBuf, bufLen, textFile );
+                fgets( lineBuf, static_cast<int>( bufLen ), textFile );
             }
         }
         else if ( linePos < lastLinePos ) {
@@ -1253,13 +1284,13 @@ int SimWinText::readTextFileLine( int linePos, char *lineBuf, int bufLen  ) {
             while ( lastLinePos < linePos ) {
                 
                 lastLinePos ++;
-                fgets( lineBuf, bufLen, textFile );
+                fgets( lineBuf, static_cast<int>( bufLen ), textFile );
             }
         }
-        else fgets( lineBuf, bufLen, textFile );
+        else fgets( lineBuf, static_cast<int>( bufLen ), textFile );
             
         lineBuf[ strcspn( lineBuf, "\r\n") ] = 0;
-        return((int) strlen ( lineBuf ));
+        return( strlen ( lineBuf ));
     }
     else return ( 0 );
 }
@@ -1290,7 +1321,7 @@ SimWinConsole::SimWinConsole( SimGlobals *glb ) : SimWin( glb ) {
 void SimWinConsole::setDefaults( ) {
     
     setWinType( WT_CONSOLE_WIN );
-    setRadix( glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT ));
+    setRadix( toUInt32( glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT )));
 
     setWinToggleLimit( 1 );
     setWinLimitsForToggle( 0, 24, MAX_WIN_ROW_SIZE, 112, 112 );
@@ -1341,11 +1372,11 @@ void SimWinConsole::drawBody( ) {
     
     glb -> console -> setFmtAttributes( FMT_DEFAULT );
     
-    int rowsToShow = getRows( ) - 2;
+    size_t rowsToShow = getRows( ) - 2;
     winOut -> setScrollWindowSize( rowsToShow );
     setWinCursor( rowsToShow + 1, 1 );
     
-    for ( int i = 0; i < rowsToShow; i++ ) {
+    for ( size_t i = 0; i < rowsToShow; i++ ) {
         
         char *lineBufPtr = winOut -> getLineRelative( i );
         if ( lineBufPtr != nullptr ) {

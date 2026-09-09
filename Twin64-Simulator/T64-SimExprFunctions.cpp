@@ -111,7 +111,7 @@ void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr, bool evalEnabled ) {
     
     SimExpr     lExpr = INIT_EXPR;
     uint32_t    instr = 0;
-    int         rdx   = toInt32( glb -> env -> getEnvVarNum((char *) ENV_RDX_DEFAULT ));
+    size_t      rdx   = toUInt32( glb -> env -> getEnvVarNum((char *) ENV_RDX_DEFAULT ));
     static char        asmStr[ MAX_CMD_LINE_SIZE ];
     
     tok -> nextToken( );
@@ -123,7 +123,7 @@ void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr, bool evalEnabled ) {
     if ( evalEnabled ) {
 
         if ( lExpr.typ != TYP_NUM ) throw ( ERR_EXPECTED_INSTR_VAL );
-        instr = lExpr.u.val;
+        instr = toUInt32( lExpr.u.val );
     }
    
     if ( tok -> tokId( ) == TOK_COMMA ) {
@@ -133,7 +133,7 @@ void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr, bool evalEnabled ) {
         if (( tok -> tokId( ) == TOK_HEX ) ||
             ( tok -> tokId( ) == TOK_DEC )) {
                 
-            rdx = tok -> tokVal( );
+            rdx = toUInt32( tok -> tokVal( ));
             tok -> nextToken( );
         }
         else if ( tok -> tokId( ) == TOK_EOS ) {

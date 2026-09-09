@@ -134,7 +134,7 @@ const size_t MAX_WIN_COL_SIZE           = 1024;
 const size_t MAX_WIN_OUT_LINES          = 256;
 const size_t MAX_WIN_OUT_LINE_SIZE      = 256;
 const size_t MAX_WIN_NAME               = 8;
-const size_t MAX_WIN_TOGGLES            = 8;
+const int    MAX_WIN_TOGGLES            = 8;
 
 const size_t MAX_CMD_HIST               = 64;
 const size_t MAX_CMD_LINES              = 64;
@@ -151,7 +151,7 @@ const size_t MAX_ENV_VARIABLES          = 256;
 // to create. 
 //
 //----------------------------------------------------------------------------------------
-enum SimWinType : uint16_t {
+enum SimWinType : uint32_t {
 
     WT_NIL,                     WT_CMD_WIN,                 WT_CONSOLE_WIN,
     WT_TEXT_WIN,                WT_CPU_WIN,                 WT_TLB_WIN,
@@ -162,7 +162,7 @@ enum SimWinType : uint16_t {
 // Command line tokens and expression have a type.
 //
 //----------------------------------------------------------------------------------------
-enum SimTokTypeId : uint16_t {
+enum SimTokTypeId : uint32_t {
 
     TYP_NIL,                    TYP_NUM,                    TYP_STR,
     TYP_BOOL,                   TYP_COND,                   TYP_SYM,       
@@ -178,7 +178,7 @@ enum SimTokTypeId : uint16_t {
 // types and token Id are used to build the command and expression tokens.
 //
 //----------------------------------------------------------------------------------------
-enum SimTokId : uint16_t {
+enum SimTokId : uint32_t {
 
     //------------------------------------------------------------------------------------
     // General tokens and symbols.
@@ -280,7 +280,7 @@ enum SimTokId : uint16_t {
 //
 // ??? clean up, keep the ones we need...
 //----------------------------------------------------------------------------------------
-enum SimErrMsgId : uint16_t {
+enum SimErrMsgId : uint32_t {
     
     NO_ERR                          = 0,
     ERR_NOT_SUPPORTED               = 1,
@@ -478,14 +478,14 @@ void processCmdLineOptions( SimGlobals *glb, int argc, char *argv[ ] );
 // parser used to parse long options (e.g. --option=value).
 //
 //----------------------------------------------------------------------------------------
-enum SimCmdLineArgOptions : int {
+enum SimCmdLineArgOptions : uint32_t {
 
     CL_OPT_NO_ARGUMENT,         
     CL_OPT_REQUIRED_ARGUMENT,   
     CL_OPT_OPTIONAL_ARGUMENT
 };
 
-enum SimCmdLineArgVal : int {
+enum SimCmdLineArgVal : uint32_t {
 
     CL_ARG_VAL_NIL,             
     CL_ARG_VAL_HELP,             
@@ -834,7 +834,7 @@ struct SimCmdHistory {
     bool    isHistoryEnabled( );
     
     void    addCmdLine( const char *cmdStr );
-    char    *getCmdLine( size_t cmdRef, size_t *cmdId = nullptr );
+    char    *getCmdLine( int cmdRef, size_t *cmdId = nullptr );
     size_t  getCmdCount( );
     size_t  getCmdNum( );
    
@@ -906,20 +906,21 @@ struct SimWinSize {
 };
 
 //----------------------------------------------------------------------------------------
-// The "SimWin" class. The simulator will in screen mode feature a set of stacks each 
-// with a list of screen sub windows. The default is one stack, the general register
-// set window and the command line window, which also spans all stacks. Each sub window
-// is an instance of a specific window class with this class as the base class. There
-// are routines common to all windows to enable/ disable, set the lines displayed and
-// so on. There are also abstract methods that the inheriting class needs to implement.
-// Examples are to initialize a window, redraw and so on.
+// The "SimWin" class. The simulator will in screen mode feature a set of stacks
+// each with a list of screen sub windows. The default is one stack, the general
+// register set window and the command line window, which also spans all stacks. 
+// Each sub window is an instance of a specific window class with this class as
+// the base class. There are routines common to all windows to enable/ disable, 
+// set the lines displayed and so on. There are also abstract methods that the
+// inheriting class needs to implement. Examples are to initialize a window, 
+// redraw and so on.
 //
 // A window can also implement different views of the data. This is handled by a 
 // toggle mechanism. The window maintains the current toggle value as well as the
 // default and actual sizes of the windows for each toggle view.
 //
-// Most windows will be associated with a module or submodule. The window also keeps
-// the simulator module number it is associated with.
+// Most windows will be associated with a module or submodule. The window also 
+// keeps the simulator module number it is associated with.
 //
 //----------------------------------------------------------------------------------------
 struct SimWin {
@@ -932,8 +933,8 @@ struct SimWin {
     void            setWinType( SimWinType type );
     SimWinType      getWinType( );
     
-    void            setWinIndex( size_t index );
-    size_t          getWinIndex( );
+    void            setWinIndex( int index );
+    int             getWinIndex( );
 
     void            setWinName( char *name );
     char            *getWinName( );
@@ -964,21 +965,21 @@ struct SimWin {
     int             getWinStack( );
     void            setWinStack( int wStack );
 
-    void            setWinToggleLimit( size_t limit );
-    size_t          getWinToggleLimit( );
+    void            setWinToggleLimit( int limit );
+    int             getWinToggleLimit( );
 
-    size_t          getWinToggleVal( );
-    void            setWinToggleVal( size_t val );
+    int             getWinToggleVal( );
+    void            setWinToggleVal( int val );
 
-    SimWinSize      getWinSize( size_t toggleVal );
+    SimWinSize      getWinSize( int toggleVal );
     
-    void            setWinLimitsForToggle( size_t toggleVal, 
+    void            setWinLimitsForToggle( int toggleVal, 
                                            size_t minRow, 
                                            size_t maxRow,
                                            size_t minCol,
                                            size_t maxCol );
 
-    void            setWinSizeForToggle( size_t toggleVal, 
+    void            setWinSizeForToggle( int toggleVal, 
                                          size_t row, 
                                          size_t col );
 
@@ -1005,7 +1006,6 @@ struct SimWin {
                                     size_t col = 0 ); 
     
     void            printRadixField( uint32_t fmtDesc = FMT_DEFAULT,
-                                     size_t len = 0,
                                      size_t row = 0,
                                      size_t col = 0 );
     
@@ -1019,7 +1019,7 @@ struct SimWin {
     
     void            reDraw( );
     
-    virtual void    toggleWin( size_t toggleVal = 0 );
+    virtual void    toggleWin( int toggleVal = 0 );
     virtual void    setDefaults( )  = 0;
     virtual void    drawBanner( )   = 0;
     virtual void    drawBody( )     = 0;
@@ -1031,7 +1031,7 @@ struct SimWin {
     private:
     
     SimWinType      winType             = WT_NIL;
-    size_t          winIndex            = 0;
+    int             winIndex            = 0;
     int             winModNum           = 0;
     char            winName[ MAX_WIN_NAME ];
     SimWinSize      winSizes[ MAX_WIN_TOGGLES ];
@@ -1040,8 +1040,8 @@ struct SimWin {
     size_t          winRadix            = 16;
     int             winStack            = 0;
     
-    size_t          winToggleLimit      = 0;
-    size_t          winToggleVal        = 0;
+    int             winToggleLimit      = 0;
+    int             winToggleVal        = 0;
     
     size_t          winColumns          = 0;
     size_t          winRows             = 0;       
@@ -1054,17 +1054,18 @@ struct SimWin {
 
 //----------------------------------------------------------------------------------------
 // "WinScrollable" is an extension to the basic window. It implements scrollable
-// windows with a number of lines. There is a high level concept of a starting index
-// of zero and a limit. The meaning i.e. whether the index is a memory address or an
-// index into a TLB or Cache array is determined by the inheriting class. The 
-// scrollable window will show a number of lines, the "drawLine" method needs to be
-// implemented by the inheriting class. The routine is passed the item address for 
-// the line and is responsible for the correct address interpretation. The 
-// "lineIncrement" is the increment value for the item address passed.
+// windows with a number of lines. There is a high level concept of a starting 
+// index of zero and a limit. The meaning i.e. whether the index is a memory 
+// address or an index into a TLB or Cache array is determined by the inheriting
+// class. The scrollable window will show a number of lines, the "drawLine" 
+// method needs to be implemented by the inheriting class. The routine is passed
+// the item address for the line and is responsible for the correct address 
+// interpretation. The "lineIncrement" is the increment value for the item 
+// address passed.
 //
-// There is the scenario that a line item actually spans to or even more lines. The
-// actual rows needed is the line increment times the rows per line item. In most 
-// cases there is however a one to one mapping.
+// There is the scenario that a line item actually spans to or even more lines.
+// The actual rows needed is the line increment times the rows per line item. 
+// In most cases there is however a one to one mapping.
 // 
 //----------------------------------------------------------------------------------------
 struct SimWinScrollable : SimWin {
@@ -1124,7 +1125,7 @@ struct SimWinProcState : SimWin {
 
     size_t  drawGRegSubWindow( size_t linePos );
     size_t  drawCRegSubWindow( size_t linePos);
-    size_t  drawCodeSubWindow( size_t linePos, size_t lineLeft );
+    size_t  drawCodeSubWindow( size_t linePos, size_t linesLeft );
     void    drawGRegDataLine( size_t from, size_t to );
     void    drawCRegDataLine( size_t from, size_t to );
     
@@ -1215,20 +1216,20 @@ struct SimWinText : SimWinScrollable {
     private:
 
     bool    openTextFile( );
-    int     readTextFileLine( int linePos, char *lineBuf, int bufLen );
+    size_t  readTextFileLine( size_t linePos, char *lineBuf, size_t bufLen );
     
     FILE    *textFile          = nullptr;
-    int     fileSizeLines      = 0;
-    int     lastLinePos        = 0;
+    size_t  fileSizeLines      = 0;
+    size_t  lastLinePos        = 0;
     char    fileName[ MAX_FILE_PATH_SIZE ] = { 0 };
 };
 
 //----------------------------------------------------------------------------------------
-// Console Window. When the CPU is running, it has access to a "console window". This
-// is a rather simple console IO window. Care needs to be taken however what character
-// IO directed to this window means. For example, escape sequences cannot be just 
-// printed out as it would severely impact the simulator windows. Likewise scrolling 
-// and line editing are to be handheld.
+// Console Window. When the CPU is running, it has access to a "console window".
+// This is a rather simple console IO window. Care needs to be taken however what 
+// character IO directed to this window means. For example, escape sequences 
+// cannot be just printed out as it would severely impact the simulator windows. 
+// Likewise scrolling and line editing are to be handheld.
 //
 //----------------------------------------------------------------------------------------
 struct SimWinConsole : SimWin {
@@ -1280,7 +1281,7 @@ private:
                                     size_t promptStrLen, 
                                     char prefix = ' ' );
 
-    int             readCmdLine( char *cmdBuf, size_t cmdBufLen, char *promptStr );
+    size_t          readCmdLine( char *cmdBuf, size_t cmdBufLen, char *promptStr );
     void            processCmdLine( char *cmdBuf );
     SimTokId        peekAtInputLine( char *cmdBuf );
     void            cmdLineError( SimErrMsgId errNum, char *argStr = nullptr );
@@ -1289,7 +1290,7 @@ private:
     int             promptYesNoCancel( char *promptStr );
     void            configureT64Sim( );
     void            configureT64Log( );
-    int             writeLog( );
+   // int             writeLog( );
 
     void            ensureWinModeOn( );
     void            printStackInfoField( uint32_t fmtDesc = 0,

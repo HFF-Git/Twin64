@@ -81,7 +81,7 @@ int lookupToken( char *inputStr, SimToken *tokTab ) {
 //
 //
 //----------------------------------------------------------------------------------------
-void addChar( char *buf, int size, char ch ) {
+void addChar( char *buf, size_t size, char ch ) {
     
     size_t len = strlen( buf );
     

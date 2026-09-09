@@ -415,7 +415,7 @@ void SimCmdHistory::addCmdLine( const char *cmdStr ) {
 // return the absolute command Id.
 //
 //----------------------------------------------------------------------------------------
-char *SimCmdHistory::getCmdLine( size_t cmdRef, size_t *cmdId ) {
+char *SimCmdHistory::getCmdLine( int cmdRef, size_t *cmdId ) {
 
     if ( count == 0 ) return ( nullptr );
 
@@ -619,9 +619,9 @@ void SimCommandsWin::clearCmdWin( ) {
 // cursor at the input line, right after the prompt string.
 //
 //----------------------------------------------------------------------------------------
-int SimCommandsWin::readCmdLine( char   *cmdBuf, 
-                                 size_t initialCmdBufLen, 
-                                 char   *promptBuf ) {
+size_t SimCommandsWin::readCmdLine( char   *cmdBuf, 
+                                    size_t initialCmdBufLen, 
+                                    char   *promptBuf ) {
     
     enum CharType : uint16_t { 
         
@@ -679,7 +679,7 @@ int SimCommandsWin::readCmdLine( char   *cmdBuf,
                         if ( glb -> console -> isConsole( ) ) {
 
                             glb->console -> writeChars( ":" ); 
-                            promptBufLen = static_cast<int> ( strlen( ":" ));                       
+                            promptBufLen = strlen( ":" );                       
                         }
 
                         cmdBufCursor = cmdBufLen;
@@ -701,8 +701,6 @@ int SimCommandsWin::readCmdLine( char   *cmdBuf,
                     
                     if ( cmdBufCursor > 0 ) {
 
-                    // if ( cmdBufLen > 0 ) {
-                        
                         removeChar( cmdBuf, &cmdBufLen, &cmdBufCursor );
                         glb -> console -> writeChars( "\r %s%s", promptBuf, cmdBuf );
                         glb -> console -> clearToEndOfLine( ); 
@@ -3277,7 +3275,7 @@ void SimCommandsWin::winKillWinCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winSetStackCmd( ) {
     
-    int     lWinStack    = -1;
+    int     lWinStack   = -1;
     int     winNumStart = -1;
     int     winNumEnd   = -1;
     

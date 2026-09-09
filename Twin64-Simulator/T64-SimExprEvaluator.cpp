@@ -83,13 +83,6 @@ enum BitOpId : int {
 //
 //
 //----------------------------------------------------------------------------------------
-int toInt32( T64Word val ) {
-
-    if ( val < INT32_MIN ) throw( ERR_NUMERIC_OVERFLOW );
-    if ( val > INT32_MAX ) throw( ERR_NUMERIC_OVERFLOW );
-    return ( static_cast<int> ( val ));
-}
-
 uint32_t toUInt32( T64Word val ) {
 
     if ( val > UINT32_MAX ) throw( ERR_NUMERIC_OVERFLOW );
@@ -377,7 +370,7 @@ SimExprEvaluator::SimExprEvaluator( SimGlobals *glb, SimTokenizer *tok ) {
 void SimExprEvaluator::parseRegister( SimExpr *rExpr, bool evalEnabled ) {
 
     SimTokTypeId regType    = tok -> tokTyp( );
-    int         regId       = static_cast<int> ( tok -> tokVal( ));
+    int          regId      = static_cast<int> ( tok -> tokVal( ));
     int          modNum     = -1;
 
     rExpr -> typ      = TYP_NIL;
@@ -455,7 +448,10 @@ void SimExprEvaluator::parseMemData( SimExpr *rExpr, bool evalEnabled ) {
 
         if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
 
-        if ( ! isAlignedAdr( rExpr -> u.val, len )) throw ( ERR_UNALIGNED_ADDR );
+        if ( ! isAlignedAdr( rExpr -> u.val, static_cast<T64Word> ( len ))) { 
+                                
+            throw ( ERR_UNALIGNED_ADDR );
+        }
 
         T64Word data = 0;
         if ( readMem( glb -> system, rExpr -> u.val, (uint8_t *) &data, len )) {

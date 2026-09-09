@@ -45,8 +45,8 @@ namespace {
 // get.
 //
 //----------------------------------------------------------------------------------------
-const int LEN_16 = 16;
-const int LEN_32 = 32;
+const size_t LEN_16 = 16;
+const size_t LEN_32 = 32;
 
 //----------------------------------------------------------------------------------------
 // A little helper function to display the comparison condition codes in human 
@@ -985,17 +985,17 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
 //----------------------------------------------------------------------------------------
 T64DisAssemble::T64DisAssemble( ) { }
 
-int T64DisAssemble::getOpCodeFieldWidth( ) {
+size_t T64DisAssemble::getOpCodeFieldWidth( ) {
     
     return ( LEN_16 );
 }
 
-int T64DisAssemble::getOperandsFieldWidth( ) {
+size_t T64DisAssemble::getOperandsFieldWidth( ) {
     
     return ( LEN_32 );
 }
 
-int T64DisAssemble::formatOpCode( char *buf, int bufLen, uint32_t instr ) {
+int T64DisAssemble::formatOpCode( char *buf, size_t bufLen, T64Instr instr ) {
     
     if ( bufLen >= getOpCodeFieldWidth( )) 
         return ( buildOpCodeStr( buf, instr ));
@@ -1004,9 +1004,9 @@ int T64DisAssemble::formatOpCode( char *buf, int bufLen, uint32_t instr ) {
 }
 
 int T64DisAssemble::formatOperands( char *buf, 
-                                    int bufLen, 
-                                    uint32_t instr, 
-                                    int rdx ) {
+                                    size_t bufLen, 
+                                    T64Instr instr, 
+                                    size_t rdx ) {
     
     if ( bufLen >= getOperandsFieldWidth( )) 
         return ( buildOperandStr( buf, instr, rdx ));
@@ -1015,9 +1015,9 @@ int T64DisAssemble::formatOperands( char *buf,
 }
 
 int T64DisAssemble::formatInstr( char *buf, 
-                                 int bufLen, 
-                                 uint32_t instr, 
-                                 int rdx ) {
+                                 size_t bufLen, 
+                                 T64Instr instr, 
+                                 size_t rdx ) {
     
     if ( bufLen >= ( getOpCodeFieldWidth( ) + 1 + getOperandsFieldWidth( ))) {
         

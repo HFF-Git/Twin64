@@ -204,7 +204,8 @@ int SimWinDisplay::getWinStackNum( int winNum ) {
 
 int SimWinDisplay::getWinModNum( int winNum ) {
 
-    return(( validWindowNum( winNum )) ? windowList[ winNum ] -> getWinModNum( ) : -1 );
+    return(( validWindowNum( winNum )) ? 
+                    windowList[ winNum ] -> getWinModNum( ) : -1 );
 }
 
 bool SimWinDisplay::isCurrentWin( int winNum ) {
@@ -222,7 +223,8 @@ bool SimWinDisplay::isScrollableWin ( int typ ) {
 bool SimWinDisplay::isWinEnabled( int winNum ) {
 
     if ( winNum == -1 ) winNum = getCurrentWindow( );
-    return(( validWindowNum( winNum )) && ( windowList[ winNum ] -> isEnabled( )));
+    return(( validWindowNum( winNum )) && 
+           ( windowList[ winNum ] -> isEnabled( )));
 }
 
 bool SimWinDisplay::isWindowsOn( ) {
