@@ -203,7 +203,7 @@ struct SimConsoleIO : SimFormatter {
     void    initConsoleIO( );
     void    setBlockingMode( bool enabled );
     bool    isConsole( );
-    size_t  getConsoleSize( size_t *rows, size_t *cols );
+    void    getConsoleSize( size_t *rows, size_t *cols );
     int     readChar( );
     size_t  writeChars( const char *format, ... );
     

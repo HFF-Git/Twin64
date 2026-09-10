@@ -29,12 +29,18 @@
 #include "T64-SimDeclarations.h"
 #include "T64-SimTables.h"
 
+//----------------------------------------------------------------------------------------
+// Avoid a ton of warnings that we can do nothing about.
+//
+//----------------------------------------------------------------------------------------
+#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wconversion"
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic ignored "-Wold-style-cast"
 #include <elfio/elfio.hpp>
 #pragma clang diagnostic pop
+#endif
 
 using namespace ELFIO;
 

@@ -132,89 +132,89 @@ T64TrapCode T64Processor::executeUnit( ) {
 // Little helpers.
 //
 //----------------------------------------------------------------------------------------
-char *T64Processor::getProcStateStr( ) {
+const char *T64Processor::getProcStateStr( ) {
 
     switch ( getModuleState( )) {
 
-        case T64_MOD_STATE_RESET: return (( char *) "RESET" );
-        case T64_MOD_STATE_EXECUTE: return (( char *) "RUN" );
-        case T64_MOD_STATE_TERMINATE: return ((char *) "TERMINATE" );
+        case T64_MOD_STATE_RESET: return ( "RESET" );
+        case T64_MOD_STATE_EXECUTE: return ( "RUN" );
+        case T64_MOD_STATE_TERMINATE: return ( "TERMINATE" );
 
         case T64_MOD_STATE_HALTED: {
 
             switch ( getTrapCode( )) {
 
                 case NO_TRAP: 
-                    return((char *) "HALT" );
+                    return( "HALT" );
 
                 case MACHINE_CHECK: 
-                    return((char *) "TRAP: MCHECK" );
+                    return( "TRAP: MCHECK" );
 
                 case POWER_FAILURE: 
-                    return((char *) "TRAP: PWF-FAIL" );  
+                    return( "TRAP: PWF-FAIL" );  
 
                 case RECOVERY_COUNTER_TRAP: 
-                    return((char *) "TRAP: REC_CNTR" );
+                    return( "TRAP: REC_CNTR" );
 
                 case EXTERNAL_INTERRUPT: 
-                    return((char *) "TRAP: EXT-INT" );
+                    return( "TRAP: EXT-INT" );
 
                 case ILLEGAL_INSTR_TRAP: 
-                    return((char *) "TRAP: ILLEGAL-INSTR" );
+                    return( "TRAP: ILLEGAL-INSTR" );
 
                 case PRIV_OPERATION_TRAP: 
-                    return((char *) "TRAP: PRIV-VIOLATION" );
+                    return( "TRAP: PRIV-VIOLATION" );
 
                 case PRIV_REGISTER_TRAP: 
-                    return((char *) "TRAP: PRIV-REG-ACC" );
+                    return( "TRAP: PRIV-REG-ACC" );
 
                 case OVERFLOW_TRAP: 
-                    return((char *) "TRAP: OVERFLOW" );
+                    return( "TRAP: OVERFLOW" );
 
                 case INSTR_TLB_MISS_TRAP: 
-                    return((char *) "TRAP: ITLB-MISS" );
+                    return( "TRAP: ITLB-MISS" );
 
                 case NON_ACC_INSTR_TLB_MISS_TRAP: 
-                    return((char *) "TRAP: NON-ACC-ITLB-MISS" );
+                    return( "TRAP: NON-ACC-ITLB-MISS" );
 
                 case INSTR_ACC_RIGHTS_TRAP: 
-                    return((char *) "TRAP: INSTR-ACC" );
+                    return( "TRAP: INSTR-ACC" );
 
                 case INSTR_PROTECTION_TRAP: 
-                    return((char *) "TRAP: INSTR-PROT" );
+                    return( "TRAP: INSTR-PROT" );
 
                 case INSTR_ALIGNMENT_TRAP: 
-                    return((char *) "TRAP: INSTR-ALIGN" );
+                    return( "TRAP: INSTR-ALIGN" );
 
                 case DATA_TLB_MISS_TRAP: 
-                    return((char *) "TRAP: DTLB-MISS" );
+                    return( "TRAP: DTLB-MISS" );
 
                 case NON_ACC_DATA_TLB_MISS_TRAP: 
-                    return((char *) "TRAP: NON-ACC-DTLB-MISS" );
+                    return( "TRAP: NON-ACC-DTLB-MISS" );
 
                 case DATA_ACC_RIGHTS_TRAP: 
-                    return((char *) "TRAP: DATA-ACC" );
+                    return( "TRAP: DATA-ACC" );
                     
                 case DATA_PROTECTION_TRAP: 
-                    return((char *) "TRAP: DATA-PROT" );
+                    return( "TRAP: DATA-PROT" );
 
                 case DATA_ALIGNMENT_TRAP: 
-                    return((char *) "TRAP: DATA-ALIGN" );
+                    return( "TRAP: DATA-ALIGN" );
       
                 case PAGE_REF_TRAP: 
-                    return((char *) "TRAP: PAGE-REF" );
+                    return( "TRAP: PAGE-REF" );
 
                 case BREAK_INSTR_TRAP: 
-                    return((char *) "TRAP: BREAK" );
+                    return( "TRAP: BREAK" );
 
                 case USER_DEFINED_TRAP: 
-                    return((char *) "TRAP: USER" );
+                    return( "TRAP: USER" );
 
-                default: return ((char *) "TRAP: ???" );
+                default: return ( "TRAP: ???" );
             }
         }
 
-        default: return ((char *) "HALT: ??? " );
+        default: return ( "HALT: ??? " );
     }
 }
 
@@ -245,12 +245,12 @@ T64GlobalTlb *T64Processor::getGlobalTlbPtr( ) {
 // ??? should we define for the common IO Regs routines at the module level ?
 //
 //----------------------------------------------------------------------------------------
-bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
+bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t len ) {
 
     int     wordIndex           = (( pAdr - hpaAdr ) >> 3 );
     int     regSetIndex         = wordIndex / T64_IO_REG_SET_SIZE;
     int     wordInRegSetIndex   = wordIndex % T64_IO_REG_SET_SIZE;
-    int     wordOfs             = pAdr % sizeof( T64Word );
+    size_t  wordOfs             = pAdr % sizeof( T64Word );
     T64Word tmp                 = 0;
     
     if ( regSetIndex == 0 ) {
@@ -399,7 +399,7 @@ bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
         }
         else {
 
-            tmp = ((T64Word) e -> tlbInfo << 48 ) | ( e -> pAdr );
+            tmp = ( static_cast<T64Word>( e -> tlbInfo ) << 48 ) | ( e -> pAdr );
             copyFromReg( data, tmp, wordOfs, len );
             return( true );
         }
@@ -411,7 +411,7 @@ bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, int len ) {
 // We have a write request for the processor HPA address range.
 //
 //----------------------------------------------------------------------------------------
-bool T64Processor::handleHPAWrite( T64Word pAdr, uint8_t *data, int len ) {
+bool T64Processor::handleHPAWrite( T64Word pAdr, uint8_t *data, size_t len ) {
 
     // int     wordIndex   = (( pAdr - hpaAdr ) >> 3 );
     // int     regSetIndex = wordIndex / T64_IO_REG_SET_SIZE;
@@ -484,12 +484,18 @@ bool T64Processor::handleControlEvent( T64BBusOpControlEvents event,
 // purge and so on.
 //
 //----------------------------------------------------------------------------------------
-bool T64Processor::busOpRead( T64Word adr, uint8_t *data, int len, bool rsv ) {
+bool T64Processor::busOpRead( T64Word adr, 
+                              uint8_t *data, 
+                              size_t len, 
+                              bool rsv ) {
 
-    return( sys -> busOpRead( this, adr, data, len ));
+    return( sys -> busOpRead( this, adr, data, len, rsv ));
 }
 
-bool T64Processor::busOpWrite( T64Word adr, uint8_t *data, int len, bool cond ) {
+bool T64Processor::busOpWrite( T64Word adr, 
+                               uint8_t *data, 
+                               size_t len, 
+                               bool cond ) {
 
     return( sys -> busOpWrite( this, adr, data, len, cond ));
 }

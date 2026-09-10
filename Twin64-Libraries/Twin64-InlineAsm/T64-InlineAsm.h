@@ -46,10 +46,10 @@ public:
     
     T64Assemble( );
     
-    int         assembleInstr( char *inputStr, uint32_t *instr );
+    int         assembleInstr( char *inputStr, T64Instr *instr );
 
     int         getErrId( );
-    int         getErrPos( );
+    size_t      getErrPos( );
     const char  *getErrStr( int errId );
 };
 
@@ -67,9 +67,9 @@ public:
     
     T64DisAssemble( );
     
-    int     formatInstr( char *buf, size_t bufLen, uint32_t instr, size_t rdx );
-    int     formatOpCode( char *buf, size_t bufLen, uint32_t instr );
-    int     formatOperands( char *buf, size_t bufLen, uint32_t instr, size_t rdx );
+    int     formatInstr( char *buf, size_t bufLen, T64Instr instr, size_t rdx );
+    int     formatOpCode( char *buf, size_t bufLen, T64Instr instr );
+    int     formatOperands( char *buf, size_t bufLen, T64Instr instr, size_t rdx );
     size_t  getOpCodeFieldWidth( );
     size_t  getOperandsFieldWidth( );
 };

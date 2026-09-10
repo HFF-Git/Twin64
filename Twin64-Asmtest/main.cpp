@@ -91,12 +91,15 @@ void printHelp( ) {
 //
 //----------------------------------------------------------------------------------------
 int getInput( char *buf ) {
-    
-    if ( fgets( buf, 128, stdin ) == nullptr ) return( -1 );
-    buf[ strcspn( buf, "\n") ] = '\0';
 
-    for ( char *s = buf; *s; s++ ) *s = toupper((unsigned char) *s );
-    return((uint32_t) strlen( buf ));
+    if ( fgets( buf, 128, stdin ) == nullptr ) return( -1 );
+
+    buf[ strcspn( buf, "\n" ) ] = '\0';
+
+    for ( char *s = buf; *s; s++ )
+        *s = static_cast<char>( toupper( static_cast<unsigned char>( *s )));
+
+    return( static_cast<int>( strlen( buf ) ) );
 }
 
 //----------------------------------------------------------------------------------------

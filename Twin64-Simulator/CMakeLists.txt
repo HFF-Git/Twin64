@@ -32,21 +32,3 @@ target_link_libraries( ${PROJECT_NAME} PRIVATE
     Twin64-Memory
     ELFIO
 )
-
-target_compile_options(Twin64-Simulator PRIVATE
-
-    # GCC / Clang / AppleClang
-    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:
-        -Wall
-        -Wextra
-        -Wconversion
-        -Wsign-conversion
-        -Wpedantic
-        -Wold-style-cast
-    >
-
-    # Microsoft Visual C++
-    $<$<CXX_COMPILER_ID:MSVC>:
-        /W4
-    >
-)

@@ -23,7 +23,13 @@ else()
         -Wall 
         -Wno-unused-parameter 
         -Wno-gnu-anonymous-struct 
-        -Wnested-anon-types)
+        -Wnested-anon-types
+        -Wextra
+        -Wconversion
+        -Wsign-conversion
+        -Wpedantic
+        -Wold-style-cast
+        )
 endif()
 
 add_library(ELFIO INTERFACE)

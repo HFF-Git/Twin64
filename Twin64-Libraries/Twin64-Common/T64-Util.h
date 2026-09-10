@@ -210,16 +210,16 @@ inline void copyFromReg( uint8_t *dst, T64Word reg, size_t ofs, size_t len ) {
 // Helper function to check a bit range value in the instruction.
 //
 //----------------------------------------------------------------------------------------
-inline bool isInRangeForInstrBitFieldS( int val, int bitLen ) {
+inline bool isInRangeForInstrBitFieldS( T64Word val, size_t bitLen ) {
     
     int min = - ( 1 << (( bitLen - 1 ) % 32 ));
     int max = ( 1 << (( bitLen - 1 ) % 32 )) - 1;
     return (( val <= max ) && ( val >= min ));
 }
 
-inline bool isInRangeForInstrBitFieldU( uint32_t val, int bitLen ) {
+inline bool isInRangeForInstrBitFieldU( uint32_t val, size_t bitLen ) {
     
-    uint32_t max = (( 1 << ( bitLen % 32 )) - 1 );
+    size_t max = (( 1 << ( bitLen % 32 )) - 1 );
     return ( val <= max );
 }
 

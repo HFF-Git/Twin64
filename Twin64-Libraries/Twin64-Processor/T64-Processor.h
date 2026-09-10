@@ -307,8 +307,15 @@ struct T64Processor : T64ProcThreadModule {
     void            resetModule( ) override;
     T64TrapCode     executeUnit( ) override;
 
-    bool            busOpRead( T64Word adr, uint8_t *data, int len, bool rsv );
-    bool            busOpWrite( T64Word adr, uint8_t *data, int len, bool cond = false );
+    bool            busOpRead( T64Word adr, 
+                               uint8_t *data, 
+                               size_t len, 
+                               bool rsv = false );
+
+    bool            busOpWrite( T64Word adr, 
+                                uint8_t *data, 
+                                size_t len, 
+                                bool cond = false );
 
     bool            busOpControl( T64BBusOpControlEvents id, 
                                   T64Word            arg1, 
@@ -328,17 +335,17 @@ struct T64Processor : T64ProcThreadModule {
                         
     T64Cpu          *getCpuPtr( );
     T64LocalTlb     *getLocalTlbPtr( );
-    char            *getProcStateStr( );
+    const char      *getProcStateStr( );
     T64GlobalTlb    *getGlobalTlbPtr( );
 
 private:
 
-    bool            handleHPARead( T64Word pAdr, uint8_t *data, int len );
-    bool            handleHPAWrite( T64Word pAdr, uint8_t *data, int len );
+    bool            handleHPARead( T64Word pAdr, uint8_t *data, size_t len );
+    bool            handleHPAWrite( T64Word pAdr, uint8_t *data, size_t len );
 
     bool            handleControlEvent( T64BBusOpControlEvents  event, 
-                                        T64Word             arg1, 
-                                        T64Word             arg2);
+                                        T64Word                 arg1, 
+                                        T64Word                 arg2);
 
     friend struct   T64Cpu;
 
