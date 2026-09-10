@@ -255,12 +255,12 @@ void sanitizeLine( const char *inputStr, char *outputStr ) {
 // making sure that the buffer is large enough.
 //
 //----------------------------------------------------------------------------------------
-inline size_t appendPrintf( char *buf, 
-                          size_t bufSize, 
-                          size_t& bufLen,
-                          const char *format, ... ) {
+inline size_t appendPrintf( char   *buf, 
+                            size_t  bufSize, 
+                            size_t& bufLen,
+                            const char *format, ... ) {
 
-    if (( bufLen < 0 ) || ( static_cast<size_t>( bufLen ) >= bufSize )) {
+    if ( bufLen >= bufSize ) {
 
         throw( ERR_STRING_TOO_LONG );
     }
@@ -268,15 +268,15 @@ inline size_t appendPrintf( char *buf,
     va_list args;
     va_start( args, format );
     int n = vsnprintf(buf + bufLen,
-                      bufSize - static_cast<size_t>(bufLen),
+                      bufSize - bufLen,
                       format,
                       args);
     va_end( args );
 
     if (( n < 0 ) ||
-        ( static_cast<size_t>(n) > bufSize - static_cast<size_t>(bufLen))) {
+        ( static_cast<size_t>( n ) >= bufSize - bufLen )) {
 
-        throw(ERR_STRING_TOO_LONG);
+        throw( ERR_STRING_TOO_LONG );
     }
 
     bufLen += static_cast<size_t>( n );
@@ -383,13 +383,13 @@ SimCmdHistory::SimCmdHistory( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Enable or disable command history. When disabled, no commands are added to the
-// history stack. When enabled, commands are added to the history stack. The
-// history stack is a circular buffer, so when the stack is full, the oldest
+// Enable or disable command history. When disabled, no commands are added to 
+// the history stack. When enabled, commands are added to the history stack. 
+// The history stack is a circular buffer, so when the stack is full, the oldest
 // command is removed to make room for the new command. We will use this feature
 // when executing commands from a script file. We do not want to fill the history
-// stack with commands from a script file, as it would fill the history stack with
-// commands that are not useful for the user.
+// stack with commands from a script file, as it would fill the history stack 
+// with commands that are not useful for the user.
 //
 //----------------------------------------------------------------------------------------
 void SimCmdHistory::enableHistory( bool enable ) {
@@ -403,8 +403,8 @@ bool SimCmdHistory::isHistoryEnabled( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Add a command line. If the history buffer is full, the oldest entry is re-used. 
-// The head index points to the next entry for allocation.
+// Add a command line. If the history buffer is full, the oldest entry is 
+// re-used. The head index points to the next entry for allocation.
 //
 //----------------------------------------------------------------------------------------
 void SimCmdHistory::addCmdLine( const char *cmdStr ) {
@@ -425,10 +425,10 @@ void SimCmdHistory::addCmdLine( const char *cmdStr ) {
 
 //----------------------------------------------------------------------------------------
 // Get a command line from the command history. If the command reference is 
-// negative, the entry relative to the top is used. "head - 1" refers to the last
-// entry entered. If the command reference is positive, we search for the entry 
-// with the matching command id, if still in the history buffer. Optionally, we
-// return the absolute command Id.
+// negative, the entry relative to the top is used. "head - 1" refers to the 
+// last entry entered. If the command reference is positive, we search for the 
+// entry with the matching command id, if still in the history buffer.
+// Optionally, we return the absolute command Id.
 //
 //----------------------------------------------------------------------------------------
 char *SimCmdHistory::getCmdLine( int cmdRef, size_t *cmdId ) {
@@ -447,7 +447,7 @@ char *SimCmdHistory::getCmdLine( int cmdRef, size_t *cmdId ) {
 
             if ( history[ pos ].cmdId == toUInt32( cmdRef )) {
 
-                if ( cmdId ) *cmdId = history[pos].cmdId;
+                if ( cmdId != nullptr ) *cmdId = history[pos].cmdId;
                 return ( history[ pos ].cmdLine );
             }
         }
@@ -548,13 +548,14 @@ void SimCommandsWin::drawBanner( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// The body lines of the command window are displayed after the banner line. The 
-// window is filled from the output buffer. We first set the screen lines as the
-// length of the command window may have changed.
+// The body lines of the command window are displayed after the banner line. 
+// The window is filled from the output buffer. We first set the screen lines 
+// as the length of the command window may have changed.
 //
-// Rows to show is the number of lines between the header line and the last line,
-// which is out command input line. We fill from the lowest line upward to the 
-// header line. Finally, we set the cursor to the last line in the command window.
+// Rows to show is the number of lines between the header line and the last 
+// line, which is out command input line. We fill from the lowest line upward 
+// to the header line. Finally, we set the cursor to the last line in the 
+// command window.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::drawBody( ) {
@@ -595,15 +596,15 @@ void SimCommandsWin::clearCmdWin( ) {
 //----------------------------------------------------------------------------------------
 // "readCmdLine" is used by the command line interpreter to get the command. 
 // Since we run in raw mode, the basic handling of backspace, carriage return, 
-// relevant escape sequences, etc. needs to be processed in this routine directly. 
-// Characters other than the special characters are piled up in a local buffer 
-// until we read in a carriage return. The core is a state machine that examines 
-// a character read to analyze whether this is a special character or sequence. 
-// Any "normal" character is just added to the line buffer. The states are as 
-// follows:
+// relevant escape sequences, etc. needs to be processed in this routine 
+// directly. Characters other than the special characters are piled up in a 
+// local buffer until we read in a carriage return. The core is a state machine
+// that examines a character read to analyze whether this is a special character 
+// or sequence. Any "normal" character is just added to the line buffer. The 
+// states are as follows:
 //
 //      CT_NORMAL: got a character, analyze it.
-//      CT_ESCAPE: check the characters got. If a "[" we handle an escape sequence.
+//      CT_ESCAPE: check the characters got. If "[" we handle an escape sequence.
 //      CT_ESCAPE_BRACKET: analyze the argument after "esc[" input got so far.
 //      CT_WIN_SPECIAL: analyze a MS windows special character.
 //
@@ -612,14 +613,14 @@ void SimCommandsWin::clearCmdWin( ) {
 // multi-line input. A special prompt is displayed and we keep reading in command
 // lines. After the final carriage return, we are done reading the input line. 
 //
-// The prompt and the command string along with a carriage return are appended to
-// the command output buffer. Before returning to the caller, the last thing to 
-// do is to remove any comment from the line.
+// The prompt and the command string along with a carriage return are appended 
+// to the command output buffer. Before returning to the caller, the last thing
+// to do is to remove any comment from the line.
 //
-// The left and right arrows move the cursor in the command line. Backspacing and
-// inserting will then take place at the current cursor position shifting any 
-// content to the right of the cursor when inserting and shifting to the left 
-// when deleting.
+// The left and right arrows move the cursor in the command line. Backspacing 
+// and inserting will then take place at the current cursor position shifting 
+// any content to the right of the cursor when inserting and shifting to the 
+// left when deleting.
 //
 // On MS windows a special character indicates the start of a special button 
 // pressed. We currently recognize only the cursor keys.
@@ -718,7 +719,9 @@ size_t SimCommandsWin::readCmdLine( char   *cmdBuf,
                     if ( cmdBufCursor > 0 ) {
 
                         removeChar( cmdBuf, &cmdBufLen, &cmdBufCursor );
-                        glb -> console -> writeChars( "\r %s%s", promptBuf, cmdBuf );
+                        glb -> console -> writeChars( "\r %s%s", 
+                                                      promptBuf, cmdBuf );
+
                         glb -> console -> clearToEndOfLine( ); 
                         setWinCursor( 0, 1 + promptBufLen + cmdBufCursor );
                     }
@@ -731,7 +734,9 @@ size_t SimCommandsWin::readCmdLine( char   *cmdBuf,
 
                         if ( isprint( ch )) {
 
-                            glb -> console -> writeChars( "\r %s%s", promptBuf, cmdBuf);
+                            glb -> console -> writeChars( "\r %s%s", 
+                                                          promptBuf, cmdBuf);
+
                             glb -> console -> clearToEndOfLine( ); 
                             setWinCursor(0, 1 + promptBufLen + cmdBufCursor );
                         }
@@ -969,8 +974,8 @@ SimWinOutBuffer *SimCommandsWin::getWinOutHandle( ) {
 
 //----------------------------------------------------------------------------------------
 // Print the stack info data. In the command window line, we will have a field 
-// to the very right, which is on when we are in windows mode. It will show which 
-// stacks are current used, regardless whether they a visible or not.
+// to the very right, which is on when we are in windows mode. It will show 
+// which stacks are current used, regardless whether they a visible or not.
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::printStackInfoField( uint32_t fmtDesc, 
@@ -1247,7 +1252,7 @@ void SimCommandsWin::addTlbModule( int modNum ) {
 // pairs to get all module type info. Omitted key/value pairs are set to their
 // reasonable defaults.
 //
-//  NM IO, <modNum>, SPA_ADR=xxx, SPA_LEN=xxx, ...
+//  NMOD IO, <modNum>, <ioType>, SPA_ADR=xxx, SPA_LEN=xxx, ...
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addIoModule( int modNum ) {
@@ -1663,9 +1668,16 @@ void SimCommandsWin::execFileCmd( ) {
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::loadElfFileCmd( ) {
+
+    char *filePath = nullptr;
     
-    if ( tok -> tokTyp( ) == TYP_STR )  loadElfFile( tok -> tokStr( ));
-    else                                throw( ERR_EXPECTED_FILE_NAME );
+    if ( tok -> tokTyp( ) != TYP_STR ) throw( ERR_EXPECTED_FILE_NAME );
+    filePath = tok -> tokStr( );
+
+    tok -> nextToken( );
+    tok -> checkEOS( );
+
+    loadElfFile( filePath );                                
 }
 
 //----------------------------------------------------------------------------------------

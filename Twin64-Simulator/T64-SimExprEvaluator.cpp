@@ -396,33 +396,36 @@ void SimExprEvaluator::parseRegister( SimExpr *rExpr, bool evalEnabled ) {
         modNum = acceptIntExpr( ERR_EXPECTED_NUM_VALUE, 0, INT32_MAX );
     }
     else modNum = glb -> winDisplay -> getCurrentWinModNum( );
+
+    if ( evalEnabled ) {
         
-    T64ModuleType mType = glb -> system -> getModuleType( modNum );
-    if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
+        T64ModuleType mType = glb -> system -> getModuleType( modNum );
+        if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
 
-    T64Processor *proc = 
-    reinterpret_cast<T64Processor *>( glb -> system -> lookupByModNum( modNum ));
-    
-    if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
+        T64Processor *proc = 
+        reinterpret_cast<T64Processor *>( glb -> system -> lookupByModNum( modNum ));
+        
+        if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
 
-    if ( regType == TYP_GREG ) {
+        if ( regType == TYP_GREG ) {
 
-        rExpr -> u.val =  proc -> getCpuPtr( ) -> getGeneralReg( regId );
-        rExpr -> typ = TYP_NUM;
+            rExpr -> u.val =  proc -> getCpuPtr( ) -> getGeneralReg( regId );
+            rExpr -> typ = TYP_NUM;
+        }
+        else if ( regType == TYP_CREG ) {
+
+            rExpr -> u.val =  proc -> getCpuPtr( ) -> getControlReg( regId );
+            rExpr -> typ = TYP_NUM;
+        }
+        else if ( regType == TYP_PREG ) {
+
+            T64Word tmp = proc -> getCpuPtr( ) -> getPsrReg( );
+            if      ( regId == 1 ) rExpr -> u.val = extractField64( tmp, 0, 52 );
+            else if ( regId == 2 ) rExpr -> u.val = extractField64( tmp, 52, 12 );  
+            rExpr -> typ = TYP_NUM;
+        }
+        else throw( ERR_INVALID_REG_ID );
     }
-    else if ( regType == TYP_CREG ) {
-
-        rExpr -> u.val =  proc -> getCpuPtr( ) -> getControlReg( regId );
-        rExpr -> typ = TYP_NUM;
-    }
-    else if ( regType == TYP_PREG ) {
-
-        T64Word tmp = proc -> getCpuPtr( ) -> getPsrReg( );
-        if      ( regId == 1 ) rExpr -> u.val = extractField64( tmp, 0, 52 );
-        else if ( regId == 2 ) rExpr -> u.val = extractField64( tmp, 52, 12 );  
-        rExpr -> typ = TYP_NUM;
-    }
-    else ;
 }
 
 //----------------------------------------------------------------------------------------
@@ -447,15 +450,15 @@ void SimExprEvaluator::parseMemData( SimExpr *rExpr, bool evalEnabled ) {
         tok -> nextToken( );
     }
     else if ( tok -> isToken( TOK_UBYTE ) ||
-                tok -> isToken( TOK_USHORT  ) ||
-                tok -> isToken( TOK_UHALF ) ||
-                tok -> isToken( TOK_UWORD  )) {
+              tok -> isToken( TOK_USHORT  ) ||
+              tok -> isToken( TOK_UHALF ) ||
+              tok -> isToken( TOK_UWORD  )) {
 
         sExt = false;
         len  = toUInt32( tok -> tokVal( ));
         tok -> nextToken( );
     }
-    else ;
+    else throw ( ERR_EXPECTED_NUM_VALUE );
 
     parseExpr( rExpr, evalEnabled );
 

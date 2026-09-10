@@ -48,6 +48,8 @@ namespace {
 const size_t LEN_16 = 16;
 const size_t LEN_32 = 32;
 
+// ??? use appendPrintf helper from Simulator ?
+
 //----------------------------------------------------------------------------------------
 // A little helper function to display the comparison condition codes in human 
 // readable form. The function returns the characters written.

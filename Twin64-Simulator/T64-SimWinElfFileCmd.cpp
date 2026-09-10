@@ -225,6 +225,4 @@ void SimCommandsWin::loadElfFile( char *fileName ) {
         if ( reader != nullptr ) closeElfFile( reader );
         throw( errNum );
     }
-    
-    
 }
