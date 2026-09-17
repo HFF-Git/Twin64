@@ -383,7 +383,7 @@ SimExprEvaluator::SimExprEvaluator( SimGlobals *glb, SimTokenizer *tok ) {
 void SimExprEvaluator::parseRegister( SimExpr *rExpr, bool evalEnabled ) {
 
     SimTokTypeId regType    = tok -> tokTyp( );
-    int          regId      = static_cast<int> ( tok -> tokVal( ));
+    unsigned     regId      = static_cast<unsigned> ( tok -> tokVal( ));
     int          modNum     = -1;
 
     rExpr -> typ      = TYP_NIL;
@@ -466,7 +466,7 @@ void SimExprEvaluator::parseMemData( SimExpr *rExpr, bool evalEnabled ) {
 
         if ( rExpr -> typ != TYP_NUM ) throw ( ERR_EXPECTED_NUM_VALUE );
 
-        if ( ! isAlignedAdr( rExpr -> u.val, static_cast<T64Word> ( len ))) { 
+        if ( ! isAlignedAdr( rExpr -> u.val, static_cast<unsigned> ( len ))) { 
                                 
             throw ( ERR_UNALIGNED_ADDR );
         }

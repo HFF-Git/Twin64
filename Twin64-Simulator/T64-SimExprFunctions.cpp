@@ -141,7 +141,7 @@ void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr, bool evalEnabled ) {
     
     if ( evalEnabled ) {
 
-        disAsm -> formatInstr( asmStr, sizeof( asmStr ), instr, rdx );
+        disAsm -> formatInstr( asmStr, sizeof( asmStr ), instr );
         
         rExpr -> typ   = TYP_STR;
         rExpr -> u.str = asmStr; 

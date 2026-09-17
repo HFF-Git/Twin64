@@ -1339,7 +1339,7 @@ void SimCommandsWin::displayMemContentAsCode( T64Word adr, T64Word len ) {
                       reinterpret_cast<uint8_t *>( &instr ), 
                       sizeof( instr )) ) {
 
-            disAsm -> formatInstr( buf, sizeof( buf ), instr, 16 );
+            disAsm -> formatInstr( buf, sizeof( buf ), instr );
             winOut -> writeChars( "%s\n", buf ); 
         }
         else winOut -> writeChars( "******\n" );
@@ -2601,7 +2601,7 @@ void SimCommandsWin::modifyRegCmd( ) {
    
     int             modNum      = -1;
     SimTokTypeId    regSetId    = TYP_GREG;
-    int             regNum      = 0;
+    unsigned        regNum      = 0;
     T64Word         val         = 0;
    
     if (( tok -> tokTyp( ) == TYP_GREG ) ||
@@ -2609,7 +2609,7 @@ void SimCommandsWin::modifyRegCmd( ) {
         ( tok -> tokTyp( ) == TYP_PREG )) {
         
         regSetId    = tok -> tokTyp( );
-        regNum      = toInt32( tok -> tokVal( ));
+        regNum      = static_cast<unsigned>( tok -> tokVal( ));
         tok -> nextToken( );
     }
     else throw ( ERR_INVALID_REG_ID );

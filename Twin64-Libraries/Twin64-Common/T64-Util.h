@@ -91,24 +91,24 @@ inline bool isInRange( T64Word adr, T64Word low, T64Word high ) {
     return (( adr >= low ) && ( adr <= high ));
 }
 
-inline T64Word roundup( T64Word arg, T64Word round ) {
+inline T64Word roundup( T64Word arg, unsigned round ) {
 
     if ( round == 0 ) return arg;
     return (( arg + round - 1 ) / round ) * round;
 }
 
-inline T64Word rounddown( T64Word arg, T64Word round ) {
+inline T64Word rounddown( T64Word arg, unsigned round ) {
 
     if (round == 0) return arg;
     return (arg / round) * round;
 }
 
-inline bool isAligned( T64Word arg, T64Word align ) {
+inline bool isAligned( T64Word arg, unsigned align ) {
 
     return (( arg & ( align - 1 )) == 0 );
 }
 
-inline bool isAlignedAdr( T64Word adr, T64Word align ) {
+inline bool isAlignedAdr( T64Word adr, unsigned align ) {
 
     if (( align == 1 ) || ( align == 2 ) || 
         ( align == 4 ) || ( align == 8 )) {
@@ -118,7 +118,7 @@ inline bool isAlignedAdr( T64Word adr, T64Word align ) {
     else return( false );
 }
 
-inline bool isAlignedPageAdr( T64Word adr, T64Word align ) {
+inline bool isAlignedPageAdr( T64Word adr, unsigned align ) {
 
     if (( align == T64_PAGE_SIZE_BYTES                  ) ||
         ( align == 16 * T64_PAGE_SIZE_BYTES             ) ||
@@ -135,7 +135,7 @@ inline bool isAlignedInstrAdr( T64Word adr ) {
     return (( adr & 0x3 ) == 0 );
 }
 
-inline bool isAlignedOfs( T64Word ofs,  T64Word align ) {
+inline bool isAlignedOfs( T64Word ofs,  unsigned align ) {
 
     return (( ofs & ( align - 1 )) == 0 );
 }
@@ -227,13 +227,13 @@ inline bool isInRangeForInstrBitFieldU( uint32_t val, size_t bitLen ) {
 // Instruction field routines.
 //
 //----------------------------------------------------------------------------------------
-inline int extractInstrBit( T64Instr arg, size_t bitpos ) {
+inline bool extractInstrBit( T64Instr arg, size_t bitpos ) {
     
     if ( bitpos > 31 ) return ( 0 );
     return (( arg >> bitpos ) & 0x1 );
 }
 
-inline int extractInstrFieldU( T64Instr arg, size_t bitpos, size_t len ) {
+inline unsigned extractInstrFieldU( T64Instr arg, size_t bitpos, size_t len ) {
     
     if ( bitpos > 31 ) return ( 0 );
     if ( bitpos + len > 32 ) return ( 0 );
@@ -263,42 +263,42 @@ inline T64Word signExtend( T64Word data, size_t pos ) {
     return (( data & mask ) ? ( data | extend ) : ( data & ~extend ));
 }
 
-inline int extractInstrOpGroup( T64Instr instr ) {
+inline unsigned extractInstrOpGroup( T64Instr instr ) {
     
     return ( extractInstrFieldU( instr, 30, 2 ));
 }
 
-inline int extractInstrOpNum( T64Instr instr ) {
+inline unsigned extractInstrOpNum( T64Instr instr ) {
     
     return ( extractInstrFieldU( instr, 26, 4 ));
 }
 
-inline int extractInstrOpCode( T64Instr instr ) {
+inline unsigned extractInstrOpCode( T64Instr instr ) {
     
     return ( extractInstrFieldU( instr, 26, 6 ));
 }
 
-inline int extractInstrOptField( T64Instr instr ) {
+inline unsigned extractInstrOptField( T64Instr instr ) {
     
     return ( extractInstrFieldU( instr, 19, 3 ));
 }
 
-inline int extractInstrRegR( T64Instr instr ) {
+inline unsigned extractInstrRegR( T64Instr instr ) {
     
     return ( extractInstrFieldU( instr, 22, 4 ));
 }
 
-inline int extractInstrRegB( T64Instr instr ) {
+inline unsigned extractInstrRegB( T64Instr instr ) {
     
     return ( extractInstrFieldU( instr, 15, 4 ));
 }
 
-inline int extractInstrRegA( T64Instr instr ) {
+inline unsigned extractInstrRegA( T64Instr instr ) {
     
     return ( extractInstrFieldU( instr, 9, 4 ));
 }
 
-inline int extractInstrDwField( T64Instr instr) {
+inline unsigned extractInstrDwField( T64Instr instr) {
     
     return ( extractInstrFieldU( instr, 13, 2 ));
 }
@@ -323,7 +323,7 @@ inline int extractInstrSignedImm19( T64Instr instr ) {
     return ( extractInstrFieldS( instr, 0, 19 ));
 }
 
-inline int extractInstrImm20( T64Instr instr ) {
+inline unsigned extractInstrImm20( T64Instr instr ) {
 
     return ( extractInstrFieldU( instr, 0, 20 ));
 }
@@ -342,8 +342,8 @@ inline void depositInstrField( T64Instr *instr,
     mask = mask << bitpos;
 
     *instr = static_cast<T64Instr>(
-                (static_cast<uint32_t>( *instr ) & ~mask ) |
-                ((static_cast<uint32_t>( value ) << bitpos ) & mask ));
+                (static_cast<T64Instr>( *instr ) & ~mask ) |
+                ((static_cast<T64Instr>( value ) << bitpos ) & mask ));
 }
 
 inline void depositInstrBit( T64Instr *instr,
@@ -447,14 +447,14 @@ inline bool willAddOverflow( T64Word a, T64Word b ) {
     
     if (( b > 0 ) && ( a > INT64_MAX - b )) return true;
     if (( b < 0 ) && ( a < INT64_MIN - b )) return true;
-    return false;
+    return ( false );
 }
 
 inline bool willSubOverflow( T64Word a, T64Word b ) {
     
     if (( b < 0 ) && ( a > INT64_MAX + b )) return true;
     if (( b > 0 ) && ( a < INT64_MIN + b )) return true;
-    return false;
+    return ( false );
 }
 
 inline bool willMultOverflow( T64Word a, T64Word b ) {
@@ -485,10 +485,10 @@ inline bool willDivOverflow( T64Word a, T64Word b ) {
     return ( false );
 }
 
-inline bool willShiftLeftOverflow( T64Word val, int shift ) {
+inline bool willShiftLeftOverflow( T64Word val, unsigned shift ) {
     
-    if (( shift < 0 ) || ( shift >= 63 ))   return ( true );
-    if ( shift == 0 )                       return ( false );
+    if ( shift >= 63 )   return ( true );
+    if ( shift == 0 )    return ( false );
     
     T64Word shifted     = val << shift;
     T64Word recovered   = shifted >> shift;

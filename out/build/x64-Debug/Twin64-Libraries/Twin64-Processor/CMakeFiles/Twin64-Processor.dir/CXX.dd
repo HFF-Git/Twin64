@@ -1,7 +1,0 @@
-ninja_dyndep_version = 1.0
-build Twin64-Libraries\Twin64-Processor\CMakeFiles\Twin64-Processor.dir\T64-Processor.cpp.obj: dyndep
-
-build Twin64-Libraries\Twin64-Processor\CMakeFiles\Twin64-Processor.dir\T64-Cpu.cpp.obj: dyndep
-
-build Twin64-Libraries\Twin64-Processor\CMakeFiles\Twin64-Processor.dir\T64-TLB.cpp.obj: dyndep
-

@@ -1,5 +1,0 @@
-ninja_dyndep_version = 1.0
-build Twin64-Libraries\Twin64-InlineAsm\CMakeFiles\Twin64-InlineAsm.dir\T64-InlineAsm.cpp.obj: dyndep
-
-build Twin64-Libraries\Twin64-InlineAsm\CMakeFiles\Twin64-InlineAsm.dir\T64-InlineDisAsm.cpp.obj: dyndep
-

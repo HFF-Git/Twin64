@@ -573,7 +573,7 @@ size_t SimWinProcState::drawCodeSubWindow( size_t linePos, size_t linesLeft ) {
             setWinCursor( 0, pos + opCodeField );
             
             clearField( operandField );
-            disAsm -> formatOperands( instrBuf, sizeof( instrBuf ), instr, 16 );
+            disAsm -> formatOperands( instrBuf, sizeof( instrBuf ), instr );
             printTextField( instrBuf, fmtDesc, strlen( instrBuf ));
             setWinCursor( 0, pos + opCodeField + operandField );
 
@@ -1078,7 +1078,7 @@ void SimWinMem::drawMemDataLineCode( T64Word itemAdr ) {
     setWinCursor( 0, pos + opCodeField );
     
     clearField( operandField );
-    disAsm -> formatOperands( buf, sizeof( buf ), instr, 16 );
+    disAsm -> formatOperands( buf, sizeof( buf ), instr );
     printTextField( buf, fmtDesc, strlen( buf ));
     setWinCursor( 0, pos + opCodeField + operandField );
 

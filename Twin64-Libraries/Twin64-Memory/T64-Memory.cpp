@@ -203,12 +203,12 @@ T64MemType T64Memory::getMemType( ) const {
     return( mType );
 }
 
-char *T64Memory::getMemTypeString( ) const {   
+const char *T64Memory::getMemTypeString( ) const {   
 
     switch ( mType ) {
 
-        case T64_MT_RAM:   return((char *) "RAM" );
-        case T64_MT_ROM:   return((char *) "ROM" );
-        default:           return((char *) "Unknown Mem Type" );
+        case T64_MT_RAM:   return( "RAM" );
+        case T64_MT_ROM:   return( "ROM" );
+        default:           return( "Unknown Mem Type" );
     }
 }

@@ -1,3 +1,0 @@
-ninja_dyndep_version = 1.0
-build Twin64-Libraries\Twin64-Common\CMakeFiles\Twin64-Common.dir\T64-Util.cpp.obj: dyndep
-

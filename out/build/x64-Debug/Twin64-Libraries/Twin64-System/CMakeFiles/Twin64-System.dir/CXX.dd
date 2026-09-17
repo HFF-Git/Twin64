@@ -1,7 +1,0 @@
-ninja_dyndep_version = 1.0
-build Twin64-Libraries\Twin64-System\CMakeFiles\Twin64-System.dir\T64-System.cpp.obj: dyndep
-
-build Twin64-Libraries\Twin64-System\CMakeFiles\Twin64-System.dir\T64-Module.cpp.obj: dyndep
-
-build Twin64-Libraries\Twin64-System\CMakeFiles\Twin64-System.dir\T64-ProcThreadModule.cpp.obj: dyndep
-

@@ -1,3 +1,0 @@
-ninja_dyndep_version = 1.0
-build Twin64-Libraries\Twin64-Tlb\CMakeFiles\Twin64-Tlb.dir\T64-Tlb.cpp.obj: dyndep
-

@@ -1,3 +1,0 @@
-ninja_dyndep_version = 1.0
-build Twin64-Libraries\Twin64-Memory\CMakeFiles\Twin64-Memory.dir\T64-Memory.cpp.obj: dyndep
-

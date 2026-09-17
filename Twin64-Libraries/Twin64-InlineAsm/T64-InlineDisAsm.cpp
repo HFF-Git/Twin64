@@ -499,7 +499,7 @@ int buildOpCodeStr( char *buf, T64Instr instr ) {
 // the opcode family. We construct the final opcode for the case statement.
 //
 //----------------------------------------------------------------------------------------
-int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
+int buildOperandStr( char *buf, uint32_t instr ) {
     
     uint32_t opCode = 
         extractInstrFieldU( instr, 30, 2 ) * 16 + extractInstrFieldU( instr, 26, 4 );
@@ -862,7 +862,7 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
         case ( OPC_GRP_SYS * 16 + OPC_PRB ): {
 
-            int mode = extractInstrFieldU( instr, 13, 2 );
+            unsigned mode = extractInstrFieldU( instr, 13, 2 );
 
             if (( mode >= 0 ) && ( mode <= 2 )) {
                 
@@ -883,7 +883,7 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
         case ( OPC_GRP_SYS * 16 + OPC_TLB ): {
 
             int cursor = 0;
-            int field = extractInstrFieldU( instr, 19, 3 );
+            unsigned field = extractInstrFieldU( instr, 19, 3 );
 
             if (( field == 0 ) || ( field == 1 )) {
             
@@ -936,7 +936,7 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
             
         case ( OPC_GRP_SYS * 16 + OPC_TRAP ):  {
 
-            int info = ( extractInstrFieldU( instr, 19, 3 ) << 2 ) +
+            unsigned info = ( extractInstrFieldU( instr, 19, 3 ) << 2 ) +
                          extractInstrFieldU( instr, 13, 2 );
             
             
@@ -987,12 +987,12 @@ int buildOperandStr( char *buf, uint32_t instr, int rdx ) {
 //----------------------------------------------------------------------------------------
 T64DisAssemble::T64DisAssemble( ) { }
 
-size_t T64DisAssemble::getOpCodeFieldWidth( ) {
+unsigned T64DisAssemble::getOpCodeFieldWidth( ) {
     
     return ( LEN_16 );
 }
 
-size_t T64DisAssemble::getOperandsFieldWidth( ) {
+unsigned T64DisAssemble::getOperandsFieldWidth( ) {
     
     return ( LEN_32 );
 }
@@ -1007,19 +1007,17 @@ int T64DisAssemble::formatOpCode( char *buf, size_t bufLen, T64Instr instr ) {
 
 int T64DisAssemble::formatOperands( char *buf, 
                                     size_t bufLen, 
-                                    T64Instr instr, 
-                                    size_t rdx ) {
+                                    T64Instr instr ) {
     
     if ( bufLen >= getOperandsFieldWidth( )) 
-        return ( buildOperandStr( buf, instr, rdx ));
+        return ( buildOperandStr( buf, instr ));
     else                                    
         return ( -1 );
 }
 
 int T64DisAssemble::formatInstr( char *buf, 
                                  size_t bufLen, 
-                                 T64Instr instr, 
-                                 size_t rdx ) {
+                                 T64Instr instr ) {
     
     if ( bufLen >= ( getOpCodeFieldWidth( ) + 1 + getOperandsFieldWidth( ))) {
         
@@ -1027,7 +1025,7 @@ int T64DisAssemble::formatInstr( char *buf,
 
         int cursor = buildOpCodeStr( buf, instr );
         
-        int len = buildOperandStr( operandBuf, instr, rdx );
+        int len = buildOperandStr( operandBuf, instr );
         if ( len > 0 ) {
             
             cursor += snprintf( buf + cursor, LEN_32, " %s", operandBuf );

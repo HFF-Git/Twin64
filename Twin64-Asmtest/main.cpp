@@ -58,7 +58,7 @@ void assemble( char *asmStr ) {
 void disassemble( uint32_t instr ) {
     
     char buf[ 128 ];
-    disAsm -> formatInstr( buf, sizeof( buf ), instr, 16 );
+    disAsm -> formatInstr( buf, sizeof( buf ), instr );
     printf( "\"%s\"\n", buf );
 }
 
@@ -72,7 +72,7 @@ void testAsmDisAsm( char *asmStr ) {
         
         printf( "0x%08x -> ", instr );
 
-        disAsm -> formatInstr( buf, sizeof( buf ), instr, 16 );
+        disAsm -> formatInstr( buf, sizeof( buf ), instr );
         printf( "\"%s\"\n", buf );
     }
     else printf( "%s\n", doAsm -> getErrStr( doAsm -> getErrId( )));

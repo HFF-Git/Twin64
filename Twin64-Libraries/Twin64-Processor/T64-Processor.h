@@ -165,18 +165,18 @@ struct T64Cpu {
     void            reset( );
     T64TrapCode     executeInstr( );
 
-    T64Word         getGeneralReg( int index );
-    void            setGeneralReg( int index, T64Word val );
+    T64Word         getGeneralReg( size_t index );
+    void            setGeneralReg( size_t index, T64Word val );
 
-    T64Word         getControlReg( int index );
-    void            setControlReg( int index, T64Word val );
+    T64Word         getControlReg( size_t index );
+    void            setControlReg( size_t index, T64Word val );
 
     T64Word         getPsrReg( );
     void            setPsrReg( T64Word val );
 
     private: 
 
-    int             evalCond( int cond, T64Word val1, T64Word val2 );
+    int             evalCond( size_t cond, T64Word val1, T64Word val2 );
 
     void            machineCheckTrap( T64Word adr );
     void            externalInterruptTrap( );
@@ -201,10 +201,10 @@ struct T64Cpu {
     void            branchTakenTrap( T64Word adr );
 
     void            privModeCheck( );
-    bool            regionIdCheck( T64Word pId, int wMode );
+    bool            regionIdCheck( T64Word pId, bool wMode );
     void            instrAlignmentCheck( T64Word vAdr );
-    void            instrAccCheck( T64Word vAdr, uint16_t tlbInfo );
-    void            dataAlignmentCheck( T64Word vAdr, int len );
+    void            instrAccCheck( uint16_t tlbInfo );
+    void            dataAlignmentCheck( T64Word vAdr, unsigned align );
     void            dataReadAccCheck( T64Word vAdr, uint16_t tlbInfo );
     void            dataWriteAccCheck( T64Word vAdr, uint16_t tlbInfo );
     void            addOverFlowCheck( T64Word val1, T64Word val2 );
@@ -221,11 +221,11 @@ struct T64Cpu {
     void            setRegR( uint32_t instr, T64Word val );
    
     T64Instr        instrRead( T64Word vAdr );
-    T64Word         dataRead( T64Word vAdr, int len, bool sExt, bool rsv = false );
+    T64Word         dataRead( T64Word vAdr, size_t len, bool sExt, bool rsv = false );
     T64Word         dataReadRegBOfsImm13( uint32_t instr, bool sExt, bool rsv = false );
     T64Word         dataReadRegBOfsRegX( uint32_t instr, bool sExt );
 
-    bool            dataWrite( T64Word vAdr, T64Word val, int len, bool cond = false );
+    bool            dataWrite( T64Word vAdr, T64Word val, size_t len, bool cond = false );
     bool            dataWriteRegBOfsImm13( uint32_t instr, bool cond = false );
     bool            dataWriteRegBOfsRegX( uint32_t instr );
 
@@ -268,10 +268,7 @@ struct T64Cpu {
     void            instrSysDiagOp( T64Instr instr );
     void            instrSysTrapOp( T64Instr instr );
 
-   
-    void            handleExtInterrupts( );  // ??? will go out ?
-
-    T64Word         diagOpHandler( int opt, T64Word arg1, T64Word arg2 );
+    T64Word         diagOpHandler( unsigned opt, T64Word arg1, T64Word arg2 );
 
     T64Word         cRegFile[ T64_MAX_CREGS ];
     T64Word         gRegFile[ T64_MAX_GREGS ];

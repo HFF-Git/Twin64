@@ -80,7 +80,7 @@ public:
 
     T64MemKind  getMemKind( ) const;
     T64MemType  getMemType( ) const;
-    char        *getMemTypeString( ) const;
+    const char  *getMemTypeString( ) const;
     void        setSpaReadOnly( bool arg );
                       
 private:

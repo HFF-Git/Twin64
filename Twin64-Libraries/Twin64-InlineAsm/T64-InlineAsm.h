@@ -67,11 +67,11 @@ public:
     
     T64DisAssemble( );
     
-    int     formatInstr( char *buf, size_t bufLen, T64Instr instr, size_t rdx );
-    int     formatOpCode( char *buf, size_t bufLen, T64Instr instr );
-    int     formatOperands( char *buf, size_t bufLen, T64Instr instr, size_t rdx );
-    size_t  getOpCodeFieldWidth( );
-    size_t  getOperandsFieldWidth( );
+    int       formatInstr( char *buf, size_t bufLen, T64Instr instr );
+    int       formatOpCode( char *buf, size_t bufLen, T64Instr instr );
+    int       formatOperands( char *buf, size_t bufLen, T64Instr instr );
+    unsigned  getOpCodeFieldWidth( );
+    unsigned  getOperandsFieldWidth( );
 };
 
 #endif // T64_InlineAsm_h
