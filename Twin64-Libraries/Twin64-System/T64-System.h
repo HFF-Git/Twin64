@@ -40,7 +40,15 @@
 // several modules on one board. To the software this transparent.
 //
 //----------------------------------------------------------------------------------------
-const int MAX_MOD_MAP_ENTRIES   = T64_IO_MAX_MODULES;
+constexpr int       MAX_MOD_MAP_ENTRIES     = T64_IO_MAX_MODULES;
+
+//----------------------------------------------------------------------------------------
+// The hardware simulator support a system level breakpoint facility. When a 
+// system wide breakpoint is encountered, the simulator stops all processor 
+// modules. The stop takes place before instruction fetch.
+//
+//----------------------------------------------------------------------------------------
+constexpr unsigned  MAX_SIM_BREAKPOINTS     = 8;
 
 //----------------------------------------------------------------------------------------
 // Modules have a type, submodules a subtype.
@@ -88,7 +96,7 @@ enum T64ModuleState : int {
 //
 // ??? I/O Elements also use these names ?
 //----------------------------------------------------------------------------------------
-enum T64ModuleRegs : int {
+enum T64ModuleRegs : unsigned {
 
     T64_MREG_STATUS     = 0,
     T64_MREG_COMMAND    = 1,
@@ -99,6 +107,29 @@ enum T64ModuleRegs : int {
     T64_MREG_SPA_LEN_1  = 6,
     T64_MREG_SPA_ADR_2  = 7,
     T64_MREG_SPA_LEN_2  = 8
+};
+
+//----------------------------------------------------------------------------------------
+//
+//
+//----------------------------------------------------------------------------------------
+enum T64SystemState : unsigned {
+
+    T64_SYS_STATE_RESET = 0,
+    T64_SYS_STATE_HALT  = 1,
+    T64_SYS_STATE_RUN   = 2
+};
+
+//----------------------------------------------------------------------------------------
+//
+//
+//----------------------------------------------------------------------------------------
+enum T64SimBreakPointType : unsigned {
+
+    T64_SIM_BREAK_NIL   = 0,
+    T64_SIM_BREAK_X     = 1,
+    T64_SIM_BREAK_R     = 2,
+    T64_SIM_BREAK_RW    = 3
 };
 
 //----------------------------------------------------------------------------------------
@@ -224,6 +255,43 @@ struct T64ModuleMapEntry {
 };
 
 //----------------------------------------------------------------------------------------
+// The simulator support system wide breakpoints. The entry contains the type 
+// of breakpoint, the enable bit, the address of the breakpoint, the  address
+// range mask and the module mask. The address and the address mask together
+// allow for an efficient implementation of the break point range. A breakpoint 
+// is defined by the range size aligned address and the mask which address bits
+// to mask for checking.
+//
+// The module mask contains a bit for each module in the system. When the bit 
+// is set, the module is capable of raising a breakpoint interruption. Note that 
+// only processor modules will trigger a breakpoint handling. 
+//
+//----------------------------------------------------------------------------------------
+struct T64SimBreakPointEntry {
+
+    T64SimBreakPointType    type;
+    bool                    enabled;
+    T64Word                 adr;
+    T64Word                 adrMask;
+
+    uint64_t                modMask; 
+};
+
+//----------------------------------------------------------------------------------------
+// The simulator breakpoint map holds the simulator wide breakpoints. For 
+// efficiency we have a high watermark for the current number of used entries a
+// and an enable flag for quickly checking whether to check for breakpoints or
+// not.
+//
+//----------------------------------------------------------------------------------------
+struct T64SimBreakPointMap {
+
+    bool enabled;
+    unsigned hwm;
+    T64SimBreakPointEntry map[ MAX_SIM_BREAKPOINTS ];
+};
+
+//----------------------------------------------------------------------------------------
 // A T64 system is a bus where you plug in modules. A module represents an 
 // entity such as a processor, a memory module, an I/O module and so on. At 
 // program start we create the module objects and add them to the respective 
@@ -236,63 +304,88 @@ struct T64System {
 
     T64System( );
 
-    int                 getSystemState( );
+    T64SystemState          getSystemState( );
 
-    int                 addModule( T64Module *module );
-    int                 removeModule( T64Module *module );
+    void                    simReset( );
+    void                    simRun( );
+    void                    simHalt( );
+    void                    simStep( unsigned steps );
 
-    void                resetModule( int modNum );
-    void                haltModule( int modNum );
-    void                runModule( int modNum );
-    void                execModule( int modNum, int steps, bool haltOnTrap );
-    bool                isModuleHalted( int modNum );   
+    int                     addModule( T64Module *module );
+    int                     removeModule( T64Module *module );
+
+    void                    resetModule( int modNum );
+    void                    haltModule( int modNum );
+    void                    runModule( int modNum );
+    void                    execModule( int modNum, int steps, bool haltOnTrap );
+    bool                    isModuleHalted( int modNum );   
     
-    void                run( );
+    T64ModuleType           getModuleType( int modNum ) const;
+    const char              *getModuleStateStr( int modNum ) const;
+
+    T64Module               *lookupByModNum( int modNum ) const;
+    T64Module               *lookupByModuleType( T64ModuleType typ );
+    T64Module               *lookupByAdr( T64Word adr ) const;  
     
-    T64ModuleType       getModuleType( int modNum ) const;
-    char                *getModuleStateStr( int modNum ) const;
-    T64Module           *lookupByModNum( int modNum ) const;
-    T64Module           *lookupByModuleType( T64ModuleType typ );
-    T64Module           *lookupByAdr( T64Word adr ) const;  
-    
-    bool                translateAdr( T64Word vAdr, T64Word *pAdr );
+    bool                    translateAdr( T64Word vAdr, T64Word *pAdr );
 
-    bool                busOpRead(  T64Module *mod, 
-                                    T64Word pAdr, 
-                                    uint8_t *data, 
-                                    size_t len,
-                                    bool rsv = false );
+    bool                    busOpRead(  T64Module *mod, 
+                                        T64Word pAdr, 
+                                        uint8_t *data, 
+                                        size_t len,
+                                        bool rsv = false );
 
-    bool                busOpReadRsv( T64Module *mod, 
-                                      T64Word pAdr, 
-                                      uint8_t *data, 
-                                      size_t len );
+    bool                    busOpReadRsv( T64Module *mod, 
+                                          T64Word pAdr, 
+                                          uint8_t *data, 
+                                          size_t len );
 
-    bool                busOpWrite( T64Module *mod, 
-                                    T64Word pAdr, 
-                                    uint8_t *data, 
-                                    size_t len,
-                                    bool cond = false );
+    bool                    busOpWrite( T64Module *mod, 
+                                        T64Word pAdr, 
+                                        uint8_t *data, 
+                                        size_t len,
+                                        bool cond = false );
 
-    bool                busOpControl( T64Module *mod,
-                                      T64BBusOpControlEvents event,
-                                      T64Word             arg1, 
-                                      T64Word             arg2 );
+    bool                    busOpControl( T64Module *mod,
+                                          T64BBusOpControlEvents event,
+                                          T64Word             arg1, 
+                                          T64Word             arg2 );
+
+    bool                    addBreakPoint( T64SimBreakPointType type,
+                                            T64Word adr,
+                                            T64Word len,
+                                            uint64_t modMask ); 
+
+    bool                    removeBreakPoint( unsigned bNum );
+    bool                    enableBreakPoint( unsigned bNum, bool enb );
+
+    bool                    isBreakPointEnabled( unsigned bNum );
+
+    T64SimBreakPointEntry   *getBreakPointEntry( unsigned bNum ); 
+
+    int                     checkBreakPoint( T64SimBreakPointType type,
+                                             T64Word               adr,
+                                             unsigned              modNum );
+
 
     private:
 
-    void                initModuleMap( );
+    void                    initModuleMap( );
+    void                    initBreakPointMap( );
                             
-    T64Module           *moduleMap[ MAX_MOD_MAP_ENTRIES ];
+    T64Module               *moduleMap[ MAX_MOD_MAP_ENTRIES ];
 
-    T64Module           *systemPhysMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];
-    int                 systemPhysMemMapHwm = 0;
+    T64Module               *systemPhysMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];
+    int                     systemPhysMemMapHwm = 0;
 
-    T64Module           *systemIoMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];
-    int                 systemIoMemMapHwm = 0;
+    T64Module               *systemIoMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];
+    int                     systemIoMemMapHwm = 0;
 
-    T64Module           *systemProcMap[ MAX_MOD_MAP_ENTRIES ];
-    int                 systemProcMapHwm;
+    T64Module               *systemProcMap[ MAX_MOD_MAP_ENTRIES ];
+    int                     systemProcMapHwm;
 
-    std::mutex          sLock;
+    T64SimBreakPointMap     breakPointMap;
+
+    T64SystemState          sysState;
+    std::mutex              sLock;
 };

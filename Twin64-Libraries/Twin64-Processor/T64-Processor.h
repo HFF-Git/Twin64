@@ -165,11 +165,11 @@ struct T64Cpu {
     void            reset( );
     T64TrapCode     executeInstr( );
 
-    T64Word         getGeneralReg( size_t index );
-    void            setGeneralReg( size_t index, T64Word val );
+    T64Word         getGeneralReg( unsigned index );
+    void            setGeneralReg( unsigned index, T64Word val );
 
-    T64Word         getControlReg( size_t index );
-    void            setControlReg( size_t index, T64Word val );
+    T64Word         getControlReg( unsigned index );
+    void            setControlReg( unsigned index, T64Word val );
 
     T64Word         getPsrReg( );
     void            setPsrReg( T64Word val );

@@ -267,19 +267,19 @@ void SimWinProcState::setDefaults( ) {
 
      if ( getWinToggleVal( ) == 0 ) {
 
-        for ( int i = 0; i < T64_MAX_GREGS; i++ ) {
+        for ( unsigned i = 0; i < T64_MAX_GREGS; i++ ) {
 
             lastGRegState[ i ] = cpu -> getGeneralReg( i ); 
         }
     }
     else if ( getWinToggleVal( ) == 1 ) {
 
-        for ( int i = 0; i < T64_MAX_GREGS; i++ ) {
+        for ( unsigned i = 0; i < T64_MAX_GREGS; i++ ) {
 
             lastGRegState[ i ] = cpu -> getGeneralReg( i ); 
         }
 
-        for ( int i = 0; i < T64_MAX_CREGS; i++ ) {
+        for ( unsigned i = 0; i < T64_MAX_CREGS; i++ ) {
 
             lastCRegState[ i ] = cpu -> getControlReg( i ); 
         }
@@ -367,7 +367,7 @@ void SimWinProcState::drawBanner( ) {
 // stored, the value will be displayed in a different color.
 //
 //----------------------------------------------------------------------------------------
-void SimWinProcState::drawGRegDataLine( size_t from, size_t to ) {
+void SimWinProcState::drawGRegDataLine( unsigned from, unsigned to ) {
 
     uint32_t fmtDesc        = FMT_DEFAULT | FMT_ALIGN_LFT;
     T64Cpu   *cpu           = proc -> getCpuPtr( );
@@ -379,9 +379,9 @@ void SimWinProcState::drawGRegDataLine( size_t from, size_t to ) {
     size_t   numFlen        = glb -> console -> numberFmtLen( rdxFmt );
     uint32_t numFmtField    = fmtDesc | rdxFmt;
 
-    for ( size_t i = from; i <= to; i++ ) {
+    for ( unsigned i = from; i <= to; i++ ) {
 
-        T64Word dataVal = cpu -> getGeneralReg( static_cast<int> ( i ));
+        T64Word dataVal = cpu -> getGeneralReg( i );
 
         if ( dataVal != lastGRegState[ i ] ) {
 
@@ -402,7 +402,7 @@ void SimWinProcState::drawGRegDataLine( size_t from, size_t to ) {
 // stored, the value will be displayed in a different color.
 //
 //----------------------------------------------------------------------------------------
-void SimWinProcState::drawCRegDataLine( size_t from, size_t to ) {
+void SimWinProcState::drawCRegDataLine( unsigned from, unsigned to ) {
 
     uint32_t fmtDesc        = FMT_DEFAULT | FMT_ALIGN_LFT;
     T64Cpu   *cpu           = proc -> getCpuPtr( );
@@ -414,9 +414,9 @@ void SimWinProcState::drawCRegDataLine( size_t from, size_t to ) {
     size_t   numFlen        = glb -> console -> numberFmtLen( rdxFmt );
     uint32_t numFmtField    = fmtDesc | rdxFmt;
 
-    for ( size_t i = from; i <= to; i++ ) {
+    for ( unsigned i = from; i <= to; i++ ) {
 
-        T64Word dataVal = cpu -> getControlReg( static_cast<int>( i ));
+        T64Word dataVal = cpu -> getControlReg( i );
 
         if ( dataVal != lastCRegState[ i ] ) {
 
@@ -438,7 +438,7 @@ void SimWinProcState::drawCRegDataLine( size_t from, size_t to ) {
 //      "GRn=0x0000_0000_0000_0000". 
 //
 //----------------------------------------------------------------------------------------
-size_t SimWinProcState::drawGRegSubWindow( size_t linePos ) {
+size_t SimWinProcState::drawGRegSubWindow( unsigned linePos ) {
 
     uint32_t fmtDesc        = FMT_DEFAULT | FMT_ALIGN_LFT;
     size_t   labelFlen      = 8;
@@ -468,7 +468,7 @@ size_t SimWinProcState::drawGRegSubWindow( size_t linePos ) {
 // window. We show 4 registers per line, with the format "CRn=0x0000_0000_0000_0000". 
 //
 //----------------------------------------------------------------------------------------
-size_t SimWinProcState::drawCRegSubWindow( size_t linePos ) {
+size_t SimWinProcState::drawCRegSubWindow( unsigned linePos ) {
 
     uint32_t fmtDesc        = FMT_DEFAULT | FMT_ALIGN_LFT;
     size_t   labelFlen      = 8;
@@ -505,7 +505,7 @@ size_t SimWinProcState::drawCRegSubWindow( size_t linePos ) {
 // address is in the visible range.
 //
 //----------------------------------------------------------------------------------------
-size_t SimWinProcState::drawCodeSubWindow( size_t linePos, size_t linesLeft ) {
+size_t SimWinProcState::drawCodeSubWindow( unsigned linePos, size_t linesLeft ) {
 
     uint32_t    fmtDesc     = FMT_DEFAULT;
     T64Word     currentIa   = proc -> getCpuPtr( ) -> getPsrReg( );
@@ -600,8 +600,8 @@ size_t SimWinProcState::drawCodeSubWindow( size_t linePos, size_t linesLeft ) {
 //----------------------------------------------------------------------------------------
 void SimWinProcState::drawBody( ) {
     
-    int     toggleVal = getWinToggleVal( );
-    size_t  linePos   = 2;
+    int       toggleVal = getWinToggleVal( );
+    unsigned  linePos   = 2;
 
     if ( toggleVal == 0 ) {
 

@@ -105,7 +105,7 @@ const   int     T64_PAGE_OFS_BITS           = 12;
 const   int     T64_VADR_BITS               = 52;
 const   int     T64_PADR_BITS               = 40;
 
-const   int     T64_IO_MAX_MODULES          = 256;
+const   int     T64_IO_MAX_MODULES          = 64;
 const   int     T64_IO_REG_SET_SIZE         = 32;
 
 //----------------------------------------------------------------------------------------

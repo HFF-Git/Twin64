@@ -111,10 +111,10 @@ T64TrapCode T64ProcThreadModule::waitUntilStopped( ) {
 
     mCondVar.wait(lk, [this] {
 
-        T64ModuleState s = mState.load(std::memory_order_acquire);
+        T64ModuleState s = mState.load( std::memory_order_acquire );
 
-        return (s == T64_MOD_STATE_HALTED) ||
-               (s == T64_MOD_STATE_TERMINATE);
+        return ( s == T64_MOD_STATE_HALTED ) ||
+               ( s == T64_MOD_STATE_TERMINATE );
     });
 
     return ( mTrapCode );

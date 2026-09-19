@@ -78,23 +78,23 @@ void T64Cpu::reset( ) {
 // values.
 //
 //----------------------------------------------------------------------------------------
-T64Word T64Cpu::getGeneralReg( size_t index ) {
+T64Word T64Cpu::getGeneralReg( unsigned index ) {
     
     if ( index == 0 ) return( 0 );
     else              return( gRegFile[ index % T64_MAX_GREGS ] );
 }
 
-void T64Cpu::setGeneralReg( size_t index, T64Word val ) {
+void T64Cpu::setGeneralReg( unsigned index, T64Word val ) {
     
     if ( index != 0 ) gRegFile[ index % T64_MAX_GREGS ] = val;
 }
 
-T64Word T64Cpu::getControlReg( size_t index ) {
+T64Word T64Cpu::getControlReg( unsigned index ) {
     
     return( cRegFile[ index % T64_MAX_CREGS ] );
 }
 
-void T64Cpu::setControlReg( size_t index, T64Word val ) {
+void T64Cpu::setControlReg( unsigned index, T64Word val ) {
     
     cRegFile[ index % T64_MAX_CREGS ] = val;
 }

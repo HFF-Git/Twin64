@@ -1122,11 +1122,11 @@ struct SimWinProcState : SimWin {
 
     private:
 
-    size_t  drawGRegSubWindow( size_t linePos );
-    size_t  drawCRegSubWindow( size_t linePos);
-    size_t  drawCodeSubWindow( size_t linePos, size_t linesLeft );
-    void    drawGRegDataLine( size_t from, size_t to );
-    void    drawCRegDataLine( size_t from, size_t to );
+    size_t  drawGRegSubWindow( unsigned linePos );
+    size_t  drawCRegSubWindow( unsigned linePos);
+    size_t  drawCodeSubWindow( unsigned linePos, size_t linesLeft );
+    void    drawGRegDataLine( unsigned from, unsigned to );
+    void    drawCRegDataLine( unsigned from, unsigned to );
     
     T64Processor    *proc;
     T64DisAssemble  *disAsm;

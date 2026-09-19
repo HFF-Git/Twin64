@@ -172,15 +172,6 @@ void T64System::initModuleMap( ) {
 }
 
 //----------------------------------------------------------------------------------------
-//
-// ??? under construction... what should it report ?
-//----------------------------------------------------------------------------------------
-int T64System::getSystemState( ) {
-
-    return( 0 );
-}
-
-//----------------------------------------------------------------------------------------
 // Add a module. There are three tables. The first table just contains the 
 // modules, indexed by module number. The second and third table contain only 
 // the modules  that have an SPA address. The entries these table are sorted by
@@ -320,7 +311,7 @@ T64Module *T64System::lookupByAdr ( T64Word adr ) const {
 
     if (( adr >= T64_IO_HPA_MEM_START ) && ( adr < T64_IO_HPA_MEM_LIMIT )) {
 
-        int modNum = extractField64( adr, 12, 8 );
+        int modNum = static_cast<int>( extractField64( adr, 12, 8 ));
 
         if ( modNum > MAX_MOD_MAP_ENTRIES - 1 ) return( nullptr );
 
@@ -411,7 +402,7 @@ void T64System::execModule( int modNum, int units, bool haltOnTrap ) {
 
         if ( moduleMap[ modNum ] == nullptr ) return;
 
-        if (( units >= 1 ) && ( units < UINT32_MAX )) {
+        if (( units >= 1 ) && ( units < INT32_MAX )) {
 
             if ( auto *m = dynamic_cast<T64ProcThreadModule *> ( moduleMap[ modNum ] )) {
 
@@ -428,9 +419,151 @@ void T64System::execModule( int modNum, int units, bool haltOnTrap ) {
 // which single steps all modules. 
 //
 //----------------------------------------------------------------------------------------
-void T64System::run( ) {
+void T64System::simRun( ) {
 
     // ??? signal all processors 
+}
+
+void T64System::simHalt( ) {
+
+    // ??? signal all processors 
+
+}
+
+void T64System::simStep( unsigned steps ) {
+
+    // ??? signal all processors ?
+    // ??? have an option to just advance one processor ?
+
+}
+
+
+void T64System::initBreakPointMap( ) {
+
+    breakPointMap.enabled = true;
+    breakPointMap.hwm     =  0;
+
+    for ( unsigned i = 0; i < MAX_SIM_BREAKPOINTS; i++ ) {
+
+        T64SimBreakPointEntry *ptr = &breakPointMap.map[ i ];
+
+        ptr -> type     = T64_SIM_BREAK_NIL;
+        ptr -> enabled  = false;
+        ptr -> adr      = 0;
+        ptr -> adrMask  = 0;
+        ptr -> modMask  = 0;
+    }
+}
+
+bool T64System::addBreakPoint( T64SimBreakPointType type,
+                                       T64Word adr,
+                                       T64Word len,
+                                       uint64_t modMask ) {
+
+     if ( breakPointMap.hwm >= MAX_SIM_BREAKPOINTS ) return ( false );
+
+    auto *ptr = &breakPointMap.map[ breakPointMap.hwm ];
+
+    ptr -> type    = type;
+    ptr -> enabled = true;
+      
+    ptr -> adr     = adr & ~(len - 1);
+    ptr -> adrMask = ~(len - 1);
+
+    ptr -> modMask = modMask;
+
+    breakPointMap.hwm ++;
+    breakPointMap.enabled = true;
+
+    return ( true );
+}
+
+bool T64System::removeBreakPoint( unsigned bNum ) {
+
+    if ( bNum < breakPointMap.hwm ) {
+
+        breakPointMap.map[ bNum ] = breakPointMap.map[ breakPointMap.hwm - 1 ];
+        breakPointMap.hwm --;
+
+        return( true );
+    }
+    else return( false );
+}
+
+bool T64System::enableBreakPoint( unsigned bNum, bool enb ) {
+
+    if ( bNum >= breakPointMap.hwm ) return( false );
+   
+    breakPointMap.map[ bNum ].enabled = enb;
+    
+    for ( unsigned i = 0; i < breakPointMap.hwm; i++ ) {
+
+        if ( breakPointMap.map[ i ].enabled ) {
+            
+            breakPointMap.enabled = true;
+            return( true );
+        }
+    }
+
+    breakPointMap.enabled = false;
+    return( true );
+}
+
+bool T64System::isBreakPointEnabled( unsigned bNum ) {
+
+     if ( bNum < breakPointMap.hwm ) {
+
+        return( breakPointMap.map[ bNum ].enabled );
+    }
+    else return( false );
+}
+
+T64SimBreakPointEntry *T64System::getBreakPointEntry( unsigned bNum ) {
+
+    if ( bNum < breakPointMap.hwm ) {
+
+        return( &breakPointMap.map[ bNum ] );
+    }
+    else return( nullptr );
+} 
+
+static inline bool breakPointAddressMatches(
+    const T64SimBreakPointEntry& bp,
+    T64Word adr) {
+
+    return ( adr & bp.adrMask ) == bp.adr;
+}
+
+int T64System::checkBreakPoint( T64SimBreakPointType type,
+                                T64Word               adr,
+                                unsigned              modNum ) {
+
+    if ( !breakPointMap.enabled )
+        return( -1 );
+
+    uint64_t modBit = 1ULL << modNum;
+
+    for ( unsigned i = 0; i < breakPointMap.hwm; i++ ) {
+
+        const T64SimBreakPointEntry& bp = breakPointMap.map[ i ];
+
+        if ( ! bp.enabled )                 continue;
+        if ( bp.type != type )              continue;
+        if (( bp.modMask & modBit ) == 0 )  continue;
+
+        if (( adr & bp.adrMask ) == bp.adr ) return( i );     
+    }
+
+    return( -1 );
+}
+
+//----------------------------------------------------------------------------------------
+//
+//
+//----------------------------------------------------------------------------------------
+T64SystemState T64System::getSystemState( ) {
+
+    return( sysState );
 }
 
 //----------------------------------------------------------------------------------------
@@ -462,7 +595,8 @@ bool T64System::busOpRead( T64Module *mod,
 
             if (dynamic_cast<T64ProcThreadModule*>( mod )) {
 
-                (( T64ProcThreadModule *) mod ) -> setRsvInfo( pAdr, true );
+                ( reinterpret_cast<T64ProcThreadModule *> ( mod )) -> 
+                                                    setRsvInfo( pAdr, true );
             }
 
              return ( true );
