@@ -178,7 +178,7 @@ enum SimTokTypeId : uint32_t {
 // types and token Id are used to build the command and expression tokens.
 //
 //----------------------------------------------------------------------------------------
-enum SimTokId : uint32_t {
+enum SimTokId : unsigned {
 
     //------------------------------------------------------------------------------------
     // General tokens and symbols.
@@ -209,12 +209,12 @@ enum SimTokId : uint32_t {
     TOK_BYTE,                   TOK_UBYTE,                  TOK_SHORT,  
     TOK_USHORT,                 TOK_HALF,                   TOK_UHALF, 
     TOK_WORD,                   TOK_UWORD,                  TOK_DWORD,      
-    TOK_DOUBLE,                    
+    TOK_DOUBLE,                 TOK_TRUE,                   TOK_FALSE,
+
+    TOK_DATA_R,                 TOK_DATA_W,                 TOK_DATA_RW, 
     
     TOK_TLB_FA_16S,             TOK_TLB_FA_32S,             TOK_TLB_FA_64S,             
     TOK_TLB_FA_128S,            TOK_MOD_SPA_ADR,            TOK_MOD_SPA_LEN,
-
-    TOK_TRUE, TOK_FALSE,
 
     //------------------------------------------------------------------------------------
     // Line Commands.
@@ -231,7 +231,8 @@ enum SimTokId : uint32_t {
     CMD_MS,                     CMD_MW,                     CMD_MD,     
     CMD_DWIN,                   CMD_ECHO,                   CMD_LOG,
     CMD_IF,                     CMD_ELSEIF,                 CMD_ELSE,
-    CMD_ENDIF,                  
+    CMD_ENDIF,                  CMD_BL,                     CMD_BN,
+    CMD_BK,                     CMD_BE,                     CMD_BD,       
     
     //------------------------------------------------------------------------------------
     // Window Commands Tokens.
@@ -331,6 +332,8 @@ enum SimErrMsgId : uint32_t {
     ERR_EXPECTED_NUM_VALUE          = 116,
     ERR_EXPECTED_BOOL_VALUE         = 117,
     ERR_EXPECTED_STRING_VALUE       = 118,
+    ERR_EXPECTED_BRK_INDEX          = 119,
+    ERR_EXPECTED_BRK_TYPE           = 120,
   
     ERR_EXPECTED_OFS                = 213,
     ERR_EXPECTED_START_OFS          = 214,
@@ -401,7 +404,10 @@ enum SimErrMsgId : uint32_t {
     ERR_CREATE_MODULE               = 707,
 
     ERR_CREATE_PROC_MODULE          = 708,
-    ERR_CREATE_MEM_MODULE           = 709
+    ERR_CREATE_MEM_MODULE           = 709,
+
+    ERR_CREATE_BRK_FAILED           = 710,
+    ERR_REMOVE_BRK_FAILED           = 711,
     
 };
 
@@ -690,7 +696,10 @@ struct SimExprEvaluator {
 
     int             acceptIntExpr( SimErrMsgId errCode, 
                                    int low = INT32_MIN, 
-                                   int high = INT32_MAX );                              
+                                   int high = INT32_MAX );    
+                                   
+    unsigned        acceptUIntExpr( SimErrMsgId errCode, 
+                                    unsigned limit );
 
     bool            acceptBoolExpr( SimErrMsgId errCode );
     char            *acceptStringExpr( SimErrMsgId errCode );
@@ -1343,7 +1352,13 @@ private:
     void            runCmd( );
     void            stepCmd( );
     void            haltCmd( );
-   
+
+    void            breakPointListCmd( );
+    void            breakPointNewCmd( );
+    void            breakPointKillCmd( );
+    void            breakPointEnableCmd( );
+    void            breakPointDisableCmd( );
+
     void            modifyRegCmd( );
     
     void            displayMemCmd( );

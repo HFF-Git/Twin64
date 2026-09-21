@@ -144,6 +144,12 @@ const SimToken cmdTokTab[ ] = {
     { .name = "ELSE",       .typ = TYP_CMD,     .tid = CMD_ELSE                     },
     { .name = "ENDIF",      .typ = TYP_CMD,     .tid = CMD_ENDIF                    },
 
+    { .name = "BL",         .typ = TYP_CMD,     .tid = CMD_BL                       },
+    { .name = "BN",         .typ = TYP_CMD,     .tid = CMD_BN                       },
+    { .name = "BK",         .typ = TYP_CMD,     .tid = CMD_BK                       },
+    { .name = "BE",         .typ = TYP_CMD,     .tid = CMD_BE                       },
+    { .name = "BD",         .typ = TYP_CMD,     .tid = CMD_BD                       },
+
     //------------------------------------------------------------------------------------
     // Window command tokens.
     //
@@ -281,6 +287,22 @@ const SimToken cmdTokTab[ ] = {
     { .name = "REGION",     .typ = TYP_P_FUNC, .tid = PF_REGION,   .u = { .val = 0 }},
     { .name = "OFS",        .typ = TYP_P_FUNC, .tid = PF_OFS,      .u = { .val = 0 }},
     { .name = "PAGE",       .typ = TYP_P_FUNC, .tid = PF_PAGE,     .u = { .val = 0 }},
+
+    //------------------------------------------------------------------------------------
+    // Breakpoint tokens for data breakpoints.
+    //
+    //------------------------------------------------------------------------------------
+    { .name = "DATA_R",                     .typ = TYP_SYM, 
+      .tid = TOK_DATA_R,                    .u = { .val = 0 }},
+
+    { .name = "DATA_W",                     .typ = TYP_SYM, 
+      .tid = TOK_DATA_W,                    .u = { .val = 0 }},
+
+    { .name = "DATA_RW",                    .typ = TYP_SYM, 
+      .tid = TOK_DATA_R,                    .u = { .val = 0 }},
+
+    { .name = "DATA",                       .typ = TYP_SYM, 
+      .tid = TOK_DATA_RW,                   .u = { .val = 0 }},
 
     //------------------------------------------------------------------------------------
     // TLB and Cache configuration types.
@@ -443,6 +465,12 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
     { .errNum = ERR_EXPECTED_STRING_VALUE,           
       .errStr = "Expected a string value" },
 
+    { .errNum = ERR_EXPECTED_BRK_INDEX,
+      .errStr = "Expected a breakpoint Id" },
+
+    { .errNum = ERR_EXPECTED_BRK_TYPE,
+      .errStr = "Expected a breakpoint type" },
+
     { .errNum = ERR_EXPECTED_REL_OP,           
       .errStr = "Expected a relational operator" },
 
@@ -552,7 +580,7 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
       .errStr = "Error in ASM function" },
 
     { .errNum = ERR_IN_DISASM_PFUNC,            
-    .errStr = "Error in DISASM function" },
+      .errStr = "Error in DISASM function" },
     
     { .errNum = ERR_ENV_PREDEFINED,             
       .errStr = "ENV variable is predefined" },
@@ -625,6 +653,12 @@ const SimErrMsgTabEntry errMsgTab [ ] = {
 
     { .errNum = ERR_CREATE_MEM_MODULE,              
       .errStr = "Create memory module error" },
+
+    { .errNum = ERR_CREATE_BRK_FAILED,              
+      .errStr = "Create simulator breakpoint failed" },
+
+     { .errNum = ERR_REMOVE_BRK_FAILED,              
+      .errStr = "Remove simulator breakpoint failed" },
 
     { .errNum = ERR_INVALID_ELF_FILE,              
       .errStr = "Error while open ELF file" },
@@ -765,7 +799,42 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
         .cmdSyntaxStr   = "halt",
         .helpStr        = "halt the system or a processor"
     },
-    
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BN,
+        .cmdNameStr     = "bn",
+        .cmdSyntaxStr   = "bn <mod> , <typ> , <adr> [ , <len> ]",
+        .helpStr        = "Adds a simulator breakpoint"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BN,
+        .cmdNameStr     = "bk",
+        .cmdSyntaxStr   = "bk <bNum> [ , <modNum> ]",
+        .helpStr        = "Removes a simulator breakpoint"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BN,
+        .cmdNameStr     = "be",
+        .cmdSyntaxStr   = "be <bNum>",
+        .helpStr        = "Enables a simulator breakpoint"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BN,
+        .cmdNameStr     = "bd",
+        .cmdSyntaxStr   = "bd <bNum>",
+        .helpStr        = "Disables a simulator breakpoint"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BN,
+        .cmdNameStr     = "bl",
+        .cmdSyntaxStr   = "bl",
+        .helpStr        = "Displays the simulator breakpoints"
+    },
+
     {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_WRITE_LINE,
         .cmdNameStr     = "w",

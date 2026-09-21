@@ -557,8 +557,26 @@ size_t SimWinProcState::drawCodeSubWindow( unsigned linePos, size_t linesLeft ) 
             }
             else fmtDesc = FMT_DEFAULT;
 
-            if ( currentIa ==  ia ) printTextField( "    >", fmtDesc, 5 );
-            else                    printTextField( "     ", fmtDesc, 5 );
+            int bNum =  glb -> system -> checkBreakPoint( T64_SIM_BREAK_X, 
+                                                          ia, 
+                                                          getWinModNum( ));
+
+            if (( bNum >= 0 ) && ( bNum < 10 )) {
+
+                printTextField( "    [" );
+                printNumericField( bNum, FMT_DEC );
+                printTextField( "]" );
+            }
+            else if (( bNum >= 10 ) && ( bNum < 99 )) {
+
+                printTextField( "   [" );
+                printNumericField( bNum, FMT_DEC );
+                printTextField( "]" );
+            }
+            else printTextField( "       " );
+
+            if ( currentIa ==  ia ) printTextField( ">", fmtDesc, 1 );
+            else                    printTextField( " ", fmtDesc, 1 );
 
             printNumericField( instr, fmtDesc | FMT_HEX_8 );
             printTextField( "    ", fmtDesc );
@@ -1067,6 +1085,24 @@ void SimWinMem::drawMemDataLineCode( T64Word itemAdr ) {
     if ( highLight ) fmtDesc |= FMT_FG_COL_AMBER;
 
     printNumericField( instr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_8, 12 );
+
+    int bNum = glb -> system -> checkBreakPoint( T64_SIM_BREAK_X, itemAdr, -1 );
+
+    if (( bNum >= 0 ) && ( bNum < 10 )) {
+
+        printTextField( " [" );
+        printNumericField( bNum, FMT_DEC );
+        printTextField( "]" );
+    }
+    else if (( bNum >= 10 ) && ( bNum < 99 )) {
+
+        printTextField( "[" );
+        printNumericField( bNum, FMT_DEC );
+        printTextField( "]" );
+    }
+    else printTextField( "    " );
+
+    printTextField( "    " );
 
     size_t pos          = getWinCursorCol( );
     size_t opCodeField  = disAsm -> getOpCodeFieldWidth( );

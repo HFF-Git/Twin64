@@ -48,7 +48,7 @@ constexpr int       MAX_MOD_MAP_ENTRIES     = T64_IO_MAX_MODULES;
 // modules. The stop takes place before instruction fetch.
 //
 //----------------------------------------------------------------------------------------
-constexpr unsigned  MAX_SIM_BREAKPOINTS     = 8;
+constexpr unsigned  MAX_SIM_BREAKPOINTS     = 8U;
 
 //----------------------------------------------------------------------------------------
 // Modules have a type, submodules a subtype.
@@ -129,7 +129,8 @@ enum T64SimBreakPointType : unsigned {
     T64_SIM_BREAK_NIL   = 0,
     T64_SIM_BREAK_X     = 1,
     T64_SIM_BREAK_R     = 2,
-    T64_SIM_BREAK_RW    = 3
+    T64_SIM_BREAK_W     = 3,
+    T64_SIM_BREAK_RW    = 4
 };
 
 //----------------------------------------------------------------------------------------
@@ -210,27 +211,27 @@ struct T64ProcThreadModule : T64Module {
 
     ~ T64ProcThreadModule( );
 
-    virtual void            initModule( );
-    virtual void            resetModule( );
-    virtual void            haltModule( );
-    virtual void            runModule( );
-    virtual void            execModule( int steps, bool haltOnTrap );
-    virtual T64TrapCode     waitUntilStopped( );
+    virtual void                initModule( );
+    virtual void                resetModule( );
+    virtual void                haltModule( );
+    virtual void                runModule( );
+    virtual void                execModule( int steps, bool haltOnTrap );
+    virtual T64TrapCode         waitUntilStopped( );
     
-    virtual T64TrapCode     executeUnit( ) = 0;
+    virtual T64TrapCode         executeUnit( ) = 0;
 
-    T64ModuleState          getModuleState( );
-    T64TrapCode             getTrapCode( );
-    void                    setEnterSimOnTrap( bool val );
+    T64ModuleState              getModuleState( );
+    T64TrapCode                 getTrapCode( );
+    void                        setEnterSimOnTrap( bool val );
   
-    void                    setRsvInfo( T64Word pAdr, bool valid );
-    T64Word                 getRsvAdr( );
-    bool                    isRsvValid( );
+    void                        setRsvInfo( T64Word pAdr, bool valid );
+    T64Word                     getRsvAdr( );
+    bool                        isRsvValid( );
 
     private: 
 
-    void                    setModuleState( T64ModuleState state );
-    void                    moduleWorker( );
+    void                        setModuleState( T64ModuleState state );
+    void                        moduleWorker( );
 
     std::atomic<T64ModuleState> mState { T64_MOD_STATE_NIL };
     std::mutex                  mLock;
@@ -351,21 +352,27 @@ struct T64System {
                                           T64Word             arg1, 
                                           T64Word             arg2 );
 
-    bool                    addBreakPoint( T64SimBreakPointType type,
-                                            T64Word adr,
-                                            T64Word len,
-                                            uint64_t modMask ); 
+    uint64_t                getModuleMask( int modNum ) const;
 
-    bool                    removeBreakPoint( unsigned bNum );
+    bool                    addBreakPoint( int modNum, 
+                                           T64SimBreakPointType type,
+                                           T64Word adr,
+                                           T64Word len ); 
+
+    bool                    removeBreakPoint( unsigned bNum,
+                                              int      modNum );
+
     bool                    enableBreakPoint( unsigned bNum, bool enb );
 
     bool                    isBreakPointEnabled( unsigned bNum );
 
     T64SimBreakPointEntry   *getBreakPointEntry( unsigned bNum ); 
 
+    const char              *getBreakPointTypeStr( T64SimBreakPointType t );
+
     int                     checkBreakPoint( T64SimBreakPointType type,
                                              T64Word               adr,
-                                             unsigned              modNum );
+                                             int                   modNum );
 
 
     private:

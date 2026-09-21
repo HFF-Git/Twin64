@@ -437,7 +437,8 @@ void T64System::simStep( unsigned steps ) {
 
 }
 
-
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 void T64System::initBreakPointMap( ) {
 
     breakPointMap.enabled = true;
@@ -455,41 +456,123 @@ void T64System::initBreakPointMap( ) {
     }
 }
 
-bool T64System::addBreakPoint( T64SimBreakPointType type,
-                                       T64Word adr,
-                                       T64Word len,
-                                       uint64_t modMask ) {
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+uint64_t T64System::getModuleMask( int modNum ) const {
 
-     if ( breakPointMap.hwm >= MAX_SIM_BREAKPOINTS ) return ( false );
+    if ( modNum < 0   ) return( UINT64_MAX );
+    if ( modNum >= 64 ) return( 0 );
 
-    auto *ptr = &breakPointMap.map[ breakPointMap.hwm ];
+    return( 1ULL << modNum );
+}
+
+//----------------------------------------------------------------------------------------
+ 
+// First check whether this breakpoint already exists.
+// Find a free entry below the high water mark.
+//
+// if No free entry found. Extend the table. if no room error.
+//
+//----------------------------------------------------------------------------------------
+bool T64System::addBreakPoint( int                  modNum,
+                               T64SimBreakPointType type,
+                               T64Word              adr,
+                               T64Word              len ) {
+
+    uint64_t modMask = getModuleMask( modNum );
+    if ( modMask == 0 ) return( false );
+
+    T64Word bpAdr     = adr & ~(len - 1);
+    T64Word bpAdrMask = ~( len - 1 );
+
+    for ( unsigned i = 0; i < breakPointMap.hwm; i++ ) {
+
+        auto *ptr = &breakPointMap.map[ i ];
+
+        if ( ptr->type    == type &&
+             ptr->adr     == bpAdr &&
+             ptr->adrMask == bpAdrMask ) {
+
+            ptr->modMask |= modMask;
+            ptr->enabled = true;
+
+            breakPointMap.enabled = true;
+            return( true );
+        }
+    }
+
+    unsigned bNum = breakPointMap.hwm;
+
+    for ( unsigned i = 0; i < breakPointMap.hwm; i++ ) {
+
+        if ( breakPointMap.map[ i ].type == T64_SIM_BREAK_NIL ) {
+
+            bNum = i;
+            break;
+        }
+    }
+
+    if ( bNum == breakPointMap.hwm ) {
+
+        if ( breakPointMap.hwm >= MAX_SIM_BREAKPOINTS ) return( false );
+        breakPointMap.hwm++;
+    }
+
+    auto *ptr = &breakPointMap.map[ bNum ];
 
     ptr -> type    = type;
     ptr -> enabled = true;
-      
-    ptr -> adr     = adr & ~(len - 1);
-    ptr -> adrMask = ~(len - 1);
-
+    ptr -> adr     = bpAdr;
+    ptr -> adrMask = bpAdrMask;
     ptr -> modMask = modMask;
 
-    breakPointMap.hwm ++;
     breakPointMap.enabled = true;
-
-    return ( true );
+    return( true );
 }
 
-bool T64System::removeBreakPoint( unsigned bNum ) {
+//----------------------------------------------------------------------------------------
+//
+// Remove this module (or all modules) from the breakpoint.
+// Other modules still use this breakpoint.
+//
+// If No modules left. The breakpoint entry is now unused.
+// Shrink the high water mark over trailing unused entries.
+// if No breakpoints left at all, record no breakpoints ...
+//
+//----------------------------------------------------------------------------------------
+bool T64System::removeBreakPoint( unsigned bNum, int modNum ) {
 
-    if ( bNum < breakPointMap.hwm ) {
+    uint64_t modMask = getModuleMask( modNum );
 
-        breakPointMap.map[ bNum ] = breakPointMap.map[ breakPointMap.hwm - 1 ];
-        breakPointMap.hwm --;
+    if ( modMask == 0 ) return( false );
+    if ( bNum >= breakPointMap.hwm ) return( false );
 
-        return( true );
+    auto *ptr = &breakPointMap.map[ bNum ];
+    if ( ptr->type == T64_SIM_BREAK_NIL ) return( false );
+
+    ptr -> modMask &= ~modMask;
+    if ( ptr->modMask != 0 ) return( true );
+
+    
+    ptr->type    = T64_SIM_BREAK_NIL;
+    ptr->enabled = false;
+    ptr->adr     = 0;
+    ptr->adrMask = 0;
+    ptr->modMask = 0;
+
+    while ( breakPointMap.hwm > 0 ) {
+
+        if ( breakPointMap.map[ breakPointMap.hwm - 1 ].type
+                                     != T64_SIM_BREAK_NIL ) break;
+        breakPointMap.hwm--;
     }
-    else return( false );
+
+    if ( breakPointMap.hwm == 0 ) breakPointMap.enabled = false;
+    return( true );
 }
 
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 bool T64System::enableBreakPoint( unsigned bNum, bool enb ) {
 
     if ( bNum >= breakPointMap.hwm ) return( false );
@@ -509,6 +592,8 @@ bool T64System::enableBreakPoint( unsigned bNum, bool enb ) {
     return( true );
 }
 
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 bool T64System::isBreakPointEnabled( unsigned bNum ) {
 
      if ( bNum < breakPointMap.hwm ) {
@@ -518,6 +603,8 @@ bool T64System::isBreakPointEnabled( unsigned bNum ) {
     else return( false );
 }
 
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 T64SimBreakPointEntry *T64System::getBreakPointEntry( unsigned bNum ) {
 
     if ( bNum < breakPointMap.hwm ) {
@@ -527,21 +614,29 @@ T64SimBreakPointEntry *T64System::getBreakPointEntry( unsigned bNum ) {
     else return( nullptr );
 } 
 
-static inline bool breakPointAddressMatches(
-    const T64SimBreakPointEntry& bp,
-    T64Word adr) {
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+const char  *T64System::getBreakPointTypeStr( T64SimBreakPointType t ) {
 
-    return ( adr & bp.adrMask ) == bp.adr;
+    switch( t ) {
+
+        case T64_SIM_BREAK_X:   return ( "CODE"   );
+        case T64_SIM_BREAK_R:   return ( "DATA_R" );
+        case T64_SIM_BREAK_W:   return ( "DATA_W" );
+        case T64_SIM_BREAK_RW:  return ( "DATA"   );
+        default:                return ( "BRK:??" );
+    }
 }
 
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------//----------------------------------------------------------------------------------------
 int T64System::checkBreakPoint( T64SimBreakPointType type,
                                 T64Word               adr,
-                                unsigned              modNum ) {
+                                int                   modNum ) {
 
-    if ( !breakPointMap.enabled )
-        return( -1 );
+    if ( !breakPointMap.enabled ) return( -1 );
 
-    uint64_t modBit = 1ULL << modNum;
+    uint64_t modBit = ( modNum == -1 ) ? UINT64_MAX : 1ULL << modNum;
 
     for ( unsigned i = 0; i < breakPointMap.hwm; i++ ) {
 
@@ -551,7 +646,7 @@ int T64System::checkBreakPoint( T64SimBreakPointType type,
         if ( bp.type != type )              continue;
         if (( bp.modMask & modBit ) == 0 )  continue;
 
-        if (( adr & bp.adrMask ) == bp.adr ) return( i );     
+        if (( adr & bp.adrMask ) == bp.adr ) return ( static_cast<int> ( i ));  
     }
 
     return( -1 );

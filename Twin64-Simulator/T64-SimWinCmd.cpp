@@ -1797,10 +1797,7 @@ void SimCommandsWin::displayModuleCmd( ) {
                 winOut -> writeChars( "%-8s", 
                 reinterpret_cast<T64Processor *>( mPtr ) -> getProcStateStr( ));
             }
-            else {
-
-                winOut -> writeChars( "        " );
-            }
+            else winOut -> writeChars( "        " );
 
             winOut -> printNumber( mPtr -> getHpaAdr( ), 
                                    FMT_PREFIX_0X | FMT_HEX_2_4_4 );
@@ -1984,6 +1981,190 @@ void SimCommandsWin::runCmd( ) {
     }
 
     tok -> checkEOS( );
+}
+
+//----------------------------------------------------------------------------------------
+// Breakpoint List command. 
+//
+//  BL 
+//
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::breakPointListCmd( ) {
+
+    winOut -> writeChars( "%-5s%-7s%-8s%-21s%-16s\n", 
+                          "Idx", "Type", "State", "Adr", "Modules" );
+
+    for ( unsigned i = 0; i < MAX_SIM_BREAKPOINTS; i++ ) {
+
+        auto ptr = glb -> system -> getBreakPointEntry( i );
+
+        if ( ptr == nullptr ) continue;
+        if ( ptr -> type == T64_SIM_BREAK_NIL ) continue;
+
+        const char *type = glb -> system -> getBreakPointTypeStr( ptr -> type );
+
+        T64Word len = (~ptr -> adrMask) + 1;
+        
+        winOut -> writeChars( "%-5u", i     );     
+        winOut -> writeChars( "%-7s", type  );
+        winOut -> writeChars( "%-8s", ptr -> enabled ? "E" : "D" );
+        winOut -> printNumber( ptr -> adr, FMT_HEX_2_4_4 | FMT_PREFIX_0X );
+
+       if ( ptr -> type != T64_SIM_BREAK_X ) {
+
+            winOut -> writeChars( ":" );
+            winOut -> printNumber( len, FMT_HEX_4 );
+            winOut -> writeChars( "  " );
+        }
+        else winOut -> writeChars( "       " );
+
+        winOut -> printNumber( static_cast<T64Word>( ptr -> modMask ), 
+                                FMT_HEX_4_4_4_4 );
+        winOut -> writeChars( "\n" );
+    }
+}
+
+//----------------------------------------------------------------------------------------
+// Create a simulator breakpoint for a module. We support breakpoints for code
+// and data. A code breakpoint is the address. For data breakpoints, there is 
+// an address and optional a length, so that we can describe a range.
+//
+//  BN  <modNum>, <type> "," <adr> [ "," <len> ]
+//
+//----------------------------------------------------------------------------------------    
+void SimCommandsWin::breakPointNewCmd( ) {
+
+    if ( tok -> tokId( ) == TOK_EOS ) throw( ERR_EXPECTED_BRK_TYPE );
+
+    T64SimBreakPointType bTyp    = T64_SIM_BREAK_NIL;
+    T64Word              adr     = 0;
+    T64Word              len     = sizeof( T64Instr );
+    int                  modNum  = 0;
+
+    modNum = eval -> acceptIntExpr( ERR_EXPECTED_MOD_NUM, -1, MAX_MOD_MAP_ENTRIES );
+    tok -> acceptComma( );  
+
+    switch ( tok -> tokId( )) {
+
+        case TOK_CODE:      bTyp = T64_SIM_BREAK_X;  break;
+        case TOK_DATA_RW:   bTyp = T64_SIM_BREAK_RW; break;
+        case TOK_DATA_R:    bTyp = T64_SIM_BREAK_R;  break;
+        case TOK_DATA_W:    bTyp = T64_SIM_BREAK_W;  break;
+        default:            throw( ERR_EXPECTED_BRK_TYPE );
+    }
+
+    tok -> nextToken( );
+    tok -> acceptComma( );  
+
+    adr = eval -> acceptNumExpr( ERR_INVALID_ADDR, 0, T64_MAX_PHYS_MEM_LIMIT );
+
+    if ( bTyp == T64_SIM_BREAK_X ) tok -> checkEOS( );
+
+    if ( tok -> isToken( TOK_COMMA )) {
+
+        tok -> nextToken( );
+        len = eval -> acceptNumExpr( ERR_INVALID_NUM, 1, 16 * T64_PAGE_SIZE_BYTES );
+        tok -> checkEOS( );
+    }
+
+    if ( ! glb -> system -> addBreakPoint( modNum, bTyp, adr, len )) {
+
+        throw( ERR_CREATE_BRK_FAILED );
+    }
+}
+    
+//----------------------------------------------------------------------------------------
+// Remove a breakpoint for a module. The breakpoint is referred to by an address in the 
+// breakpoint range.
+// 
+//  BK <bNum> [ "," <modNum> ]
+//
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::breakPointKillCmd( ) {
+
+    unsigned bNum    = 0;
+    int      modNum  = -1;
+   
+    if ( tok -> tokId( ) == TOK_EOS ) throw( ERR_EXPECTED_MOD_NUM );
+
+    bNum = eval -> acceptUIntExpr( ERR_EXPECTED_BRK_INDEX, 
+                                                 MAX_SIM_BREAKPOINTS );
+
+    if ( tok -> isToken( TOK_COMMA )) {
+
+        tok -> nextToken( );
+        modNum = eval -> acceptIntExpr( ERR_EXPECTED_MOD_NUM, -1, 
+                                        MAX_MOD_MAP_ENTRIES );
+    }
+
+    tok -> checkEOS( );
+
+    if ( ! glb -> system -> removeBreakPoint( bNum, modNum )) {
+
+        throw( ERR_REMOVE_BRK_FAILED );
+    }
+}
+
+//----------------------------------------------------------------------------------------
+// Enable breakpoints. The breakpoint is referred to by the index in the 
+// breakpoint table. The ALL option enables all breakpoints.
+//
+//  BE <index> | "ALL"
+//
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::breakPointEnableCmd( ) {
+
+    if ( tok -> tokId( ) == TOK_EOS ) throw( ERR_EXPECTED_BRK_INDEX );
+
+    if ( tok -> tokId( ) == TOK_NUM ) {
+
+        unsigned index = eval -> acceptUIntExpr( ERR_EXPECTED_BRK_INDEX, 
+                                                 MAX_SIM_BREAKPOINTS );
+        
+        tok -> checkEOS( );
+        glb -> system ->enableBreakPoint( index, true );
+    }
+    else if ( tok -> isToken( TOK_ALL )) {
+
+        tok -> checkEOS( );
+
+        for ( unsigned i = 0; i < MAX_SIM_BREAKPOINTS; i++ ) {
+
+            glb -> system ->enableBreakPoint( i, true );
+        }
+    }
+    else throw( ERR_INVALID_ARG );
+}
+
+//----------------------------------------------------------------------------------------
+// Disable breakpoints. The breakpoint is referred to by the index in the 
+// breakpoint table. The ALL option disables all breakpoints.
+//
+//  BD <index> | "ALL"
+//
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::breakPointDisableCmd( ) {
+
+    if ( tok -> tokId( ) == TOK_EOS ) throw( ERR_EXPECTED_BRK_INDEX );
+
+    if ( tok -> tokId( ) == TOK_NUM ) {
+
+        unsigned index = eval -> acceptUIntExpr( ERR_EXPECTED_BRK_INDEX, 
+                                                 MAX_SIM_BREAKPOINTS );
+        
+        tok -> checkEOS( );
+        glb -> system ->enableBreakPoint( index, false );
+    }
+    else if ( tok -> isToken( TOK_ALL )) {
+
+        tok -> checkEOS( );
+
+        for ( unsigned i = 0; i < MAX_SIM_BREAKPOINTS; i++ ) {
+
+            glb -> system ->enableBreakPoint( i, false );
+        }
+    }
+    else throw( ERR_INVALID_ARG );
 }
 
 //----------------------------------------------------------------------------------------
@@ -3427,6 +3608,12 @@ void SimCommandsWin::processCmdLine( char *cmdBuf ) {
             case CMD_HALT:          haltCmd( );                     break;
             case CMD_RUN:           runCmd( );                      break;
             case CMD_STEP:          stepCmd( );                     break;
+
+            case CMD_BL:            breakPointListCmd( );           break;
+            case CMD_BN:            breakPointNewCmd( );            break;
+            case CMD_BK:            breakPointKillCmd( );           break;
+            case CMD_BE:            breakPointEnableCmd( );         break;
+            case CMD_BD:            breakPointDisableCmd( );        break;
 
             case CMD_NMOD:          addModuleCmd( );                break;
             case CMD_RMOD:          removeModuleCmd( );             break;

@@ -97,15 +97,15 @@ void SimExprEvaluator::pFuncAssemble( SimExpr *rExpr, bool evalEnabled ) {
 // pointer and return, the string is lost. Therefore the disassemble string is a static
 // variable.
 //
-// DISASSEMBLE "(" <str> [ "," <rdx> ] ")"
+// DISASSEMBLE "(" <str> ")"
 //
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr, bool evalEnabled ) {
     
     SimExpr     lExpr = INIT_EXPR;
     uint32_t    instr = 0;
-    size_t      rdx   = toUInt32( glb -> env -> getEnvVarNum( ENV_RDX_DEFAULT ));
-    static char        asmStr[ MAX_CMD_LINE_SIZE ];
+    static char asmStr[ MAX_CMD_LINE_SIZE ];
+    unsigned    rdx   = 16;
     
     tok -> nextToken( );
     if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
