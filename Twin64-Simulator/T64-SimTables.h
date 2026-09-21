@@ -808,28 +808,28 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BN,
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BK,
         .cmdNameStr     = "bk",
         .cmdSyntaxStr   = "bk <bNum> [ , <modNum> ]",
         .helpStr        = "Removes a simulator breakpoint"
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BN,
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BE,
         .cmdNameStr     = "be",
         .cmdSyntaxStr   = "be <bNum>",
         .helpStr        = "Enables a simulator breakpoint"
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BN,
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BD,
         .cmdNameStr     = "bd",
         .cmdSyntaxStr   = "bd <bNum>",
         .helpStr        = "Disables a simulator breakpoint"
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BN,
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_BL,
         .cmdNameStr     = "bl",
         .cmdSyntaxStr   = "bl",
         .helpStr        = "Displays the simulator breakpoints"
