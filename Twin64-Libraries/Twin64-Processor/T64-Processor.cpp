@@ -70,7 +70,8 @@ T64Processor::T64Processor( T64System           *sys,
                             T64TlbType          tlbType,
                             T64CacheType        cacheType ) : 
 
-                            T64ProcThreadModule(    MT_PROC, 
+                            T64ProcThreadModule( sys,
+                                                MT_PROC, 
                                                 modNum,
                                                 0,
                                                 0 ) {

@@ -133,6 +133,8 @@ enum T64SimBreakPointType : unsigned {
     T64_SIM_BREAK_RW    = 4
 };
 
+struct T64System;
+
 //----------------------------------------------------------------------------------------
 // The T64Module object represents and an object in the system. It is the base 
 // class for all concrete modules and reacts to bus operations. Each module has
@@ -143,7 +145,8 @@ struct T64Module {
     
     public:
 
-    T64Module( T64ModuleType    modType, 
+    T64Module( T64System        *sys,
+               T64ModuleType    modType, 
                int              modNum,
                T64Word          spaAdr,
                T64Word          spaLen  );
@@ -172,17 +175,16 @@ struct T64Module {
     T64Word             getSpaAdr( );
     T64Word             getSpaLen( );
 
-    public: 
-
-    T64ModuleType       moduleTyp   = MT_NIL;
-    int                 moduleNum   = 0;
-    
     protected: 
 
-    T64Word             hpaAdr      = 0;
-    T64Word             hpaLen      = 0;
-    T64Word             spaAdr      = 0;
-    T64Word             spaLen      = 0;
+    T64System           *sys;
+    int                 moduleNum;
+    T64ModuleType       moduleTyp;
+
+    T64Word             hpaAdr;
+    T64Word             hpaLen;
+    T64Word             spaAdr;
+    T64Word             spaLen;
 
     T64Word             mrStatus;
     T64Word             mrCommand;
@@ -204,7 +206,8 @@ struct T64ProcThreadModule : T64Module {
 
     public:
 
-    T64ProcThreadModule( T64ModuleType    modType, 
+    T64ProcThreadModule( T64System        *sys,
+                         T64ModuleType    modType, 
                          int              modNum,
                          T64Word          spaAdr,
                          int              spaLen );
@@ -306,11 +309,12 @@ struct T64System {
     T64System( );
 
     T64SystemState          getSystemState( );
+    const char              *getSystemStateStr( );
 
-    void                    simReset( );
+    void                    simReset( int modNum = -1 );
     void                    simRun( );
     void                    simHalt( );
-    void                    simStep( unsigned steps );
+    void                    simStep( int modNum, unsigned steps = 1 );
 
     int                     addModule( T64Module *module );
     int                     removeModule( T64Module *module );
@@ -322,6 +326,7 @@ struct T64System {
     bool                    isModuleHalted( int modNum );   
     
     T64ModuleType           getModuleType( int modNum ) const;
+    T64ModuleState          getModuleState( int modNum  ) const;
     const char              *getModuleStateStr( int modNum ) const;
 
     T64Module               *lookupByModNum( int modNum ) const;
@@ -335,11 +340,6 @@ struct T64System {
                                         uint8_t *data, 
                                         size_t len,
                                         bool rsv = false );
-
-    bool                    busOpReadRsv( T64Module *mod, 
-                                          T64Word pAdr, 
-                                          uint8_t *data, 
-                                          size_t len );
 
     bool                    busOpWrite( T64Module *mod, 
                                         T64Word pAdr, 
@@ -377,22 +377,22 @@ struct T64System {
 
     private:
 
-    void                    initModuleMap( );
-    void                    initBreakPointMap( );
+    void                        initModuleMap( );
+    void                        initBreakPointMap( );
                             
-    T64Module               *moduleMap[ MAX_MOD_MAP_ENTRIES ];
+    T64Module                   *moduleMap[ MAX_MOD_MAP_ENTRIES ];
 
-    T64Module               *systemPhysMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];
-    int                     systemPhysMemMapHwm = 0;
+    T64Module                   *systemPhysMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];
+    int                         systemPhysMemMapHwm = 0;
 
-    T64Module               *systemIoMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];
-    int                     systemIoMemMapHwm = 0;
+    T64Module                   *systemIoMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];
+    int                         systemIoMemMapHwm = 0;
 
-    T64Module               *systemProcMap[ MAX_MOD_MAP_ENTRIES ];
-    int                     systemProcMapHwm;
+    T64Module                   *systemProcMap[ MAX_MOD_MAP_ENTRIES ];
+    int                         systemProcMapHwm;
 
-    T64SimBreakPointMap     breakPointMap;
+    T64SimBreakPointMap         breakPointMap;
 
-    T64SystemState          sysState;
-    std::mutex              sLock;
+    std::atomic<T64SystemState> sysState { T64_SYS_STATE_RESET };
+    std::mutex                  sLock;
 };

@@ -32,11 +32,13 @@
 //
 //
 //----------------------------------------------------------------------------------------
-T64ProcThreadModule::T64ProcThreadModule( T64ModuleType    modType, 
+T64ProcThreadModule::T64ProcThreadModule( T64System        *sys,
+                                          T64ModuleType    modType, 
                                           int              modNum,
                                           T64Word          spaAdr,
                                           int              spaLen ) 
-                                          : T64Module ( modType, 
+                                          : T64Module ( sys,
+                                                        modType, 
                                                         modNum,
                                                         spaAdr, 
                                                         spaLen ) { 
@@ -224,6 +226,12 @@ void T64ProcThreadModule::moduleWorker( ) {
                         mTrapCode = NO_TRAP;
                         mState.store( T64_MOD_STATE_HALTED,
                                       std::memory_order_release );
+
+                        break;
+                    }
+
+                    if (( mUnitCount != 1 ) &&
+                        ( sys -> getSystemState( ) == T64_SYS_STATE_HALT )) {
 
                         break;
                     }

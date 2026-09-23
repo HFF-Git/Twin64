@@ -32,7 +32,8 @@
 // Object constructor.
 //
 //----------------------------------------------------------------------------------------
-T64Module::T64Module( T64ModuleType    modType, 
+T64Module::T64Module( T64System        *sys,
+                      T64ModuleType    modType, 
                       int              modNum,
                       T64Word          spaAdr,
                       T64Word          spaLen ) {
@@ -64,15 +65,15 @@ const char *T64Module::getModuleTypeName( ) {
 
     switch ( moduleTyp ) {
 
-        case MT_PROC:       return ((char *) "PROC" );
-        case MT_CPU_CORE:   return ((char *) "CPU" );
-        case MT_CPU_TLB:    return ((char *) "TLB"  );
-        case MT_GTLB:       return ((char *) "TLB"  );
-        case MT_IO:         return ((char *) "IO" );
-        case MT_MEM:        return ((char *) "MEM" );
+        case MT_PROC:       return ( "PROC" );
+        case MT_CPU_CORE:   return ( "CPU" );
+        case MT_CPU_TLB:    return ( "TLB"  );
+        case MT_GTLB:       return ( "TLB"  );
+        case MT_IO:         return ( "IO" );
+        case MT_MEM:        return ( "MEM" );
 
         case MT_NIL:
-        default:            return ((char *) "NIL" );
+        default:            return (  "NIL" );
     }
 }
 

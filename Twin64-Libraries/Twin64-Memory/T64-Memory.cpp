@@ -61,7 +61,8 @@ T64Memory::T64Memory( T64System     *sys,
                       T64Word       spaAdr,
                       T64Word       spaLen ) : 
 
-                      T64Module(    MT_MEM, 
+                      T64Module(    sys,
+                                    MT_MEM, 
                                     modNum,
                                     spaAdr,
                                     spaLen

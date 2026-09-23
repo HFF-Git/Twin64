@@ -535,8 +535,7 @@ void SimCommandsWin::drawBanner( ) {
     printTextField( "Commands", ( fmtDescBlack | FMT_ALIGN_LFT ), 16 );
 
     printTextField( "System State: ", fmtDescBlack );
-    printNumericField( glb -> system -> getSystemState( ), 
-                       fmtDescBlack | FMT_HEX_4 );
+    printTextField( glb -> system -> getSystemStateStr( ), fmtDescBlack );
     padLine( fmtDesc ); 
 
     if ( glb -> winDisplay -> isWindowsOn( )) {
@@ -1233,7 +1232,11 @@ void SimCommandsWin::addTlbModule( int modNum ) {
 
     tok -> checkEOS( );
 
-    T64GlobalTlb *t = new T64GlobalTlb( MT_GTLB, modNum, T64_TK_GLOBAL_TLB, tlbType );
+    T64GlobalTlb *t = new T64GlobalTlb( glb -> system,
+                                        MT_GTLB, 
+                                        modNum, 
+                                        T64_TK_GLOBAL_TLB, 
+                                        tlbType );
 
     int rStat = glb -> system -> addModule( t );   
 

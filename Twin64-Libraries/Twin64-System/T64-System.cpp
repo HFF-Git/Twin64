@@ -275,7 +275,7 @@ int T64System::removeModule( T64Module *module ) {
 //----------------------------------------------------------------------------------------
 T64Module *T64System::lookupByModNum( int modNum ) const {
 
-    if ( modNum > MAX_MOD_MAP_ENTRIES ) return ( nullptr );
+    if (( modNum < 0 ) || ( modNum > MAX_MOD_MAP_ENTRIES )) return ( nullptr );
     return ( moduleMap[ modNum ] );
 }
 
@@ -288,7 +288,7 @@ T64Module *T64System::lookupByModuleType( T64ModuleType typ ) {
     for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
         if (( moduleMap[ i ] != nullptr ) &&
-            ( moduleMap[ i ]-> moduleTyp == typ )) return ( moduleMap[ i ] );
+            ( moduleMap[ i ]-> getModuleType( ) == typ )) return ( moduleMap[ i ] );
     }
 
     return ( nullptr );
@@ -349,6 +349,14 @@ T64ModuleType T64System::getModuleType( int modNum ) const {
 
     T64Module *mod = lookupByModNum( modNum );
     return (( mod != nullptr ) ? mod -> getModuleType( ) : MT_NIL );
+}
+
+T64ModuleState T64System::getModuleState( int modNum ) const {
+
+    T64Module *mod = lookupByModNum( modNum );
+    // return (( mod != nullptr ) ? mod -> getModuleState( ) : T64_MOD_STATE_NIL );
+
+    return ( T64_MOD_STATE_NIL ); // ??? for now ...
 }
 
 //----------------------------------------------------------------------------------------
@@ -412,41 +420,6 @@ void T64System::execModule( int modNum, int units, bool haltOnTrap ) {
             }
         }
     }
-}
-
-//----------------------------------------------------------------------------------------
-// RUN. The simulator can just run the system. We just enter an endless loop 
-// which single steps all modules. 
-//
-// ??? we have the module functions halt, reset, step... use them ?
-//----------------------------------------------------------------------------------------
-void T64System::simReset( ) {
-
-    // ??? resets all processors 
-}
-
-//----------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------
-void T64System::simRun( ) {
-
-    // ??? signal all processors 
-}
-
-//----------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------
-void T64System::simHalt( ) {
-
-    // ??? signal all processors 
-
-}
-
-//----------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------
-void T64System::simStep( unsigned steps ) {
-
-    // ??? signal all processors ?
-    // ??? have an option to just advance one processor ?
-
 }
 
 //----------------------------------------------------------------------------------------
@@ -674,6 +647,7 @@ const char  *T64System::getBreakPointTypeStr( T64SimBreakPointType t ) {
 // and data access. We first check that there are breakpoints at all. If so,
 // we search for a matching and enabled breakpoint.
 //
+// ??? do we need to have the breakpoint type ?
 //----------------------------------------------------------------------------------------//----------------------------------------------------------------------------------------
 int T64System::checkBreakPoint( T64SimBreakPointType type,
                                 T64Word               adr,
@@ -706,6 +680,17 @@ T64SystemState T64System::getSystemState( ) {
     return( sysState );
 }
 
+const char *T64System::getSystemStateStr( ) {
+
+    switch ( sysState ) {
+
+        case T64_SYS_STATE_HALT: return ( "HALT" );
+        case T64_SYS_STATE_RUN: return( "RUN" );
+        case T64_SYS_STATE_RESET: return( "RESET" );
+        default: return ( "NIL ");
+    }
+}
+
 //----------------------------------------------------------------------------------------
 // Bus read operation. The system is the dispatcher for bus operations. We look
 // up the module that covers the address and call the module's bus event handler. 
@@ -718,10 +703,10 @@ T64SystemState T64System::getSystemState( ) {
 //
 //----------------------------------------------------------------------------------------
 bool T64System::busOpRead( T64Module *mod, 
-                           T64Word pAdr, 
-                           uint8_t *data, 
-                           size_t len,
-                           bool rsv ) {
+                           T64Word   pAdr, 
+                           uint8_t   *data, 
+                           size_t    len,
+                           bool      rsv ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return( false );
@@ -835,5 +820,59 @@ bool T64System::busOpControl( T64Module *mod,
     }
 
     return( true );
+}
+
+//----------------------------------------------------------------------------------------
+// RUN. The simulator can just run the system. We just enter an endless loop 
+// which single steps all modules. 
+//
+// ??? if all modules, just set sysState, which they should catch ?
+// ??? a single module, just tell it to reset.
+//----------------------------------------------------------------------------------------
+void T64System::simReset( int modNum ) {
+
+    if ( modNum == -1 ) {
+
+        sysState = T64_SYS_STATE_RESET;
+    }
+    else {
+
+        if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+
+            if ( moduleMap[ modNum ] != nullptr )
+                moduleMap[ modNum ] -> resetModule( );
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------
+// Resume the simulator. All we have to do is to put the system into the RUN
+// state. 
+// 
+//----------------------------------------------------------------------------------------
+void T64System::simRun( ) {
+
+    sysState = T64_SYS_STATE_RUN;
+}
+
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+void T64System::simHalt( ) {
+
+    sysState = T64_SYS_STATE_HALT;
+}
+
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+void T64System::simStep( int modNum, unsigned steps ) {
+
+    if ( modNum == -1 ) {
+
+        // ??? step all processors 
+    }
+    else {
+
+
+    }
 }
 

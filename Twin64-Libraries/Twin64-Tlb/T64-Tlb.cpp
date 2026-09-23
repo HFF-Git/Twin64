@@ -101,11 +101,12 @@ T64TlbEntry* lookupTlbEntry( T64TlbEntry *tlb,
 // of different sizes.
 //
 //----------------------------------------------------------------------------------------
-T64GlobalTlb::T64GlobalTlb( T64ModuleType    modType, 
+T64GlobalTlb::T64GlobalTlb( T64System        *sys,
+                            T64ModuleType    modType, 
                             int              modNum, 
                             T64TlbKind       tlbKind,
                             T64TlbType       tlbType ) : 
-                            T64Module( modType, modNum, 0, 0 ) {
+                            T64Module( sys, modType, modNum, 0, 0 ) {
 
     this -> tlbKind = tlbKind;
     this -> tlbType = tlbType;

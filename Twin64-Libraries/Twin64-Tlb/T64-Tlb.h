@@ -47,7 +47,8 @@ struct T64GlobalTlb : T64Module {
 
     public:
 
-    T64GlobalTlb( T64ModuleType    modType, 
+    T64GlobalTlb( T64System        *sys,
+                  T64ModuleType    modType, 
                   int              modNum, 
                   T64TlbKind       tlbKind,
                   T64TlbType       tlbType );
