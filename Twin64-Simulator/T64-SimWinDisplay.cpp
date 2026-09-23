@@ -249,9 +249,9 @@ bool SimWinDisplay::isWindowsOn( ) {
 // column of a window.
 //
 //----------------------------------------------------------------------------------------
-size_t SimWinDisplay::computeColumnsNeeded( int winStack ) {
+unsigned SimWinDisplay::computeColumnsNeeded( int winStack ) {
     
-    size_t columnSize = 0;
+    unsigned columnSize = 0;
     
     for ( size_t i = 0; i < MAX_WINDOWS; i++ ) {
         
@@ -259,7 +259,7 @@ size_t SimWinDisplay::computeColumnsNeeded( int winStack ) {
             ( windowList[ i ] -> isEnabled( )) &&
             ( windowList[ i ] -> getWinStack( ) == winStack )) {
             
-            size_t columns = windowList[ i ] -> getDefColumns( );
+            unsigned columns = windowList[ i ] -> getDefColumns( );
             if ( columns > columnSize ) columnSize = columns;
         }
     }
@@ -273,7 +273,7 @@ size_t SimWinDisplay::computeColumnsNeeded( int winStack ) {
 // end of line picture.
 //
 //----------------------------------------------------------------------------------------
-void SimWinDisplay::setWindowColumns( int winStack, size_t columnSize ) {
+void SimWinDisplay::setWindowColumns( int winStack, unsigned columns ) {
     
     for ( size_t i = 0; i < MAX_WINDOWS; i++ ) {
         
@@ -281,7 +281,7 @@ void SimWinDisplay::setWindowColumns( int winStack, size_t columnSize ) {
             ( windowList[ i ] -> isEnabled( )) &&
             ( windowList[ i ] -> getWinStack( ) == winStack )) {
             
-            windowList[ i ] -> setColumns( columnSize );
+            windowList[ i ] -> setColumns( columns );
         }
     }
 }
@@ -293,11 +293,11 @@ void SimWinDisplay::setWindowColumns( int winStack, size_t columnSize ) {
 // stack.
 //
 //----------------------------------------------------------------------------------------
-size_t SimWinDisplay::computeRowsNeeded( int winStack ) {
+unsigned SimWinDisplay::computeRowsNeeded( int winStack ) {
     
-    size_t rowSize = 0;
+    unsigned rowSize = 0;
     
-    for ( size_t i = 0; i < MAX_WINDOWS; i++ ) {
+    for ( unsigned i = 0; i < MAX_WINDOWS; i++ ) {
         
         if (( windowList[ i ] != nullptr ) &&
             ( windowList[ i ] -> isEnabled( )) &&
@@ -318,12 +318,12 @@ size_t SimWinDisplay::computeRowsNeeded( int winStack ) {
 //
 //----------------------------------------------------------------------------------------
 void SimWinDisplay::setWindowOrigins( int winStack, 
-                                      size_t rowOffset, 
-                                      size_t colOffset ) {
+                                      unsigned rowOffset, 
+                                      unsigned colOffset ) {
     
-    size_t tmpRow = rowOffset;
+    unsigned tmpRow = rowOffset;
     
-    for ( size_t i = 0; i < MAX_WINDOWS; i++ ) {
+    for ( unsigned i = 0; i < MAX_WINDOWS; i++ ) {
         
         if (( windowList[ i ] != nullptr ) &&
             ( windowList[ i ] -> isEnabled( )) &&
@@ -372,13 +372,13 @@ void SimWinDisplay::setWindowOrigins( int winStack,
 //----------------------------------------------------------------------------------------
 void SimWinDisplay::reDraw( ) {
     
-    size_t winStackColumns[ MAX_WIN_STACKS ]   = { 0 };
-    size_t winStackRows[ MAX_WIN_STACKS ]      = { 0 };
-    size_t stackCount                          = 0;
-    size_t maxRowsNeeded                       = 0;
-    size_t maxColumnsNeeded                    = 0;
-    size_t stackColumnGap                      = 2;
-    size_t minRowSize = toUInt32( glb -> env -> getEnvVarNum( ENV_WIN_MIN_ROWS ));
+    unsigned winStackColumns[ MAX_WIN_STACKS ]   = { 0 };
+    unsigned winStackRows[ MAX_WIN_STACKS ]      = { 0 };
+    unsigned stackCount                          = 0;
+    unsigned maxRowsNeeded                       = 0;
+    unsigned maxColumnsNeeded                    = 0;
+    unsigned stackColumnGap                      = 2;
+    unsigned minRowSize = toUInt32( glb -> env -> getEnvVarNum( ENV_WIN_MIN_ROWS ));
     
     if ( winModeOn ) {
        
@@ -415,8 +415,8 @@ void SimWinDisplay::reDraw( ) {
             }
         }  
 
-        size_t curColumn = 1;
-        size_t curRows   = 1;
+        unsigned curColumn = 1;
+        unsigned curRows   = 1;
         
         for ( int i = 0; i < MAX_WIN_STACKS; i++ ) {
 
@@ -623,7 +623,7 @@ void SimWinDisplay::windowEnable( int winNumStart, int winNumEnd, bool enable ) 
 // needs to change. In case of a user window, the window is made the current window.
 //
 //----------------------------------------------------------------------------------------
-void SimWinDisplay::windowRadix( size_t rdx, int winNum ) {
+void SimWinDisplay::windowRadix( unsigned rdx, int winNum ) {
 
     if ( ! winModeOn ) throw( ERR_NOT_IN_WIN_MODE );
     if ( winNum == -1 ) winNum = currentWinNum;
@@ -640,7 +640,7 @@ void SimWinDisplay::windowRadix( size_t rdx, int winNum ) {
 // for locating the window object. The window is made the current window.
 //
 //----------------------------------------------------------------------------------------
-void SimWinDisplay::windowSetRows( size_t rows, int winNum ) {
+void SimWinDisplay::windowSetRows( unsigned rows, int winNum ) {
 
     if ( ! winModeOn ) throw( ERR_NOT_IN_WIN_MODE );
     if ( winNum == -1 ) winNum = currentWinNum;
@@ -656,7 +656,7 @@ void SimWinDisplay::windowSetRows( size_t rows, int winNum ) {
     setWinReFormat( );
 }
 
-void SimWinDisplay::windowSetCmdWinRows( size_t rows ) {
+void SimWinDisplay::windowSetCmdWinRows( unsigned rows ) {
 
     if ( ! winModeOn ) throw( ERR_NOT_IN_WIN_MODE );
 

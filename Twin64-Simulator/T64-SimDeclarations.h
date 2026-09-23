@@ -123,32 +123,32 @@
 // Fundamental constants for the T64 window system.
 //
 //----------------------------------------------------------------------------------------
-const size_t MAX_FILE_PATH_SIZE         = 256;
-const size_t MAX_TEXT_FIELD_LEN         = 132;
-const size_t MAX_TEXT_LINE_SIZE         = 256;
+const size_t    MAX_FILE_PATH_SIZE         = 256;
+const size_t    MAX_TEXT_FIELD_LEN         = 132;
+const size_t    MAX_TEXT_LINE_SIZE         = 256;
 
-const int    MAX_WINDOWS                = 32;
-const int    MAX_WIN_STACKS             = 4;
-const size_t MAX_WIN_ROW_SIZE           = 64;
-const size_t MAX_WIN_COL_SIZE           = 1024;
-const size_t MAX_WIN_OUT_LINES          = 256;
-const size_t MAX_WIN_OUT_LINE_SIZE      = 256;
-const size_t MAX_WIN_NAME               = 8;
-const int    MAX_WIN_TOGGLES            = 8;
+const int       MAX_WINDOWS                = 32;
+const int       MAX_WIN_STACKS             = 4;
+const size_t    MAX_WIN_ROW_SIZE           = 64;
+const size_t    MAX_WIN_COL_SIZE           = 1024;
+const size_t    MAX_WIN_OUT_LINES          = 256;
+const size_t    MAX_WIN_OUT_LINE_SIZE      = 256;
+const size_t    MAX_WIN_NAME               = 8;
+const int       MAX_WIN_TOGGLES            = 8;
 
-const size_t MAX_CMD_HIST               = 64;
-const size_t MAX_CMD_LINES              = 64;
-const size_t MAX_CMD_LINE_SIZE          = 256;
+const unsigned  MAX_CMD_HIST               = 64;
+const unsigned  MAX_CMD_LINES              = 64;
+const size_t    MAX_CMD_LINE_SIZE          = 256;
 
-const size_t MAX_TOK_STR_SIZE           = 256;
-const size_t MAX_TOK_NAME_SIZE          = 32;
+const size_t    MAX_TOK_STR_SIZE           = 256;
+const size_t    MAX_TOK_NAME_SIZE          = 32;
 
-const size_t MAX_ENV_NAME_SIZE          = 32;
-const size_t MAX_ENV_VARIABLES          = 256;
+const size_t    MAX_ENV_NAME_SIZE          = 32;
+const unsigned  MAX_ENV_VARIABLES          = 256;
 
 //----------------------------------------------------------------------------------------
-// Windows have a type. The type is primarily used to specify what type of window
-// to create. 
+// Windows have a type. The type is primarily used to specify what type of 
+// window to create. 
 //
 //----------------------------------------------------------------------------------------
 enum SimWinType : uint32_t {
@@ -624,7 +624,7 @@ struct SimTokenizerFromString : public SimTokenizer {
  
     void            nextChar( );
 
-    size_t          currentCharIndex    = 0;
+    unsigned        currentCharIndex    = 0;
     size_t          currentLineLen      = 0;
     char            tokenLine[ 256 ]    = { 0 };
 
@@ -651,9 +651,9 @@ struct SimTokenizerFromFile : public SimTokenizer {
     void    closeFile( );
     void    nextChar( );
     
-    size_t  currentLineIndex    = 0;
-    size_t  currentCharIndex    = 0;
-    FILE   *srcFile             = nullptr;
+    unsigned  currentLineIndex    = 0;
+    unsigned  currentCharIndex    = 0;
+    FILE      *srcFile             = nullptr;
 };
 
 //----------------------------------------------------------------------------------------
@@ -827,8 +827,8 @@ struct SimEnv {
 //----------------------------------------------------------------------------------------
 struct SimCmdHistEntry {
     
-    size_t  cmdId;
-    char    cmdLine[ MAX_CMD_LINE_SIZE ];
+    unsigned  cmdId;
+    char      cmdLine[ MAX_CMD_LINE_SIZE ];
 };
 
 struct SimCmdHistory {
@@ -837,22 +837,22 @@ struct SimCmdHistory {
     
     SimCmdHistory( );
     
-    void    enableHistory( bool enable );
-    void    disableHistory( );
-    bool    isHistoryEnabled( );
+    void        enableHistory( bool enable );
+    void        disableHistory( );
+    bool        isHistoryEnabled( );
     
-    void    addCmdLine( const char *cmdStr );
-    char    *getCmdLine( int cmdRef, size_t *cmdId = nullptr );
-    size_t  getCmdCount( );
-    size_t  getCmdNum( );
+    void        addCmdLine( const char *cmdStr );
+    char        *getCmdLine( int cmdRef, unsigned *cmdId = nullptr );
+    unsigned    getCmdCount( );
+    unsigned    getCmdNum( );
    
     private:
     
     bool    historyEnabled  = true;
-    size_t  nextCmdNum      = 0;
-    size_t  head            = 0;
-    size_t  tail            = 0;
-    size_t  count           = 0;
+    unsigned  nextCmdNum      = 0;
+    unsigned  head            = 0;
+    unsigned  tail            = 0;
+    unsigned  count           = 0;
     
     SimCmdHistEntry history[ MAX_CMD_HIST ];
 };
@@ -881,20 +881,20 @@ struct SimWinOutBuffer : SimFormatter {
     void        setScrollWindowSize( size_t size );
     
     void        resetLineCursor( );
-    char        *getLineRelative( size_t lineBelowTop );
-    size_t      getCursorIndex( );
-    size_t      getTopIndex( );
+    char        *getLineRelative( unsigned lineBelowTop );
+    unsigned    getCursorIndex( );
+    unsigned    getTopIndex( );
     
-    void        scrollUp( size_t lines = 1 );
-    void        scrollDown( size_t lines = 1 );
+    void        scrollUp( unsigned lines = 1 );
+    void        scrollDown( unsigned lines = 1 );
     
     private:
     
     char        buffer[ MAX_WIN_OUT_LINES ] [ MAX_WIN_OUT_LINE_SIZE ];
-    size_t      topIndex    = 0; // Index of the next line to use.
-    size_t      cursorIndex = 0; // Index of the last line currently shown.
-    size_t      screenLines = 0; // Number of lines displayed in the window.
-    size_t      charPos     = 0; // Current character position in the line.
+    unsigned    topIndex    = 0; // Index of the next line to use.
+    unsigned    cursorIndex = 0; // Index of the last line currently shown.
+    unsigned    screenLines = 0; // Number of lines displayed in the window.
+    unsigned    charPos     = 0; // Current character position in the line.
 };
 
 //----------------------------------------------------------------------------------------
@@ -904,13 +904,13 @@ struct SimWinOutBuffer : SimFormatter {
 //----------------------------------------------------------------------------------------
 struct SimWinSize {
 
-    size_t minCol = 0;
-    size_t maxCol = 0;
-    size_t minRow = 0;
-    size_t maxRow = 0;
+    unsigned minCol = 0;
+    unsigned maxCol = 0;
+    unsigned minRow = 0;
+    unsigned maxRow = 0;
 
-    size_t actualRow = 0;
-    size_t actualCol = 0;
+    unsigned actualRow = 0;
+    unsigned actualCol = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -953,22 +953,22 @@ struct SimWin {
     void            setEnable( bool arg );
     bool            isEnabled( );
     
-    void            setRadix( size_t radix );
-    size_t          getRadix( );
+    void            setRadix( unsigned radix );
+    unsigned        getRadix( );
     
-    size_t          getDefRows( );
-    size_t          getRows( );
-    void            setRows( size_t arg );
+    unsigned        getDefRows( );
+    unsigned        getRows( );
+    void            setRows( unsigned arg );
     
-    size_t          getDefColumns( );
-    size_t          getColumns( );
-    void            setColumns( size_t arg );
+    unsigned        getDefColumns( );
+    unsigned        getColumns( );
+    void            setColumns( unsigned arg );
 
-    void            setWinOrigin( size_t row, size_t col );
-    void            setWinCursor( size_t row, size_t col );
+    void            setWinOrigin( unsigned row, unsigned col );
+    void            setWinCursor( unsigned row, unsigned col );
     
-    size_t          getWinCursorRow( );
-    size_t          getWinCursorCol( );
+    unsigned        getWinCursorRow( );
+    unsigned        getWinCursorCol( );
     
     int             getWinStack( );
     void            setWinStack( int wStack );
@@ -982,44 +982,44 @@ struct SimWin {
     SimWinSize      getWinSize( int toggleVal );
     
     void            setWinLimitsForToggle( int toggleVal, 
-                                           size_t minRow, 
-                                           size_t maxRow,
-                                           size_t minCol,
-                                           size_t maxCol );
+                                           unsigned minRow, 
+                                           unsigned maxRow,
+                                           unsigned minCol,
+                                           unsigned maxCol );
 
     void            setWinSizeForToggle( int toggleVal, 
-                                         size_t row, 
-                                         size_t col );
+                                         unsigned row, 
+                                         unsigned col );
 
     void            initWinToggleSizes( );
     
     void            printNumericField(  T64Word val,
                                         uint32_t fmtDesc = FMT_DEFAULT,
                                         size_t len = 0,
-                                        size_t row = 0,
-                                        size_t col = 0 );
+                                        unsigned row = 0,
+                                        unsigned col = 0 );
     
     void            printTextField( const char *text,
                                     uint32_t fmtDesc = FMT_DEFAULT,
                                     size_t len = 0,
-                                    size_t row = 0,
-                                    size_t col = 0 );
+                                    unsigned row = 0,
+                                    unsigned col = 0 );
 
     void            printBitField(  T64Word val, 
-                                    size_t pos,
+                                    unsigned pos,
                                     int printChar,
                                     uint32_t fmtDesc = FMT_DEFAULT,
                                     size_t len = 0,
-                                    size_t row = 0,
-                                    size_t col = 0 ); 
+                                    unsigned row = 0,
+                                    unsigned col = 0 ); 
     
     void            printRadixField( uint32_t fmtDesc = FMT_DEFAULT,
-                                     size_t row = 0,
-                                     size_t col = 0 );
+                                     unsigned row = 0,
+                                     unsigned col = 0 );
     
     void            printWindowIdField( uint32_t fmtDesc = FMT_DEFAULT,
-                                        size_t row = 0,
-                                        size_t col = 0 );
+                                        unsigned row = 0,
+                                        unsigned col = 0 );
     
     void            padLine( uint32_t fmtDesc = FMT_DEFAULT );
     void            padField( size_t dLen, size_t fLen );
@@ -1045,19 +1045,19 @@ struct SimWin {
     SimWinSize      winSizes[ MAX_WIN_TOGGLES ];
     
     bool            winEnabled          = false;
-    size_t          winRadix            = 16;
+    unsigned        winRadix            = 16;
     int             winStack            = 0;
     
     int             winToggleLimit      = 0;
     int             winToggleVal        = 0;
     
-    size_t          winColumns          = 0;
-    size_t          winRows             = 0;       
+    unsigned        winColumns          = 0;
+    unsigned        winRows             = 0;       
 
-    size_t          winAbsCursorRow     = 0;
-    size_t          winAbsCursorCol     = 0;
-    size_t          lastRowPos          = 0;
-    size_t          lastColPos          = 0;    
+    unsigned        winAbsCursorRow     = 0;
+    unsigned        winAbsCursorCol     = 0;
+    unsigned        lastRowPos          = 0;
+    unsigned        lastColPos          = 0;    
 };
 
 //----------------------------------------------------------------------------------------
@@ -1131,11 +1131,11 @@ struct SimWinProcState : SimWin {
 
     private:
 
-    size_t  drawGRegSubWindow( unsigned linePos );
-    size_t  drawCRegSubWindow( unsigned linePos);
-    size_t  drawCodeSubWindow( unsigned linePos, size_t linesLeft );
-    void    drawGRegDataLine( unsigned from, unsigned to );
-    void    drawCRegDataLine( unsigned from, unsigned to );
+    unsigned  drawGRegSubWindow( unsigned linePos );
+    unsigned  drawCRegSubWindow( unsigned linePos);
+    unsigned  drawCodeSubWindow( unsigned linePos, unsigned linesLeft );
+    void      drawGRegDataLine( unsigned from, unsigned to );
+    void      drawCRegDataLine( unsigned from, unsigned to );
     
     T64Processor    *proc;
     T64DisAssemble  *disAsm;
@@ -1226,10 +1226,10 @@ struct SimWinText : SimWinScrollable {
     bool    openTextFile( );
     size_t  readTextFileLine( size_t linePos, char *lineBuf, size_t bufLen );
     
-    FILE    *textFile          = nullptr;
-    size_t  fileSizeLines      = 0;
-    size_t  lastLinePos        = 0;
-    char    fileName[ MAX_FILE_PATH_SIZE ] = { 0 };
+    FILE      *textFile          = nullptr;
+    unsigned  fileSizeLines      = 0;
+    unsigned  lastLinePos        = 0;
+    char      fileName[ MAX_FILE_PATH_SIZE ] = { 0 };
 };
 
 //----------------------------------------------------------------------------------------
@@ -1305,8 +1305,8 @@ private:
 
     void            ensureWinModeOn( );
     void            printStackInfoField( uint32_t fmtDesc = 0,
-                                         size_t row = 0,
-                                         size_t col = 0 );
+                                         unsigned row = 0,
+                                         unsigned col = 0 );
   
     void            displayMemContent( T64Word ofs, 
                                        T64Word len, 
@@ -1441,9 +1441,9 @@ public:
     void            windowCurrent( int winNum );
     void            windowEnable( int winNumStart, int winNumEnd, bool enable );
     void            winStacksEnable( int stackNum, bool enable );
-    void            windowRadix( size_t rdx, int winNum );
-    void            windowSetRows( size_t rows, int winNum );
-    void            windowSetCmdWinRows( size_t rows );
+    void            windowRadix( unsigned rdx, int winNum );
+    void            windowSetRows( unsigned rows, int winNum );
+    void            windowSetCmdWinRows( unsigned rows );
     void            windowClearCmdWin( );
     
     void            windowHome( T64Word amt, int winNum );
@@ -1485,12 +1485,12 @@ public:
     private:
     
     int             getFreeWindowSlot( );
-    size_t          computeColumnsNeeded( int winStack );
-    size_t          computeRowsNeeded( int winStack );
-    void            setWindowColumns( int winStack, size_t columns );
+    unsigned        computeColumnsNeeded( int winStack );
+    unsigned        computeRowsNeeded( int winStack );
+    void            setWindowColumns( int winStack, unsigned columns );
     void            setWindowOrigins( int winStack, 
-                                      size_t rowOfs = 1, 
-                                      size_t colOfs = 1 );
+                                      unsigned rowOfs = 1, 
+                                      unsigned colOfs = 1 );
    
     int             currentWinNum                   = -1;
     int             previousWinNum                  = -1;

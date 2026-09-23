@@ -106,25 +106,25 @@ void SimWin::setEnable( bool arg ) {
     winEnabled = arg; 
 }
 
-size_t SimWin::getDefRows( ) { 
+unsigned SimWin::getDefRows( ) { 
 
     return ( winSizes[ winToggleVal ].actualRow ); 
 }
 
-size_t SimWin::getRows( ) { 
+unsigned SimWin::getRows( ) { 
 
     return( winRows );
 }
 
-void SimWin::setRows( size_t arg ) { 
+void SimWin::setRows( unsigned arg ) { 
 
     if ( arg < 1 ) arg = 1;
     if ( arg > MAX_WIN_ROW_SIZE ) arg = MAX_WIN_ROW_SIZE;
 
     for ( int i = 0; i < winToggleLimit; i++ ) {
 
-        size_t maxRows = winSizes[ i ].maxRow;
-        size_t minRows = winSizes[ i ].minRow;
+        unsigned maxRows = winSizes[ i ].maxRow;
+        unsigned minRows = winSizes[ i ].minRow;
 
         if ( arg < minRows ) arg = minRows;
         if ( arg > maxRows ) arg = maxRows;
@@ -135,28 +135,28 @@ void SimWin::setRows( size_t arg ) {
     winRows = arg;
 }
 
-size_t SimWin::getDefColumns( ) { 
+unsigned SimWin::getDefColumns( ) { 
     
     return ( winSizes[ winToggleVal ].actualCol );
 }
 
-size_t SimWin::getColumns( ) { 
+unsigned SimWin::getColumns( ) { 
 
     return( winColumns ); 
 }
 
-void SimWin::setColumns( size_t arg ) { 
+void SimWin::setColumns( unsigned arg ) { 
 
     winColumns = (( arg > MAX_WIN_COL_SIZE ) ? MAX_WIN_COL_SIZE : arg );
 }
 
-void SimWin::setRadix( size_t rdx ) { 
+void SimWin::setRadix( unsigned rdx ) { 
 
     if (( rdx == 10 ) || ( rdx == 16 )) winRadix = rdx; 
     else winRadix = 16;
 }
 
-size_t SimWin::getRadix( ) { 
+unsigned SimWin::getRadix( ) { 
     
     return ( winRadix ); 
 }
@@ -193,10 +193,10 @@ void SimWin::setWinToggleLimit( int limit ) {
 }
 
 void SimWin::setWinLimitsForToggle( int toggleVal, 
-                                    size_t minRow, 
-                                    size_t maxRow, 
-                                    size_t minCol,
-                                    size_t maxCol ) {
+                                    unsigned minRow, 
+                                    unsigned maxRow, 
+                                    unsigned minCol,
+                                    unsigned maxCol ) {
 
     toggleVal = toggleVal % MAX_WIN_TOGGLES;
 
@@ -219,7 +219,7 @@ void SimWin::setWinLimitsForToggle( int toggleVal,
     winSizes[ toggleVal ].actualCol = minCol;
 }
 
-void SimWin::setWinSizeForToggle( int toggleVal, size_t row, size_t col ) {
+void SimWin::setWinSizeForToggle( int toggleVal, unsigned row, unsigned col ) {
 
     toggleVal = toggleVal % MAX_WIN_TOGGLES;
 
@@ -267,7 +267,7 @@ void SimWin::toggleWin( int toggleVal ) {
 // cursor position are set at (1,1).
 //
 //----------------------------------------------------------------------------------------
-void SimWin::setWinOrigin( size_t row, size_t col ) {
+void SimWin::setWinOrigin( unsigned row, unsigned col ) {
     
     winAbsCursorRow = row;
     winAbsCursorCol = col;
@@ -283,7 +283,7 @@ void SimWin::setWinOrigin( size_t row, size_t col ) {
 // are values starting with 1.
 //
 //----------------------------------------------------------------------------------------
-void SimWin::setWinCursor( size_t row, size_t col ) {
+void SimWin::setWinCursor( unsigned row, unsigned col ) {
     
     if ( row == 0 ) row = lastRowPos;
     if ( col == 0 ) col = lastColPos;
@@ -298,12 +298,12 @@ void SimWin::setWinCursor( size_t row, size_t col ) {
     lastColPos = col;
 }
 
-size_t SimWin::getWinCursorRow( ) { 
+unsigned SimWin::getWinCursorRow( ) { 
     
     return ( lastRowPos ); 
 }
 
-size_t SimWin::getWinCursorCol( ) { 
+unsigned SimWin::getWinCursorCol( ) { 
     
     return ( lastColPos ); 
 }
@@ -333,8 +333,8 @@ void SimWin::padField( size_t dLen, size_t fLen ) {
 void SimWin::printNumericField( T64Word   val, 
                                 uint32_t  fmtDesc, 
                                 size_t    fLen, 
-                                size_t    row, 
-                                size_t    col ) {
+                                unsigned  row, 
+                                unsigned  col ) {
     
     if ( row == 0 )                 row = lastRowPos;
     if ( col == 0 )                 col = lastColPos;
@@ -363,7 +363,7 @@ void SimWin::printNumericField( T64Word   val,
     else glb -> console -> printNumber( val, fmtDesc );
     
     lastRowPos  = row;
-    lastColPos  = col + fLen;
+    lastColPos  = col + static_cast<unsigned>( fLen );
 }
 
 //----------------------------------------------------------------------------------------
@@ -375,11 +375,11 @@ void SimWin::printNumericField( T64Word   val,
 // ??? add a check that we do not go past the window column size ?
 // ??? use calculateStrLen vs. strlen ?
 //----------------------------------------------------------------------------------------
-void SimWin::printTextField( const char       *text, 
+void SimWin::printTextField( const char *text, 
                              uint32_t   fmtDesc, 
                              size_t     fLen, 
-                             size_t     row, 
-                             size_t     col ) {
+                             unsigned   row, 
+                             unsigned   col ) {
     
     if ( row == 0 ) row = lastRowPos;
     if ( col == 0 ) col = lastColPos;
@@ -388,7 +388,8 @@ void SimWin::printTextField( const char       *text,
     if ( dLen > MAX_TEXT_FIELD_LEN ) dLen = MAX_TEXT_FIELD_LEN;
     
     if ( fLen == 0 ) fLen = dLen;
-    if ( fmtDesc & FMT_LAST_FIELD ) col = getColumns( ) - fLen;
+    if ( fmtDesc & FMT_LAST_FIELD ) 
+        col = getColumns( ) - static_cast<unsigned>( fLen );
 
     setWinCursor( row, col );
     glb -> console -> setFmtAttributes( fmtDesc );
@@ -422,7 +423,7 @@ void SimWin::printTextField( const char       *text,
     else glb -> console -> printText( text, dLen );
     
     lastRowPos  = row;
-    lastColPos  = col + fLen;
+    lastColPos  = col + static_cast<unsigned>( fLen );
 }
 
 //----------------------------------------------------------------------------------------
@@ -430,13 +431,13 @@ void SimWin::printTextField( const char       *text,
 // else lower case.
 //
 //----------------------------------------------------------------------------------------
-void SimWin::printBitField( T64Word val, 
-                            size_t pos,
-                            int printChar,
+void SimWin::printBitField( T64Word  val, 
+                            unsigned pos,
+                            int      printChar,
                             uint32_t fmtDesc,
-                            size_t fLen,
-                            size_t row,
-                            size_t col ) {
+                            size_t   fLen,
+                            unsigned row,
+                            unsigned col ) {
 
     if ( pos <= 63 ) {
       
@@ -459,7 +460,7 @@ void SimWin::printBitField( T64Word val,
 // as the last field in the banner line.
 //
 //----------------------------------------------------------------------------------------
-void SimWin::printRadixField( uint32_t fmtDesc, size_t row, size_t col ) {
+void SimWin::printRadixField( uint32_t fmtDesc, unsigned row, unsigned col ) {
     
     glb -> console -> setFmtAttributes( fmtDesc );
  
@@ -477,7 +478,7 @@ void SimWin::printRadixField( uint32_t fmtDesc, size_t row, size_t col ) {
 // and the window number.
 //
 //----------------------------------------------------------------------------------------
-void SimWin::printWindowIdField( uint32_t fmtDesc, size_t row, size_t col ) {
+void SimWin::printWindowIdField( uint32_t fmtDesc, unsigned row, unsigned col ) {
     
     if ( row == 0 ) row = lastRowPos;
     if ( col == 0 ) col = lastColPos;
@@ -501,7 +502,7 @@ void SimWin::printWindowIdField( uint32_t fmtDesc, size_t row, size_t col ) {
     len += glb -> console -> writeChars( " %.8s  ", winName );
    
     lastRowPos  = row;
-    lastColPos  = col + len;
+    lastColPos  = col + static_cast<unsigned>( len );
 }
 
 //----------------------------------------------------------------------------------------
@@ -522,14 +523,15 @@ void SimWin::padLine( uint32_t fmtDesc ) {
 //----------------------------------------------------------------------------------------
 void SimWin::clearField( size_t len, uint32_t fmtDesc ) {
     
-    size_t pos = lastColPos;
+    unsigned pos = lastColPos;
     
-    if ( pos + len > getColumns( )) len = getColumns( ) - pos;     
+    if ( pos + static_cast<unsigned>( len ) > getColumns( )) 
+        len = static_cast<unsigned>( getColumns( ) - pos );     
 
     glb -> console -> setFmtAttributes( fmtDesc );
     padField( lastColPos, lastColPos + len );
     
-    setWinCursor( 0,  pos );
+    setWinCursor( 0, pos );
 }
 
 //----------------------------------------------------------------------------------------
@@ -621,9 +623,9 @@ void SimWinScrollable::setLineIncrementItemAdr( T64Word arg ) {
 //----------------------------------------------------------------------------------------
 void SimWinScrollable::drawBody( ) {
     
-    size_t numOfItemLines = getRows( ) - 1;
+    unsigned numOfItemLines = getRows( ) - 1;
 
-    for ( size_t line = 0; line < numOfItemLines; line++ ) {
+    for ( unsigned line = 0; line < numOfItemLines; line++ ) {
         
         setWinCursor( line + 2, 1 );
         drawLine( currentItemAdr + 
@@ -818,7 +820,7 @@ size_t SimWinOutBuffer::writeChars( const char *format, ... ) {
 // top.
 //
 //----------------------------------------------------------------------------------------
-void SimWinOutBuffer::scrollUp( size_t lines ) {
+void SimWinOutBuffer::scrollUp( unsigned lines ) {
     
     size_t oldestValid   = ( topIndex - ( MAX_WIN_OUT_LINES - lines ) + 
                                 MAX_WIN_OUT_LINES ) % MAX_WIN_OUT_LINES;
@@ -831,7 +833,7 @@ void SimWinOutBuffer::scrollUp( size_t lines ) {
     }
 }
 
-void SimWinOutBuffer::scrollDown( size_t lines ) {
+void SimWinOutBuffer::scrollDown( unsigned lines ) {
     
     size_t lastActive = ( topIndex - lines + MAX_WIN_OUT_LINES ) % MAX_WIN_OUT_LINES;
     
@@ -849,7 +851,7 @@ void SimWinOutBuffer::scrollDown( size_t lines ) {
 // cursor.
 //
 //----------------------------------------------------------------------------------------
-char *SimWinOutBuffer::getLineRelative( size_t lineBelowTop ) {
+char *SimWinOutBuffer::getLineRelative( unsigned lineBelowTop ) {
     
     int lineToGet = ( cursorIndex + MAX_WIN_OUT_LINES - lineBelowTop ) 
                     % MAX_WIN_OUT_LINES;
@@ -857,12 +859,12 @@ char *SimWinOutBuffer::getLineRelative( size_t lineBelowTop ) {
     return ( &buffer[ lineToGet ][ 0 ] );
 }
 
-size_t SimWinOutBuffer::getCursorIndex( ) {
+unsigned SimWinOutBuffer::getCursorIndex( ) {
     
     return ( cursorIndex );
 }
 
-size_t SimWinOutBuffer::getTopIndex( ) {
+unsigned SimWinOutBuffer::getTopIndex( ) {
     
     return ( topIndex );
 }

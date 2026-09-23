@@ -438,7 +438,7 @@ void SimWinProcState::drawCRegDataLine( unsigned from, unsigned to ) {
 //      "GRn=0x0000_0000_0000_0000". 
 //
 //----------------------------------------------------------------------------------------
-size_t SimWinProcState::drawGRegSubWindow( unsigned linePos ) {
+unsigned SimWinProcState::drawGRegSubWindow( unsigned linePos ) {
 
     uint32_t fmtDesc        = FMT_DEFAULT | FMT_ALIGN_LFT;
     size_t   labelFlen      = 8;
@@ -468,7 +468,7 @@ size_t SimWinProcState::drawGRegSubWindow( unsigned linePos ) {
 // window. We show 4 registers per line, with the format "CRn=0x0000_0000_0000_0000". 
 //
 //----------------------------------------------------------------------------------------
-size_t SimWinProcState::drawCRegSubWindow( unsigned linePos ) {
+unsigned SimWinProcState::drawCRegSubWindow( unsigned linePos ) {
 
     uint32_t fmtDesc        = FMT_DEFAULT | FMT_ALIGN_LFT;
     size_t   labelFlen      = 8;
@@ -505,7 +505,8 @@ size_t SimWinProcState::drawCRegSubWindow( unsigned linePos ) {
 // address is in the visible range.
 //
 //----------------------------------------------------------------------------------------
-size_t SimWinProcState::drawCodeSubWindow( unsigned linePos, size_t linesLeft ) {
+unsigned SimWinProcState::drawCodeSubWindow( unsigned linePos, 
+                                             unsigned linesLeft ) {
 
     uint32_t    fmtDesc     = FMT_DEFAULT;
     T64Word     currentIa   = proc -> getCpuPtr( ) -> getPsrReg( );

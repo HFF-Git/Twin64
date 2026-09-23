@@ -640,13 +640,13 @@ const Expr INIT_EXPR = { .typ = TYP_NIL, .val = 0 };
 // Global variables for the tokenizer.
 //
 //----------------------------------------------------------------------------------------
-int     lastErr                             = NO_ERR;
-char    tokenLine[ MAX_INPUT_LINE_SIZE ]    = { 0 };
-size_t  currentLineLen                      = 0;
-size_t  currentCharIndex                    = 0;
-size_t  currentTokCharIndex                 = 0;
-char    currentChar                         = ' ';
-Token   currentToken;
+int         lastErr                             = NO_ERR;
+char        tokenLine[ MAX_INPUT_LINE_SIZE ]    = { 0 };
+size_t      currentLineLen                      = 0;
+unsigned    currentCharIndex                    = 0;
+unsigned    currentTokCharIndex                 = 0;
+char        currentChar                         = ' ';
+Token       currentToken;
 
 //----------------------------------------------------------------------------------------
 // Forward declarations.
@@ -1081,7 +1081,7 @@ void nextToken( ) {
     }
     else if ( currentChar == ';' ) {
         
-        currentCharIndex    = currentLineLen;
+        currentCharIndex    = static_cast<unsigned>( currentLineLen );
         currentToken.typ    = TYP_NIL;
         currentToken.tid    = TOK_EOS;
     }
@@ -1288,9 +1288,9 @@ void parseExpr( Expr *rExpr ) {
 //
 //----------------------------------------------------------------------------------------
 inline void depositInstrFieldS( T64Instr *instr, 
-                                size_t bitpos, 
-                                size_t len, 
-                                T64Word value ) {
+                                unsigned bitpos, 
+                                size_t   len, 
+                                T64Word  value ) {
     
     if ( isInRangeForInstrBitFieldS( value, len )) {
 
@@ -1300,8 +1300,8 @@ inline void depositInstrFieldS( T64Instr *instr,
 }
 
 inline void depositInstrFieldU( T64Instr *instr, 
-                                size_t bitpos,
-                                size_t len, 
+                                unsigned bitpos,
+                                size_t   len, 
                                 uint32_t value ) {
     
     if ( isInRangeForInstrBitFieldU( value, len )) {
@@ -1637,7 +1637,7 @@ void acceptRegB( uint32_t *instr ) {
 //      NOP
 //
 //----------------------------------------------------------------------------------------
-void parseNopInstr( uint32_t *instr, TokId instrOpToken ) {
+void parseNopInstr( ) {
     
     nextToken( );
     acceptEOS( );
@@ -2752,7 +2752,7 @@ void parseInstrSregOp( uint32_t *instr, TokId instrOpToken ) {
 //      RFI
 //
 //----------------------------------------------------------------------------------------
-void parseInstrRFI( uint32_t *instr, TokId instrOpToken ) {
+void parseInstrRFI( T64Instr *instr, TokId instrOpToken ) {
 
     uint32_t instrFlags = IF_NIL;
 
@@ -2781,8 +2781,8 @@ void parseInstrDIAG( uint32_t *instr, TokId instrOpToken ) {
     parseExpr( &rExpr );
     if ( rExpr.typ == TYP_NUM ) {
         
-        depositInstrFieldU( instr, 19, 3, static_cast<uint32_t>( rExpr.val >> 2 ));
-        depositInstrFieldU( instr, 13, 2, static_cast<uint32_t>( rExpr.val & 0x3));
+        depositInstrFieldU( instr, 19, 3, toUInt32( rExpr.val >> 2 ));
+        depositInstrFieldU( instr, 13, 2, toUInt32( rExpr.val & 0x3 ));
     }
     else throw ( ERR_EXPECTED_DIAG_OP );
     
@@ -2848,7 +2848,7 @@ void parseLine( char *inputStr, uint32_t *instr ) {
         
         switch( instrOpToken ) {
                 
-            case TOK_OP_NOP:    parseNopInstr( instr, instrOpToken );       break;
+            case TOK_OP_NOP:    parseNopInstr( ); break;
                 
             case TOK_OP_ADD:
             case TOK_OP_SUB:
@@ -2960,7 +2960,7 @@ int T64Assemble::getErrId( ) {
     return ( lastErr );
 }
 
-size_t T64Assemble::getErrPos( ) {
+unsigned T64Assemble::getErrPos( ) {
     
     return ( currentTokCharIndex );
 }

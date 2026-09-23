@@ -105,8 +105,7 @@ void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr, bool evalEnabled ) {
     SimExpr     lExpr = INIT_EXPR;
     uint32_t    instr = 0;
     static char asmStr[ MAX_CMD_LINE_SIZE ];
-    unsigned    rdx   = 16;
-    
+
     tok -> nextToken( );
     if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
     else throw ( ERR_EXPECTED_LPAREN );
@@ -119,22 +118,7 @@ void SimExprEvaluator::pFuncDisAssemble( SimExpr *rExpr, bool evalEnabled ) {
         instr = toUInt32( lExpr.u.val );
     }
    
-    if ( tok -> tokId( ) == TOK_COMMA ) {
-            
-        tok -> nextToken( );
-            
-        if (( tok -> tokId( ) == TOK_HEX ) ||
-            ( tok -> tokId( ) == TOK_DEC )) {
-                
-            rdx = toUInt32( tok -> tokVal( ));
-            tok -> nextToken( );
-        }
-        else if ( tok -> tokId( ) == TOK_EOS ) {
-                
-            throw ( ERR_UNEXPECTED_EOS );
-        }
-        else throw ( ERR_INVALID_FMT_OPT );
-    }
+    tok -> checkEOS( );
         
     if ( tok -> isToken( TOK_RPAREN )) tok -> nextToken( );
     else throw ( ERR_EXPECTED_RPAREN );
@@ -192,7 +176,6 @@ void SimExprEvaluator::pFuncAddOffset( SimExpr *rExpr, bool evalEnabled ) {
 //----------------------------------------------------------------------------------------
 // Region function. We take the value and return the virtual region portion.
 //
-// ??? skipEval ?
 //----------------------------------------------------------------------------------------
 void SimExprEvaluator::pFuncRegion( SimExpr *rExpr, bool evalEnabled ) {
     
@@ -202,7 +185,7 @@ void SimExprEvaluator::pFuncRegion( SimExpr *rExpr, bool evalEnabled ) {
     if ( tok -> isToken( TOK_LPAREN )) tok -> nextToken( );
     else throw ( ERR_EXPECTED_LPAREN );
     
-    parseExpr( &lExpr );
+    parseExpr( &lExpr, evalEnabled );
 
     if ( evalEnabled ) {
 

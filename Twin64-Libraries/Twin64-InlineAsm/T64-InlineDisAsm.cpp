@@ -96,7 +96,8 @@ int printDwField( char *buf, uint32_t dw ) {
 //----------------------------------------------------------------------------------------
 int buildOpCodeStr( char *buf, T64Instr instr ) {
     
-    uint32_t opCode = extractInstrOpGroup( instr ) * 16 + extractInstrOpNum( instr );
+    uint32_t opCode = 
+            extractInstrOpGroup( instr ) * 16 + extractInstrOpNum( instr );
 
     switch( opCode ) {
             
@@ -1005,8 +1006,8 @@ int T64DisAssemble::formatOpCode( char *buf, size_t bufLen, T64Instr instr ) {
         return ( -1 );
 }
 
-int T64DisAssemble::formatOperands( char *buf, 
-                                    size_t bufLen, 
+int T64DisAssemble::formatOperands( char     *buf, 
+                                    size_t   bufLen, 
                                     T64Instr instr ) {
     
     if ( bufLen >= getOperandsFieldWidth( )) 
@@ -1015,8 +1016,8 @@ int T64DisAssemble::formatOperands( char *buf,
         return ( -1 );
 }
 
-int T64DisAssemble::formatInstr( char *buf, 
-                                 size_t bufLen, 
+int T64DisAssemble::formatInstr( char     *buf, 
+                                 size_t   bufLen, 
                                  T64Instr instr ) {
     
     if ( bufLen >= ( getOpCodeFieldWidth( ) + 1 + getOperandsFieldWidth( ))) {

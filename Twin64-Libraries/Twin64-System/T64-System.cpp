@@ -418,18 +418,30 @@ void T64System::execModule( int modNum, int units, bool haltOnTrap ) {
 // RUN. The simulator can just run the system. We just enter an endless loop 
 // which single steps all modules. 
 //
+// ??? we have the module functions halt, reset, step... use them ?
+//----------------------------------------------------------------------------------------
+void T64System::simReset( ) {
+
+    // ??? resets all processors 
+}
+
+//----------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------------------
 void T64System::simRun( ) {
 
     // ??? signal all processors 
 }
 
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 void T64System::simHalt( ) {
 
     // ??? signal all processors 
 
 }
 
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 void T64System::simStep( unsigned steps ) {
 
     // ??? signal all processors ?
@@ -438,6 +450,8 @@ void T64System::simStep( unsigned steps ) {
 }
 
 //----------------------------------------------------------------------------------------
+// Setup the breakpoint table.
+//
 //----------------------------------------------------------------------------------------
 void T64System::initBreakPointMap( ) {
 
@@ -457,6 +471,9 @@ void T64System::initBreakPointMap( ) {
 }
 
 //----------------------------------------------------------------------------------------
+// Build a module mask from the module number. A module number of -1 represents
+// all modules.
+//
 //----------------------------------------------------------------------------------------
 uint64_t T64System::getModuleMask( int modNum ) const {
 
@@ -467,11 +484,11 @@ uint64_t T64System::getModuleMask( int modNum ) const {
 }
 
 //----------------------------------------------------------------------------------------
- 
-// First check whether this breakpoint already exists.
-// Find a free entry below the high water mark.
-//
-// if No free entry found. Extend the table. if no room error.
+// Add a break point. We first check of this breakpoint already exists. If 
+// so, we just update the module mask. Otherwise we try to find a free entry.
+// If there is none found and we still have room, increment the high water
+// mark and setup the new entry. Breakpoint ranges cannot overlap. We check 
+// all existing breakpoint ranges when we allocate a new entry.
 //
 //----------------------------------------------------------------------------------------
 bool T64System::addBreakPoint( int                  modNum,
@@ -489,16 +506,32 @@ bool T64System::addBreakPoint( int                  modNum,
 
         auto *ptr = &breakPointMap.map[ i ];
 
-        if ( ptr->type    == type &&
-             ptr->adr     == bpAdr &&
-             ptr->adrMask == bpAdrMask ) {
+        if ( ptr -> type    == type &&
+             ptr -> adr     == bpAdr &&
+             ptr -> adrMask == bpAdrMask ) {
 
-            ptr->modMask |= modMask;
-            ptr->enabled = true;
+            ptr -> modMask |= modMask;
+            ptr -> enabled = true;
 
             breakPointMap.enabled = true;
             return( true );
         }
+    }
+
+    for ( unsigned i = 0; i < breakPointMap.hwm; i++ ) {
+
+        auto *ptr = &breakPointMap.map[ i ];
+
+        if ( ptr -> type == T64_SIM_BREAK_NIL ) continue;
+
+        if ( ptr -> type != type ) continue;
+
+        T64Word ptrLen = ~ptr -> adrMask + 1;
+
+        T64Word ptrEnd = ptr -> adr + ptrLen;
+        T64Word bpEnd  = bpAdr + len;
+
+        if ( bpAdr < ptrEnd && ptr -> adr < bpEnd ) return( false );
     }
 
     unsigned bNum = breakPointMap.hwm;
@@ -531,13 +564,13 @@ bool T64System::addBreakPoint( int                  modNum,
 }
 
 //----------------------------------------------------------------------------------------
+// Remove a module from the breakpoint mask. If no modules are left in the 
+// module mask, the breakpoint itself is removed. A module number of -1 has
+// the same effect.
 //
-// Remove this module (or all modules) from the breakpoint.
-// Other modules still use this breakpoint.
-//
-// If No modules left. The breakpoint entry is now unused.
-// Shrink the high water mark over trailing unused entries.
-// if No breakpoints left at all, record no breakpoints ...
+// When a breakpoint is removed and it is the entry at the high water mark, we
+// shrink the high water accordingly. Furthermore, removing the last breakpoint
+// will also set the global breakpoint enable flag.
 //
 //----------------------------------------------------------------------------------------
 bool T64System::removeBreakPoint( unsigned bNum, int modNum ) {
@@ -548,17 +581,16 @@ bool T64System::removeBreakPoint( unsigned bNum, int modNum ) {
     if ( bNum >= breakPointMap.hwm ) return( false );
 
     auto *ptr = &breakPointMap.map[ bNum ];
-    if ( ptr->type == T64_SIM_BREAK_NIL ) return( false );
+    if ( ptr -> type == T64_SIM_BREAK_NIL ) return( false );
 
     ptr -> modMask &= ~modMask;
-    if ( ptr->modMask != 0 ) return( true );
+    if ( ptr -> modMask != 0 ) return( true );
 
-    
-    ptr->type    = T64_SIM_BREAK_NIL;
-    ptr->enabled = false;
-    ptr->adr     = 0;
-    ptr->adrMask = 0;
-    ptr->modMask = 0;
+    ptr -> type    = T64_SIM_BREAK_NIL;
+    ptr -> enabled = false;
+    ptr -> adr     = 0;
+    ptr -> adrMask = 0;
+    ptr -> modMask = 0;
 
     while ( breakPointMap.hwm > 0 ) {
 
@@ -572,6 +604,9 @@ bool T64System::removeBreakPoint( unsigned bNum, int modNum ) {
 }
 
 //----------------------------------------------------------------------------------------
+// Enable / disable a disabled breakpoint. If all breakpoints are disabled,
+// the global enable flag is also updated.  
+//
 //----------------------------------------------------------------------------------------
 bool T64System::enableBreakPoint( unsigned bNum, bool enb ) {
 
@@ -593,6 +628,8 @@ bool T64System::enableBreakPoint( unsigned bNum, bool enb ) {
 }
 
 //----------------------------------------------------------------------------------------
+// Return the enable state of a breakpoint.
+//
 //----------------------------------------------------------------------------------------
 bool T64System::isBreakPointEnabled( unsigned bNum ) {
 
@@ -604,6 +641,8 @@ bool T64System::isBreakPointEnabled( unsigned bNum ) {
 }
 
 //----------------------------------------------------------------------------------------
+// Return a pointer to the breakpoint entry.
+//
 //----------------------------------------------------------------------------------------
 T64SimBreakPointEntry *T64System::getBreakPointEntry( unsigned bNum ) {
 
@@ -615,6 +654,8 @@ T64SimBreakPointEntry *T64System::getBreakPointEntry( unsigned bNum ) {
 } 
 
 //----------------------------------------------------------------------------------------
+// Return a string version of the breakpoint type.
+//
 //----------------------------------------------------------------------------------------
 const char  *T64System::getBreakPointTypeStr( T64SimBreakPointType t ) {
 
@@ -629,6 +670,10 @@ const char  *T64System::getBreakPointTypeStr( T64SimBreakPointType t ) {
 }
 
 //----------------------------------------------------------------------------------------
+// Check for a breakpoint. This routine is called for each instruction fetch
+// and data access. We first check that there are breakpoints at all. If so,
+// we search for a matching and enabled breakpoint.
+//
 //----------------------------------------------------------------------------------------//----------------------------------------------------------------------------------------
 int T64System::checkBreakPoint( T64SimBreakPointType type,
                                 T64Word               adr,

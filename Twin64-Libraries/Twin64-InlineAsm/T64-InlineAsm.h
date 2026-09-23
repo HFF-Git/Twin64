@@ -49,7 +49,7 @@ public:
     int         assembleInstr( char *inputStr, T64Instr *instr );
 
     int         getErrId( );
-    size_t      getErrPos( );
+    unsigned    getErrPos( );
     const char  *getErrStr( int errId );
 };
 

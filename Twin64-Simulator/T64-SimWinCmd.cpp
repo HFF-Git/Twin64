@@ -273,14 +273,12 @@ inline size_t appendPrintf( char   *buf,
                       args);
     va_end( args );
 
-    if (( n < 0 ) ||
-        ( static_cast<size_t>( n ) >= bufSize - bufLen )) {
+    if (( n < 0 ) || ( static_cast<size_t>( n ) >= bufSize - bufLen )) {
 
         throw( ERR_STRING_TOO_LONG );
     }
 
     bufLen += static_cast<size_t>( n );
-
     return( bufLen );
 }
 
@@ -431,7 +429,7 @@ void SimCmdHistory::addCmdLine( const char *cmdStr ) {
 // Optionally, we return the absolute command Id.
 //
 //----------------------------------------------------------------------------------------
-char *SimCmdHistory::getCmdLine( int cmdRef, size_t *cmdId ) {
+char *SimCmdHistory::getCmdLine( int cmdRef, unsigned *cmdId ) {
 
     if ( count == 0 ) return ( nullptr );
 
@@ -471,12 +469,12 @@ char *SimCmdHistory::getCmdLine( int cmdRef, size_t *cmdId ) {
 //here.
 //
 //----------------------------------------------------------------------------------------
-size_t SimCmdHistory::getCmdNum( ) {
+unsigned SimCmdHistory::getCmdNum( ) {
     
     return ( nextCmdNum );
 }
 
-size_t SimCmdHistory::getCmdCount( ) {
+unsigned SimCmdHistory::getCmdCount( ) {
     
     return ( count );
 }
@@ -979,8 +977,8 @@ SimWinOutBuffer *SimCommandsWin::getWinOutHandle( ) {
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::printStackInfoField( uint32_t fmtDesc, 
-                                          size_t row, 
-                                          size_t col ) {
+                                          unsigned row, 
+                                          unsigned col ) {
 
     size_t stacks[ MAX_WIN_STACKS ] = { 0 };
     char   stackStr[ 16 ]           = { 0 };
@@ -1822,7 +1820,8 @@ void SimCommandsWin::displayModuleCmd( ) {
 // Reset command. This command resets a module or the entire system.
 //
 //  RESET <modNum> | ALL
-//
+// 
+// ??? need to take put the for loop... we do in system...
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::resetCmd( ) {
 
@@ -1858,6 +1857,8 @@ void SimCommandsWin::resetCmd( ) {
 //
 //  HALT <modNum> | ALL
 //
+// ??? need to take put the for loop... we do in system...
+// ??? should we be able to halt a single module ?
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::haltCmd( ) {
 
@@ -2234,8 +2235,8 @@ void SimCommandsWin::writeLineCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::histCmd( ) {
     
-    size_t  depth = 0;
-    size_t  cmdCount = hist -> getCmdCount( );
+    unsigned  depth    = 0;
+    unsigned  cmdCount = hist -> getCmdCount( );
     
     if ( tok -> tokId( ) != TOK_EOS ) {
 
@@ -2248,8 +2249,8 @@ void SimCommandsWin::histCmd( ) {
     
     for ( int i = - static_cast<int>( depth ); i < 0; i++ ) {
         
-        size_t cmdRef = 0;
-        char   *cmdLine = hist -> getCmdLine( i, &cmdRef );
+        unsigned cmdRef = 0;
+        char     *cmdLine = hist -> getCmdLine( i, &cmdRef );
         
         if ( cmdLine != nullptr )
             winOut -> writeChars( "[%d]: %s\n", cmdRef, cmdLine );
