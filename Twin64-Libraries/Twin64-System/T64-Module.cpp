@@ -62,19 +62,23 @@ T64ModuleType T64Module::getModuleType( ) {
     return ( moduleTyp );
 }
 
+T64ModuleState T64Module::getModuleState( ) {
+
+    return ( moduleState.load( std::memory_order_acquire ));
+}
+
 const char *T64Module::getModuleTypeName( ) {
 
     switch ( moduleTyp ) {
 
-        case MT_PROC:       return ( "PROC" );
-        case MT_CPU_CORE:   return ( "CPU" );
-        case MT_CPU_TLB:    return ( "TLB"  );
-        case MT_GTLB:       return ( "TLB"  );
-        case MT_IO:         return ( "IO" );
-        case MT_MEM:        return ( "MEM" );
-
-        case MT_NIL:
-        default:            return (  "NIL" );
+        case T64_MOD_TYPE_PROC:         return ( "PROC" );
+        case T64_MOD_TYPE_CPU_CORE:     return ( "CPU" );
+        case T64_MOD_TYPE_CPU_TLB:      return ( "TLB"  );
+        case T64_MOD_TYPE_GTLB:         return ( "TLB"  );
+        case T64_MOD_TYPE_IO:           return ( "IO" );
+        case T64_MOD_TYPE_MEM:          return ( "MEM" );
+        case T64_MOD_TYPE_NIL:          return ( "NIL" );
+        default:                        return ( "NIL" );
     }
 }
 

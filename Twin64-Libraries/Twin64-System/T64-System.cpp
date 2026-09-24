@@ -228,7 +228,7 @@ int T64System::addModule( T64Module *module ) {
 
     moduleMap[ module -> getModuleNum( ) ] = module;    
 
-    if ( module -> getModuleType( ) == MT_PROC ) {
+    if ( module -> getModuleType( ) == T64_MOD_TYPE_PROC ) {
 
         rStat = insertIntoMap( systemProcMap,
                                module,
@@ -348,29 +348,13 @@ T64Module *T64System::lookupByAdr ( T64Word adr ) const {
 T64ModuleType T64System::getModuleType( int modNum ) const {
 
     T64Module *mod = lookupByModNum( modNum );
-    return (( mod != nullptr ) ? mod -> getModuleType( ) : MT_NIL );
+    return (( mod != nullptr ) ? mod -> getModuleType( ) : T64_MOD_TYPE_NIL );
 }
 
 T64ModuleState T64System::getModuleState( int modNum ) const {
 
     T64Module *mod = lookupByModNum( modNum );
-    // return (( mod != nullptr ) ? mod -> getModuleState( ) : T64_MOD_STATE_NIL );
-
-    return ( T64_MOD_STATE_NIL ); // ??? for now ...
-}
-
-//----------------------------------------------------------------------------------------
-// Reset modules. We just invoke the module handler for the registered module.
-// A module number of -1 will reset all modules.
-//
-//----------------------------------------------------------------------------------------
-void T64System::resetModule( int modNum ) {
-
-    if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
-
-        if ( moduleMap[ modNum ] != nullptr )
-            moduleMap[ modNum ] -> resetModule( );
-    }
+    return (( mod != nullptr ) ? mod -> getModuleState( ) : T64_MOD_STATE_NIL );
 }
 
 //----------------------------------------------------------------------------------------
@@ -386,39 +370,17 @@ void T64System::haltModule( int modNum ) {
     }
 }
 
-//----------------------------------------------------------------------------------------
-// Run a module. We will return to the caller and the threads now run in parallel.
-//
-//----------------------------------------------------------------------------------------
-void T64System::runModule( int modNum ) {
+void T64System::moduleRunComplete()
+{
+    std::lock_guard<std::mutex> lk(sLock);
 
-    if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+    if (runPending > 0)
+        --runPending;
 
-        if ( auto *m = dynamic_cast<T64ProcThreadModule *> ( moduleMap[ modNum ] ))
-            m -> runModule( );
-    }
-}
-
-//----------------------------------------------------------------------------------------
-// Run a module for n execution units. We will wait until these units have been 
-// executed. 
-//
-//----------------------------------------------------------------------------------------
-void T64System::execModule( int modNum, int units, bool haltOnTrap ) {
-
-    if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
-
-        if ( moduleMap[ modNum ] == nullptr ) return;
-
-        if (( units >= 1 ) && ( units < INT32_MAX )) {
-
-            if ( auto *m = dynamic_cast<T64ProcThreadModule *> ( moduleMap[ modNum ] )) {
-
-                m -> execModule( units, haltOnTrap );   
-                m -> waitUntilStopped( );
-
-            }
-        }
+    if (runPending == 0) {
+        sysState.store(T64_SYS_STATE_HALT,
+                       std::memory_order_release);
+        sCondVar.notify_one();
     }
 }
 
@@ -672,7 +634,7 @@ int T64System::checkBreakPoint( T64SimBreakPointType type,
 }
 
 //----------------------------------------------------------------------------------------
-//
+// System state property.
 //
 //----------------------------------------------------------------------------------------
 T64SystemState T64System::getSystemState( ) {
@@ -823,56 +785,85 @@ bool T64System::busOpControl( T64Module *mod,
 }
 
 //----------------------------------------------------------------------------------------
-// RUN. The simulator can just run the system. We just enter an endless loop 
-// which single steps all modules. 
+// Simulator reset. We can reset all modules or a single one. On an "all" 
+// reset, the state is "HALT" afterwards. On an individual reset, the system 
+// state is unchanged.
 //
-// ??? if all modules, just set sysState, which they should catch ?
-// ??? a single module, just tell it to reset.
 //----------------------------------------------------------------------------------------
 void T64System::simReset( int modNum ) {
 
-    if ( modNum == -1 ) {
+    {
+        std::lock_guard<std::mutex> lk(sLock);
 
-        sysState = T64_SYS_STATE_RESET;
-    }
-    else {
+        if ( modNum == -1 ) {
 
-        if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+            for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
-            if ( moduleMap[ modNum ] != nullptr )
-                moduleMap[ modNum ] -> resetModule( );
+                if ( auto *m = dynamic_cast<T64ProcThreadModule *> ( moduleMap[ i ] ))
+                    m -> resetModule( );
+            }
+
+            sysState.store( T64_SYS_STATE_HALT, std::memory_order_release );
+        }
+        else if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+
+            if ( auto *m = dynamic_cast<T64ProcThreadModule *> ( moduleMap[ modNum ] ))
+                m -> resetModule( );
         }
     }
 }
 
 //----------------------------------------------------------------------------------------
-// Resume the simulator. All we have to do is to put the system into the RUN
-// state. 
+// Resume the simulator. There are two cases. The first is to put all modules
+// into "EXEC" mode. The second is to just do this for one module. Note that
+// both cases the simulator was in "HALT" mode. Since more than one thread
+// can be fired off, we need to keep track how many need to run to completion
+// until we resume the simulator command interface. The "runPending" count and
+// the "sCondVar" variable take care of this.
 // 
 //----------------------------------------------------------------------------------------
-void T64System::simRun( ) {
+void T64System::simRun(int modNum, int steps, bool haltOnTrap) {
 
-    sysState = T64_SYS_STATE_RUN;
-}
+    std::unique_lock<std::mutex> lk(sLock);
 
-//----------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------
-void T64System::simHalt( ) {
-
-    sysState = T64_SYS_STATE_HALT;
-}
-
-//----------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------
-void T64System::simStep( int modNum, unsigned steps ) {
+    runPending = 0;
+    sysState.store(T64_SYS_STATE_RUN, std::memory_order_release);
 
     if ( modNum == -1 ) {
 
-        // ??? step all processors 
-    }
-    else {
+        for (int i = 0; i < MAX_MOD_MAP_ENTRIES; i++) {
 
+            if (auto *m =
+                    dynamic_cast<T64ProcThreadModule *>(moduleMap[i])) {
 
+                ++runPending;
+                m->execModule( steps, haltOnTrap );
+            }
+        }
     }
+    else if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+
+        if ( auto *m =
+                dynamic_cast<T64ProcThreadModule *>(moduleMap[modNum])) {
+
+            runPending = 1;
+            m -> execModule(steps, haltOnTrap);
+        }
+    }
+
+    sCondVar.wait(lk, [this] {
+
+        return runPending == 0;
+    });
+}
+
+//----------------------------------------------------------------------------------------
+//
+//
+//----------------------------------------------------------------------------------------
+void T64System::simHalt( ) {
+
+    sysState.store(T64_SYS_STATE_HALT, std::memory_order_release);
+    sCondVar.notify_one();      
 }
 

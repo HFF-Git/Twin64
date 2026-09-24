@@ -62,7 +62,7 @@ T64Memory::T64Memory( T64System     *sys,
                       T64Word       spaLen ) : 
 
                       T64Module(    sys,
-                                    MT_MEM, 
+                                    T64_MOD_TYPE_MEM, 
                                     modNum,
                                     spaAdr,
                                     spaLen
@@ -99,7 +99,8 @@ void T64Memory::initModule( ) {
 void T64Memory::resetModule( ) {
 
     if ( memData != nullptr ) free( memData );
-    this -> memData  = (uint8_t *) calloc( spaLen, sizeof( uint8_t ));
+    memData  = reinterpret_cast<uint8_t *>( 
+                    calloc( static_cast<size_t>( spaLen ), sizeof( uint8_t )));
 }
 
 //----------------------------------------------------------------------------------------

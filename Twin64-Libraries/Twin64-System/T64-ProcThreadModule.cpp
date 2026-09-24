@@ -44,14 +44,14 @@ T64ProcThreadModule::T64ProcThreadModule( T64System        *sys,
                                                         spaLen ) { 
 
     mTrapCode = NO_TRAP;
-    mState.store( T64_MOD_STATE_HALTED, std::memory_order_release );      
+    moduleState.store( T64_MOD_STATE_HALTED, std::memory_order_release );      
 }
 
 T64ProcThreadModule:: ~ T64ProcThreadModule( ) {
 
     mTrapCode = NO_TRAP;
-    mState.store( T64_MOD_STATE_TERMINATE, std::memory_order_release );
-    mCondVar.notify_one( );
+    moduleState.store( T64_MOD_STATE_TERMINATE, std::memory_order_release );
+ //   mCondVar.notify_one( );
 
     if ( mWorker.joinable( )) mWorker.join();
 }
@@ -67,7 +67,7 @@ void T64ProcThreadModule::setModuleState( T64ModuleState state ) {
 
     {
         std::lock_guard<std::mutex> lk(mLock);
-        mState = state;
+        moduleState = state;
     }
 
     mCondVar.notify_one( );
@@ -107,26 +107,6 @@ void T64ProcThreadModule::execModule( int units, bool haltOnTrap ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Wait for the thread to stop. We stop when the number of steps were executed
-// or an exception, i.e. a trap occurred. 
-//
-//----------------------------------------------------------------------------------------
-T64TrapCode T64ProcThreadModule::waitUntilStopped( ) {
-
-    std::unique_lock<std::mutex> lk(mLock);
-
-    mCondVar.wait(lk, [this] {
-
-        T64ModuleState s = mState.load( std::memory_order_acquire );
-
-        return ( s == T64_MOD_STATE_HALTED ) ||
-               ( s == T64_MOD_STATE_TERMINATE );
-    });
-
-    return ( mTrapCode );
-}
-
-//----------------------------------------------------------------------------------------
 // Support for LDR/STC instructions.
 //
 //----------------------------------------------------------------------------------------
@@ -150,11 +130,6 @@ bool T64ProcThreadModule::isRsvValid( ) {
 // A little helper to return the module state and trap code.
 //
 //----------------------------------------------------------------------------------------
-T64ModuleState T64ProcThreadModule::getModuleState( ) {
-
-    return ( mState.load( std::memory_order_acquire ));
-}
-
 T64TrapCode T64ProcThreadModule::getTrapCode( ) {
 
     return( mTrapCode );
@@ -181,20 +156,20 @@ T64TrapCode T64ProcThreadModule::getTrapCode( ) {
 //
 //----------------------------------------------------------------------------------------
 void T64ProcThreadModule::moduleWorker( ) {
-    
-    mState.store( T64_MOD_STATE_RESET, std::memory_order_release );
+ 
+    moduleState.store( T64_MOD_STATE_RESET, std::memory_order_release );
 
     while ( true ) {
 
-        T64ModuleState s = mState.load( std::memory_order_acquire );
+        T64ModuleState s = moduleState.load( std::memory_order_acquire );
 
         if ( s == T64_MOD_STATE_HALTED ) {
 
-            std::unique_lock<std::mutex> lk(mLock);
+            std::unique_lock<std::mutex> lk( mLock );
 
-            mCondVar.wait(lk, [this] {
+            mCondVar.wait( lk, [this] {
 
-                return( mState.load(std::memory_order_acquire) != 
+                return( moduleState.load(std::memory_order_acquire) != 
                             T64_MOD_STATE_HALTED );
             });
 
@@ -208,7 +183,7 @@ void T64ProcThreadModule::moduleWorker( ) {
                // resetModule( );
 
                 mTrapCode = NO_TRAP;
-                mState.store( T64_MOD_STATE_HALTED, 
+                moduleState.store( T64_MOD_STATE_HALTED, 
                                  std::memory_order_release );
 
                 mCondVar.notify_one( );
@@ -217,35 +192,47 @@ void T64ProcThreadModule::moduleWorker( ) {
 
             case T64_MOD_STATE_EXECUTE: {
 
-                while ( true ) {
+                while (true) {
 
-                    if ( mState.load( std::memory_order_acquire )
-                            != T64_MOD_STATE_EXECUTE ) {
-
+                    // Has this module been stopped?
+                    if ( moduleState.load( std::memory_order_acquire )
+                            != T64_MOD_STATE_EXECUTE) {
                         break;
                     }
 
+                    // Has this module completed its requested execution?
                     if ( mUnitCount == 0 ) {
 
                         mTrapCode = NO_TRAP;
-                        mState.store( T64_MOD_STATE_HALTED,
-                                      std::memory_order_release );
 
+                        moduleState.store( T64_MOD_STATE_HALTED,
+                                           std::memory_order_release) ;
+
+                        sys->moduleRunComplete( );
                         break;
                     }
 
-                    if (( mUnitCount != 1 ) &&
-                        ( sys -> getSystemState( ) == T64_SYS_STATE_HALT )) {
+                    // Has the entire simulated system been stopped?
+                    if ( sys -> getSystemState( ) == T64_SYS_STATE_HALT ) {
 
+                        moduleState.store( T64_MOD_STATE_HALTED,
+                                           std::memory_order_release );
+
+                        sys->moduleRunComplete( );
                         break;
                     }
 
-                    mTrapCode = executeUnit();
+                    // Execute one unit.
+                    mTrapCode = executeUnit( );
 
-                    if (( mTrapCode != NO_TRAP ) && ( enterSimOnTrap )) {
+                    // A trap stops the entire simulated system.
+                    if (( mTrapCode != NO_TRAP)  && enterSimOnTrap ) {
 
-                        mState.store( T64_MOD_STATE_HALTED, 
-                                      std::memory_order_release );
+                        moduleState.store( T64_MOD_STATE_HALTED,
+                                           std::memory_order_release) ;
+
+                        sys->simHalt( );
+                        sys->moduleRunComplete( );
                         break;
                     }
 
@@ -262,4 +249,3 @@ void T64ProcThreadModule::moduleWorker( ) {
         }
     }
 }
-

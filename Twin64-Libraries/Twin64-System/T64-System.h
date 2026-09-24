@@ -56,13 +56,13 @@ constexpr unsigned  MAX_SIM_BREAKPOINTS     = 8U;
 //----------------------------------------------------------------------------------------
 enum T64ModuleType {
 
-    MT_NIL          = 0,
-    MT_PROC         = 10,
-    MT_CPU_CORE     = 12,
-    MT_CPU_TLB      = 13, 
-    MT_GTLB         = 20,
-    MT_MEM          = 30,
-    MT_IO           = 40   
+    T64_MOD_TYPE_NIL                = 0,
+    T64_MOD_TYPE_PROC               = 10,
+    T64_MOD_TYPE_CPU_CORE           = 12,
+    T64_MOD_TYPE_CPU_TLB            = 13, 
+    T64_MOD_TYPE_GTLB               = 20,
+    T64_MOD_TYPE_MEM                = 30,
+    T64_MOD_TYPE_IO                 = 40   
 };
 
 //----------------------------------------------------------------------------------------
@@ -71,10 +71,10 @@ enum T64ModuleType {
 //----------------------------------------------------------------------------------------
 enum T64BBusOpControlEvents {
 
-    T64_CNTRL_EVENT_MODULE_PURGE  = 1,
-    T64_CNTRL_EVENT_TLB_PURGE     = 2,
-    T64_CNTRL_EVENT_TLB_INSERT    = 3,
-    T64_CNTRL_EVENT_STORE_OP      = 4
+    T64_CNTRL_EVENT_MODULE_PURGE    = 1,
+    T64_CNTRL_EVENT_TLB_PURGE       = 2,
+    T64_CNTRL_EVENT_TLB_INSERT      = 3,
+    T64_CNTRL_EVENT_STORE_OP        = 4
 };
 
 //----------------------------------------------------------------------------------------
@@ -83,11 +83,11 @@ enum T64BBusOpControlEvents {
 //----------------------------------------------------------------------------------------
 enum T64ModuleState : int {
 
-    T64_MOD_STATE_NIL          = 0,
-    T64_MOD_STATE_RESET        = 1,
-    T64_MOD_STATE_EXECUTE      = 2, 
-    T64_MOD_STATE_HALTED       = 3,
-    T64_MOD_STATE_TERMINATE    = 4    
+    T64_MOD_STATE_NIL               = 0,
+    T64_MOD_STATE_RESET             = 1,
+    T64_MOD_STATE_EXECUTE           = 2, 
+    T64_MOD_STATE_HALTED            = 3,
+    T64_MOD_STATE_TERMINATE         = 4    
 };
 
 //----------------------------------------------------------------------------------------
@@ -144,6 +144,10 @@ struct T64System;
 // class for all concrete modules and reacts to bus operations. Each module has
 // a HPA address range and an optional SPA address range in I/O memory. 
 //
+// The T64Module class is an abstract class. The inheriting class is required 
+// to implement the module init and reset methods, as well as the bus operation 
+// interfaces.
+//
 //----------------------------------------------------------------------------------------
 struct T64Module {
     
@@ -170,34 +174,39 @@ struct T64Module {
     busOpControlEvent( T64BBusOpControlEvents event, 
                        T64Word  arg1, T64Word arg2 ) = 0;
 
-    T64ModuleType       getModuleType( );
-    int                 getModuleNum( );
-    const char          *getModuleTypeName( );
+    T64ModuleType               getModuleType( );
+    int                         getModuleNum( );
+    const char                  *getModuleTypeName( );
     
-    T64Word             getHpaAdr( );
-    T64Word             getHpaLen( );
-    T64Word             getSpaAdr( );
-    T64Word             getSpaLen( );
+    T64Word                     getHpaAdr( );
+    T64Word                     getHpaLen( );
+    T64Word                     getSpaAdr( );
+    T64Word                     getSpaLen( );
+
+    T64ModuleState              getModuleState( );
+
+    // ??? should we have routines to get the data from SPA HPA ?
 
     protected: 
 
-    T64System           *sys;
-    int                 moduleNum;
-    T64ModuleType       moduleTyp;
+    T64System                   *sys;
+    int                         moduleNum;
+    T64ModuleType               moduleTyp;
+    std::atomic<T64ModuleState> moduleState { T64_MOD_STATE_NIL };
 
-    T64Word             hpaAdr;
-    T64Word             hpaLen;
-    T64Word             spaAdr;
-    T64Word             spaLen;
+    T64Word                     hpaAdr;
+    T64Word                     hpaLen;
+    T64Word                     spaAdr;
+    T64Word                     spaLen;
 
-    T64Word             mrStatus;
-    T64Word             mrCommand;
-    T64Word             mrData;
-    T64Word             mrEir;
-    T64Word             mrConfig;
-    T64Word             mrVersion;
-    T64Word             mrType;
-    T64Word             mrId;
+    T64Word                     mrStatus;
+    T64Word                     mrCommand;
+    T64Word                     mrData;
+    T64Word                     mrEir;
+    T64Word                     mrConfig;
+    T64Word                     mrVersion;
+    T64Word                     mrType;
+    T64Word                     mrId;
 };
 
 //----------------------------------------------------------------------------------------
@@ -223,11 +232,9 @@ struct T64ProcThreadModule : T64Module {
     virtual void                haltModule( );
     virtual void                runModule( );
     virtual void                execModule( int steps, bool haltOnTrap );
-    virtual T64TrapCode         waitUntilStopped( );
     
     virtual T64TrapCode         executeUnit( ) = 0;
 
-    T64ModuleState              getModuleState( );
     T64TrapCode                 getTrapCode( );
     void                        setEnterSimOnTrap( bool val );
   
@@ -240,7 +247,6 @@ struct T64ProcThreadModule : T64Module {
     void                        setModuleState( T64ModuleState state );
     void                        moduleWorker( );
 
-    std::atomic<T64ModuleState> mState { T64_MOD_STATE_NIL };
     std::mutex                  mLock;
     std::condition_variable     mCondVar;
     std::thread                 mWorker;
@@ -316,18 +322,19 @@ struct T64System {
     const char              *getSystemStateStr( );
 
     void                    simReset( int modNum = -1 );
-    void                    simRun( );
+
+    void                    simRun( int  modNum      = -1, 
+                                    int  steps       = 1,
+                                    bool haltOnTrap = false );
+
     void                    simHalt( );
-    void                    simStep( int modNum, unsigned steps = 1 );
 
     int                     addModule( T64Module *module );
     int                     removeModule( T64Module *module );
 
-    void                    resetModule( int modNum );
     void                    haltModule( int modNum );
-    void                    runModule( int modNum );
-    void                    execModule( int modNum, int steps, bool haltOnTrap );
     bool                    isModuleHalted( int modNum );   
+    void                    moduleRunComplete( );
     
     T64ModuleType           getModuleType( int modNum ) const;
     T64ModuleState          getModuleState( int modNum  ) const;
@@ -399,4 +406,6 @@ struct T64System {
 
     std::atomic<T64SystemState> sysState { T64_SYS_STATE_RESET };
     std::mutex                  sLock;
+    std::condition_variable     sCondVar;
+    unsigned                    runPending;
 };

@@ -320,7 +320,7 @@ bool translateAdr( T64System *sys, T64Word virtAdr, T64Word *physAdr ) {
     else {
 
         T64GlobalTlb *tlbModule = 
-        reinterpret_cast<T64GlobalTlb *>( sys -> lookupByModuleType( MT_GTLB ));
+        reinterpret_cast<T64GlobalTlb *>( sys -> lookupByModuleType( T64_MOD_TYPE_GTLB ));
         
         if ( tlbModule == nullptr ) return ( false );
 
@@ -530,12 +530,18 @@ void SimCommandsWin::drawBanner( ) {
     
     uint32_t fmtDesc        = FMT_DEFAULT | FMT_BOLD | FMT_BG_COL_WHITE;
     uint32_t fmtDescBlack   = fmtDesc | FMT_FG_COL_BLACK;
+    uint32_t fmtDescRed     = fmtDesc | FMT_FG_COL_RED;
+    uint32_t fmtDescGreen   = fmtDesc | FMT_FG_COL_GREEN;
 
     setWinCursor( 1, 1 );
     printTextField( "Commands", ( fmtDescBlack | FMT_ALIGN_LFT ), 16 );
 
     printTextField( "System State: ", fmtDescBlack );
-    printTextField( glb -> system -> getSystemStateStr( ), fmtDescBlack );
+
+    if ( glb -> system -> getSystemState( ) == T64_SYS_STATE_RUN ) 
+        printTextField( glb -> system -> getSystemStateStr( ), fmtDescGreen );
+    else 
+        printTextField( glb -> system -> getSystemStateStr( ), fmtDescRed );
     padLine( fmtDesc ); 
 
     if ( glb -> winDisplay -> isWindowsOn( )) {
@@ -561,11 +567,11 @@ void SimCommandsWin::drawBody( ) {
     
     glb -> console ->setFmtAttributes( FMT_DEFAULT );
   
-    size_t rowsToShow = getRows( ) - 2;
+    unsigned rowsToShow = getRows( ) - 2;
     winOut -> setScrollWindowSize( rowsToShow );
     setWinCursor( rowsToShow + 1, 1 );
     
-    for ( size_t i = 0; i < rowsToShow; i++ ) {
+    for ( unsigned i = 0; i < rowsToShow; i++ ) {
         
         char *lineBufPtr = winOut -> getLineRelative( i );
         if ( lineBufPtr != nullptr ) {
@@ -643,8 +649,8 @@ size_t SimCommandsWin::readCmdLine( char   *cmdBuf,
     };
     
     size_t      promptBufLen    = strlen( promptBuf );
-    size_t      cmdBufCursor    = 0;
     size_t      cmdBufLen       = 0;
+    size_t      cmdBufCursor    = 0;
     int         ch              = ' ';
     CharType    state           = CT_NORMAL;
     
@@ -661,7 +667,9 @@ size_t SimCommandsWin::readCmdLine( char   *cmdBuf,
         cmdBufCursor                = initialCmdBufLen;
 
         glb -> console -> writeChars( "\r %s%s", promptBuf, cmdBuf );
-        setWinCursor( 0, 1U + promptBufLen + cmdBufCursor );
+
+        setWinCursor( 0, static_cast<unsigned>( 1U + 
+                                                promptBufLen + cmdBufCursor ));
     }
     else cmdBuf[ 0 ] = '\0';
     
@@ -715,7 +723,9 @@ size_t SimCommandsWin::readCmdLine( char   *cmdBuf,
                     
                     if ( cmdBufCursor > 0 ) {
 
-                        removeChar( cmdBuf, &cmdBufLen, &cmdBufCursor );
+                        removeChar( cmdBuf, 
+                                    &cmdBufLen, 
+                                    &cmdBufCursor );
                         glb -> console -> writeChars( "\r %s%s", 
                                                       promptBuf, cmdBuf );
 
@@ -1233,7 +1243,7 @@ void SimCommandsWin::addTlbModule( int modNum ) {
     tok -> checkEOS( );
 
     T64GlobalTlb *t = new T64GlobalTlb( glb -> system,
-                                        MT_GTLB, 
+                                        T64_MOD_TYPE_GTLB, 
                                         modNum, 
                                         T64_TK_GLOBAL_TLB, 
                                         tlbType );
@@ -1793,7 +1803,7 @@ void SimCommandsWin::displayModuleCmd( ) {
             winOut -> writeChars( "%02d   ", i  );
             winOut -> writeChars( "%-7s", mPtr -> getModuleTypeName( ));
 
-            if ( mPtr -> getModuleType( ) == MT_PROC ) {
+            if ( mPtr -> getModuleType( ) == T64_MOD_TYPE_PROC ) {
 
                 winOut -> writeChars( "%-8s", 
                 reinterpret_cast<T64Processor *>( mPtr ) -> getProcStateStr( ));
@@ -1824,7 +1834,6 @@ void SimCommandsWin::displayModuleCmd( ) {
 //
 //  RESET <modNum> | ALL
 // 
-// ??? need to take put the for loop... we do in system...
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::resetCmd( ) {
 
@@ -1843,14 +1852,7 @@ void SimCommandsWin::resetCmd( ) {
     
     tok -> checkEOS( );
 
-    if ( modNum == -1 ) {
-
-        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
-
-            glb -> system -> resetModule( i );
-        }
-    }
-    else glb -> system -> resetModule( modNum );
+    glb -> system -> simReset( modNum );
 }
 
 //----------------------------------------------------------------------------------------
@@ -1893,9 +1895,9 @@ void SimCommandsWin::haltCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Step command. The command will advance a module by one or more steps. A
-// step is an execution unit. If the module number is omitted, we refer to the 
-// current processor window module number. The default number of steps is one.
+// Step command. The command will advance the system or a module by one or more
+// steps. A step is an execution unit. If the module number is omitted, we refer
+// to all modules, if steps is omitted we run one step.
 //
 //  S [ <steps> [ "," <modNum> ]]
 //
@@ -1922,23 +1924,20 @@ void SimCommandsWin::stepCmd( ) {
             modNum = eval -> acceptIntExpr( ERR_EXPECTED_MOD_NUM, 
                                             0, T64_IO_MAX_MODULES - 1 );
     }
-    else modNum = glb -> winDisplay -> getCurrentWinModNum( );
-
-    if ( modNum == -1 ) {
-
-        modNum = glb -> winDisplay -> getCurrentWinModNum( );
-        if ( modNum == -1 ) throw( ERR_EXPCTED_PROC_MODULE );
-    }
-
-    T64Module *m = glb -> system -> lookupByModNum( modNum );
-    if ( m == nullptr ) throw( ERR_EXPCTED_PROC_MODULE );
-
-    if ( m -> getModuleType( ) != MT_PROC ) throw( ERR_EXPCTED_PROC_MODULE );
-
-    bool haltOnTrap = glb -> env -> getEnvVarBool(ENV_HALT_ON_TRAPS );
 
     tok -> checkEOS( );
-    glb -> system -> execModule( modNum, numOfSteps, haltOnTrap );
+
+    if ( modNum > 0 ) {
+
+        T64Module *m = glb -> system -> lookupByModNum( modNum );
+        if ( m == nullptr ) throw( ERR_EXPCTED_PROC_MODULE );
+
+        if ( m -> getModuleType( ) != T64_MOD_TYPE_PROC ) 
+            throw( ERR_EXPCTED_PROC_MODULE );
+    }
+    
+    bool haltOnTrap = glb -> env -> getEnvVarBool(ENV_HALT_ON_TRAPS );
+    glb -> system -> simRun( modNum, numOfSteps, haltOnTrap );
 }
 
 //----------------------------------------------------------------------------------------
@@ -1968,19 +1967,19 @@ void SimCommandsWin::runCmd( ) {
         modNum = eval -> acceptIntExpr( ERR_EXPECTED_MOD_NUM, 
                                         0, T64_IO_MAX_MODULES - 1 );
 
-        if ( glb -> system -> getModuleType( modNum ) != MT_PROC ) {
+        if ( glb -> system -> getModuleType( modNum ) != T64_MOD_TYPE_PROC ) {
 
             throw( ERR_EXPCTED_PROC_MODULE );
         }
 
         // ??? check if module is in halted state then put into RUN state.
-        glb -> system -> runModule( modNum );
+        // glb -> system -> runModule( modNum );
     }
     else {
 
          for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
-            glb -> system -> runModule( i );
+            // glb -> system -> runModule( i );
         }
     }
 
@@ -2824,7 +2823,7 @@ void SimCommandsWin::modifyRegCmd( ) {
     reinterpret_cast<T64Processor *>( glb -> system -> lookupByModNum( modNum ));
 
     if ( proc == nullptr ) throw ( ERR_INVALID_MODULE_TYPE );
-    if ( proc -> getModuleType( ) != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
+    if ( proc -> getModuleType( ) != T64_MOD_TYPE_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
 
     switch( regSetId ) {
 
@@ -3065,8 +3064,8 @@ void SimCommandsWin::winEnableCmd( bool enable ) {
 void SimCommandsWin::winSetRadixCmd( ) {
 
    
-    size_t rdx     = toUInt32( glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT ));
-    int    winNum  = -1;
+    unsigned rdx     = toUInt32( glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT ));
+    int      winNum  = -1;
    
     if ( tok -> isToken( TOK_EOS )) {
         

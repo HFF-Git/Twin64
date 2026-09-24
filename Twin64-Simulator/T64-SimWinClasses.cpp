@@ -153,7 +153,7 @@ bool translateAdr( T64System *sys, T64Word virtAdr, T64Word *physAdr ) {
     else {
 
         T64GlobalTlb *tlbModule = 
-            reinterpret_cast<T64GlobalTlb *>( sys -> lookupByModuleType( MT_GTLB ));
+            reinterpret_cast<T64GlobalTlb *>( sys -> lookupByModuleType( T64_MOD_TYPE_GTLB ));
 
         if ( tlbModule == nullptr ) return ( false );
 
@@ -211,7 +211,7 @@ SimWinProcState::SimWinProcState( SimGlobals *glb, int modNum ) : SimWin( glb ) 
     for ( int i = 0; i < T64_MAX_CREGS; i++ ) lastCRegState[ i ] = 0;
 
     T64ModuleType mType = glb -> system -> getModuleType( modNum );
-    if ( mType != MT_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
+    if ( mType != T64_MOD_TYPE_PROC ) throw ( ERR_INVALID_MODULE_TYPE );
 
     this -> proc = 
      reinterpret_cast<T64Processor *>( glb -> system -> lookupByModNum( modNum ));
@@ -664,7 +664,7 @@ SimWinTlb::SimWinTlb( SimGlobals    *glb,
     this -> glb = glb;
 
     T64ModuleType mType = glb -> system -> getModuleType( modNum );
-    if ( mType != MT_GTLB ) throw ( ERR_INVALID_MODULE_TYPE );
+    if ( mType != T64_MOD_TYPE_GTLB ) throw ( ERR_INVALID_MODULE_TYPE );
 
     this -> tlb = 
     reinterpret_cast<T64GlobalTlb *>( glb -> system -> lookupByModNum( modNum ));

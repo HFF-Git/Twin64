@@ -71,7 +71,7 @@ T64Processor::T64Processor( T64System           *sys,
                             T64CacheType        cacheType ) : 
 
                             T64ProcThreadModule( sys,
-                                                MT_PROC, 
+                                                T64_MOD_TYPE_PROC, 
                                                 modNum,
                                                 0,
                                                 0 ) {
@@ -80,7 +80,7 @@ T64Processor::T64Processor( T64System           *sys,
 
     cpu       = new T64Cpu( this, cpuType );
     localTlb  = new T64LocalTlb( this, T64_TK_UNIFIED_TLB, tlbType );
-    globalTlb = dynamic_cast<T64GlobalTlb*>( sys -> lookupByModuleType( MT_GTLB ));
+    globalTlb = dynamic_cast<T64GlobalTlb*>( sys -> lookupByModuleType( T64_MOD_TYPE_GTLB ));
     
     cpu -> reset( );
     localTlb -> reset( );
@@ -97,7 +97,12 @@ T64Processor:: ~T64Processor( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Implement the module abstract methods for init, reset, halt and execute.
+// Implement the module abstract methods for init, reset and execute. The thread 
+// class expect to call a routine that will execute a number of units. For a 
+// processor, the unit is an instruction step. The routine will also return
+// a boolean value which indicates whether the thread required attention. For a
+// processor this is a trap that was raised. The thread will then be placed in 
+// a "HALT" state for examination.
 //
 //----------------------------------------------------------------------------------------
 void T64Processor::initModule( ) {
@@ -116,14 +121,6 @@ void T64Processor::resetModule( ) {
     T64ProcThreadModule::resetModule( );
 }
 
-//----------------------------------------------------------------------------------------
-// The thread class expect to call a routine that will execute a number of units.
-// For a processor, the unit is an instruction step. The routine will also return
-// a boolean value which indicates whether the thread required attention. For a
-// processor this is a trap that was raised. The thread will then be placed in a
-// "HALT" state for examination.
-//
-//----------------------------------------------------------------------------------------
 T64TrapCode T64Processor::executeUnit( ) {
 
     return( cpu -> executeInstr( ));
