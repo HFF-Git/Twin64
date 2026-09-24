@@ -684,9 +684,9 @@ const char *T64System::getSystemStateStr( ) {
 
     switch ( sysState ) {
 
-        case T64_SYS_STATE_HALT: return ( "HALT" );
-        case T64_SYS_STATE_RUN: return( "RUN" );
-        case T64_SYS_STATE_RESET: return( "RESET" );
+        case T64_SYS_STATE_HALT:    return ( "HALT" );
+        case T64_SYS_STATE_RUN:     return( "RUN" );
+        case T64_SYS_STATE_RESET:   return( "RESET" );
         default: return ( "NIL ");
     }
 }

@@ -38,6 +38,7 @@ T64Module::T64Module( T64System        *sys,
                       T64Word          spaAdr,
                       T64Word          spaLen ) {
 
+    this -> sys         = sys;
     this -> moduleTyp   = modType;
     this -> moduleNum   = modNum;
     this -> spaAdr      = spaAdr;

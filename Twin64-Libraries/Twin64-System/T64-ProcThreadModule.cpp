@@ -80,11 +80,13 @@ void T64ProcThreadModule::initModule( ) {
 
 void T64ProcThreadModule::resetModule( ) {
 
+    mUnitCount = 0;
     setModuleState( T64_MOD_STATE_RESET );
 }
 
 void T64ProcThreadModule::haltModule( ) {
 
+    mUnitCount = 0;
     setModuleState( T64_MOD_STATE_HALTED );
 }
 
@@ -95,6 +97,8 @@ void T64ProcThreadModule::runModule( ) {
 }
 
 void T64ProcThreadModule::execModule( int units, bool haltOnTrap ) {
+
+    if ( units < -1 ) units = -1;
 
     mUnitCount      = units;
     enterSimOnTrap  = haltOnTrap;
