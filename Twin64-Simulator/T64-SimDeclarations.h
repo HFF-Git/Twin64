@@ -225,14 +225,14 @@ enum SimTokId : unsigned {
     CMD_ENV,                    CMD_XF,                     CMD_LOADELF,
     CMD_WRITE_LINE,             CMD_ASSERT,                 CMD_CHECK,   
     CMD_DMOD,                   CMD_NMOD,                   CMD_RMOD,       
-    CMD_RESET,                  CMD_RUN,                    CMD_STEP,                                             
-    CMD_HALT,                   CMD_ITLB,                   CMD_PTLB, 
-    CMD_MR,                     CMD_DM,                     CMD_MB,             
-    CMD_MS,                     CMD_MW,                     CMD_MD,     
-    CMD_DWIN,                   CMD_ECHO,                   CMD_LOG,
-    CMD_IF,                     CMD_ELSEIF,                 CMD_ELSE,
-    CMD_ENDIF,                  CMD_BL,                     CMD_BN,
-    CMD_BK,                     CMD_BE,                     CMD_BD,       
+    CMD_RESET,                  CMD_RUN,                    CMD_STEP,                                            
+    CMD_ITLB,                   CMD_PTLB,                   CMD_MR,    
+    CMD_DM,                     CMD_MB,                     CMD_MS,
+    CMD_MW,                     CMD_MD,                     CMD_DWIN,
+    CMD_ECHO,                   CMD_LOG,                    CMD_IF,
+    CMD_ELSEIF,                 CMD_ELSE,                   CMD_ENDIF,
+    CMD_BL,                     CMD_BN,                     CMD_BK,
+    CMD_BE,                     CMD_BD,       
     
     //------------------------------------------------------------------------------------
     // Window Commands Tokens.
@@ -1351,7 +1351,6 @@ private:
     void            resetCmd( );
     void            runCmd( );
     void            stepCmd( );
-    void            haltCmd( );
 
     void            breakPointListCmd( );
     void            breakPointNewCmd( );

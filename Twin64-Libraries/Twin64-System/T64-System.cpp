@@ -559,11 +559,8 @@ bool T64System::enableBreakPoint( unsigned bNum, bool enb ) {
 //----------------------------------------------------------------------------------------
 bool T64System::isBreakPointEnabled( unsigned bNum ) {
 
-     if ( bNum < breakPointMap.hwm ) {
-
-        return( breakPointMap.map[ bNum ].enabled );
-    }
-    else return( false );
+    if ( bNum < breakPointMap.hwm ) return( breakPointMap.map[ bNum ].enabled );
+    else                            return( false );
 }
 
 //----------------------------------------------------------------------------------------
@@ -572,11 +569,8 @@ bool T64System::isBreakPointEnabled( unsigned bNum ) {
 //----------------------------------------------------------------------------------------
 T64SimBreakPointEntry *T64System::getBreakPointEntry( unsigned bNum ) {
 
-    if ( bNum < breakPointMap.hwm ) {
-
-        return( &breakPointMap.map[ bNum ] );
-    }
-    else return( nullptr );
+    if ( bNum < breakPointMap.hwm ) return( &breakPointMap.map[ bNum ] );
+    else                            return( nullptr );
 } 
 
 //----------------------------------------------------------------------------------------
@@ -790,16 +784,22 @@ void T64System::simReset( int modNum ) {
 
             for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
-                if ( auto *m = dynamic_cast<T64ProcThreadModule *> ( moduleMap[ i ] ))
+                if ( auto *m = 
+                        dynamic_cast<T64ProcThreadModule *> ( moduleMap[ i ] )) {
+
                     m -> resetModule( );
+                }
             }
 
             sysState.store( T64_SYS_STATE_HALT, std::memory_order_release );
         }
         else if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
-            if ( auto *m = dynamic_cast<T64ProcThreadModule *> ( moduleMap[ modNum ] ))
+            if ( auto *m = 
+                    dynamic_cast<T64ProcThreadModule *> ( moduleMap[ modNum ] )) {
+
                 m -> resetModule( );
+            }
         }
     }
 }
@@ -822,9 +822,9 @@ void T64System::simRun(int modNum, int steps, bool haltOnTrap) {
 
     if ( modNum == -1 ) {
 
-        for (int i = 0; i < MAX_MOD_MAP_ENTRIES; i++) {
+        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
-            if (auto *m =
+            if ( auto *m =
                     dynamic_cast<T64ProcThreadModule *>(moduleMap[ i ])) {
 
                 runPending++;
@@ -842,6 +842,12 @@ void T64System::simRun(int modNum, int steps, bool haltOnTrap) {
         }
     }
 
+    if ( runPending == 0 ) {
+        
+        sysState.store( T64_SYS_STATE_HALT, std::memory_order_release );
+        return;
+    }
+
     sCondVar.wait( lk, [this] {
 
         return runPending == 0;
@@ -856,8 +862,17 @@ void T64System::simHalt( int modNum ) {
 
     if ( modNum == - 1 ) {
 
-        sysState.store(T64_SYS_STATE_HALT, std::memory_order_release);
-        sCondVar.notify_one();  
+        sysState.store( T64_SYS_STATE_HALT, std::memory_order_release );
+        sCondVar.notify_one( );  
+
+        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+            if ( auto *m =
+                    dynamic_cast<T64ProcThreadModule *>(moduleMap[ i ])) {
+
+                m -> haltModule( );
+            }
+        }
     }
     else {
 

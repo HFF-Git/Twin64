@@ -119,8 +119,7 @@ const SimToken cmdTokTab[ ] = {
     { .name = "NMOD",       .typ = TYP_CMD,     .tid = CMD_NMOD                     },
     { .name = "RMOD",       .typ = TYP_CMD,     .tid = CMD_RMOD                     },
     
-    { .name = "RESET",      .typ = TYP_CMD,     .tid = CMD_RESET                    },
-    { .name = "HALT",       .typ = TYP_CMD,     .tid = CMD_HALT                     },
+    { .name = "RESET",      .typ = TYP_CMD,     .tid = CMD_RESET                    },            
     { .name = "RUN",        .typ = TYP_CMD,     .tid = CMD_RUN                      },
     { .name = "STEP",       .typ = TYP_CMD,     .tid = CMD_STEP                     },
     { .name = "S",          .typ = TYP_CMD,     .tid = CMD_STEP                     },
@@ -773,13 +772,6 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
     },
 
     {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_HALT,
-        .cmdNameStr     = "halt",
-        .cmdSyntaxStr   = "halt ( <modNum> | 'ALL' )",
-        .helpStr        = "halt module(s)"
-    },
-    
-    {
         .helpTypeId = TYP_CMD,  .helpTokId  = CMD_RUN,
         .cmdNameStr     = "run",
         .cmdSyntaxStr   = "run",
@@ -791,13 +783,6 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
         .cmdNameStr     = "step",
         .cmdSyntaxStr   = "s [ <steps> [ , <modNum> ]]",
         .helpStr        = "single step a module"
-    },
-
-    {
-        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_HALT,
-        .cmdNameStr     = "halt",
-        .cmdSyntaxStr   = "halt",
-        .helpStr        = "halt the system or a processor"
     },
 
     {

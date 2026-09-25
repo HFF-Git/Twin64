@@ -730,7 +730,8 @@ size_t SimCommandsWin::readCmdLine( char   *cmdBuf,
                                                       promptBuf, cmdBuf );
 
                         glb -> console -> clearToEndOfLine( ); 
-                        setWinCursor( 0, 1 + promptBufLen + cmdBufCursor );
+                        setWinCursor( 0, 
+                            static_cast<unsigned> ( 1 + promptBufLen + cmdBufCursor ));
                     }
                 }
                 else {
@@ -745,7 +746,8 @@ size_t SimCommandsWin::readCmdLine( char   *cmdBuf,
                                                           promptBuf, cmdBuf);
 
                             glb -> console -> clearToEndOfLine( ); 
-                            setWinCursor(0, 1 + promptBufLen + cmdBufCursor );
+                            setWinCursor( 0, 
+                                static_cast<unsigned>( 1 + promptBufLen + cmdBufCursor ));
                         }
                     }
                 }
@@ -787,7 +789,7 @@ size_t SimCommandsWin::readCmdLine( char   *cmdBuf,
                         
                         winOut -> scrollUp( );
                         reDraw( );
-                        setWinCursor( 0, promptBufLen );
+                        setWinCursor( 0, static_cast<unsigned>( promptBufLen ));
                         
                     } break;
                         
@@ -795,7 +797,7 @@ size_t SimCommandsWin::readCmdLine( char   *cmdBuf,
                         
                         winOut -> scrollDown( );
                         reDraw( );
-                        setWinCursor( 0, promptBufLen  );
+                        setWinCursor( 0, static_cast<unsigned>( promptBufLen ));
                         
                     } break;
                         
@@ -834,7 +836,7 @@ size_t SimCommandsWin::readCmdLine( char   *cmdBuf,
                         
                         winOut -> scrollUp( );
                         reDraw( );
-                        setWinCursor( 0, promptBufLen );
+                        setWinCursor( 0, static_cast<unsigned>( promptBufLen ));
                         
                     } break;
                         
@@ -842,7 +844,7 @@ size_t SimCommandsWin::readCmdLine( char   *cmdBuf,
                         
                         winOut -> scrollDown( );
                         reDraw( );
-                        setWinCursor( 0, promptBufLen  );
+                        setWinCursor( 0, static_cast<unsigned>( promptBufLen ));
                         
                     } break;
                         
@@ -1856,45 +1858,6 @@ void SimCommandsWin::resetCmd( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Halt command. The command will halt a module or the system. Note that only
-// modules which are threads, i.e. a processor or an I/O module can be halted.
-// For all other modules, this command is ignored.
-//
-//  HALT <modNum> | ALL
-//
-// ??? need to take put the for loop... we do in system...
-// ??? should we be able to halt a single module ?
-//----------------------------------------------------------------------------------------
-void SimCommandsWin::haltCmd( ) {
-
-    int modNum = -1;
-    
-    if ( tok -> tokTyp( ) == TYP_NUM ) {
-
-        modNum = eval -> acceptIntExpr( ERR_EXPECTED_MOD_NUM, 
-                                        0, 
-                                        MAX_MOD_MAP_ENTRIES );
-    }
-    else if ( tok -> isToken( TOK_ALL )) {
-
-        tok -> nextToken( );
-        modNum = -1;
-    }
-    else throw ( ERR_INVALID_ARG );
-    
-    tok -> checkEOS( );
-
-    if ( modNum == -1 ) {
-
-        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
-
-            glb -> system -> simHalt( i );
-        }
-    }
-    else glb -> system -> simHalt( modNum );
-}
-
-//----------------------------------------------------------------------------------------
 // Step command. The command will advance the system or a module by one or more
 // steps. A step is an execution unit. If the module number is omitted, we refer
 // to all modules, if steps is omitted we run one step.
@@ -1943,7 +1906,7 @@ void SimCommandsWin::stepCmd( ) {
 //----------------------------------------------------------------------------------------
 // Run command. The command will just run the system until a halt is detected.
 //
-//  RUN [ <modNum> ]
+//  RUN 
 //
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 
@@ -1959,31 +1922,11 @@ void SimCommandsWin::stepCmd( ) {
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::runCmd( ) {
-    
-    int modNum = -1;
-    
-    if ( tok -> tokTyp( ) == TYP_NUM ) {
-
-        modNum = eval -> acceptIntExpr( ERR_EXPECTED_MOD_NUM, 
-                                        0, T64_IO_MAX_MODULES - 1 );
-
-        if ( glb -> system -> getModuleType( modNum ) != T64_MOD_TYPE_PROC ) {
-
-            throw( ERR_EXPCTED_PROC_MODULE );
-        }
-
-        // ??? check if module is in halted state then put into RUN state.
-        // glb -> system -> runModule( modNum );
-    }
-    else {
-
-         for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
-
-            // glb -> system -> runModule( i );
-        }
-    }
 
     tok -> checkEOS( );
+
+    bool haltOnTraps = glb -> env -> getEnvVarBool( "ENV_HALT_ON_TRAPS " );
+    glb -> system -> simRun( -1, -1, haltOnTraps  );
 }
 
 //----------------------------------------------------------------------------------------
@@ -3230,7 +3173,7 @@ void SimCommandsWin::winSetRowsCmd( ) {
     }
     else {
 
-        size_t winLines = toUInt32( eval -> acceptIntExpr( ERR_INVALID_NUM )) + 1;
+        unsigned winLines = toUInt32( eval -> acceptIntExpr( ERR_INVALID_NUM )) + 1;
         int    winNum   = -1;
     
         if ( tok -> isToken( TOK_COMMA )) {
@@ -3258,7 +3201,7 @@ void SimCommandsWin::winSetRowsCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::winSetCmdWinRowsCmd( ) {
 
-    size_t winLines = 0;
+    unsigned winLines = 0;
 
     if ( tok -> isToken( TOK_NUM )) {
 
@@ -3608,7 +3551,6 @@ void SimCommandsWin::processCmdLine( char *cmdBuf ) {
             case CMD_LOG:           writeLogCmd( );                 break;
                 
             case CMD_RESET:         resetCmd( );                    break;
-            case CMD_HALT:          haltCmd( );                     break;
             case CMD_RUN:           runCmd( );                      break;
             case CMD_STEP:          stepCmd( );                     break;
 

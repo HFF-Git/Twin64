@@ -169,7 +169,7 @@ void T64ProcThreadModule::moduleWorker( ) {
 
             mCondVar.wait( lk, [this] {
 
-                return( moduleState.load(std::memory_order_acquire) != 
+                return( moduleState.load( std::memory_order_acquire) != 
                             T64_MOD_STATE_HALTED );
             });
 
@@ -184,7 +184,7 @@ void T64ProcThreadModule::moduleWorker( ) {
 
                 mTrapCode = NO_TRAP;
                 moduleState.store( T64_MOD_STATE_HALTED, 
-                                 std::memory_order_release );
+                                   std::memory_order_release );
 
                 mCondVar.notify_one( );
 
@@ -208,7 +208,7 @@ void T64ProcThreadModule::moduleWorker( ) {
                         moduleState.store( T64_MOD_STATE_HALTED,
                                            std::memory_order_release) ;
 
-                        sys->moduleRunComplete( );
+                        sys -> moduleRunComplete( );
                         break;
                     }
 
@@ -218,7 +218,7 @@ void T64ProcThreadModule::moduleWorker( ) {
                         moduleState.store( T64_MOD_STATE_HALTED,
                                            std::memory_order_release );
 
-                        sys->moduleRunComplete( );
+                        sys -> moduleRunComplete( );
                         break;
                     }
 
@@ -231,8 +231,8 @@ void T64ProcThreadModule::moduleWorker( ) {
                         moduleState.store( T64_MOD_STATE_HALTED,
                                            std::memory_order_release) ;
 
-                        sys->simHalt( -1 );
-                        sys->moduleRunComplete( );
+                        sys -> simHalt( -1 );
+                        sys -> moduleRunComplete( );
                         break;
                     }
 
