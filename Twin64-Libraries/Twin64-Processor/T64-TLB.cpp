@@ -59,7 +59,7 @@ T64TlbEntry* lookup( T64TlbEntry *tlb, uint32_t tlbSize, T64Word  vAdr ) {
 
     if ( ! tlb ) return ( nullptr );
     
-    for ( int i = 0; i < tlbSize; i++ ) {
+    for ( unsigned i = 0; i < tlbSize; i++ ) {
 
         if ( tlbInfoIsValid( tlb[ i ].tlbInfo )) {
 
@@ -95,8 +95,11 @@ T64LocalTlb::T64LocalTlb( T64Processor *proc,
     dTlbEntries = 4;
     tlbConfig   = 0;
 
-    iTlb = (T64TlbEntry *) calloc( iTlbEntries, sizeof( T64TlbEntry ));
-    dTlb = (T64TlbEntry *) calloc( dTlbEntries, sizeof( T64TlbEntry ));
+    iTlb = reinterpret_cast<T64TlbEntry *>( calloc( iTlbEntries, 
+                                            sizeof( T64TlbEntry )));
+
+    dTlb = reinterpret_cast<T64TlbEntry *>( calloc( dTlbEntries, 
+                                                    sizeof( T64TlbEntry )));
 
     // ??? build tlbConfigRegister based on type and kind of TLB    
 
@@ -119,8 +122,8 @@ T64LocalTlb::~T64LocalTlb( ) {
 //----------------------------------------------------------------------------------------
 void T64LocalTlb::reset( ) {
     
-    for ( int i = 0; i < iTlbEntries; i++ ) resetTlbEntry( &iTlb[ i ] );
-    for ( int i = 0; i < dTlbEntries; i++ ) resetTlbEntry( &dTlb[ i ] );
+    for ( unsigned i = 0; i < iTlbEntries; i++ ) resetTlbEntry( &iTlb[ i ] );
+    for ( unsigned i = 0; i < dTlbEntries; i++ ) resetTlbEntry( &dTlb[ i ] );
      
     iTlbRoundRobin      = 0;            
     
@@ -192,10 +195,10 @@ bool T64LocalTlb::lookupDtlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
 
         dTlbHits ++;
 
-        int         idx = e - dTlb;
+        unsigned    idx = static_cast<unsigned>( e - dTlb );
         T64TlbEntry hit = *e;
 
-        for ( int i = idx; i > 0; i-- ) dTlb[ i ] = dTlb[ i - 1 ];
+        for ( unsigned i = idx; i > 0; i-- ) dTlb[ i ] = dTlb[ i - 1 ];
         dTlb[ 0 ] = hit;
 
         *pAdr    = hit.pAdr | ( vAdr & ~ hit.pageMask ); 
@@ -213,7 +216,9 @@ bool T64LocalTlb::lookupDtlb( T64Word vAdr, T64Word *pAdr, uint16_t *tlbInfo ) {
         
         dTlbMissGTlbHits ++;
 
-        for ( int i = dTlbEntries - 1; i > 0; i-- ) dTlb[ i ] = dTlb[ i - 1 ];
+        for ( unsigned i = dTlbEntries - 1; i > 0; i-- ) 
+            dTlb[ i ] = dTlb[ i - 1 ];
+        
         dTlb[ 0 ] = tlbEntry;
 
         *pAdr    = tlbEntry.pAdr | ( vAdr & ~ tlbEntry.pageMask );  
@@ -247,13 +252,13 @@ bool T64LocalTlb::purgeTlb( T64Word vAdr ) {
 // Getters.
 //
 //----------------------------------------------------------------------------------------
-T64TlbEntry *T64LocalTlb::getITlbEntry( int index ) {
+T64TlbEntry *T64LocalTlb::getITlbEntry( unsigned index ) {
 
     if ( index < 0 || index >= iTlbEntries ) return ( nullptr );
     return ( &iTlb[ index ] );
 }
 
-T64TlbEntry *T64LocalTlb::getDTlbEntry( int index ) {
+T64TlbEntry *T64LocalTlb::getDTlbEntry( unsigned index ) {
 
     if ( index < 0 || index >= dTlbEntries ) return ( nullptr );
     return ( &dTlb[ index ] );

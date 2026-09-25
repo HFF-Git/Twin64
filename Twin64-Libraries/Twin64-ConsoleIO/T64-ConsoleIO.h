@@ -162,26 +162,26 @@ struct SimFormatter {
     void            eraseChar( );
     void            writeCursorLeft( );
     void            writeCursorRight( );
-    void            writeScrollUp( size_t n );
-    void            writeScrollDown( size_t n );
-    void            writeCharAtLinePos( int ch, size_t pos );
+    void            writeScrollUp( unsigned n );
+    void            writeScrollDown( unsigned n );
+    void            writeCharAtLinePos( int ch, unsigned pos );
   
     void            clearScreen( );
     void            clearLine( );
     void            clearToEndOfLine( );
-    void            setAbsCursor( size_t row, size_t col );
-    void            setCursorInLine( size_t col ); 
-    void            setWindowSize( size_t row, size_t col );
-    void            setScrollArea( size_t start, size_t end );
+    void            setAbsCursor( unsigned row, unsigned col );
+    void            setCursorInLine( unsigned col ); 
+    void            setWindowSize( unsigned row, unsigned col );
+    void            setScrollArea( unsigned start, unsigned end );
     void            clearScrollArea( );
 
     void            setFmtAttributes( uint32_t fmtDesc );
-    size_t          printBlanks( size_t len );
+    size_t          printBlanks( unsigned len );
     size_t          printSeparator( size_t len, bool light = false );
     size_t          printText( const char *text, size_t len );
     size_t          printNumber( T64Word val, uint32_t fmtDesc );
     size_t          numberFmtLen( uint32_t fmtDesc, T64Word val = 0 );
-    char            printBit( T64Word val, size_t pos, char printChar );
+    char            printBit( T64Word val, unsigned pos, char printChar );
 };
 
 //----------------------------------------------------------------------------------------

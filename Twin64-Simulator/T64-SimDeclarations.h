@@ -129,16 +129,16 @@ const size_t    MAX_TEXT_LINE_SIZE         = 256;
 
 const int       MAX_WINDOWS                = 32;
 const int       MAX_WIN_STACKS             = 4;
-const size_t    MAX_WIN_ROW_SIZE           = 64;
-const size_t    MAX_WIN_COL_SIZE           = 1024;
-const size_t    MAX_WIN_OUT_LINES          = 256;
-const size_t    MAX_WIN_OUT_LINE_SIZE      = 256;
-const size_t    MAX_WIN_NAME               = 8;
+const unsigned  MAX_WIN_ROW_SIZE           = 64;
+const unsigned  MAX_WIN_COL_SIZE           = 1024;
+const unsigned  MAX_WIN_OUT_LINES          = 256;
+const unsigned  MAX_WIN_OUT_LINE_SIZE      = 256;
+const unsigned  MAX_WIN_NAME               = 8;
 const int       MAX_WIN_TOGGLES            = 8;
 
 const unsigned  MAX_CMD_HIST               = 64;
 const unsigned  MAX_CMD_LINES              = 64;
-const size_t    MAX_CMD_LINE_SIZE          = 256;
+const unsigned  MAX_CMD_LINE_SIZE          = 256;
 
 const size_t    MAX_TOK_STR_SIZE           = 256;
 const size_t    MAX_TOK_NAME_SIZE          = 32;
@@ -878,7 +878,7 @@ struct SimWinOutBuffer : SimFormatter {
     void        addToBuffer( const char *data );
     size_t      writeChars( const char *format, ... );
     size_t      writeChar( const char ch );
-    void        setScrollWindowSize( size_t size );
+    void        setScrollWindowLines( unsigned lines );
     
     void        resetLineCursor( );
     char        *getLineRelative( unsigned lineBelowTop );
@@ -1224,7 +1224,7 @@ struct SimWinText : SimWinScrollable {
     private:
 
     bool    openTextFile( );
-    size_t  readTextFileLine( size_t linePos, char *lineBuf, size_t bufLen );
+    size_t  readTextFileLine( unsigned linePos, char *lineBuf, size_t bufLen );
     
     FILE      *textFile          = nullptr;
     unsigned  fileSizeLines      = 0;

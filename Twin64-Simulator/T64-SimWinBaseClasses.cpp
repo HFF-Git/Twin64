@@ -725,7 +725,7 @@ SimWinOutBuffer::SimWinOutBuffer( ) {
 
 void SimWinOutBuffer::initBuffer( ) {
     
-    for ( size_t i = 0; i < MAX_WIN_OUT_LINES; i++ ) buffer[ i ][ 0 ] = '\0';
+    for ( unsigned i = 0; i < MAX_WIN_OUT_LINES; i++ ) buffer[ i ][ 0 ] = '\0';
     
     topIndex     = 0;
     cursorIndex  = 0;
@@ -874,8 +874,7 @@ void SimWinOutBuffer::resetLineCursor( ) {
     cursorIndex = topIndex;
 }
 
-void SimWinOutBuffer::setScrollWindowSize( size_t size ) {
-    
-    screenLines = size;
-}
+void SimWinOutBuffer::setScrollWindowLines( unsigned lines ) {
 
+    screenLines = lines;
+}

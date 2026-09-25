@@ -39,7 +39,7 @@ namespace {
 // inclement in multiples of four of the base page size.
 // 
 //----------------------------------------------------------------------------------------
-int tlbPageSize( int size ) {
+unsigned tlbPageSize( unsigned size ) {
 
     return( T64_PAGE_SIZE_BYTES * ( 1U << ( size * 4 )));
 }
@@ -50,10 +50,10 @@ int tlbPageSize( int size ) {
 // corresponding to the page size.
 //
 //----------------------------------------------------------------------------------------
-inline T64Word tlbPageMask( int pSize ) {
+inline T64Word tlbPageMask( unsigned pSize ) {
     
-    int shift = T64_PAGE_OFS_BITS + ( pSize * 4 );
-    return ~(( 1ULL << shift ) - 1 );
+    unsigned shift = T64_PAGE_OFS_BITS + ( pSize * 4 );
+    return ( static_cast<T64Word>( ~(( 1ULL << shift ) - 1 )));
 }
 
 //----------------------------------------------------------------------------------------
@@ -165,8 +165,8 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
 
     std::unique_lock lock( tLock );
 
-    uint16_t tlbInfo = arg2 >> 48;
-    int      pSize   = tlbPageSize( tlbInfoPageSize( tlbInfo ));
+    uint16_t tlbInfo = static_cast<uint16_t>( arg2 >> 48 );
+    unsigned pSize   = tlbPageSize( tlbInfoPageSize( tlbInfo ));
     
     if ( isInIoAdrRange( arg1 )) return ( true );
     if ( ! isAlignedPageAdr( arg1, pSize )) return ( false );
@@ -179,7 +179,7 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
     entry.pAdr      = arg2 & entry.pageMask & 0xFFFFFFFFFFULL;
     entry.tlbInfo   = tlbInfo | 0x8000;
     
-    for ( int i = 0; i < tlbSize; i++ ) {
+    for ( unsigned i = 0; i < tlbSize; i++ ) {
 
         T64TlbEntry *e = &tlbTable[ i ];
 
@@ -199,7 +199,7 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
         }
     }
 
-    for ( int i = 0; i < tlbSize; i++ ) {
+    for ( unsigned i = 0; i < tlbSize; i++ ) {
 
         if ( ! ( tlbInfoIsValid( tlbTable[ i ].tlbInfo ))) {
 
@@ -208,9 +208,9 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
         }
     }
 
-    for ( int i = 0; i < tlbSize; i++ ) {
+    for ( unsigned i = 0; i < tlbSize; i++ ) {
 
-        int idx = tlbRoundRobin++ % tlbSize;
+        unsigned idx = tlbRoundRobin++ % tlbSize;
 
         if ( ! ( tlbInfoIsLocked( tlbTable[ idx ].tlbInfo ))) {
 
@@ -243,7 +243,7 @@ bool T64GlobalTlb::removeTlbEntry( T64Word vAdr ) {
 // Routines for the simulator concerning the global TLB:
 //
 //----------------------------------------------------------------------------------------
-size_t T64GlobalTlb::getTlbSize( ) {
+unsigned T64GlobalTlb::getTlbSize( ) {
 
     return( tlbSize );
 }

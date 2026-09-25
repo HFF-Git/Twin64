@@ -568,7 +568,7 @@ void SimCommandsWin::drawBody( ) {
     glb -> console ->setFmtAttributes( FMT_DEFAULT );
   
     unsigned rowsToShow = getRows( ) - 2;
-    winOut -> setScrollWindowSize( rowsToShow );
+    winOut -> setScrollWindowLines( rowsToShow );
     setWinCursor( rowsToShow + 1, 1 );
     
     for ( unsigned i = 0; i < rowsToShow; i++ ) {

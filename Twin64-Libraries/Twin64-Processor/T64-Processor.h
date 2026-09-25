@@ -95,8 +95,8 @@ struct T64LocalTlb {
 
     bool            purgeTlb( T64Word vAdr );
 
-    T64TlbEntry     *getITlbEntry( int index );
-    T64TlbEntry     *getDTlbEntry( int index );
+    T64TlbEntry     *getITlbEntry( unsigned index );
+    T64TlbEntry     *getDTlbEntry( unsigned index );
 
     T64Word         getTlbStatus( );
     T64Word         getTlbConfig( );
@@ -121,8 +121,8 @@ struct T64LocalTlb {
     T64TlbEntry     *iTlb               = nullptr;
     T64TlbEntry     *dTlb               = nullptr;
 
-    int             iTlbEntries         = 0;
-    int             dTlbEntries         = 0;
+    unsigned        iTlbEntries         = 0;
+    unsigned        dTlbEntries         = 0;
    
     uint32_t        iTlbRoundRobin      = 0;       
 

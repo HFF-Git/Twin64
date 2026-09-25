@@ -231,13 +231,13 @@ SimWinProcState::SimWinProcState( SimGlobals *glb, int modNum ) : SimWin( glb ) 
 //----------------------------------------------------------------------------------------
 void SimWinProcState::setDefaults( ) {
 
-    const size_t ROW_BANNERS               = 2;
-    const size_t ROW_REG_SUBWINDOW         = 4; 
-    const size_t MIN_ROW_CODE_SUBWINDOW    = 7; 
-    const size_t MAX_ROWS                  = 32;
-    const size_t MAX_COLS                  = 98;
+    const unsigned ROW_BANNERS               = 2;
+    const unsigned ROW_REG_SUBWINDOW         = 4; 
+    const unsigned MIN_ROW_CODE_SUBWINDOW    = 7; 
+    const unsigned MAX_ROWS                  = 32;
+    const unsigned MAX_COLS                  = 98;
 
-    T64Cpu       *cpu                      = proc -> getCpuPtr( );
+    T64Cpu       *cpu                        = proc -> getCpuPtr( );
     
     setWinType( WT_CPU_WIN );
     setRadix( toUInt32( glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT )));
@@ -287,7 +287,7 @@ void SimWinProcState::setDefaults( ) {
 
     lastCodeWinBaseAdr = codeWinBaseAdr;
 
-    size_t linesLeft = getRows( ) - ROW_BANNERS - ROW_REG_SUBWINDOW;
+    unsigned linesLeft = getRows( ) - ROW_BANNERS - ROW_REG_SUBWINDOW;
 
     for ( size_t i = 0; i < linesLeft; i++ ) {
 
@@ -526,7 +526,7 @@ unsigned SimWinProcState::drawCodeSubWindow( unsigned linePos,
 
     setWinCursor( linePos, 1 );
 
-    for ( size_t i = 0; i < linesLeft; i++ ) {
+    for ( unsigned i = 0; i < linesLeft; i++ ) {
 
         fmtDesc = FMT_DEFAULT;
 
@@ -582,9 +582,9 @@ unsigned SimWinProcState::drawCodeSubWindow( unsigned linePos,
             printNumericField( instr, fmtDesc | FMT_HEX_8 );
             printTextField( "    ", fmtDesc );
 
-            size_t pos          = getWinCursorCol( );
-            size_t opCodeField  = disAsm -> getOpCodeFieldWidth( );
-            size_t operandField = disAsm -> getOperandsFieldWidth( );
+            unsigned pos          = getWinCursorCol( );
+            unsigned opCodeField  = disAsm -> getOpCodeFieldWidth( );
+            unsigned operandField = disAsm -> getOperandsFieldWidth( );
             
             clearField( opCodeField );
             disAsm -> formatOpCode( instrBuf, sizeof( instrBuf ), instr );
@@ -645,7 +645,7 @@ void SimWinProcState::drawBody( ) {
         linePos += 1;
     }
 
-    size_t linesLeft = getRows( ) - linePos + 1;
+    unsigned linesLeft = getRows( ) - linePos + 1U;
     drawCodeSubWindow( linePos, linesLeft );
 }
 
@@ -906,7 +906,7 @@ void SimWinMem::drawBanner( ) {
         setRadix( 16 );
     }
 
-    int alignVal = ( getWinToggleVal( ) < 4 ) ? 8 : 4;
+    unsigned alignVal = ( getWinToggleVal( ) < 4 ) ? 8U : 4U;
     
     if ( ! isAlignedAdr( getCurrentItemAdr( ), alignVal )) {
         
@@ -1105,9 +1105,9 @@ void SimWinMem::drawMemDataLineCode( T64Word itemAdr ) {
 
     printTextField( "    " );
 
-    size_t pos          = getWinCursorCol( );
-    size_t opCodeField  = disAsm -> getOpCodeFieldWidth( );
-    size_t operandField = disAsm -> getOperandsFieldWidth( );
+    unsigned pos          = getWinCursorCol( );
+    unsigned opCodeField  = disAsm -> getOpCodeFieldWidth( );
+    unsigned operandField = disAsm -> getOperandsFieldWidth( );
     
     clearField( opCodeField );
     disAsm -> formatOpCode( buf, sizeof( buf ), instr );
@@ -1184,7 +1184,7 @@ SimWinText:: ~SimWinText( ) {
 //----------------------------------------------------------------------------------------
 void SimWinText::setDefaults( ) {
 
-    size_t txWidth = 
+    unsigned txWidth = 
         toUInt32( glb -> env -> getEnvVarInt( ENV_WIN_TEXT_LINE_WIDTH ));
     
     setWinType( WT_TEXT_WIN );
@@ -1244,10 +1244,10 @@ void SimWinText::drawBanner( ) {
 void SimWinText::drawLine( T64Word index ) {
     
     uint32_t    fmtDesc = FMT_DEFAULT;
-     char       lineBuf[ MAX_TEXT_LINE_SIZE ];
+    char        lineBuf[ MAX_TEXT_LINE_SIZE ];
     size_t      lineSize = 0;
     
-    size_t tabSize = 
+    unsigned tabSize = 
         toUInt32( glb -> env -> getEnvVarInt( ENV_WIN_TEXT_TAB_SIZE ));
    
     if ( openTextFile( )) {
@@ -1313,9 +1313,9 @@ bool SimWinText::openTextFile( ) {
 // line.
 //
 //----------------------------------------------------------------------------------------
-size_t SimWinText::readTextFileLine( size_t linePos, 
-                                  char *lineBuf, 
-                                  size_t bufLen ) {
+size_t SimWinText::readTextFileLine( unsigned linePos, 
+                                     char *lineBuf, 
+                                     size_t bufLen ) {
  
     if ( textFile != nullptr ) {
         
@@ -1422,12 +1422,12 @@ void SimWinConsole::drawBody( ) {
     char lineOutBuf[ MAX_WIN_OUT_LINE_SIZE ];
     
     glb -> console -> setFmtAttributes( FMT_DEFAULT );
-    
-    size_t rowsToShow = getRows( ) - 2;
-    winOut -> setScrollWindowSize( rowsToShow );
+
+    auto rowsToShow = getRows( ) - 2;
+    winOut -> setScrollWindowLines( rowsToShow );
     setWinCursor( rowsToShow + 1, 1 );
     
-    for ( size_t i = 0; i < rowsToShow; i++ ) {
+    for ( unsigned i = 0; i < rowsToShow; i++ ) {
         
         char *lineBufPtr = winOut -> getLineRelative( i );
         if ( lineBufPtr != nullptr ) {

@@ -365,12 +365,12 @@ void SimFormatter::writeCursorRight( ) {
     writeChars( "\033[C" );
 }
 
-void SimFormatter::writeScrollUp( size_t n ) {
+void SimFormatter::writeScrollUp( unsigned n ) {
     
     writeChars( "\033[%dS", n );
 }
 
-void SimFormatter::writeScrollDown( size_t n ) {
+void SimFormatter::writeScrollDown( unsigned n ) {
     
     writeChars( "\033[%dT", n );
 }
@@ -384,7 +384,7 @@ void SimFormatter::writeCarriageReturn( ) {
     #endif
 }
 
-void SimFormatter::writeCharAtLinePos( int ch, size_t pos ) {
+void SimFormatter::writeCharAtLinePos( int ch, unsigned pos ) {
     
     writeChars( "\033[%dG\033[1@%c", pos, ch );
 }
@@ -405,22 +405,22 @@ void SimFormatter::clearToEndOfLine( ) {
     writeChars( "\x1b[K" );
 }
 
-void SimFormatter::setAbsCursor( size_t row, size_t col ) {
+void SimFormatter::setAbsCursor( unsigned row, unsigned col ) {
     
     writeChars( "\x1b[%d;%dH", row, col );
 }
 
-void SimFormatter::setCursorInLine( size_t col ) {
+void SimFormatter::setCursorInLine( unsigned col ) {
     
     writeChars( "\x1b[%dG", col );
 }
 
-void SimFormatter::setWindowSize( size_t row, size_t col ) {
+void SimFormatter::setWindowSize( unsigned row, unsigned col ) {
     
     writeChars( "\x1b[8;%d;%dt", row, col );
 }
 
-void SimFormatter::setScrollArea( size_t start, size_t end ) {
+void SimFormatter::setScrollArea( unsigned start, unsigned end ) {
     
     writeChars( "\x1b[%d;%dr", start, end );
 }
@@ -486,9 +486,9 @@ void SimFormatter::setFmtAttributes( uint32_t fmtDesc ) {
 // Just emit blanks.
 //
 //----------------------------------------------------------------------------------------
-size_t SimFormatter::printBlanks( size_t len ) {
+size_t SimFormatter::printBlanks( unsigned len ) {
 
-    for ( size_t i = 0; i < len; i++ ) writeChars( " " );
+    for ( unsigned i = 0; i < len; i++ ) writeChars( " " );
     return( len );
 }
 
@@ -544,7 +544,7 @@ size_t SimFormatter::printText( const char *text, size_t maxLen ) {
 // cleared in lower case.
 // 
 //----------------------------------------------------------------------------------------
-char SimFormatter::printBit( T64Word val, size_t pos, char printChar ) {
+char SimFormatter::printBit( T64Word val, unsigned pos, char printChar ) {
 
     if ( pos <= 63 ) {
 
