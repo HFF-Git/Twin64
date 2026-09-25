@@ -1888,10 +1888,10 @@ void SimCommandsWin::haltCmd( ) {
 
         for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
-            glb -> system -> haltModule( i );
+            glb -> system -> simHalt( i );
         }
     }
-    else glb -> system -> haltModule( modNum );
+    else glb -> system -> simHalt( modNum );
 }
 
 //----------------------------------------------------------------------------------------

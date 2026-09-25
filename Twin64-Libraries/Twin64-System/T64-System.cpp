@@ -358,28 +358,19 @@ T64ModuleState T64System::getModuleState( int modNum ) const {
 }
 
 //----------------------------------------------------------------------------------------
-// Halt module. We just invoke the module handler for the registered module.
-//
+// Module run completion. This routine will check the pending run count. When 
+// all threads are completed, we place the simulator in HALT mode and notify
+// the simulator command interface.
 //----------------------------------------------------------------------------------------
-void T64System::haltModule( int modNum ) {
+void T64System::moduleRunComplete( ) {
 
-    if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
-
-        if ( auto *m = dynamic_cast<T64ProcThreadModule *> ( moduleMap[ modNum ] ))
-            m -> haltModule( );
-    }
-}
-
-void T64System::moduleRunComplete()
-{
     std::lock_guard<std::mutex> lk(sLock);
 
-    if (runPending > 0)
-        --runPending;
+    if ( runPending > 0 ) --runPending;
 
     if (runPending == 0) {
-        sysState.store(T64_SYS_STATE_HALT,
-                       std::memory_order_release);
+
+        sysState.store(T64_SYS_STATE_HALT, std::memory_order_release);
         sCondVar.notify_one();
     }
 }
@@ -827,31 +818,31 @@ void T64System::simRun(int modNum, int steps, bool haltOnTrap) {
     std::unique_lock<std::mutex> lk(sLock);
 
     runPending = 0;
-    sysState.store(T64_SYS_STATE_RUN, std::memory_order_release);
+    sysState.store( T64_SYS_STATE_RUN, std::memory_order_release );
 
     if ( modNum == -1 ) {
 
         for (int i = 0; i < MAX_MOD_MAP_ENTRIES; i++) {
 
             if (auto *m =
-                    dynamic_cast<T64ProcThreadModule *>(moduleMap[i])) {
+                    dynamic_cast<T64ProcThreadModule *>(moduleMap[ i ])) {
 
-                ++runPending;
-                m->execModule( steps, haltOnTrap );
+                runPending++;
+                m -> execModule( steps, haltOnTrap );
             }
         }
     }
     else if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
         if ( auto *m =
-                dynamic_cast<T64ProcThreadModule *>(moduleMap[modNum])) {
+                dynamic_cast<T64ProcThreadModule *>( moduleMap[modNum] )) {
 
             runPending = 1;
-            m -> execModule(steps, haltOnTrap);
+            m -> execModule( steps, haltOnTrap );
         }
     }
 
-    sCondVar.wait(lk, [this] {
+    sCondVar.wait( lk, [this] {
 
         return runPending == 0;
     });
@@ -861,9 +852,19 @@ void T64System::simRun(int modNum, int steps, bool haltOnTrap) {
 //
 //
 //----------------------------------------------------------------------------------------
-void T64System::simHalt( ) {
+void T64System::simHalt( int modNum ) {
 
-    sysState.store(T64_SYS_STATE_HALT, std::memory_order_release);
-    sCondVar.notify_one();      
+    if ( modNum == - 1 ) {
+
+        sysState.store(T64_SYS_STATE_HALT, std::memory_order_release);
+        sCondVar.notify_one();  
+    }
+    else {
+
+        if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+
+        if ( auto *m = dynamic_cast<T64ProcThreadModule *> ( moduleMap[ modNum ] ))
+            m -> haltModule( );
+        }
+    }
 }
-

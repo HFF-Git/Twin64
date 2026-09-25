@@ -231,7 +231,7 @@ void T64ProcThreadModule::moduleWorker( ) {
                         moduleState.store( T64_MOD_STATE_HALTED,
                                            std::memory_order_release) ;
 
-                        sys->simHalt( );
+                        sys->simHalt( -1 );
                         sys->moduleRunComplete( );
                         break;
                     }

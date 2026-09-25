@@ -327,13 +327,10 @@ struct T64System {
                                     int  steps       = 1,
                                     bool haltOnTrap = false );
 
-    void                    simHalt( );
+    void                    simHalt( int modNum );
 
     int                     addModule( T64Module *module );
-    int                     removeModule( T64Module *module );
-
-    void                    haltModule( int modNum );
-    bool                    isModuleHalted( int modNum );   
+    int                     removeModule( T64Module *module ); 
     void                    moduleRunComplete( );
     
     T64ModuleType           getModuleType( int modNum ) const;
