@@ -65,12 +65,12 @@ inline T64Word tlbPageMask( unsigned pSize ) {
 //
 //----------------------------------------------------------------------------------------
 T64TlbEntry* lookupTlbEntry( T64TlbEntry *tlb, 
-                             int         tlbEntries, 
+                             unsigned    tlbEntries, 
                              T64Word     vAdr ) {
     
     T64TlbEntry *best = nullptr;
 
-    for ( int i = 0; i < tlbEntries; i++ ) {
+    for ( unsigned i = 0; i < tlbEntries; i++ ) {
         
         T64TlbEntry *e = &tlb[ i ];
 
@@ -123,7 +123,8 @@ T64GlobalTlb::T64GlobalTlb( T64System        *sys,
     tlbMissCount = 0;
     tlbHitCount  = 0;
 
-    tlbTable = ( T64TlbEntry *) calloc( tlbSize, sizeof( T64TlbEntry ));
+    tlbTable = 
+        reinterpret_cast<T64TlbEntry *>( calloc( tlbSize, sizeof( T64TlbEntry )));
 }
 
 //----------------------------------------------------------------------------------------
@@ -176,7 +177,7 @@ bool T64GlobalTlb::insertTlbEntry( T64Word arg1, T64Word arg2 ) {
 
     entry.pageMask  = tlbPageMask( tlbInfoPageSize( tlbInfo ));
     entry.vAdr      = vAdr( arg1 & entry.pageMask );
-    entry.pAdr      = arg2 & entry.pageMask & 0xFFFFFFFFFFULL;
+    entry.pAdr      = extractField64( arg2 & entry.pageMask, 0, 40 );
     entry.tlbInfo   = tlbInfo | 0x8000;
     
     for ( unsigned i = 0; i < tlbSize; i++ ) {
@@ -248,19 +249,19 @@ unsigned T64GlobalTlb::getTlbSize( ) {
     return( tlbSize );
 }
 
-char *T64GlobalTlb::getTlbTypeStr( ) {
+const char *T64GlobalTlb::getTlbTypeStr( ) {
 
     switch ( tlbType ) {
 
-        case T64_TT_FA_16S:     return ((char *) "FA_16S" ); break;
-        case T64_TT_FA_32S:     return ( (char *) "FA_32S" ); break;
-        case T64_TT_FA_64S:     return ( (char *) "FA_64S" ); break;
-        case T64_TT_FA_128S:    return ( (char *) "FA_128S" ); break;
-        default:                return ( (char *) "TLB_**" ); break;
+        case T64_TT_FA_16S:     return ( "FA_16S" ); break;
+        case T64_TT_FA_32S:     return ( "FA_32S" ); break;
+        case T64_TT_FA_64S:     return ( "FA_64S" ); break;
+        case T64_TT_FA_128S:    return ( "FA_128S" ); break;
+        default:                return ( "TLB_**" ); break;
     }
 }
 
-T64TlbEntry *T64GlobalTlb::getTlbEntry( int index ) {
+T64TlbEntry *T64GlobalTlb::getTlbEntry( unsigned index ) {
 
     if (( index < 0 ) || ( index > tlbSize - 1 )) return ( nullptr );
     if ( tlbTable == nullptr ) return ( nullptr );
@@ -299,7 +300,8 @@ void T64GlobalTlb::resetModule( ) {
 
     if ( tlbTable != nullptr ) free ( tlbTable );
 
-    tlbTable = ( T64TlbEntry *) calloc( tlbSize, sizeof( T64TlbEntry ));
+    tlbTable = 
+        reinterpret_cast<T64TlbEntry *>( calloc( tlbSize, sizeof( T64TlbEntry )));
 }
 
 //----------------------------------------------------------------------------------------

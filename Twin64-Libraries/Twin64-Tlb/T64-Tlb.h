@@ -60,8 +60,8 @@ struct T64GlobalTlb : T64Module {
     bool        removeTlbEntry( T64Word vAdr );
 
     unsigned    getTlbSize( );
-    char        *getTlbTypeStr( );
-    T64TlbEntry *getTlbEntry( int index );
+    const char  *getTlbTypeStr( );
+    T64TlbEntry *getTlbEntry( unsigned index );
     bool        translateAdr( T64Word vAdr, T64Word *pAdr );
 
     void        initModule( );
@@ -78,7 +78,7 @@ struct T64GlobalTlb : T64Module {
 
     T64TlbKind          tlbKind;
     T64TlbType          tlbType;
-    size_t              tlbSize;
+    unsigned            tlbSize;
     T64TlbEntry         *tlbTable;
     unsigned            tlbRoundRobin;
     std::shared_mutex   tLock;

@@ -180,7 +180,7 @@ void T64ProcThreadModule::moduleWorker( ) {
 
             case T64_MOD_STATE_RESET: {
 
-               // resetModule( );
+                // ??? how do we get to the module reset function ?
 
                 mTrapCode = NO_TRAP;
                 moduleState.store( T64_MOD_STATE_HALTED, 
@@ -225,15 +225,31 @@ void T64ProcThreadModule::moduleWorker( ) {
                     // Execute one unit.
                     mTrapCode = executeUnit( );
 
-                    // A trap stops the entire simulated system.
-                    if (( mTrapCode != NO_TRAP)  && enterSimOnTrap ) {
+                    // Check for traps.
+                    if  ( mTrapCode != NO_TRAP ) {
 
-                        moduleState.store( T64_MOD_STATE_HALTED,
+                         if ( mTrapCode == MACHINE_CHECK ) {
+
+                            // ??? check that it a machine check or a 
+                            // breakpoint ?
+
+                            moduleState.store( T64_MOD_STATE_HALTED,
                                            std::memory_order_release) ;
 
-                        sys -> simHalt( -1 );
-                        sys -> moduleRunComplete( );
-                        break;
+                            sys -> simHalt( -1 );
+                            sys -> moduleRunComplete( );
+                            break;
+                         }
+
+                         if ( enterSimOnTrap ) {
+
+                            moduleState.store( T64_MOD_STATE_HALTED,
+                                           std::memory_order_release) ;
+
+                            sys -> simHalt( -1 );
+                            sys -> moduleRunComplete( );
+                            break;
+                         }
                     }
 
                     if ( mUnitCount > 0 ) mUnitCount--;

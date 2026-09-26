@@ -242,13 +242,17 @@ T64GlobalTlb *T64Processor::getGlobalTlbPtr( ) {
 // ??? document what is covered in the reg sets.
 // ??? should we define for the common IO Regs routines at the module level ?
 //
+// ??? we need a better way to handle the HPA space... should we view this
+// space as an array of n words ? should we then just copy from memory at that
+// offset ? should we just have enums for the arcgitected registers ?
+//
 //----------------------------------------------------------------------------------------
 bool T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t len ) {
 
-    int     wordIndex           = (( pAdr - hpaAdr ) >> 3 );
-    int     regSetIndex         = wordIndex / T64_IO_REG_SET_SIZE;
-    int     wordInRegSetIndex   = wordIndex % T64_IO_REG_SET_SIZE;
-    size_t  wordOfs             = pAdr % sizeof( T64Word );
+    T64Word   wordIndex           = (( pAdr - hpaAdr ) >> 3 );
+    T64Word   regSetIndex         = wordIndex / T64_IO_REG_SET_SIZE;
+    T64Word   wordInRegSetIndex   = wordIndex % T64_IO_REG_SET_SIZE;
+    unsigned  wordOfs             = pAdr % sizeof( T64Word );
     T64Word tmp                 = 0;
     
     if ( regSetIndex == 0 ) {

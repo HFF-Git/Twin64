@@ -1899,7 +1899,7 @@ void SimCommandsWin::stepCmd( ) {
             throw( ERR_EXPCTED_PROC_MODULE );
     }
     
-    bool haltOnTrap = glb -> env -> getEnvVarBool(ENV_HALT_ON_TRAPS );
+    bool haltOnTrap = glb -> env -> getEnvVarBool( ENV_HALT_ON_TRAPS );
     glb -> system -> simRun( modNum, numOfSteps, haltOnTrap );
 }
 
@@ -1925,7 +1925,7 @@ void SimCommandsWin::runCmd( ) {
 
     tok -> checkEOS( );
 
-    bool haltOnTraps = glb -> env -> getEnvVarBool( "ENV_HALT_ON_TRAPS " );
+    bool haltOnTraps = glb -> env -> getEnvVarBool( ENV_HALT_ON_TRAPS );
     glb -> system -> simRun( -1, -1, haltOnTraps  );
 }
 

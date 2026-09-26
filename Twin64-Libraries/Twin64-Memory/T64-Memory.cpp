@@ -120,7 +120,7 @@ bool T64Memory::busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len ) {
         std::atomic<bool> *lockPtr = &memLock;
         while ( lockPtr -> exchange( true )) { /* spin */ };
             
-         if ( pAdr + static_cast<T64Word>( len ) >= spaAdr + spaLen ) {
+         if ( pAdr + static_cast<T64Word>( len ) > spaAdr + spaLen ) {
 
             lockPtr -> store( false );
             return( false );

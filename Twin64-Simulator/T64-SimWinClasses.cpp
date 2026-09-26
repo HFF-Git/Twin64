@@ -38,16 +38,9 @@
 namespace {
 
 //----------------------------------------------------------------------------------------
-//
+// A little helper to "cast" unsigned from T64Word.
 //
 //----------------------------------------------------------------------------------------
-int toInt32( T64Word val ) {
-
-    if ( val < INT32_MIN ) throw( ERR_NUMERIC_OVERFLOW );
-    if ( val > INT32_MAX ) throw( ERR_NUMERIC_OVERFLOW );
-    return ( static_cast<int> ( val ));
-}
-
 uint32_t toUInt32( T64Word val ) {
 
     if ( val > UINT32_MAX ) throw( ERR_NUMERIC_OVERFLOW );
@@ -761,7 +754,7 @@ void SimWinTlb::drawTlbEntry( T64TlbEntry *ePtr ) {
 void SimWinTlb::drawLine( T64Word index ) {
 
     uint32_t    fmtDesc     = FMT_DEFAULT;
-    T64TlbEntry *ePtr       = tlb -> getTlbEntry( toInt32( index ));
+    T64TlbEntry *ePtr       = tlb -> getTlbEntry( toUInt32( index ));
 
     printTextField( "(", fmtDesc );
     printNumericField( index, fmtDesc | FMT_HEX_4 );

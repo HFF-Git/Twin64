@@ -755,6 +755,8 @@ bool T64System::busOpControl( T64Module *mod,
                               T64BBusOpControlEvents event,
                               T64Word            arg1, 
                               T64Word            arg2 ) {
+                                
+    if ( mod == nullptr ) return ( false );
 
     {
         std::lock_guard<std::mutex> lk(sLock);                              
@@ -813,7 +815,7 @@ void T64System::simReset( int modNum ) {
 // the "sCondVar" variable take care of this.
 // 
 //----------------------------------------------------------------------------------------
-void T64System::simRun(int modNum, int steps, bool haltOnTrap) {
+void T64System::simRun( int modNum, int steps, bool haltOnTrap ) {
 
     std::unique_lock<std::mutex> lk(sLock);
 
