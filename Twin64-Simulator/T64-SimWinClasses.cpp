@@ -26,11 +26,6 @@
 #include "T64-SimDeclarations.h"
 
 //----------------------------------------------------------------------------------------
-// ??? How about a module window. Shows the system state and module state.
-//
-//----------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------
 // Local name space. We try to keep utility functions and constants local to the 
 // file.
 //
@@ -948,7 +943,7 @@ void SimWinMem::drawMemDataLine32( T64Word itemAdr, uint32_t fmtDesc ) {
         if ( readMem( glb -> system, 
                       itemAdr + i, 
                       reinterpret_cast<uint8_t *>( &actualVal ), 
-                      sizeof( actualVal )) == T64_BUS_OP_STAT_OK ) {
+                      sizeof( actualVal ))) {
 
             T64Word tmpAdr = ( itemAdr + i ) - getCurrentItemAdr( );
             uint32_t dataVal = 0;
@@ -1000,7 +995,7 @@ void SimWinMem::drawMemDataLine64( T64Word itemAdr, uint32_t fmtDesc ) {
         if ( readMem( glb -> system, 
                       itemAdr + i, 
                       reinterpret_cast<uint8_t *>( &actualVal ), 
-                      sizeof( actualVal )) == T64_BUS_OP_STAT_OK ) {
+                      sizeof( actualVal ))) {
 
             T64Word tmpAdr  = ( itemAdr + i ) - getCurrentItemAdr( );
             T64Word dataVal = 0;
@@ -1050,7 +1045,7 @@ void SimWinMem::drawMemDataLineCode( T64Word itemAdr ) {
 
     if ( readMem( glb -> system, 
                   itemAdr, reinterpret_cast<uint8_t *>( &instr ), 
-                  sizeof( uint32_t )) == T64_BUS_OP_STAT_OK ) {
+                  sizeof( uint32_t ))) {
 
         T64Word tmpAdr  = itemAdr - getCurrentItemAdr( );
         uint32_t dataVal = 0;

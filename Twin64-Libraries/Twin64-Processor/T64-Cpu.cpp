@@ -138,6 +138,11 @@ void T64Cpu::setRegR( uint32_t instr, T64Word val ) {
 // Trap code helpers. Each routine fills in the trap data and raises an exception.
 //
 //----------------------------------------------------------------------------------------
+void T64Cpu::simulatorTrap( T64Word adr ) {
+
+    throw( T64Trap( SIM_BRK_TRAP, psrReg, instrReg, adr ));
+}
+
 void T64Cpu::machineCheckTrap( T64Word adr ) {
 
     throw( T64Trap( MACHINE_CHECK, psrReg, instrReg, adr ));
@@ -431,15 +436,17 @@ T64Instr T64Cpu::instrRead( T64Word vAdr ) {
         instrAccCheck( instrTlbInfo );      
     }
 
-    if ( proc -> busOpRead( pAdr, 
-                              reinterpret_cast<uint8_t *>( &instr ), 
-                              4, 
-                              false ) != T64_BUS_OP_STAT_OK ) {
+    T64BusOpStat rStat = 
+        proc -> busOpFetch( pAdr, reinterpret_cast<uint8_t *>( &instr ));
 
-        // ??? need to refine for sim breaks
+    if ( rStat == T64_BUS_OP_SIM_BRK ) {
 
-            machineCheckTrap( vAdr );
-    }  
+        simulatorTrap( pAdr );
+    }
+    else if ( rStat == T64_BUS_OP_MCHECK ) {
+
+         machineCheckTrap( vAdr );
+    }
 
     copyEndianAware( reinterpret_cast<uint8_t *>( &instr ), 
                      reinterpret_cast<uint8_t *>( &instr ), 
@@ -485,14 +492,19 @@ T64Word T64Cpu::dataRead( T64Word vAdr, size_t len, bool sExt, bool rsv ) {
         dataReadAccCheck( vAdr, tlbInfo );      
     }
 
-    if ( proc -> busOpRead( pAdr, 
-                              reinterpret_cast<uint8_t *>( &data ), 
-                              len, 
-                              rsv ) != T64_BUS_OP_STAT_OK ) {
+    T64BusOpStat rStat =  
+        proc -> busOpRead( pAdr, 
+                           reinterpret_cast<uint8_t *>( &data ), 
+                           len, 
+                           rsv );
 
-        // ??? neeed to refine for Sim Breaks.
+    if ( rStat == T64_BUS_OP_SIM_BRK ) {
 
-        machineCheckTrap( pAdr );
+        simulatorTrap( pAdr );
+    }
+    else if ( rStat == T64_BUS_OP_MCHECK ) {
+
+         machineCheckTrap( vAdr );
     }
 
     copyEndianAware( reinterpret_cast<uint8_t *>( &data ), 
@@ -553,15 +565,19 @@ bool T64Cpu::dataWrite( T64Word vAdr, T64Word data, size_t len, bool cond ) {
         dataWriteAccCheck( vAdr, tlbInfo ); 
     }
 
-    if ( proc -> busOpWrite( pAdr, 
-                               reinterpret_cast<uint8_t *>( &data ), 
-                               len, 
-                               cond ) != T64_BUS_OP_STAT_OK ) {
+    T64BusOpStat rStat =  
+        proc -> busOpWrite( pAdr, 
+                            reinterpret_cast<uint8_t *>( &data ), 
+                            len, 
+                            cond );
 
+    if ( rStat == T64_BUS_OP_SIM_BRK ) {
 
-        // ??? need to refine for Sim Breaks.
+        simulatorTrap( pAdr );
+    }
+    else if ( rStat == T64_BUS_OP_MCHECK ) {
 
-        machineCheckTrap( pAdr );
+         machineCheckTrap( vAdr );
     }
 
     return( true );
@@ -1815,17 +1831,20 @@ T64TrapCode T64Cpu::executeInstr( ) {
     }
     catch ( const T64Trap t ) {
 
-        proc -> setRsvInfo( 0, false );
+        if ( t.trapCode != SIM_BRK_TRAP ) {
 
-        T64TrapCode code = t.trapCode;
+            proc -> setRsvInfo( 0, false );
 
-        cRegFile[ CTL_REG_IPSR   ] = t.instrAdr;
-        cRegFile[ CTL_REG_IARG_0 ] = t.arg0;
-        cRegFile[ CTL_REG_IARG_1 ] = t.arg1;  
+            T64TrapCode code = t.trapCode;
 
-        T64Word ivaAdr  = cRegFile[ CTL_REG_IVA ];
-        psrReg          = ivaAdr + ( code * 32 );
+            cRegFile[ CTL_REG_IPSR   ] = t.instrAdr;
+            cRegFile[ CTL_REG_IARG_0 ] = t.arg0;
+            cRegFile[ CTL_REG_IARG_1 ] = t.arg1;  
 
-        return( code );
+            T64Word ivaAdr  = cRegFile[ CTL_REG_IVA ];
+            psrReg          = ivaAdr + ( code * 32 );
+        }
+
+        return( t.trapCode );
     }
 }

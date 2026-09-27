@@ -1930,7 +1930,7 @@ void SimCommandsWin::stepCmd( ) {
 // return from the CPU steps, enable blocking mode again and restore the current 
 // window.
 //
-// ??? when we are inRUN mode, the keyboard input is simply stored in the console
+// ??? when we are in RUN mode, the keyboard input is simply stored in the console
 // IO driver. Likewise, console is just displayed to he screen. ( not sure if
 // we have a separate console window, or just the command window ). After each
 // instruction, the CPU checks if we are in RUN mode and then executes all 

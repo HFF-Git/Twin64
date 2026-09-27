@@ -168,6 +168,8 @@ enum T64TrapCode : int {
     BRANCH_TAKEN_TRAP               = 21,
 
     USER_DEFINED_TRAP               = 22,
+
+    SIM_BRK_TRAP                    = 30
     
 };
 

@@ -178,6 +178,7 @@ struct T64Cpu {
 
     int             evalCond( size_t cond, T64Word val1, T64Word val2 );
 
+    void            simulatorTrap( T64Word adr );
     void            machineCheckTrap( T64Word adr );
     void            externalInterruptTrap( );
     void            privModeOperationTrap( );
@@ -303,6 +304,9 @@ struct T64Processor : T64ThreadModule {
     void            initModule( ) override;
     void            resetModule( ) override;
     T64TrapCode     executeUnit( ) override;
+
+    T64BusOpStat    busOpFetch( T64Word adr, 
+                                uint8_t *instr );
 
     T64BusOpStat    busOpRead( T64Word adr, 
                                uint8_t *data, 

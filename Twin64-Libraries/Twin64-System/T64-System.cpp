@@ -594,8 +594,9 @@ const char  *T64System::getBreakPointTypeStr( T64SimBreakPointType t ) {
 // and data access. We first check that there are breakpoints at all. If so,
 // we search for a matching and enabled breakpoint.
 //
-//----------------------------------------------------------------------------------------//----------------------------------------------------------------------------------------
-int T64System::checkBreakPoint( T64Word adr, int modNum ) {
+//----------------------------------------------------------------------------------------
+int T64System::checkBreakPoint( T64Word              adr, 
+                                int                  modNum ) {
 
     if ( ! breakPointMap.enabled ) return( -1 );
   
@@ -607,7 +608,6 @@ int T64System::checkBreakPoint( T64Word adr, int modNum ) {
 
         if ( ! bp.enabled )                 continue;
         if (( bp.modMask & modBit ) == 0 )  continue;
-
         if (( adr & bp.adrMask ) == bp.adr ) return ( static_cast<int> ( i ));  
     }
 
@@ -635,6 +635,32 @@ const char *T64System::getSystemStateStr( T64SystemState state ) {
 }
 
 //----------------------------------------------------------------------------------------
+// Bus instruction fetch operation. The ftech operation is very similar to the
+// data read bus operation. 
+//
+// For supporting simulator breaks, we check right after checking whether the 
+// physical address is a valid one for a possible breakpoint for the requesting
+// module at that location. Note that a module can also be a nullptr. A memory
+// and a TLB do not request bus read/write operations.
+//
+//----------------------------------------------------------------------------------------
+T64BusOpStat T64System::busOpFetch(  T64Module *mod, 
+                                     T64Word   pAdr, 
+                                     uint8_t   *instr ) {
+
+    T64Module *mPtr = lookupByAdr( pAdr );
+    if ( mPtr == nullptr ) return( T64_BUS_OP_MCHECK );
+
+    if (( mod != nullptr ) && 
+        ( checkBreakPoint( pAdr, mod -> getModuleNum( )) != -1 )) {
+
+        return( T64_BUS_OP_SIM_BRK );
+    }
+
+    return ( mPtr -> busOpReadEvent( pAdr, instr, sizeof( T64Instr )));
+}
+
+//----------------------------------------------------------------------------------------
 // Bus read operation. The system is the dispatcher for bus operations. We look
 // up the module that covers the address and call the module's bus event handler. 
 // The module can react to the bus event and return true if it has handled the 
@@ -646,14 +672,9 @@ const char *T64System::getSystemStateStr( T64SystemState state ) {
 // onyl used by the processor modules, IO modules do not support LDC/STC concepts.
 //
 // For supporting simulator breaks, we check right after checking whether the 
-// physical address is a valoid one for a possible breakpoint for the requesting
+// physical address is a valid one for a possible breakpoint for the requesting
 // module at that location. Note that a module can also be a nullptr. A memory
 // and a TLB do not request bus read/write operations.
-//
-//
-// ??? need to change so we return a cler breakpoint indication....
-// ??? otherwise it will look like a machine check and we set IA to the
-// MCHECK adress....
 //
 //----------------------------------------------------------------------------------------
 T64BusOpStat T64System::busOpRead( T64Module *mod, 
@@ -670,7 +691,7 @@ T64BusOpStat T64System::busOpRead( T64Module *mod,
 
         return( T64_BUS_OP_SIM_BRK );
     }
-
+    
     if ( rsv ) {
 
         { 
@@ -839,6 +860,10 @@ void T64System::simReset( int modNum ) {
 // until we resume the simulator command interface. The "runPending" count and
 // the "sCondVar" variable take care of this.
 // 
+//
+// ??? we have one issue. If we sit on a break, then simRun will just again 
+// raise that breakpoint. Need a way to skip this break if we sit there....
+//
 //----------------------------------------------------------------------------------------
 void T64System::simRun( int modNum, int steps, bool haltOnTrap ) {
 

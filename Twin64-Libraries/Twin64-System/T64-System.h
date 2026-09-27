@@ -355,6 +355,10 @@ struct T64System {
     
     bool                    translateAdr( T64Word vAdr, T64Word *pAdr );
 
+    T64BusOpStat            busOpFetch(  T64Module *mod, 
+                                         T64Word pAdr, 
+                                         uint8_t *instr );
+
     T64BusOpStat            busOpRead(  T64Module *mod, 
                                         T64Word pAdr, 
                                         uint8_t *data, 

@@ -145,14 +145,17 @@ const char *T64Processor::getProcStateStr( ) {
                 case NO_TRAP: 
                     return( "HALT" );
 
+                case SIM_BRK_TRAP: 
+                    return( "SIM-BREAK" );
+
                 case MACHINE_CHECK: 
-                    return( "TRAP: MCHECK/BRK" );
+                    return( "TRAP: MACHINE-CHECK" );
 
                 case POWER_FAILURE: 
-                    return( "TRAP: PWF-FAIL" );  
+                    return( "TRAP: POWER-FAIL" );  
 
                 case RECOVERY_COUNTER_TRAP: 
-                    return( "TRAP: REC_CNTR" );
+                    return( "TRAP: REC-CNTR" );
 
                 case EXTERNAL_INTERRUPT: 
                     return( "TRAP: EXT-INT" );
@@ -491,6 +494,12 @@ T64BusOpStat T64Processor::handleControlEvent( T64BBusOpControlEvents event,
 // purge and so on.
 //
 //----------------------------------------------------------------------------------------
+T64BusOpStat T64Processor::busOpFetch( T64Word adr, 
+                                        uint8_t *instr ) {
+
+    return( sys -> busOpFetch( this, adr, instr ));
+}
+
 T64BusOpStat T64Processor::busOpRead( T64Word adr, 
                                       uint8_t *data, 
                                       size_t len, 

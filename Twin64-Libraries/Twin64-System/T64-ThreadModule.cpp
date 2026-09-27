@@ -228,10 +228,8 @@ void T64ThreadModule::moduleWorker( ) {
                     // Check for traps.
                     if  ( mTrapCode != NO_TRAP ) {
 
-                         if ( mTrapCode == MACHINE_CHECK ) {
-
-                            // ??? check that it a machine check or a 
-                            // breakpoint ?
+                         if (( mTrapCode == MACHINE_CHECK ) ||
+                             ( mTrapCode == SIM_BRK_TRAP )) {
 
                             moduleState.store( T64_MOD_STATE_HALTED,
                                            std::memory_order_release) ;
