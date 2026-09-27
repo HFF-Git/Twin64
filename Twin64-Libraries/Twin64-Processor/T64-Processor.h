@@ -287,7 +287,7 @@ struct T64Cpu {
 // bus for memory and IO access. The unit is a single step, i.e. one instruction. 
 //
 //----------------------------------------------------------------------------------------
-struct T64Processor : T64ProcThreadModule {
+struct T64Processor : T64ThreadModule {
     
     public:
 
@@ -304,29 +304,28 @@ struct T64Processor : T64ProcThreadModule {
     void            resetModule( ) override;
     T64TrapCode     executeUnit( ) override;
 
-    bool            busOpRead( T64Word adr, 
+    T64BusOpStat    busOpRead( T64Word adr, 
                                uint8_t *data, 
                                size_t len, 
                                bool rsv = false );
 
-    bool            busOpWrite( T64Word adr, 
+    T64BusOpStat    busOpWrite( T64Word adr, 
                                 uint8_t *data, 
                                 size_t len, 
                                 bool cond = false );
 
-    bool            busOpControl( T64BBusOpControlEvents id, 
+    T64BusOpStat    busOpControl( T64BBusOpControlEvents id, 
                                   T64Word            arg1, 
                                   T64Word            arg2 );
-
-    bool            busOpReadEvent( T64Word pAdr, 
+    T64BusOpStat    busOpReadEvent( T64Word pAdr, 
                                     uint8_t *data, 
                                     size_t len ) override;
 
-    bool            busOpWriteEvent( T64Word pAdr, 
+    T64BusOpStat    busOpWriteEvent( T64Word pAdr, 
                                      uint8_t *data, 
                                      size_t len ) override; 
 
-    bool            busOpControlEvent( T64BBusOpControlEvents id, 
+    T64BusOpStat    busOpControlEvent( T64BBusOpControlEvents id, 
                                        T64Word            arg1, 
                                        T64Word            arg2 ) override;
                         
@@ -337,10 +336,10 @@ struct T64Processor : T64ProcThreadModule {
 
 private:
 
-    bool            handleHPARead( T64Word pAdr, uint8_t *data, size_t len );
-    bool            handleHPAWrite( T64Word pAdr, uint8_t *data, size_t len );
+    T64BusOpStat    handleHPARead( T64Word pAdr, uint8_t *data, size_t len );
+    T64BusOpStat    handleHPAWrite( T64Word pAdr, uint8_t *data, size_t len );
 
-    bool            handleControlEvent( T64BBusOpControlEvents  event, 
+    T64BusOpStat    handleControlEvent( T64BBusOpControlEvents  event, 
                                         T64Word                 arg1, 
                                         T64Word                 arg2);
 

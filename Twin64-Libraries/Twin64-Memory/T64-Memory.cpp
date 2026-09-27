@@ -108,12 +108,14 @@ void T64Memory::resetModule( ) {
 // offset on our SPA range. The address needs to be aligned with length parameter.
 //
 //----------------------------------------------------------------------------------------
-bool T64Memory::busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len ) {
+T64BusOpStat T64Memory::busOpReadEvent( T64Word pAdr, 
+                                        uint8_t *data, 
+                                        size_t len ) {
 
     if ( isInIoAdrRange( pAdr )) {
 
         memset( data, 0, len );
-        return ( false );
+        return ( T64_BUS_OP_MCHECK );
     }
     else {
 
@@ -123,19 +125,19 @@ bool T64Memory::busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len ) {
          if ( pAdr + static_cast<T64Word>( len ) > spaAdr + spaLen ) {
 
             lockPtr -> store( false );
-            return( false );
+            return( T64_BUS_OP_MCHECK );
         }
 
         if ( ! isAlignedAdr( pAdr,  static_cast<unsigned>( len ) )) {
 
             lockPtr -> store( false );
-            return( false );
+            return( T64_BUS_OP_MCHECK );
         }
        
         uint8_t *srcPtr = &memData[ pAdr - spaAdr ];
         memcpy( data, srcPtr, len );
         lockPtr -> store( false );
-        return( true );
+        return( T64_BUS_OP_STAT_OK );
     }
 }
 
@@ -144,12 +146,14 @@ bool T64Memory::busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len ) {
 // offset on our SPA range. The address needs to be aligned with length parameter.
 //
 //----------------------------------------------------------------------------------------
-bool T64Memory::busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len ) {
+T64BusOpStat T64Memory::busOpWriteEvent( T64Word pAdr, 
+                                         uint8_t *data, 
+                                         size_t len ) {
 
     if ( isInIoAdrRange( pAdr )) {
 
         memset( data, 0, len );
-        return ( false );
+        return ( T64_BUS_OP_MCHECK );
     }
     else {
 
@@ -158,30 +162,30 @@ bool T64Memory::busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len ) {
 
         if ( pAdr + static_cast<T64Word>( len ) >= spaAdr + spaLen ) {
             lockPtr -> store( false );
-            return( false );
+            return( T64_BUS_OP_MCHECK );
         }
         if ( ! isAlignedAdr( pAdr, static_cast<unsigned>( len ))) {
             lockPtr -> store( false );
-            return( false );
+            return( T64_BUS_OP_MCHECK );
         }
 
         if ( spaReadOnly ) {
             lockPtr -> store( false );
-            return ( false );
+            return ( T64_BUS_OP_MCHECK );
         }
 
         uint8_t *dstPtr = &memData[ pAdr - spaAdr ];
         memcpy( dstPtr, data, len );
         lockPtr -> store( false );
-        return( true );
+        return( T64_BUS_OP_STAT_OK );
     }
 }
 
-bool T64Memory::busOpControlEvent( T64BBusOpControlEvents id, 
-                                   T64Word            arg1, 
-                                   T64Word            arg2 ) {
+T64BusOpStat T64Memory::busOpControlEvent( T64BBusOpControlEvents id, 
+                                           T64Word                arg1, 
+                                           T64Word                arg2 ) {
 
-    return( true );
+    return( T64_BUS_OP_STAT_OK );
 }
 
 //----------------------------------------------------------------------------------------

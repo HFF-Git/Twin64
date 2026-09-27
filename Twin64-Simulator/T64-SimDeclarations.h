@@ -1278,6 +1278,7 @@ public:
     void            drawBody( );
     void            clearCmdWin( );
     SimTokId        getCurrentCmd( );
+    void            setCmdWinSysState( T64SystemState state );
     SimWinOutBuffer *getWinOutHandle( );
     void            cmdInterpreterSetup( ); 
     void            cmdInterpreterLoop( );
@@ -1301,7 +1302,6 @@ private:
     int             promptYesNoCancel( char *promptStr );
     void            configureT64Sim( );
     void            configureT64Log( );
-   // int             writeLog( );
 
     void            ensureWinModeOn( );
     void            printStackInfoField( uint32_t fmtDesc = 0,
@@ -1403,6 +1403,7 @@ private:
     T64Assemble             *inlineAsm  = nullptr;
     T64DisAssemble          *disAsm     = nullptr;   
     SimTokId                currentCmd  = TOK_NIL;
+    T64SystemState          sysState    = T64_SYS_STATE_HALT;
 };
 
 //----------------------------------------------------------------------------------------
@@ -1426,6 +1427,7 @@ public:
     void            setupWinDisplay( );
     void            startWinDisplay( );
     SimTokId        getCurrentCmd( );
+    SimCommandsWin  *getSimCmdWin( );
 
     void            setWinMode( bool winOn );
     bool            isWinModeOn( );

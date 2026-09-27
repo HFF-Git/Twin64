@@ -78,12 +78,17 @@ void SimWinDisplay::startWinDisplay( ) {
 
 SimTokId SimWinDisplay::getCurrentCmd( ) {
     
-    return( cmdWin -> getCurrentCmd( ));
+    return ( cmdWin -> getCurrentCmd( ));
+}
+
+SimCommandsWin *SimWinDisplay::getSimCmdWin( ) {
+
+    return ( cmdWin );
 }
 
 bool SimWinDisplay::isWinModeOn( ) {
     
-    return( winModeOn );
+    return ( winModeOn );
 }
 
 void SimWinDisplay::setWinMode( bool winOn ) {
@@ -98,7 +103,7 @@ void SimWinDisplay::setWinReFormat( ) {
 
 bool SimWinDisplay::isWinReFormat( ) {
 
-    return( winReFormatPending );
+    return ( winReFormatPending );
 }
 
 //----------------------------------------------------------------------------------------
@@ -110,7 +115,7 @@ bool SimWinDisplay::isWinReFormat( ) {
 //----------------------------------------------------------------------------------------
 int  SimWinDisplay::getCurrentWindow( ) {
     
-    return( currentWinNum );
+    return ( currentWinNum );
 }
 
 void SimWinDisplay::setCurrentWindow( int winNum ) {
@@ -127,7 +132,7 @@ SimWinType SimWinDisplay::getCurrentWinType( ) {
 
     if ( validWindowNum( currentWinNum )) {
 
-        return( windowList[ currentWinNum ] -> getWinType( ));
+        return ( windowList[ currentWinNum ] -> getWinType( ));
     }
     else throw( ERR_INVALID_WIN_ID );
 }
@@ -136,7 +141,7 @@ int SimWinDisplay::getCurrentWinModNum( ) {
 
      if ( validWindowNum( currentWinNum )) {
 
-        return( windowList[ currentWinNum ] -> getWinModNum( ));
+        return ( windowList[ currentWinNum ] -> getWinModNum( ));
      } 
      else throw( ERR_INVALID_WIN_ID );
 }
@@ -147,7 +152,7 @@ int SimWinDisplay::getCurrentWinModNum( ) {
 //----------------------------------------------------------------------------------------
 SimCommandsWin  *SimWinDisplay::getCmdWinHandle( ) {
 
-    return( cmdWin );
+    return ( cmdWin );
 }
 
 //----------------------------------------------------------------------------------------
@@ -158,20 +163,20 @@ SimCommandsWin  *SimWinDisplay::getCmdWinHandle( ) {
 //----------------------------------------------------------------------------------------
 bool SimWinDisplay::validWindowNum( int winNum ) {
     
-    return(( winNum >= 0 ) && 
+    return (( winNum >= 0 ) && 
            ( winNum < static_cast<int> ( MAX_WINDOWS )) && 
            ( windowList[ winNum ] != nullptr ));
 }
 
 bool SimWinDisplay::validWindowStackNum( int stackNum ) {
     
-    return(( stackNum >= 0 ) && 
+    return (( stackNum >= 0 ) && 
            ( stackNum < static_cast<int> ( MAX_WIN_STACKS )));
 }
 
 bool SimWinDisplay::validWindowType( SimTokId winType ) {
     
-    return( ( winType == TOK_CPU    ) ||
+    return ( ( winType == TOK_CPU    ) ||
             ( winType == TOK_MEM    ) || 
             ( winType == TOK_TLB    ) ||
             ( winType == TOK_CODE   ) || 
@@ -182,7 +187,7 @@ char *SimWinDisplay::getWinName( int winNum ) {
 
     if ( validWindowNum( winNum )) {
 
-        return( windowList[ winNum ] -> getWinName( ));
+        return ( windowList[ winNum ] -> getWinName( ));
     }
     else throw( ERR_INVALID_WIN_ID );
 }   
@@ -193,14 +198,14 @@ const char *SimWinDisplay::getWinTypeName( int winNum ) {
 
         switch ( windowList[ winNum ]->getWinType( )) {
         
-            case WT_CMD_WIN:       return( "Command" );
-            case WT_CONSOLE_WIN:   return( "Console" );
-            case WT_TEXT_WIN:      return( "Text" );
-            case WT_CPU_WIN:       return( "CPU" );
-            case WT_TLB_WIN:       return( "TLB" );
-            case WT_MEM_WIN:       return( "Memory" );
+            case WT_CMD_WIN:       return ( "Command" );
+            case WT_CONSOLE_WIN:   return ( "Console" );
+            case WT_TEXT_WIN:      return ( "Text" );
+            case WT_CPU_WIN:       return ( "CPU" );
+            case WT_TLB_WIN:       return ( "TLB" );
+            case WT_MEM_WIN:       return ( "Memory" );
             
-            default:               return( "N/A" );
+            default:               return ( "N/A" );
         }
     }
     else throw( ERR_INVALID_WIN_ID );
@@ -208,19 +213,19 @@ const char *SimWinDisplay::getWinTypeName( int winNum ) {
 
 int SimWinDisplay::getWinStackNum( int winNum ) {
 
-    return(( validWindowNum( winNum )) ? 
+    return (( validWindowNum( winNum )) ? 
              windowList[ winNum ] -> getWinStack( ) : -1 );
 }
 
 int SimWinDisplay::getWinModNum( int winNum ) {
 
-    return(( validWindowNum( winNum )) ? 
+    return (( validWindowNum( winNum )) ? 
                     windowList[ winNum ] -> getWinModNum( ) : -1 );
 }
 
 bool SimWinDisplay::isCurrentWin( int winNum ) {
     
-    return(( validWindowNum( winNum ) && ( currentWinNum == winNum )));
+    return (( validWindowNum( winNum ) && ( currentWinNum == winNum )));
 }
 
 bool SimWinDisplay::isScrollableWin ( int typ ) {
@@ -233,13 +238,13 @@ bool SimWinDisplay::isScrollableWin ( int typ ) {
 bool SimWinDisplay::isWinEnabled( int winNum ) {
 
     if ( winNum == -1 ) winNum = getCurrentWindow( );
-    return(( validWindowNum( winNum )) && 
+    return (( validWindowNum( winNum )) && 
            ( windowList[ winNum ] -> isEnabled( )));
 }
 
 bool SimWinDisplay::isWindowsOn( ) {
 
-    return( winModeOn );
+    return ( winModeOn );
 }
 
 //----------------------------------------------------------------------------------------
@@ -264,7 +269,7 @@ unsigned SimWinDisplay::computeColumnsNeeded( int winStack ) {
         }
     }
     
-    return( columnSize );
+    return ( columnSize );
 }
 
 //----------------------------------------------------------------------------------------
@@ -307,7 +312,7 @@ unsigned SimWinDisplay::computeRowsNeeded( int winStack ) {
         }
     }
     
-    return( rowSize );
+    return ( rowSize );
 }
 
 //----------------------------------------------------------------------------------------
@@ -834,7 +839,7 @@ int SimWinDisplay::getFreeWindowSlot( ) {
 
     for ( int i = 0; i < MAX_WINDOWS; i++ ) {
         
-        if ( windowList[ i ] == nullptr ) return( i );
+        if ( windowList[ i ] == nullptr ) return ( i );
     }
 
     throw( ERR_OUT_OF_WINDOWS );

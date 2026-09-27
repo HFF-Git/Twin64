@@ -171,7 +171,7 @@ bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
     if ( sys -> busOpRead( nullptr, 
                            physAdr, 
                            reinterpret_cast<uint8_t *>( val ), 
-                           size )) {
+                           size ) == T64_BUS_OP_STAT_OK ) {
 
         copyEndianAware( reinterpret_cast<uint8_t *>( val ), 
                          reinterpret_cast<uint8_t *>( val ), 
@@ -551,9 +551,7 @@ unsigned SimWinProcState::drawCodeSubWindow( unsigned linePos,
             }
             else fmtDesc = FMT_DEFAULT;
 
-            int bNum =  glb -> system -> checkBreakPoint( T64_SIM_BREAK_X, 
-                                                          ia, 
-                                                          getWinModNum( ));
+            int bNum =  glb -> system -> checkBreakPoint( ia, getWinModNum( ));
 
             if (( bNum >= 0 ) && ( bNum < 10 )) {
 
@@ -950,7 +948,7 @@ void SimWinMem::drawMemDataLine32( T64Word itemAdr, uint32_t fmtDesc ) {
         if ( readMem( glb -> system, 
                       itemAdr + i, 
                       reinterpret_cast<uint8_t *>( &actualVal ), 
-                      sizeof( actualVal ))) {
+                      sizeof( actualVal )) == T64_BUS_OP_STAT_OK ) {
 
             T64Word tmpAdr = ( itemAdr + i ) - getCurrentItemAdr( );
             uint32_t dataVal = 0;
@@ -1002,7 +1000,7 @@ void SimWinMem::drawMemDataLine64( T64Word itemAdr, uint32_t fmtDesc ) {
         if ( readMem( glb -> system, 
                       itemAdr + i, 
                       reinterpret_cast<uint8_t *>( &actualVal ), 
-                      sizeof( actualVal ))) {
+                      sizeof( actualVal )) == T64_BUS_OP_STAT_OK ) {
 
             T64Word tmpAdr  = ( itemAdr + i ) - getCurrentItemAdr( );
             T64Word dataVal = 0;
@@ -1052,7 +1050,7 @@ void SimWinMem::drawMemDataLineCode( T64Word itemAdr ) {
 
     if ( readMem( glb -> system, 
                   itemAdr, reinterpret_cast<uint8_t *>( &instr ), 
-                  sizeof( uint32_t ))) {
+                  sizeof( uint32_t )) == T64_BUS_OP_STAT_OK ) {
 
         T64Word tmpAdr  = itemAdr - getCurrentItemAdr( );
         uint32_t dataVal = 0;
@@ -1080,7 +1078,7 @@ void SimWinMem::drawMemDataLineCode( T64Word itemAdr ) {
 
     printNumericField( instr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_8, 12 );
 
-    int bNum = glb -> system -> checkBreakPoint( T64_SIM_BREAK_X, itemAdr, -1 );
+    int bNum = glb -> system -> checkBreakPoint( itemAdr, -1 );
 
     if (( bNum >= 0 ) && ( bNum < 10 )) {
 

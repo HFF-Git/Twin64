@@ -594,14 +594,11 @@ const char  *T64System::getBreakPointTypeStr( T64SimBreakPointType t ) {
 // and data access. We first check that there are breakpoints at all. If so,
 // we search for a matching and enabled breakpoint.
 //
-// ??? do we need to have the breakpoint type ?
 //----------------------------------------------------------------------------------------//----------------------------------------------------------------------------------------
-int T64System::checkBreakPoint( T64SimBreakPointType type,
-                                T64Word               adr,
-                                int                   modNum ) {
+int T64System::checkBreakPoint( T64Word adr, int modNum ) {
 
-    if ( !breakPointMap.enabled ) return( -1 );
-
+    if ( ! breakPointMap.enabled ) return( -1 );
+  
     uint64_t modBit = ( modNum == -1 ) ? UINT64_MAX : 1ULL << modNum;
 
     for ( unsigned i = 0; i < breakPointMap.hwm; i++ ) {
@@ -609,7 +606,6 @@ int T64System::checkBreakPoint( T64SimBreakPointType type,
         const T64SimBreakPointEntry& bp = breakPointMap.map[ i ];
 
         if ( ! bp.enabled )                 continue;
-        if ( bp.type != type )              continue;
         if (( bp.modMask & modBit ) == 0 )  continue;
 
         if (( adr & bp.adrMask ) == bp.adr ) return ( static_cast<int> ( i ));  
@@ -627,9 +623,9 @@ T64SystemState T64System::getSystemState( ) {
     return( sysState );
 }
 
-const char *T64System::getSystemStateStr( ) {
+const char *T64System::getSystemStateStr( T64SystemState state ) {
 
-    switch ( sysState ) {
+    switch ( state ) {
 
         case T64_SYS_STATE_HALT:    return ( "HALT" );
         case T64_SYS_STATE_RUN:     return( "RUN" );
@@ -644,34 +640,52 @@ const char *T64System::getSystemStateStr( ) {
 // The module can react to the bus event and return true if it has handled the 
 // event, or false if it has not handled the event. 
 //
-// For supporting the LDR/STC instruction, we need to support a bus read 
-// reserved operation. In this case, we lock the access, read the data and
-// set the reservation info in the calling processor module.
+// For supporting the LDR/STC instruction sematics, we need to support a bus 
+// read reserved operation. In this case, we lock the access, read the data and
+// set the reservation info in the calling module. Note that this mechanism is
+// onyl used by the processor modules, IO modules do not support LDC/STC concepts.
+//
+// For supporting simulator breaks, we check right after checking whether the 
+// physical address is a valoid one for a possible breakpoint for the requesting
+// module at that location. Note that a module can also be a nullptr. A memory
+// and a TLB do not request bus read/write operations.
+//
+//
+// ??? need to change so we return a cler breakpoint indication....
+// ??? otherwise it will look like a machine check and we set IA to the
+// MCHECK adress....
 //
 //----------------------------------------------------------------------------------------
-bool T64System::busOpRead( T64Module *mod, 
-                           T64Word   pAdr, 
-                           uint8_t   *data, 
-                           size_t    len,
-                           bool      rsv ) {
+T64BusOpStat T64System::busOpRead( T64Module *mod, 
+                                   T64Word   pAdr, 
+                                   uint8_t   *data, 
+                                   size_t    len,
+                                   bool      rsv ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
-    if ( mPtr == nullptr ) return( false );
+    if ( mPtr == nullptr ) return( T64_BUS_OP_MCHECK );
+
+    if (( mod != nullptr ) && 
+        ( checkBreakPoint( pAdr, mod -> getModuleNum( )) != -1 )) {
+
+        return( T64_BUS_OP_SIM_BRK );
+    }
 
     if ( rsv ) {
 
         { 
             std::lock_guard<std::mutex> lk(sLock);
 
-            if ( ! mPtr -> busOpReadEvent( pAdr, data, len )) return( false );
+            T64BusOpStat rStat = mPtr -> busOpReadEvent( pAdr, data, len );
+            if ( rStat != T64_BUS_OP_STAT_OK ) return( rStat );
 
-            if (dynamic_cast<T64ProcThreadModule*>( mod )) {
+            if (dynamic_cast<T64ThreadModule*>( mod )) {
 
-                ( reinterpret_cast<T64ProcThreadModule *> ( mod )) -> 
+                ( reinterpret_cast<T64ThreadModule *> ( mod )) -> 
                                                     setRsvInfo( pAdr, true );
             }
 
-             return ( true );
+             return ( T64_BUS_OP_STAT_OK );
         }
     }
     else return ( mPtr -> busOpReadEvent( pAdr, data, len ));
@@ -694,24 +708,35 @@ bool T64System::busOpRead( T64Module *mod,
 // For normal write operations, we just perform the write operation and clear
 // any reservation for the address.
 //
+// For supporting simulator breaks, we check right after checking whether the 
+// physical address is a valoid one for a possible breakpoint for the requesting
+// module at that location. Note that a module can also be a nullptr. A memory
+// and a TLB do not request bus read/write operations.
+//
 //----------------------------------------------------------------------------------------
-bool T64System::busOpWrite( T64Module *mod, 
-                            T64Word pAdr, 
-                            uint8_t *data, 
-                            size_t len, 
-                            bool cond ) {
-
-    bool rStat = false;
+T64BusOpStat T64System::busOpWrite( T64Module *mod, 
+                                    T64Word pAdr, 
+                                    uint8_t *data, 
+                                    size_t len, 
+                                    bool cond ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
-    if ( mPtr == nullptr ) return ( false );
+    if ( mPtr == nullptr ) return ( T64_BUS_OP_MCHECK );
+
+    if (( mod != nullptr ) && 
+        ( checkBreakPoint( pAdr, mod -> getModuleNum( )) != -1 )) {
+
+        return( T64_BUS_OP_SIM_BRK );
+    }
 
     {
         std::lock_guard<std::mutex> lk(sLock);
 
+        T64BusOpStat rStat = T64_BUS_OP_STAT_OK;
+
         if ( cond ) {
 
-            if ( auto p = dynamic_cast<T64ProcThreadModule*>( mod )) {
+            if ( auto p = dynamic_cast<T64ThreadModule*>( mod )) {
 
                 if ( p -> getRsvAdr( ) == pAdr ) {
 
@@ -720,7 +745,7 @@ bool T64System::busOpWrite( T64Module *mod,
                         p -> setRsvInfo( pAdr, false );
                         rStat = mPtr -> busOpWriteEvent( pAdr, data, len );
                     }
-                    else rStat = false;
+                    else rStat = T64_BUS_OP_MCHECK;
                 }
                 else {
 
@@ -732,7 +757,7 @@ bool T64System::busOpWrite( T64Module *mod,
 
         for ( int i = 0; i < systemProcMapHwm; i ++ ) {
 
-            if ( auto p = dynamic_cast<T64ProcThreadModule*>( systemProcMap[ i ] )) {
+            if ( auto p = dynamic_cast<T64ThreadModule*>( systemProcMap[ i ] )) {
 
                 if ( p -> getRsvAdr( ) == pAdr ) {
 
@@ -751,12 +776,12 @@ bool T64System::busOpWrite( T64Module *mod,
 // inform all modules.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::busOpControl( T64Module *mod,
-                              T64BBusOpControlEvents event,
-                              T64Word            arg1, 
-                              T64Word            arg2 ) {
+T64BusOpStat T64System::busOpControl( T64Module *mod,
+                                      T64BBusOpControlEvents event,
+                                      T64Word            arg1, 
+                                      T64Word            arg2 ) {
                                 
-    if ( mod == nullptr ) return ( false );
+    if ( mod == nullptr ) return ( T64_BUS_OP_MCHECK );
 
     {
         std::lock_guard<std::mutex> lk(sLock);                              
@@ -768,7 +793,7 @@ bool T64System::busOpControl( T64Module *mod,
         }
     }
 
-    return( true );
+    return( T64_BUS_OP_STAT_OK );
 }
 
 //----------------------------------------------------------------------------------------
@@ -787,7 +812,7 @@ void T64System::simReset( int modNum ) {
             for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
                 if ( auto *m = 
-                        dynamic_cast<T64ProcThreadModule *> ( moduleMap[ i ] )) {
+                        dynamic_cast<T64ThreadModule *> ( moduleMap[ i ] )) {
 
                     m -> resetModule( );
                 }
@@ -798,7 +823,7 @@ void T64System::simReset( int modNum ) {
         else if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
             if ( auto *m = 
-                    dynamic_cast<T64ProcThreadModule *> ( moduleMap[ modNum ] )) {
+                    dynamic_cast<T64ThreadModule *> ( moduleMap[ modNum ] )) {
 
                 m -> resetModule( );
             }
@@ -827,7 +852,7 @@ void T64System::simRun( int modNum, int steps, bool haltOnTrap ) {
         for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
             if ( auto *m =
-                    dynamic_cast<T64ProcThreadModule *>(moduleMap[ i ])) {
+                    dynamic_cast<T64ThreadModule *>(moduleMap[ i ])) {
 
                 runPending++;
                 m -> execModule( steps, haltOnTrap );
@@ -837,7 +862,7 @@ void T64System::simRun( int modNum, int steps, bool haltOnTrap ) {
     else if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
         if ( auto *m =
-                dynamic_cast<T64ProcThreadModule *>( moduleMap[modNum] )) {
+                dynamic_cast<T64ThreadModule *>( moduleMap[modNum] )) {
 
             runPending = 1;
             m -> execModule( steps, haltOnTrap );
@@ -857,7 +882,8 @@ void T64System::simRun( int modNum, int steps, bool haltOnTrap ) {
 }
 
 //----------------------------------------------------------------------------------------
-//
+// Halt the simulatar or a module. When we halt all modules, the system state
+// becomes "HALT", else it is untouched.
 //
 //----------------------------------------------------------------------------------------
 void T64System::simHalt( int modNum ) {
@@ -870,7 +896,7 @@ void T64System::simHalt( int modNum ) {
         for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
             if ( auto *m =
-                    dynamic_cast<T64ProcThreadModule *>(moduleMap[ i ])) {
+                    dynamic_cast<T64ThreadModule *>(moduleMap[ i ])) {
 
                 m -> haltModule( );
             }
@@ -880,7 +906,7 @@ void T64System::simHalt( int modNum ) {
 
         if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
-        if ( auto *m = dynamic_cast<T64ProcThreadModule *> ( moduleMap[ modNum ] ))
+        if ( auto *m = dynamic_cast<T64ThreadModule *> ( moduleMap[ modNum ] ))
             m -> haltModule( );
         }
     }

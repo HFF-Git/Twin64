@@ -308,11 +308,12 @@ void T64GlobalTlb::resetModule( ) {
 // A bus read event that concerns us. We only listen to our HPA address range.
 //
 //----------------------------------------------------------------------------------------
-bool 
-T64GlobalTlb::busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len )  {
+T64BusOpStat T64GlobalTlb::busOpReadEvent( T64Word pAdr, 
+                                           uint8_t *data, 
+                                           size_t len )  {
 
-    if ( ! isInIoHpaRange( pAdr )) return( false );
-    if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( false );
+    if ( ! isInIoHpaRange( pAdr )) return( T64_BUS_OP_MCHECK );
+    if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( T64_BUS_OP_MCHECK );
 
     // int     wordIndex           = (( pAdr - hpaAdr ) >> 3 );
     // int     regSetIndex         = wordIndex / T64_IO_REG_SET_SIZE;
@@ -323,7 +324,7 @@ T64GlobalTlb::busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len )  {
     // ??? what registers do we have ?
 
     copyFromReg( data, tmp, 0, len );
-    return ( true );
+    return ( T64_BUS_OP_STAT_OK );
 }
 
 //----------------------------------------------------------------------------------------
@@ -331,11 +332,12 @@ T64GlobalTlb::busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len )  {
 // defined for the TLB.
 //
 //----------------------------------------------------------------------------------------
-bool 
-T64GlobalTlb::busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len )  {
+T64BusOpStat T64GlobalTlb::busOpWriteEvent( T64Word pAdr, 
+                                            uint8_t *data, 
+                                            size_t  len )  {
 
-    if ( ! isInIoHpaRange( pAdr )) return( false );
-    if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( false );
+    if ( ! isInIoHpaRange( pAdr )) return( T64_BUS_OP_MCHECK );
+    if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( T64_BUS_OP_MCHECK );
 
     // int     wordIndex           = (( pAdr - hpaAdr ) >> 3 );
     // int     regSetIndex         = wordIndex / T64_IO_REG_SET_SIZE;
@@ -345,7 +347,7 @@ T64GlobalTlb::busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len )  {
     
     // ??? what registers can we write ?
 
-    return ( false );
+    return ( T64_BUS_OP_STAT_OK );
 } 
 
 //----------------------------------------------------------------------------------------
@@ -353,24 +355,26 @@ T64GlobalTlb::busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len )  {
 // for example.
 //
 //----------------------------------------------------------------------------------------
-bool T64GlobalTlb::busOpControlEvent( T64BBusOpControlEvents id, 
-                                      T64Word            arg1, 
-                                      T64Word            arg2 )  {
+T64BusOpStat T64GlobalTlb::busOpControlEvent( T64BBusOpControlEvents id, 
+                                              T64Word            arg1, 
+                                              T64Word            arg2 )  {
 
     switch ( id ) {
 
         case T64_CNTRL_EVENT_TLB_INSERT: {
 
-            return( insertTlbEntry( arg1, arg2));  
+            return(( insertTlbEntry( arg1, arg2 )) ? 
+                     T64_BUS_OP_STAT_OK : T64_BUS_OP_MCHECK );
               
         } break;
 
         case T64_CNTRL_EVENT_TLB_PURGE: {
 
-            return( removeTlbEntry( arg1 ));
+            return(( removeTlbEntry( arg1 )) ? 
+                     T64_BUS_OP_STAT_OK : T64_BUS_OP_MCHECK );
               
         } break;
 
-        default: return( false );
+        default: return( T64_BUS_OP_MCHECK );
     }
 }

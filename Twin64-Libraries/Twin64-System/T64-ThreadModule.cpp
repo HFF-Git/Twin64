@@ -32,7 +32,7 @@
 //
 //
 //----------------------------------------------------------------------------------------
-T64ProcThreadModule::T64ProcThreadModule( T64System        *sys,
+T64ThreadModule::T64ThreadModule( T64System        *sys,
                                           T64ModuleType    modType, 
                                           int              modNum,
                                           T64Word          spaAdr,
@@ -47,7 +47,7 @@ T64ProcThreadModule::T64ProcThreadModule( T64System        *sys,
     moduleState.store( T64_MOD_STATE_HALTED, std::memory_order_release );      
 }
 
-T64ProcThreadModule:: ~ T64ProcThreadModule( ) {
+T64ThreadModule:: ~ T64ThreadModule( ) {
 
     mTrapCode = NO_TRAP;
     moduleState.store( T64_MOD_STATE_TERMINATE, std::memory_order_release );
@@ -63,7 +63,7 @@ T64ProcThreadModule:: ~ T64ProcThreadModule( ) {
 // update. Finally, we wake up the thread which is waiting in the "mCondVar".
 //
 //----------------------------------------------------------------------------------------
-void T64ProcThreadModule::setModuleState( T64ModuleState state ) {
+void T64ThreadModule::setModuleState( T64ModuleState state ) {
 
     {
         std::lock_guard<std::mutex> lk(mLock);
@@ -73,30 +73,30 @@ void T64ProcThreadModule::setModuleState( T64ModuleState state ) {
     mCondVar.notify_one( );
 }
 
-void T64ProcThreadModule::initModule( ) {
+void T64ThreadModule::initModule( ) {
 
-    mWorker = std::thread( &T64ProcThreadModule::moduleWorker, this );
+    mWorker = std::thread( &T64ThreadModule::moduleWorker, this );
 }
 
-void T64ProcThreadModule::resetModule( ) {
+void T64ThreadModule::resetModule( ) {
 
     mUnitCount = 0;
     setModuleState( T64_MOD_STATE_RESET );
 }
 
-void T64ProcThreadModule::haltModule( ) {
+void T64ThreadModule::haltModule( ) {
 
     mUnitCount = 0;
     setModuleState( T64_MOD_STATE_HALTED );
 }
 
-void T64ProcThreadModule::runModule( ) {
+void T64ThreadModule::runModule( ) {
 
     mUnitCount = -1;
     setModuleState( T64_MOD_STATE_EXECUTE );
 }
 
-void T64ProcThreadModule::execModule( int units, bool haltOnTrap ) {
+void T64ThreadModule::execModule( int units, bool haltOnTrap ) {
 
     if ( units < -1 ) units = -1;
 
@@ -110,18 +110,18 @@ void T64ProcThreadModule::execModule( int units, bool haltOnTrap ) {
 // Support for LDR/STC instructions.
 //
 //----------------------------------------------------------------------------------------
-void T64ProcThreadModule::setRsvInfo( T64Word pAdr, bool valid ) {
+void T64ThreadModule::setRsvInfo( T64Word pAdr, bool valid ) {
 
     rsvInfo  = pAdr;
     rsvValid = valid;
 }
     
-T64Word T64ProcThreadModule::getRsvAdr( ) {
+T64Word T64ThreadModule::getRsvAdr( ) {
 
     return( rsvInfo );
 }
 
-bool T64ProcThreadModule::isRsvValid( ) {
+bool T64ThreadModule::isRsvValid( ) {
 
     return( rsvValid );
 }
@@ -130,12 +130,12 @@ bool T64ProcThreadModule::isRsvValid( ) {
 // A little helper to return the module state and trap code.
 //
 //----------------------------------------------------------------------------------------
-T64TrapCode T64ProcThreadModule::getTrapCode( ) {
+T64TrapCode T64ThreadModule::getTrapCode( ) {
 
     return( mTrapCode );
 }
 
- void T64ProcThreadModule::setEnterSimOnTrap( bool val ) {
+ void T64ThreadModule::setEnterSimOnTrap( bool val ) {
 
     enterSimOnTrap = val;
  }
@@ -155,7 +155,7 @@ T64TrapCode T64ProcThreadModule::getTrapCode( ) {
 //      loop = fetch-decode-execute
 //
 //----------------------------------------------------------------------------------------
-void T64ProcThreadModule::moduleWorker( ) {
+void T64ThreadModule::moduleWorker( ) {
  
     moduleState.store( T64_MOD_STATE_RESET, std::memory_order_release );
 

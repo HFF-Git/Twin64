@@ -345,7 +345,7 @@ bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
     if ( sys -> busOpRead( nullptr,
                            physAdr, 
                            reinterpret_cast<uint8_t *>( val ), 
-                           size )) {
+                           size ) == T64_BUS_OP_STAT_OK ) {
 
         copyEndianAware( reinterpret_cast<uint8_t *>( val ), 
                          reinterpret_cast<uint8_t *>( val ), 
@@ -521,10 +521,19 @@ void SimCommandsWin::setDefaults( ) {
 }
 
 //----------------------------------------------------------------------------------------
+// "setCmdWinSysState" sets the commands window system state value which is used
+// in the banner line.
+//
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::setCmdWinSysState( T64SystemState state ) {
+
+    sysState = state;
+}
+
+//----------------------------------------------------------------------------------------
 // The banner line for command window. For now, we just label the banner line 
 // and show the system state plus the WIN mode stack info.
 //
-// ??? one day we hook up the system state to PDC data...
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::drawBanner( ) {
     
@@ -538,10 +547,11 @@ void SimCommandsWin::drawBanner( ) {
 
     printTextField( "System State: ", fmtDescBlack );
 
-    if ( glb -> system -> getSystemState( ) == T64_SYS_STATE_RUN ) 
-        printTextField( glb -> system -> getSystemStateStr( ), fmtDescGreen );
+    if ( sysState == T64_SYS_STATE_RUN ) 
+        printTextField( glb -> system -> getSystemStateStr( sysState ), fmtDescGreen );
     else 
-        printTextField( glb -> system -> getSystemStateStr( ), fmtDescRed );
+        printTextField( glb -> system -> getSystemStateStr( sysState ), fmtDescRed );
+
     padLine( fmtDesc ); 
 
     if ( glb -> winDisplay -> isWindowsOn( )) {
@@ -1901,12 +1911,18 @@ void SimCommandsWin::stepCmd( ) {
     
     bool haltOnTrap = glb -> env -> getEnvVarBool( ENV_HALT_ON_TRAPS );
     glb -> system -> simRun( modNum, numOfSteps, haltOnTrap );
+
+    setCmdWinSysState( glb -> system -> getSystemState( ));
 }
 
 //----------------------------------------------------------------------------------------
 // Run command. The command will just run the system until a halt is detected.
 //
 //  RUN 
+//
+// The systenm state is set to "RUN" before we enter the simuolator RUN. This is
+// necessary because we will not return for the simulator run until we stop again.
+// To give an indication that we are now in RUN mode, we update before.
 //
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 
@@ -1926,7 +1942,13 @@ void SimCommandsWin::runCmd( ) {
     tok -> checkEOS( );
 
     bool haltOnTraps = glb -> env -> getEnvVarBool( ENV_HALT_ON_TRAPS );
+    
+    setCmdWinSysState( T64_SYS_STATE_RUN );
+    glb -> winDisplay -> reDraw( );
+  
     glb -> system -> simRun( -1, -1, haltOnTraps  );
+
+    setCmdWinSysState( glb -> system -> getSystemState( ));
 }
 
 //----------------------------------------------------------------------------------------
@@ -2708,7 +2730,8 @@ void SimCommandsWin::modifyMemCmd( ) {
 
     if ( translateAdr( glb -> system, adr, &adr )) {
  
-        if ( ! glb -> system -> busOpWrite( nullptr, adr, ptr, len )) {
+        if ( glb -> system -> busOpWrite( nullptr, adr, ptr, len ) != 
+                    T64_BUS_OP_STAT_OK ) {
 
             throw( ERR_MEM_OP_FAILED );
         }

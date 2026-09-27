@@ -134,6 +134,17 @@ enum T64SimBreakPointType : unsigned {
 };
 
 //----------------------------------------------------------------------------------------
+// Bus operation request status.
+//
+//----------------------------------------------------------------------------------------
+enum T64BusOpStat : unsigned {
+
+    T64_BUS_OP_STAT_OK  = 0,
+    T64_BUS_OP_MCHECK   = 1,
+    T64_BUS_OP_SIM_BRK  = 2
+};
+
+//----------------------------------------------------------------------------------------
 // Forward declaration of T64System.
 //
 //----------------------------------------------------------------------------------------
@@ -164,13 +175,13 @@ struct T64Module {
     virtual void        initModule( )           = 0;
     virtual void        resetModule( )          = 0;
 
-    virtual bool        
+    virtual T64BusOpStat        
     busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len ) = 0;
 
-    virtual bool        
+    virtual T64BusOpStat        
     busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len ) = 0;
 
-    virtual bool        
+    virtual T64BusOpStat        
     busOpControlEvent( T64BBusOpControlEvents event, 
                        T64Word  arg1, T64Word arg2 ) = 0;
 
@@ -210,22 +221,23 @@ struct T64Module {
 };
 
 //----------------------------------------------------------------------------------------
-// The processor thread module implements the thread logic for our processors. 
-// The inheriting processor module is required to implement the "execModule" 
-// method, which actually executes instructions for a processor. 
+// The thread module implements the thread logic for our processors and IO 
+// modules. The inheriting module module is required to implement the "execModule" 
+// method, which actually executes instructions for a processor and unit steps 
+// for an IO module.
 //
 //----------------------------------------------------------------------------------------
-struct T64ProcThreadModule : T64Module {
+struct T64ThreadModule : T64Module {
 
     public:
 
-    T64ProcThreadModule( T64System        *sys,
-                         T64ModuleType    modType, 
-                         int              modNum,
-                         T64Word          spaAdr,
-                         int              spaLen );
+    T64ThreadModule( T64System        *sys,
+                     T64ModuleType    modType, 
+                     int              modNum,
+                     T64Word          spaAdr,
+                     int              spaLen );
 
-    ~ T64ProcThreadModule( );
+    ~ T64ThreadModule( );
 
     virtual void                initModule( );
     virtual void                resetModule( );
@@ -319,7 +331,7 @@ struct T64System {
     T64System( );
 
     T64SystemState          getSystemState( );
-    const char              *getSystemStateStr( );
+    const char              *getSystemStateStr( T64SystemState state );
 
     void                    simReset( int modNum = -1 );
 
@@ -343,19 +355,19 @@ struct T64System {
     
     bool                    translateAdr( T64Word vAdr, T64Word *pAdr );
 
-    bool                    busOpRead(  T64Module *mod, 
+    T64BusOpStat            busOpRead(  T64Module *mod, 
                                         T64Word pAdr, 
                                         uint8_t *data, 
                                         size_t len,
                                         bool rsv = false );
 
-    bool                    busOpWrite( T64Module *mod, 
+    T64BusOpStat            busOpWrite( T64Module *mod, 
                                         T64Word pAdr, 
                                         uint8_t *data, 
                                         size_t len,
                                         bool cond = false );
 
-    bool                    busOpControl( T64Module *mod,
+    T64BusOpStat            busOpControl( T64Module *mod,
                                           T64BBusOpControlEvents event,
                                           T64Word             arg1, 
                                           T64Word             arg2 );
@@ -378,9 +390,8 @@ struct T64System {
 
     const char              *getBreakPointTypeStr( T64SimBreakPointType t );
 
-    int                     checkBreakPoint( T64SimBreakPointType type,
-                                             T64Word               adr,
-                                             int                   modNum );
+    int                     checkBreakPoint( T64Word adr,
+                                             int     modNum );
 
 
     private:

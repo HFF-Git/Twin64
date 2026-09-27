@@ -53,26 +53,26 @@ struct T64GlobalTlb : T64Module {
                   T64TlbKind       tlbKind,
                   T64TlbType       tlbType );
 
-    virtual ~T64GlobalTlb( );
+    virtual         ~ T64GlobalTlb( );
 
-    bool        lookupTlb( T64Word vAdr, T64TlbEntry *e );
-    bool        insertTlbEntry( T64Word arg1, T64Word arg2 );
-    bool        removeTlbEntry( T64Word vAdr );
+    bool            lookupTlb( T64Word vAdr, T64TlbEntry *e );
+    bool            insertTlbEntry( T64Word arg1, T64Word arg2 );
+    bool            removeTlbEntry( T64Word vAdr );
 
-    unsigned    getTlbSize( );
-    const char  *getTlbTypeStr( );
-    T64TlbEntry *getTlbEntry( unsigned index );
-    bool        translateAdr( T64Word vAdr, T64Word *pAdr );
+    unsigned        getTlbSize( );
+    const char      *getTlbTypeStr( );
+    T64TlbEntry     *getTlbEntry( unsigned index );
+    bool            translateAdr( T64Word vAdr, T64Word *pAdr );
 
-    void        initModule( );
-    void        resetModule( );
+    void            initModule( );
+    void            resetModule( );
    
-    bool        busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len );
-    bool        busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len );  
+    T64BusOpStat    busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len );
+    T64BusOpStat    busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len );  
 
-    bool        busOpControlEvent( T64BBusOpControlEvents id, 
-                                   T64Word            arg1, 
-                                   T64Word            arg2 );
+    T64BusOpStat    busOpControlEvent( T64BBusOpControlEvents id, 
+                                       T64Word            arg1, 
+                                       T64Word            arg2 );
 
     private:
 

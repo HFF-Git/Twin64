@@ -431,10 +431,12 @@ T64Instr T64Cpu::instrRead( T64Word vAdr ) {
         instrAccCheck( instrTlbInfo );      
     }
 
-    if ( ! proc -> busOpRead( pAdr, 
+    if ( proc -> busOpRead( pAdr, 
                               reinterpret_cast<uint8_t *>( &instr ), 
                               4, 
-                              false )) {
+                              false ) != T64_BUS_OP_STAT_OK ) {
+
+        // ??? need to refine for sim breaks
 
             machineCheckTrap( vAdr );
     }  
@@ -483,10 +485,12 @@ T64Word T64Cpu::dataRead( T64Word vAdr, size_t len, bool sExt, bool rsv ) {
         dataReadAccCheck( vAdr, tlbInfo );      
     }
 
-    if ( ! proc -> busOpRead( pAdr, 
+    if ( proc -> busOpRead( pAdr, 
                               reinterpret_cast<uint8_t *>( &data ), 
                               len, 
-                              rsv )) {
+                              rsv ) != T64_BUS_OP_STAT_OK ) {
+
+        // ??? neeed to refine for Sim Breaks.
 
         machineCheckTrap( pAdr );
     }
@@ -549,10 +553,13 @@ bool T64Cpu::dataWrite( T64Word vAdr, T64Word data, size_t len, bool cond ) {
         dataWriteAccCheck( vAdr, tlbInfo ); 
     }
 
-    if ( ! proc -> busOpWrite( pAdr, 
+    if ( proc -> busOpWrite( pAdr, 
                                reinterpret_cast<uint8_t *>( &data ), 
                                len, 
-                               cond )) {
+                               cond ) != T64_BUS_OP_STAT_OK ) {
+
+
+        // ??? need to refine for Sim Breaks.
 
         machineCheckTrap( pAdr );
     }
@@ -1621,8 +1628,12 @@ void T64Cpu::instrSysTlbOp( T64Instr instr ) {
 
             T64Word vAdr = addAdrOfs32( getRegB( instr ), getRegA( instr ));
             proc -> localTlb -> purgeTlb( vAdr );
-            
-            proc -> busOpControl( T64_CNTRL_EVENT_TLB_PURGE, vAdr, 0 ); 
+
+            if ( proc -> busOpControl( T64_CNTRL_EVENT_TLB_PURGE, vAdr, 0 )
+                    != T64_BUS_OP_STAT_OK ) {
+
+
+            } 
 
             setRegR( instr, 1 );
 
