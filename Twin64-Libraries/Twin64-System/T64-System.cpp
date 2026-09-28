@@ -481,6 +481,7 @@ bool T64System::addBreakPoint( int                  modNum,
 
     ptr -> type    = type;
     ptr -> enabled = true;
+    ptr -> armed   = true;
     ptr -> adr     = bpAdr;
     ptr -> adrMask = bpAdrMask;
     ptr -> modMask = modMask;
@@ -553,13 +554,26 @@ bool T64System::enableBreakPoint( unsigned bNum, bool enb ) {
     return( true );
 }
 
-//----------------------------------------------------------------------------------------
-// Return the enable state of a breakpoint.
-//
-//----------------------------------------------------------------------------------------
 bool T64System::isBreakPointEnabled( unsigned bNum ) {
 
     if ( bNum < breakPointMap.hwm ) return( breakPointMap.map[ bNum ].enabled );
+    else                            return( false );
+}
+
+//----------------------------------------------------------------------------------------
+// Return the armed state of a breakpoint.
+//
+//----------------------------------------------------------------------------------------
+bool T64System::armBreakPoint( unsigned bNum, bool arm ) {
+
+    if ( bNum >= breakPointMap.hwm ) return( false );
+    breakPointMap.map[ bNum ].armed = arm;
+    return( true );
+}
+
+bool T64System::isBreakPointArmed( unsigned bNum ) {
+
+    if ( bNum < breakPointMap.hwm ) return( breakPointMap.map[ bNum ].armed );
     else                            return( false );
 }
 
@@ -651,10 +665,20 @@ T64BusOpStat T64System::busOpFetch(  T64Module *mod,
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return( T64_BUS_OP_MCHECK );
 
-    if (( mod != nullptr ) && 
-        ( checkBreakPoint( pAdr, mod -> getModuleNum( )) != -1 )) {
+    if ( mod != nullptr ) {
 
-        return( T64_BUS_OP_SIM_BRK );
+        int bpNum = checkBreakPoint( pAdr, mod->getModuleNum( ));
+
+        if ( bpNum != -1 ) {
+
+            if ( isBreakPointArmed( static_cast<unsigned>( bpNum ))) {
+
+                armBreakPoint( static_cast<unsigned>( bpNum ), false );
+                return( T64_BUS_OP_SIM_BRK );
+            }
+
+            armBreakPoint( static_cast<unsigned>( bpNum ), true );
+        }
     }
 
     return ( mPtr -> busOpReadEvent( pAdr, instr, sizeof( T64Instr )));
@@ -686,10 +710,20 @@ T64BusOpStat T64System::busOpRead( T64Module *mod,
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return( T64_BUS_OP_MCHECK );
 
-    if (( mod != nullptr ) && 
-        ( checkBreakPoint( pAdr, mod -> getModuleNum( )) != -1 )) {
+    if ( mod != nullptr ) {
 
-        return( T64_BUS_OP_SIM_BRK );
+        int bpNum = checkBreakPoint( pAdr, mod->getModuleNum() );
+
+        if ( bpNum != -1 ) {
+
+            if ( isBreakPointArmed( static_cast<unsigned>( bpNum ) )) {
+
+                armBreakPoint( static_cast<unsigned>( bpNum ), false );
+                return( T64_BUS_OP_SIM_BRK );
+            }
+
+            armBreakPoint( static_cast<unsigned>( bpNum ), true );
+        }
     }
     
     if ( rsv ) {
@@ -744,10 +778,20 @@ T64BusOpStat T64System::busOpWrite( T64Module *mod,
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return ( T64_BUS_OP_MCHECK );
 
-    if (( mod != nullptr ) && 
-        ( checkBreakPoint( pAdr, mod -> getModuleNum( )) != -1 )) {
+    if ( mod != nullptr ) {
 
-        return( T64_BUS_OP_SIM_BRK );
+        int bpNum = checkBreakPoint( pAdr, mod -> getModuleNum() );
+
+        if ( bpNum != -1 ) {
+
+            if ( isBreakPointArmed( static_cast<unsigned>( bpNum ) )) {
+
+                armBreakPoint( static_cast<unsigned>( bpNum ), false );
+                return( T64_BUS_OP_SIM_BRK );
+            }
+
+            armBreakPoint( static_cast<unsigned>( bpNum ), true );
+        }
     }
 
     {
@@ -859,10 +903,6 @@ void T64System::simReset( int modNum ) {
 // can be fired off, we need to keep track how many need to run to completion
 // until we resume the simulator command interface. The "runPending" count and
 // the "sCondVar" variable take care of this.
-// 
-//
-// ??? we have one issue. If we sit on a break, then simRun will just again 
-// raise that breakpoint. Need a way to skip this break if we sit there....
 //
 //----------------------------------------------------------------------------------------
 void T64System::simRun( int modNum, int steps, bool haltOnTrap ) {

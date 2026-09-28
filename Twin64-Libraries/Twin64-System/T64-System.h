@@ -297,6 +297,7 @@ struct T64SimBreakPointEntry {
 
     T64SimBreakPointType    type;
     bool                    enabled;
+    bool                    armed;
     T64Word                 adr;
     T64Word                 adrMask;
 
@@ -330,72 +331,72 @@ struct T64System {
 
     T64System( );
 
-    T64SystemState          getSystemState( );
-    const char              *getSystemStateStr( T64SystemState state );
+    T64SystemState              getSystemState( );
+    const char                  *getSystemStateStr( T64SystemState state );
 
-    void                    simReset( int modNum = -1 );
+    void                        simReset( int modNum = -1 );
 
-    void                    simRun( int  modNum      = -1, 
-                                    int  steps       = 1,
-                                    bool haltOnTrap = false );
+    void                        simRun( int  modNum      = -1, 
+                                        int  steps       = 1,
+                                        bool haltOnTrap  = false );
 
-    void                    simHalt( int modNum );
+    void                        simHalt( int modNum );
 
-    int                     addModule( T64Module *module );
-    int                     removeModule( T64Module *module ); 
-    void                    moduleRunComplete( );
+    int                         addModule( T64Module *module );
+    int                         removeModule( T64Module *module ); 
+    void                        moduleRunComplete( );
     
-    T64ModuleType           getModuleType( int modNum ) const;
-    T64ModuleState          getModuleState( int modNum  ) const;
-    const char              *getModuleStateStr( int modNum ) const;
+    T64ModuleType               getModuleType( int modNum ) const;
+    T64ModuleState              getModuleState( int modNum  ) const;
+    const char                  *getModuleStateStr( int modNum ) const;
 
-    T64Module               *lookupByModNum( int modNum ) const;
-    T64Module               *lookupByModuleType( T64ModuleType typ );
-    T64Module               *lookupByAdr( T64Word adr ) const;  
+    T64Module                   *lookupByModNum( int modNum ) const;
+    T64Module                   *lookupByModuleType( T64ModuleType typ );
+    T64Module                   *lookupByAdr( T64Word adr ) const;  
     
-    bool                    translateAdr( T64Word vAdr, T64Word *pAdr );
+    bool                        translateAdr( T64Word vAdr, T64Word *pAdr );
 
-    T64BusOpStat            busOpFetch(  T64Module *mod, 
-                                         T64Word pAdr, 
-                                         uint8_t *instr );
+    T64BusOpStat                busOpFetch(  T64Module *mod, 
+                                             T64Word pAdr, 
+                                             uint8_t *instr );
 
-    T64BusOpStat            busOpRead(  T64Module *mod, 
-                                        T64Word pAdr, 
-                                        uint8_t *data, 
-                                        size_t len,
-                                        bool rsv = false );
+    T64BusOpStat                busOpRead(  T64Module *mod, 
+                                            T64Word pAdr, 
+                                            uint8_t *data, 
+                                            size_t len,
+                                            bool rsv = false );
 
-    T64BusOpStat            busOpWrite( T64Module *mod, 
-                                        T64Word pAdr, 
-                                        uint8_t *data, 
-                                        size_t len,
-                                        bool cond = false );
+    T64BusOpStat                busOpWrite( T64Module *mod, 
+                                            T64Word pAdr, 
+                                            uint8_t *data, 
+                                            size_t len,
+                                            bool cond = false );
 
-    T64BusOpStat            busOpControl( T64Module *mod,
-                                          T64BBusOpControlEvents event,
-                                          T64Word             arg1, 
-                                          T64Word             arg2 );
+    T64BusOpStat                busOpControl( T64Module *mod,
+                                              T64BBusOpControlEvents event,
+                                              T64Word             arg1, 
+                                              T64Word             arg2 );
 
-    uint64_t                getModuleMask( int modNum ) const;
+    uint64_t                    getModuleMask( int modNum ) const;
 
-    bool                    addBreakPoint( int modNum, 
-                                           T64SimBreakPointType type,
-                                           T64Word adr,
-                                           T64Word len ); 
+    bool                        addBreakPoint( int modNum, 
+                                               T64SimBreakPointType type,
+                                               T64Word adr,
+                                               T64Word len ); 
 
-    bool                    removeBreakPoint( unsigned bNum,
-                                              int      modNum );
+    bool                        removeBreakPoint( unsigned bNum,
+                                                  int      modNum );
 
-    bool                    enableBreakPoint( unsigned bNum, bool enb );
+    bool                        enableBreakPoint( unsigned bNum, bool enb );
+    bool                        isBreakPointEnabled( unsigned bNum );
 
-    bool                    isBreakPointEnabled( unsigned bNum );
+    bool                        armBreakPoint( unsigned bNum, bool arm );
+    bool                        isBreakPointArmed( unsigned bNum );
+   
+    T64SimBreakPointEntry       *getBreakPointEntry( unsigned bNum ); 
+    const char                  *getBreakPointTypeStr( T64SimBreakPointType t );
 
-    T64SimBreakPointEntry   *getBreakPointEntry( unsigned bNum ); 
-
-    const char              *getBreakPointTypeStr( T64SimBreakPointType t );
-
-    int                     checkBreakPoint( T64Word adr,
-                                             int     modNum );
+    int                         checkBreakPoint( T64Word adr, int modNum );
 
 
     private:

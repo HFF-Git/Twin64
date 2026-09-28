@@ -203,7 +203,8 @@ void T64ThreadModule::moduleWorker( ) {
                     // Has this module completed its requested execution?
                     if ( mUnitCount == 0 ) {
 
-                        mTrapCode = NO_TRAP;
+                        mTrapCode      = NO_TRAP;
+                        int     modNUm = getModuleNum( );
 
                         moduleState.store( T64_MOD_STATE_HALTED,
                                            std::memory_order_release) ;
