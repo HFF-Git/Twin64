@@ -552,7 +552,7 @@ unsigned SimWinProcState::drawCodeSubWindow( unsigned linePos,
             if (( bNum >= 0 ) && ( bNum < 10 )) {
 
                 printTextField( "    [" );
-                printNumericField( bNum, FMT_DEC );
+                printNumericField( bNum + 1, FMT_DEC );
                 printTextField( "]" );
             }
             else if (( bNum >= 10 ) && ( bNum < 99 )) {
@@ -1079,7 +1079,7 @@ void SimWinMem::drawMemDataLineCode( T64Word itemAdr ) {
     if (( bNum >= 0 ) && ( bNum < 10 )) {
 
         printTextField( " [" );
-        printNumericField( bNum, FMT_DEC );
+        printNumericField( bNum + 1, FMT_DEC );
         printTextField( "]" );
     }
     else if (( bNum >= 10 ) && ( bNum < 99 )) {
