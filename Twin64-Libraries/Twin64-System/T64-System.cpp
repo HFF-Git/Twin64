@@ -410,7 +410,7 @@ const char *T64System::getSystemStateStr( T64SystemState state ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Bus instruction fetch operation. The ftech operation is very similar to the
+// Bus instruction fetch operation. The fetch operation is very similar to the
 // data read bus operation. 
 //
 // For supporting simulator breaks, we check right after checking whether the 
@@ -453,10 +453,10 @@ T64BusOpStat T64System::busOpFetch(  T64Module *mod,
 // The module can react to the bus event and return true if it has handled the 
 // event, or false if it has not handled the event. 
 //
-// For supporting the LDR/STC instruction sematics, we need to support a bus 
+// For supporting the LDR/STC instruction semantics, we need to support a bus 
 // read reserved operation. In this case, we lock the access, read the data and
 // set the reservation info in the calling module. Note that this mechanism is
-// onyl used by the processor modules, IO modules do not support LDC/STC concepts.
+// only used by the processor modules, IO modules do not support LDC/STC concepts.
 //
 // For supporting simulator breaks, we check right after checking whether the 
 // physical address is a valid one for a possible breakpoint for the requesting
@@ -529,7 +529,7 @@ T64BusOpStat T64System::busOpRead( T64Module *mod,
 // any reservation for the address.
 //
 // For supporting simulator breaks, we check right after checking whether the 
-// physical address is a valoid one for a possible breakpoint for the requesting
+// physical address is a valid one for a possible breakpoint for the requesting
 // module at that location. Note that a module can also be a nullptr. A memory
 // and a TLB do not request bus read/write operations.
 //
@@ -714,7 +714,7 @@ void T64System::simRun( int modNum, int steps, bool haltOnTrap ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Halt the simulatar or a module. When we halt all modules, the system state
+// Halt the simulator or a module. When we halt all modules, the system state
 // becomes "HALT", else it is untouched.
 //
 //----------------------------------------------------------------------------------------

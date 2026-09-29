@@ -31,6 +31,7 @@
 //----------------------------------------------------------------------------------------
 #include "T64-SimDeclarations.h"
 #include "T64-SimTables.h"
+#include "T64-System.h"
 
 //----------------------------------------------------------------------------------------
 // Local name space. We try to keep utility functions local to the file.
@@ -1280,6 +1281,33 @@ void SimCommandsWin::addTlbModule( int modNum ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addIoModule( int modNum ) {
 
+    if ( modNum == -1 ) throw( SimErrMsgId( ERR_EXPECTED_MOD_NUM ));
+
+    if ( tok -> isToken( TOK_COMMA )) {
+
+        tok -> nextToken( );
+
+        // IO type
+
+    }
+
+    if ( tok -> isToken( TOK_COMMA )) {
+
+        tok -> nextToken( );
+
+        // SPA_ADR
+    }
+
+    if ( tok -> isToken( TOK_COMMA )) {
+
+        tok -> nextToken( );
+
+        // SPA_LEN 
+
+    }
+
+    tok -> checkEOS( );
+
     // ??? analog to proc...
 
 }
@@ -1853,7 +1881,9 @@ void SimCommandsWin::resetCmd( ) {
     
     if ( tok -> tokTyp( ) == TYP_NUM ) {
 
-        modNum = eval -> acceptIntExpr( ERR_EXPECTED_MOD_NUM, 0, MAX_MOD_MAP_ENTRIES );
+        modNum = eval -> acceptIntExpr( ERR_EXPECTED_MOD_NUM, 
+                                        0, 
+                                        MAX_MOD_MAP_ENTRIES );
     }
     else if ( tok -> isToken( TOK_ALL )) {
 
@@ -1875,7 +1905,7 @@ void SimCommandsWin::resetCmd( ) {
 //  S [ <steps> [ "," <modNum> ]]
 //
 // The step command needs to handle the break point facility. When we have a 
-// step count of one, we do not want to halt on teh instruction and on the next
+// step count of one, we do not want to halt on the instruction and on the next
 // step enter the breakpoint. We already halted the first time. For this special
 // case we temporarily disable code breakpoints and restore the state after the 
 // single step. For all other cases, we just run.
@@ -1915,17 +1945,20 @@ void SimCommandsWin::stepCmd( ) {
             throw( ERR_EXPCTED_PROC_MODULE );
     }
 
-    bool skipBrkPoint = false;
     bool haltOnTrap   = glb -> env -> getEnvVarBool( ENV_HALT_ON_TRAPS );
 
     if ( numOfSteps == 1 ) {
 
-        skipBrkPoint = glb -> system -> setCodeBrkPointEnable( false );
+        bool skipBrkPoint = glb -> system -> setCodeBrkPointEnable( false );
+        glb -> system -> simRun( modNum, numOfSteps, haltOnTrap );
+        glb -> system -> setCodeBrkPointEnable( skipBrkPoint );
+       
     }
-   
-    glb -> system -> simRun( modNum, numOfSteps, haltOnTrap );
+    else {
 
-    glb -> system -> setCodeBrkPointEnable( skipBrkPoint );
+        glb -> system -> simRun( modNum, numOfSteps, haltOnTrap );
+    }
+
     setCmdWinSysState( glb -> system -> getSystemState( ));
 }
 
@@ -1934,7 +1967,7 @@ void SimCommandsWin::stepCmd( ) {
 //
 //  RUN 
 //
-// The systenm state is set to "RUN" before we enter the simuolator RUN. This is
+// The system state is set to "RUN" before we enter the simulator RUN. This is
 // necessary because we will not return for the simulator run until we stop again.
 // To give an indication that we are now in RUN mode, we update before.
 //
@@ -1972,10 +2005,18 @@ void SimCommandsWin::runCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::breakPointListCmd( ) {
 
+    if ( glb -> system -> getBreakPointMapHwm( ) == 0 ) {
+
+        winOut -> writeChars( "No simulator breakpoints defined\n" );
+        return;
+    }
+
     winOut -> writeChars( "%-5s%-7s%-8s%-21s%-16s\n", 
                           "Idx", "Type", "State", "Adr", "Modules" );
 
-    for ( unsigned i = 0; i < MAX_SIM_BREAKPOINTS; i++ ) {
+    unsigned hwm = glb -> system -> getBreakPointMapHwm( );
+
+    for ( unsigned i = 0; i < hwm; i++ ) {
 
         auto ptr = glb -> system -> getBreakPointEntry( i );
 
@@ -1986,7 +2027,7 @@ void SimCommandsWin::breakPointListCmd( ) {
 
         T64Word len = (~ptr -> adrMask) + 1;
         
-        winOut -> writeChars( "%-5u", i     );     
+        winOut -> writeChars( "%-5u", i + 1    );     
         winOut -> writeChars( "%-7s", type  );
         winOut -> writeChars( "%-8s", ptr -> enabled ? "E" : "D" );
         winOut -> printNumber( ptr -> adr, FMT_HEX_2_4_4 | FMT_PREFIX_0X );
@@ -2069,7 +2110,7 @@ void SimCommandsWin::breakPointKillCmd( ) {
     if ( tok -> tokId( ) == TOK_EOS ) throw( ERR_EXPECTED_MOD_NUM );
 
     bNum = eval -> acceptUIntExpr( ERR_EXPECTED_BRK_INDEX, 
-                                                 MAX_SIM_BREAKPOINTS );
+                                                 MAX_SIM_BREAKPOINTS ) - 1;
 
     if ( tok -> isToken( TOK_COMMA )) {
 
@@ -2090,7 +2131,7 @@ void SimCommandsWin::breakPointKillCmd( ) {
 // Enable breakpoints. The breakpoint is referred to by the index in the 
 // breakpoint table. The ALL option enables all breakpoints.
 //
-//  BE <index> | "ALL"
+//  BE <bNum> | "ALL"
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::breakPointEnableCmd( ) {
@@ -2099,11 +2140,11 @@ void SimCommandsWin::breakPointEnableCmd( ) {
 
     if ( tok -> tokId( ) == TOK_NUM ) {
 
-        unsigned index = eval -> acceptUIntExpr( ERR_EXPECTED_BRK_INDEX, 
-                                                 MAX_SIM_BREAKPOINTS );
+        unsigned bNum = eval -> acceptUIntExpr( ERR_EXPECTED_BRK_INDEX, 
+                                                 MAX_SIM_BREAKPOINTS ) - 1;
         
         tok -> checkEOS( );
-        glb -> system ->enableBreakPoint( index, true );
+        glb -> system ->enableBreakPoint( bNum, true );
     }
     else if ( tok -> isToken( TOK_ALL )) {
 
@@ -2121,7 +2162,7 @@ void SimCommandsWin::breakPointEnableCmd( ) {
 // Disable breakpoints. The breakpoint is referred to by the index in the 
 // breakpoint table. The ALL option disables all breakpoints.
 //
-//  BD <index> | "ALL"
+//  BD <bNum> | "ALL"
 //
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::breakPointDisableCmd( ) {
@@ -2130,11 +2171,11 @@ void SimCommandsWin::breakPointDisableCmd( ) {
 
     if ( tok -> tokId( ) == TOK_NUM ) {
 
-        unsigned index = eval -> acceptUIntExpr( ERR_EXPECTED_BRK_INDEX, 
-                                                 MAX_SIM_BREAKPOINTS );
+        unsigned bNum = eval -> acceptUIntExpr( ERR_EXPECTED_BRK_INDEX, 
+                                                 MAX_SIM_BREAKPOINTS ) - 1;
         
         tok -> checkEOS( );
-        glb -> system ->enableBreakPoint( index, false );
+        glb -> system ->enableBreakPoint( bNum, false );
     }
     else if ( tok -> isToken( TOK_ALL )) {
 

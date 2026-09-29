@@ -384,6 +384,7 @@ struct T64System {
                                               T64Word             arg1, 
                                               T64Word             arg2 );
 
+    unsigned                    getBreakPointMapHwm( );
     bool                        setCodeBrkPointEnable( bool enable );
     bool                        setDataBrkPointEnable( bool enable );
     bool                        isCodeBrkPointEnabled( );

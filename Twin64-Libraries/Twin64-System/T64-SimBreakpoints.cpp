@@ -111,7 +111,16 @@ void T64System::initBreakPointMap( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Overall breakpoing state. We can enable and disable all code and data break
+// Breakpoint high water mark in the map.
+//
+//----------------------------------------------------------------------------------------
+unsigned T64System::getBreakPointMapHwm( ) {
+
+    return( breakPointMap.hwm );
+}
+
+//----------------------------------------------------------------------------------------
+// Overall breakpoint state. We can enable and disable all code and data break
 // points. When no breakpoint is enabled, the respective flag is set to false,
 // allowing a quick check before checking the breakpoint map entries.
 //
