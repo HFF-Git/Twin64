@@ -313,7 +313,8 @@ struct T64SimBreakPointEntry {
 //----------------------------------------------------------------------------------------
 struct T64SimBreakPointMap {
 
-    bool enabled;
+    bool     codeBrkPointEnabled;
+    bool     dataBrkPointEnabled;
     unsigned hwm;
     T64SimBreakPointEntry map[ MAX_SIM_BREAKPOINTS ];
 };
@@ -377,8 +378,11 @@ struct T64System {
                                               T64Word             arg1, 
                                               T64Word             arg2 );
 
-    uint64_t                    getModuleMask( int modNum ) const;
-
+    bool                        setCodeBrkPointEnable( bool enable );
+    bool                        setDataBrkPointEnable( bool enable );
+    bool                        isCodeBrkPointEnabled( );
+    bool                        isDataBrkPointENabled( );
+    
     bool                        addBreakPoint( int modNum, 
                                                T64SimBreakPointType type,
                                                T64Word adr,
@@ -396,14 +400,16 @@ struct T64System {
     T64SimBreakPointEntry       *getBreakPointEntry( unsigned bNum ); 
     const char                  *getBreakPointTypeStr( T64SimBreakPointType t );
 
-    int                         checkBreakPoint( T64Word adr, int modNum );
+    int                         checkBreakPoint( T64SimBreakPointType typ,
+                                                 T64Word adr, 
+                                                 int modNum );
 
 
     private:
 
     void                        initModuleMap( );
     void                        initBreakPointMap( );
-                            
+            
     T64Module                   *moduleMap[ MAX_MOD_MAP_ENTRIES ];
 
     T64Module                   *systemPhysMemMap[ MAX_MOD_MAP_ENTRIES * 2 ];

@@ -546,7 +546,8 @@ unsigned SimWinProcState::drawCodeSubWindow( unsigned linePos,
             }
             else fmtDesc = FMT_DEFAULT;
 
-            int bNum =  glb -> system -> checkBreakPoint( ia, getWinModNum( ));
+            int bNum =  glb -> system -> 
+                            checkBreakPoint( T64_SIM_BREAK_X, ia, getWinModNum( ));
 
             if (( bNum >= 0 ) && ( bNum < 10 )) {
 
@@ -1073,7 +1074,7 @@ void SimWinMem::drawMemDataLineCode( T64Word itemAdr ) {
 
     printNumericField( instr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_8, 12 );
 
-    int bNum = glb -> system -> checkBreakPoint( itemAdr, -1 );
+    int bNum = glb -> system -> checkBreakPoint( T64_SIM_BREAK_X, itemAdr, -1 );
 
     if (( bNum >= 0 ) && ( bNum < 10 )) {
 
