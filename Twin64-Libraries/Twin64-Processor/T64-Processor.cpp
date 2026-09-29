@@ -252,10 +252,10 @@ T64GlobalTlb *T64Processor::getGlobalTlbPtr( ) {
 //----------------------------------------------------------------------------------------
 T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t len ) {
 
-    T64Word   wordIndex           = (( pAdr - hpaAdr ) >> 3 );
-    T64Word   regSetIndex         = wordIndex / T64_IO_REG_SET_SIZE;
-    T64Word   wordInRegSetIndex   = wordIndex % T64_IO_REG_SET_SIZE;
-    unsigned  wordOfs             = pAdr % sizeof( T64Word );
+    unsigned   wordIndex          = static_cast<unsigned>((( pAdr - hpaAdr ) >> 3 ));
+    unsigned   regSetIndex        = wordIndex / T64_IO_REG_SET_SIZE;
+    unsigned   wordInRegSetIndex  = wordIndex % T64_IO_REG_SET_SIZE;
+    unsigned   wordOfs            = static_cast<unsigned>( pAdr % sizeof( T64Word ));
     T64Word tmp                 = 0;
     
     if ( regSetIndex == 0 ) {
