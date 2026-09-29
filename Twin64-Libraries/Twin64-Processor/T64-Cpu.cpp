@@ -436,16 +436,11 @@ T64Instr T64Cpu::instrRead( T64Word vAdr ) {
         instrAccCheck( instrTlbInfo );      
     }
 
-    T64BusOpStat rStat = 
-        proc -> busOpFetch( pAdr, reinterpret_cast<uint8_t *>( &instr ));
+    switch ( proc -> busOpFetch( pAdr, reinterpret_cast<uint8_t *>( &instr ))) {
 
-    if ( rStat == T64_BUS_OP_SIM_BRK ) {
-
-        simulatorTrap( pAdr );
-    }
-    else if ( rStat == T64_BUS_OP_MCHECK ) {
-
-         machineCheckTrap( vAdr );
+        case T64_SYS_OP_OK:                                 break;
+        case T64_SYS_OP_SIM_BRK: simulatorTrap( pAdr );     break;
+        default:                 machineCheckTrap( vAdr );  break;
     }
 
     copyEndianAware( reinterpret_cast<uint8_t *>( &instr ), 
@@ -492,19 +487,14 @@ T64Word T64Cpu::dataRead( T64Word vAdr, size_t len, bool sExt, bool rsv ) {
         dataReadAccCheck( vAdr, tlbInfo );      
     }
 
-    T64BusOpStat rStat =  
-        proc -> busOpRead( pAdr, 
-                           reinterpret_cast<uint8_t *>( &data ), 
-                           len, 
-                           rsv );
+    switch ( proc -> busOpRead( pAdr, 
+                                reinterpret_cast<uint8_t *>( &data ), 
+                                len, 
+                                rsv )) {
 
-    if ( rStat == T64_BUS_OP_SIM_BRK ) {
-
-        simulatorTrap( pAdr );
-    }
-    else if ( rStat == T64_BUS_OP_MCHECK ) {
-
-         machineCheckTrap( vAdr );
+        case T64_SYS_OP_OK:                                 break;
+        case T64_SYS_OP_SIM_BRK: simulatorTrap( pAdr );     break;
+        default:                 machineCheckTrap( vAdr );  break;
     }
 
     copyEndianAware( reinterpret_cast<uint8_t *>( &data ), 
@@ -565,19 +555,14 @@ bool T64Cpu::dataWrite( T64Word vAdr, T64Word data, size_t len, bool cond ) {
         dataWriteAccCheck( vAdr, tlbInfo ); 
     }
 
-    T64BusOpStat rStat =  
-        proc -> busOpWrite( pAdr, 
-                            reinterpret_cast<uint8_t *>( &data ), 
-                            len, 
-                            cond );
+    switch ( proc -> busOpWrite( pAdr, 
+                                reinterpret_cast<uint8_t *>( &data ), 
+                                len, 
+                                cond )) {
 
-    if ( rStat == T64_BUS_OP_SIM_BRK ) {
-
-        simulatorTrap( pAdr );
-    }
-    else if ( rStat == T64_BUS_OP_MCHECK ) {
-
-         machineCheckTrap( vAdr );
+        case T64_SYS_OP_OK:                                 break;
+        case T64_SYS_OP_SIM_BRK: simulatorTrap( pAdr );     break;
+        default:                 machineCheckTrap( vAdr );  break;
     }
 
     return( true );
@@ -1646,7 +1631,7 @@ void T64Cpu::instrSysTlbOp( T64Instr instr ) {
             proc -> localTlb -> purgeTlb( vAdr );
 
             if ( proc -> busOpControl( T64_CNTRL_EVENT_TLB_PURGE, vAdr, 0 )
-                    != T64_BUS_OP_STAT_OK ) {
+                    != T64_SYS_OP_OK ) {
 
 
             } 

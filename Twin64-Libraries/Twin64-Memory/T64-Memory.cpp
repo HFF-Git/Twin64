@@ -115,7 +115,7 @@ T64BusOpStat T64Memory::busOpReadEvent( T64Word pAdr,
     if ( isInIoAdrRange( pAdr )) {
 
         memset( data, 0, len );
-        return ( T64_BUS_OP_MCHECK );
+        return ( T64_SYS_OP_M_CHECK );
     }
     else {
 
@@ -125,19 +125,19 @@ T64BusOpStat T64Memory::busOpReadEvent( T64Word pAdr,
          if ( pAdr + static_cast<T64Word>( len ) > spaAdr + spaLen ) {
 
             lockPtr -> store( false );
-            return( T64_BUS_OP_MCHECK );
+            return( T64_SYS_OP_M_CHECK );
         }
 
         if ( ! isAlignedAdr( pAdr,  static_cast<unsigned>( len ) )) {
 
             lockPtr -> store( false );
-            return( T64_BUS_OP_MCHECK );
+            return( T64_SYS_OP_M_CHECK );
         }
        
         uint8_t *srcPtr = &memData[ pAdr - spaAdr ];
         memcpy( data, srcPtr, len );
         lockPtr -> store( false );
-        return( T64_BUS_OP_STAT_OK );
+        return( T64_SYS_OP_OK );
     }
 }
 
@@ -153,7 +153,7 @@ T64BusOpStat T64Memory::busOpWriteEvent( T64Word pAdr,
     if ( isInIoAdrRange( pAdr )) {
 
         memset( data, 0, len );
-        return ( T64_BUS_OP_MCHECK );
+        return ( T64_SYS_OP_M_CHECK );
     }
     else {
 
@@ -162,30 +162,30 @@ T64BusOpStat T64Memory::busOpWriteEvent( T64Word pAdr,
 
         if ( pAdr + static_cast<T64Word>( len ) >= spaAdr + spaLen ) {
             lockPtr -> store( false );
-            return( T64_BUS_OP_MCHECK );
+            return( T64_SYS_OP_M_CHECK );
         }
         if ( ! isAlignedAdr( pAdr, static_cast<unsigned>( len ))) {
             lockPtr -> store( false );
-            return( T64_BUS_OP_MCHECK );
+            return( T64_SYS_OP_M_CHECK );
         }
 
         if ( spaReadOnly ) {
             lockPtr -> store( false );
-            return ( T64_BUS_OP_MCHECK );
+            return ( T64_SYS_OP_M_CHECK );
         }
 
         uint8_t *dstPtr = &memData[ pAdr - spaAdr ];
         memcpy( dstPtr, data, len );
         lockPtr -> store( false );
-        return( T64_BUS_OP_STAT_OK );
+        return( T64_SYS_OP_OK );
     }
 }
 
-T64BusOpStat T64Memory::busOpControlEvent( T64BBusOpControlEvents id, 
+T64BusOpStat T64Memory::busOpControlEvent( T64BusOpControlEvents id, 
                                            T64Word                arg1, 
                                            T64Word                arg2 ) {
 
-    return( T64_BUS_OP_STAT_OK );
+    return( T64_SYS_OP_OK );
 }
 
 //----------------------------------------------------------------------------------------

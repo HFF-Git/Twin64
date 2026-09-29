@@ -288,15 +288,15 @@ inline size_t appendPrintf( char   *buf,
 // throws an exception.
 //
 //----------------------------------------------------------------------------------------
-void throwAddModuleErr( int errNum ) {
+void throwAddModuleErr( T64BusOpStat errNum ) {
 
     switch ( errNum ) {
 
         case  0: return;
-        case -1: throw( SimErrMsgId( ERR_MODULE_TABLE_FULL ));
-        case -2: throw( SimErrMsgId( ERR_MODULE_TABLE_FULL ));
-        case -3: throw( SimErrMsgId( ERR_MODULE_RANGE_OVERLAP ));
-        case -4: throw( SimErrMsgId( ERR_MODULE_ALREADY_USED ));
+        case  T64_SYS_OP_INV_MOD_NUM:  throw( SimErrMsgId( ERR_INVALID_MOD_NUM ));
+        case  T64_SYS_OP_MOD_TAB_FULL: throw( SimErrMsgId( ERR_MODULE_TABLE_FULL ));
+        case  T64_SYS_OP_ADR_OVERLAP:  throw( SimErrMsgId( ERR_MODULE_RANGE_OVERLAP ));
+        case  T64_SYS_OP_MOD_NUM_USED:     throw( SimErrMsgId( ERR_MODULE_ALREADY_USED ));
         default: throw( SimErrMsgId( ERR_CREATE_MODULE ));
     }
 }
@@ -345,7 +345,7 @@ bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
     if ( sys -> busOpRead( nullptr,
                            physAdr, 
                            reinterpret_cast<uint8_t *>( val ), 
-                           size ) == T64_BUS_OP_STAT_OK ) {
+                           size ) == T64_SYS_OP_OK ) {
 
         copyEndianAware( reinterpret_cast<uint8_t *>( val ), 
                          reinterpret_cast<uint8_t *>( val ), 
@@ -1128,7 +1128,7 @@ void SimCommandsWin::addProcModule( int modNum ) {
                                         tlbType,
                                         cacheType );
 
-    int rStat = glb -> system -> addModule( p );   
+    T64BusOpStat rStat = glb -> system -> addModule( p );   
 
     if ( rStat != 0 ) {
 
@@ -1217,7 +1217,7 @@ void SimCommandsWin::addMemModule( int modNum ) {
                                   spaAdr,
                                   spaLen );
 
-    int rStat = glb -> system -> addModule( m );   
+    T64BusOpStat rStat = glb -> system -> addModule( m );   
 
     if ( rStat != 0 ) {
 
@@ -1260,7 +1260,7 @@ void SimCommandsWin::addTlbModule( int modNum ) {
                                         T64_TK_GLOBAL_TLB, 
                                         tlbType );
 
-    int rStat = glb -> system -> addModule( t );   
+    T64BusOpStat rStat = glb -> system -> addModule( t );   
 
     if ( rStat != 0 ) {
 
@@ -1874,6 +1874,12 @@ void SimCommandsWin::resetCmd( ) {
 //
 //  S [ <steps> [ "," <modNum> ]]
 //
+// The step command needs to handle the break point facility. When we have a 
+// step count of one, we do not want to halt on teh instruction and on the next
+// step enter the breakpoint. We already halted the first time. For this special
+// case we temporarily disable code breakpoints and restore the state after the 
+// single step. For all other cases, we just run.
+//
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 
 // window. Put the console mode into non-blocking and hand over to the CPU. On 
@@ -1908,10 +1914,18 @@ void SimCommandsWin::stepCmd( ) {
         if ( m -> getModuleType( ) != T64_MOD_TYPE_PROC ) 
             throw( ERR_EXPCTED_PROC_MODULE );
     }
-    
-    bool haltOnTrap = glb -> env -> getEnvVarBool( ENV_HALT_ON_TRAPS );
+
+    bool skipBrkPoint = false;
+    bool haltOnTrap   = glb -> env -> getEnvVarBool( ENV_HALT_ON_TRAPS );
+
+    if ( numOfSteps == 1 ) {
+
+        skipBrkPoint = glb -> system -> setCodeBrkPointEnable( false );
+    }
+   
     glb -> system -> simRun( modNum, numOfSteps, haltOnTrap );
 
+    glb -> system -> setCodeBrkPointEnable( skipBrkPoint );
     setCmdWinSysState( glb -> system -> getSystemState( ));
 }
 
@@ -1945,9 +1959,8 @@ void SimCommandsWin::runCmd( ) {
     
     setCmdWinSysState( T64_SYS_STATE_RUN );
     glb -> winDisplay -> reDraw( );
-  
-    glb -> system -> simRun( -1, -1, haltOnTraps  );
 
+    glb -> system -> simRun( -1, -1, haltOnTraps  );
     setCmdWinSysState( glb -> system -> getSystemState( ));
 }
 
@@ -2035,7 +2048,7 @@ void SimCommandsWin::breakPointNewCmd( ) {
         tok -> checkEOS( );
     }
 
-    if ( ! glb -> system -> addBreakPoint( modNum, bTyp, adr, len )) {
+    if ( glb -> system -> addBreakPoint( modNum, bTyp, adr, len ) != T64_SYS_OP_OK ) {
 
         throw( ERR_CREATE_BRK_FAILED );
     }
@@ -2067,7 +2080,7 @@ void SimCommandsWin::breakPointKillCmd( ) {
 
     tok -> checkEOS( );
 
-    if ( ! glb -> system -> removeBreakPoint( bNum, modNum )) {
+    if ( glb -> system -> removeBreakPoint( bNum, modNum ) != T64_SYS_OP_OK ) {
 
         throw( ERR_REMOVE_BRK_FAILED );
     }
@@ -2098,7 +2111,7 @@ void SimCommandsWin::breakPointEnableCmd( ) {
 
         for ( unsigned i = 0; i < MAX_SIM_BREAKPOINTS; i++ ) {
 
-            glb -> system ->enableBreakPoint( i, true );
+            glb -> system -> enableBreakPoint( i, true );
         }
     }
     else throw( ERR_INVALID_ARG );
@@ -2262,8 +2275,7 @@ void SimCommandsWin::doCmd( ) {
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::redoCmd( ) {
 
-    if ( ! glb -> console -> isConsole( )) 
-        throw( ERR_NOT_INTERACTIVE );
+    if ( ! glb -> console -> isConsole( )) throw( ERR_NOT_INTERACTIVE );
     
     int cmdId = -1;
     
@@ -2731,7 +2743,7 @@ void SimCommandsWin::modifyMemCmd( ) {
     if ( translateAdr( glb -> system, adr, &adr )) {
  
         if ( glb -> system -> busOpWrite( nullptr, adr, ptr, len ) != 
-                    T64_BUS_OP_STAT_OK ) {
+                    T64_SYS_OP_OK ) {
 
             throw( ERR_MEM_OP_FAILED );
         }
@@ -2825,9 +2837,9 @@ void SimCommandsWin::insertTLBCmd( ) {
     T64Word info = eval -> acceptNumExpr( ERR_INVALID_NUM, 0, INT64_MAX ); 
     tok -> checkEOS( );
 
-    if ( ! glb -> system -> busOpControl( nullptr, 
+    if ( glb -> system -> busOpControl( nullptr, 
                                           T64_CNTRL_EVENT_TLB_INSERT, 
-                                          vAdr, info )) {
+                                          vAdr, info ) != T64_SYS_OP_OK ) {
 
         throw ( ERR_TLB_INSERT_OP );
     }
@@ -2852,9 +2864,9 @@ void SimCommandsWin::purgeTLBCmd( ) {
     
     tok -> checkEOS( );
 
-    if ( ! glb -> system -> busOpControl( nullptr, 
+    if ( glb -> system -> busOpControl( nullptr, 
                                           T64_CNTRL_EVENT_TLB_PURGE, 
-                                          vAdr, 0 )) {
+                                          vAdr, 0 ) != T64_SYS_OP_OK ) {
 
         throw( ERR_TLB_PURGE_OP );
     }

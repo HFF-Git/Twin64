@@ -318,7 +318,7 @@ struct T64Processor : T64ThreadModule {
                                 size_t len, 
                                 bool cond = false );
 
-    T64BusOpStat    busOpControl( T64BBusOpControlEvents id, 
+    T64BusOpStat    busOpControl( T64BusOpControlEvents id, 
                                   T64Word            arg1, 
                                   T64Word            arg2 );
     T64BusOpStat    busOpReadEvent( T64Word pAdr, 
@@ -329,7 +329,7 @@ struct T64Processor : T64ThreadModule {
                                      uint8_t *data, 
                                      size_t len ) override; 
 
-    T64BusOpStat    busOpControlEvent( T64BBusOpControlEvents id, 
+    T64BusOpStat    busOpControlEvent( T64BusOpControlEvents id, 
                                        T64Word            arg1, 
                                        T64Word            arg2 ) override;
                         
@@ -343,7 +343,7 @@ private:
     T64BusOpStat    handleHPARead( T64Word pAdr, uint8_t *data, size_t len );
     T64BusOpStat    handleHPAWrite( T64Word pAdr, uint8_t *data, size_t len );
 
-    T64BusOpStat    handleControlEvent( T64BBusOpControlEvents  event, 
+    T64BusOpStat    handleControlEvent( T64BusOpControlEvents  event, 
                                         T64Word                 arg1, 
                                         T64Word                 arg2);
 

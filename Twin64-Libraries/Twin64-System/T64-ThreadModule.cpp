@@ -33,15 +33,15 @@
 //
 //----------------------------------------------------------------------------------------
 T64ThreadModule::T64ThreadModule( T64System        *sys,
-                                          T64ModuleType    modType, 
-                                          int              modNum,
-                                          T64Word          spaAdr,
-                                          int              spaLen ) 
-                                          : T64Module ( sys,
-                                                        modType, 
-                                                        modNum,
-                                                        spaAdr, 
-                                                        spaLen ) { 
+                                  T64ModuleType    modType, 
+                                  int              modNum,
+                                  T64Word          spaAdr,
+                                  unsigned         spaLen ) 
+                                  : T64Module ( sys,
+                                                modType, 
+                                                modNum,
+                                                spaAdr, 
+                                                spaLen ) { 
 
     mTrapCode = NO_TRAP;
     moduleState.store( T64_MOD_STATE_HALTED, std::memory_order_release );      
@@ -51,7 +51,6 @@ T64ThreadModule:: ~ T64ThreadModule( ) {
 
     mTrapCode = NO_TRAP;
     moduleState.store( T64_MOD_STATE_TERMINATE, std::memory_order_release );
- //   mCondVar.notify_one( );
 
     if ( mWorker.joinable( )) mWorker.join();
 }
@@ -203,11 +202,10 @@ void T64ThreadModule::moduleWorker( ) {
                     // Has this module completed its requested execution?
                     if ( mUnitCount == 0 ) {
 
-                        mTrapCode      = NO_TRAP;
-                        int     modNUm = getModuleNum( );
-
+                        mTrapCode = NO_TRAP;
+                       
                         moduleState.store( T64_MOD_STATE_HALTED,
-                                           std::memory_order_release) ;
+                                           std::memory_order_release ) ;
 
                         sys -> moduleRunComplete( );
                         break;

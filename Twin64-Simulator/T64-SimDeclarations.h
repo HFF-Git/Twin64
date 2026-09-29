@@ -1395,15 +1395,15 @@ private:
 
 private:
     
-    SimGlobals              *glb        = nullptr;
-    SimCmdHistory           *hist       = nullptr;
-    SimTokenizerFromString  *tok        = nullptr;
-    SimExprEvaluator        *eval       = nullptr;
-    SimWinOutBuffer         *winOut     = nullptr;
-    T64Assemble             *inlineAsm  = nullptr;
-    T64DisAssemble          *disAsm     = nullptr;   
-    SimTokId                currentCmd  = TOK_NIL;
-    T64SystemState          sysState    = T64_SYS_STATE_HALT;
+    SimGlobals              *glb                    = nullptr;
+    SimCmdHistory           *hist                   = nullptr;
+    SimTokenizerFromString  *tok                    = nullptr;
+    SimExprEvaluator        *eval                   = nullptr;
+    SimWinOutBuffer         *winOut                 = nullptr;
+    T64Assemble             *inlineAsm              = nullptr;
+    T64DisAssemble          *disAsm                 = nullptr;   
+    SimTokId                currentCmd              = TOK_NIL;
+    T64SystemState          sysState                = T64_SYS_STATE_HALT;
 };
 
 //----------------------------------------------------------------------------------------

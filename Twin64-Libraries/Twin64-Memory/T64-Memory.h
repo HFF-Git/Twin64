@@ -74,7 +74,7 @@ public:
     T64BusOpStat    busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len );
     T64BusOpStat    busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len );
 
-    T64BusOpStat    busOpControlEvent( T64BBusOpControlEvents event, 
+    T64BusOpStat    busOpControlEvent( T64BusOpControlEvents event, 
                                        T64Word            arg1, 
                                        T64Word            arg2 );
 

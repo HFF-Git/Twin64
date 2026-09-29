@@ -81,9 +81,12 @@ bool overlap( T64Module *a, T64Module *b ) {
 // Insert a module in one of the auxiliary maps.
 //
 //----------------------------------------------------------------------------------------
-int insertIntoMap( T64Module **map, T64Module *module, int *hwm, int maxEntries ) {
+bool insertIntoMap( T64Module **map, 
+                   T64Module *module, 
+                   int *hwm, 
+                   int maxEntries ) {
 
-    if ( *hwm >= maxEntries ) return ( -1 );
+    if ( *hwm >= maxEntries ) return (false );
 
     int pos = 0;
 
@@ -95,14 +98,14 @@ int insertIntoMap( T64Module **map, T64Module *module, int *hwm, int maxEntries 
 
     for ( int i = *hwm; i > pos; --i ) {
 
-        map[i] = map[i - 1];
+        map[ i ] = map[ i - 1 ];
     }
 
     map[ pos ] = module;
 
     (*hwm) ++;
 
-    return ( 0 );
+    return ( true );
 }
 
 //----------------------------------------------------------------------------------------
@@ -185,61 +188,71 @@ void T64System::initModuleMap( ) {
 // number is already used.
 //
 //----------------------------------------------------------------------------------------
-int T64System::addModule( T64Module *module ) {
+T64BusOpStat T64System::addModule( T64Module *module ) {
 
-    if (( module -> getModuleNum( ) > MAX_MOD_MAP_ENTRIES )) return ( -1 );
-    if (moduleMap[ module -> getModuleNum( ) ] != nullptr ) return ( -4 );
+    if (( module -> getModuleNum( ) > MAX_MOD_MAP_ENTRIES )) {
+        
+        return ( T64_SYS_OP_INV_MOD_NUM );
+    }
+
+    if ( moduleMap[ module -> getModuleNum( ) ] != nullptr ) {
+        
+        return ( T64_SYS_OP_MOD_NUM_USED );
+    }
 
     bool isIo = isInRange( module->getSpaAdr(),
                            T64_IO_SPA_MEM_START,
                            T64_IO_SPA_MEM_LIMIT);
 
-    int rStat;
-
     if ( module -> getSpaLen( ) > 0 ) {
 
         for ( int i = 0; i < systemPhysMemMapHwm; ++i ) {
 
-            if ( overlap( moduleMap[ i ], module )) return ( -3 );
+            if ( overlap( moduleMap[ i ], module )) return ( T64_SYS_OP_ADR_OVERLAP );
         }
 
         for ( int i = 0; i < systemIoMemMapHwm; ++i ) {
 
-            if ( overlap( moduleMap[ i ], module )) return ( -3 );
+            if ( overlap( moduleMap[ i ], module )) return ( T64_SYS_OP_ADR_OVERLAP );
         }
 
         if ( isIo ) {
 
-            rStat = insertIntoMap( systemIoMemMap,
-                                   module,
-                                   &systemIoMemMapHwm,
-                                   MAX_MOD_MAP_ENTRIES );
+            if ( ! insertIntoMap( systemIoMemMap,
+                                  module,
+                                  &systemIoMemMapHwm,
+                                  MAX_MOD_MAP_ENTRIES )) {
+                                    
+                return ( T64_SYS_OP_MOD_TAB_FULL );
+            }
         } 
         else {
 
-            rStat = insertIntoMap( systemPhysMemMap,
-                                   module,
-                                   &systemPhysMemMapHwm,
-                                   MAX_MOD_MAP_ENTRIES );
+            if ( ! insertIntoMap( systemPhysMemMap,
+                                  module,
+                                  &systemPhysMemMapHwm,
+                                  MAX_MOD_MAP_ENTRIES )) {
+
+                return ( T64_SYS_OP_MOD_TAB_FULL );
+            }
         }
-    
-        if ( rStat != 0 ) return( -2 );
     }
 
     moduleMap[ module -> getModuleNum( ) ] = module;    
 
     if ( module -> getModuleType( ) == T64_MOD_TYPE_PROC ) {
 
-        rStat = insertIntoMap( systemProcMap,
-                               module,
-                               &systemProcMapHwm,
-                               MAX_MOD_MAP_ENTRIES );
+        if ( ! insertIntoMap( systemProcMap,
+                              module,
+                              &systemProcMapHwm,
+                              MAX_MOD_MAP_ENTRIES )) {
 
-        if ( rStat != 0 ) return( -2 );
+            return ( T64_SYS_OP_MOD_TAB_FULL );
+        }
     }
 
     module -> initModule( );
-    return ( 0 );
+    return ( T64_SYS_OP_OK );
 }
 
 //----------------------------------------------------------------------------------------
@@ -254,9 +267,10 @@ int T64System::addModule( T64Module *module ) {
 // The function returns 0 on success, -1 if not found.
 //
 //----------------------------------------------------------------------------------------
-int T64System::removeModule( T64Module *module ) {
+T64BusOpStat T64System::removeModule( T64Module *module ) {
 
     int modNum = module -> getModuleNum( );
+    if ( modNum  > MAX_MOD_MAP_ENTRIES ) return ( T64_SYS_OP_INV_MOD_NUM );
 
     busOpControl( nullptr, T64_CNTRL_EVENT_MODULE_PURGE, modNum, 0 );
 
@@ -266,7 +280,7 @@ int T64System::removeModule( T64Module *module ) {
     moduleMap[ modNum ] = nullptr;
     delete module;
 
-    return ( 0 );
+    return ( T64_SYS_OP_OK );
 }
 
 //----------------------------------------------------------------------------------------
@@ -313,9 +327,9 @@ T64Module *T64System::lookupByAdr ( T64Word adr ) const {
 
         int modNum = static_cast<int>( extractField64( adr, 12, 8 ));
 
-        if ( modNum > MAX_MOD_MAP_ENTRIES - 1 ) return( nullptr );
+        if ( modNum > MAX_MOD_MAP_ENTRIES - 1 ) return ( nullptr );
 
-        return( moduleMap[ modNum ] );
+        return ( moduleMap[ modNum ] );
     }
     else {
 
@@ -337,7 +351,7 @@ T64Module *T64System::lookupByAdr ( T64Word adr ) const {
                 return ( mPtr ); 
         }
 
-        return nullptr;
+        return ( nullptr );
     }
 } 
 
@@ -366,7 +380,7 @@ void T64System::moduleRunComplete( ) {
 
     std::lock_guard<std::mutex> lk( sLock );
 
-    if ( runPending > 0 ) --runPending;
+    if ( runPending > 0 ) runPending --;
 
     if ( runPending == 0 ) {
 
@@ -381,7 +395,7 @@ void T64System::moduleRunComplete( ) {
 //----------------------------------------------------------------------------------------
 T64SystemState T64System::getSystemState( ) {
 
-    return( sysState );
+    return ( sysState );
 }
 
 const char *T64System::getSystemStateStr( T64SystemState state ) {
@@ -389,8 +403,8 @@ const char *T64System::getSystemStateStr( T64SystemState state ) {
     switch ( state ) {
 
         case T64_SYS_STATE_HALT:    return ( "HALT" );
-        case T64_SYS_STATE_RUN:     return( "RUN" );
-        case T64_SYS_STATE_RESET:   return( "RESET" );
+        case T64_SYS_STATE_RUN:     return ( "RUN" );
+        case T64_SYS_STATE_RESET:   return ( "RESET" );
         default: return ( "NIL ");
     }
 }
@@ -410,7 +424,7 @@ T64BusOpStat T64System::busOpFetch(  T64Module *mod,
                                      uint8_t   *instr ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
-    if ( mPtr == nullptr ) return( T64_BUS_OP_MCHECK );
+    if ( mPtr == nullptr ) return ( T64_SYS_OP_INVALID_ADR );
 
     if ( mod != nullptr ) {
 
@@ -423,7 +437,7 @@ T64BusOpStat T64System::busOpFetch(  T64Module *mod,
             if ( isBreakPointArmed( static_cast<unsigned>( bpNum ))) {
 
                 armBreakPoint( static_cast<unsigned>( bpNum ), false );
-                return( T64_BUS_OP_SIM_BRK );
+                return ( T64_SYS_OP_SIM_BRK );
             }
 
             armBreakPoint( static_cast<unsigned>( bpNum ), true );
@@ -457,7 +471,7 @@ T64BusOpStat T64System::busOpRead( T64Module *mod,
                                    bool      rsv ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
-    if ( mPtr == nullptr ) return( T64_BUS_OP_MCHECK );
+    if ( mPtr == nullptr ) return ( T64_SYS_OP_INVALID_ADR );
 
     if ( mod != nullptr ) {
 
@@ -470,7 +484,7 @@ T64BusOpStat T64System::busOpRead( T64Module *mod,
             if ( isBreakPointArmed( static_cast<unsigned>( bpNum ) )) {
 
                 armBreakPoint( static_cast<unsigned>( bpNum ), false );
-                return( T64_BUS_OP_SIM_BRK );
+                return ( T64_SYS_OP_SIM_BRK );
             }
 
             armBreakPoint( static_cast<unsigned>( bpNum ), true );
@@ -483,7 +497,7 @@ T64BusOpStat T64System::busOpRead( T64Module *mod,
             std::lock_guard<std::mutex> lk(sLock);
 
             T64BusOpStat rStat = mPtr -> busOpReadEvent( pAdr, data, len );
-            if ( rStat != T64_BUS_OP_STAT_OK ) return( rStat );
+            if ( rStat != T64_SYS_OP_OK ) return ( rStat );
 
             if (dynamic_cast<T64ThreadModule*>( mod )) {
 
@@ -491,7 +505,7 @@ T64BusOpStat T64System::busOpRead( T64Module *mod,
                                                     setRsvInfo( pAdr, true );
             }
 
-             return ( T64_BUS_OP_STAT_OK );
+             return ( T64_SYS_OP_OK );
         }
     }
     else return ( mPtr -> busOpReadEvent( pAdr, data, len ));
@@ -521,13 +535,13 @@ T64BusOpStat T64System::busOpRead( T64Module *mod,
 //
 //----------------------------------------------------------------------------------------
 T64BusOpStat T64System::busOpWrite( T64Module *mod, 
-                                    T64Word pAdr, 
-                                    uint8_t *data, 
-                                    size_t len, 
-                                    bool cond ) {
+                                    T64Word   pAdr, 
+                                    uint8_t   *data, 
+                                    size_t    len, 
+                                    bool      cond ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
-    if ( mPtr == nullptr ) return ( T64_BUS_OP_MCHECK );
+    if ( mPtr == nullptr ) return ( T64_SYS_OP_INVALID_ADR );
 
     if ( mod != nullptr ) {
 
@@ -540,7 +554,7 @@ T64BusOpStat T64System::busOpWrite( T64Module *mod,
             if ( isBreakPointArmed( static_cast<unsigned>( bpNum ) )) {
 
                 armBreakPoint( static_cast<unsigned>( bpNum ), false );
-                return( T64_BUS_OP_SIM_BRK );
+                return ( T64_SYS_OP_SIM_BRK );
             }
 
             armBreakPoint( static_cast<unsigned>( bpNum ), true );
@@ -550,7 +564,7 @@ T64BusOpStat T64System::busOpWrite( T64Module *mod,
     {
         std::lock_guard<std::mutex> lk(sLock);
 
-        T64BusOpStat rStat = T64_BUS_OP_STAT_OK;
+        T64BusOpStat rStat = T64_SYS_OP_OK;
 
         if ( cond ) {
 
@@ -563,7 +577,7 @@ T64BusOpStat T64System::busOpWrite( T64Module *mod,
                         p -> setRsvInfo( pAdr, false );
                         rStat = mPtr -> busOpWriteEvent( pAdr, data, len );
                     }
-                    else rStat = T64_BUS_OP_MCHECK;
+                    else rStat = T64_SYS_OP_M_CHECK;
                 }
                 else {
 
@@ -594,12 +608,12 @@ T64BusOpStat T64System::busOpWrite( T64Module *mod,
 // inform all modules.
 //
 //----------------------------------------------------------------------------------------
-T64BusOpStat T64System::busOpControl( T64Module *mod,
-                                      T64BBusOpControlEvents event,
-                                      T64Word            arg1, 
-                                      T64Word            arg2 ) {
+T64BusOpStat T64System::busOpControl( T64Module              *mod,
+                                      T64BusOpControlEvents event,
+                                      T64Word                arg1, 
+                                      T64Word                arg2 ) {
                                 
-    if ( mod == nullptr ) return ( T64_BUS_OP_MCHECK );
+    if ( mod == nullptr ) return ( T64_SYS_OP_INVALID_ADR );
 
     {
         std::lock_guard<std::mutex> lk(sLock);                              
@@ -611,7 +625,7 @@ T64BusOpStat T64System::busOpControl( T64Module *mod,
         }
     }
 
-    return( T64_BUS_OP_STAT_OK );
+    return ( T64_SYS_OP_OK );
 }
 
 //----------------------------------------------------------------------------------------
@@ -660,7 +674,7 @@ void T64System::simReset( int modNum ) {
 //----------------------------------------------------------------------------------------
 void T64System::simRun( int modNum, int steps, bool haltOnTrap ) {
 
-    std::unique_lock<std::mutex> lk(sLock);
+    std::unique_lock<std::mutex> lk( sLock );
 
     runPending = 0;
     sysState.store( T64_SYS_STATE_RUN, std::memory_order_release );

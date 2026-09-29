@@ -7,7 +7,8 @@
 // are for example processor, memory and I/O modules. The simulator is connected
 // to the system which handles all module functions. A program start, the all
 // modules are registered to the system. Think of a kind of bus where you plug
-// in boards.  
+// in boards. There is also a breakpoint subsystem, which allows to set at a 
+// physical address a code or data breakpoint.  
 //
 //----------------------------------------------------------------------------------------
 //
@@ -69,7 +70,7 @@ enum T64ModuleType {
 // Modules send a control event to the system. They all will run serialized.
 //
 //----------------------------------------------------------------------------------------
-enum T64BBusOpControlEvents {
+enum T64BusOpControlEvents {
 
     T64_CNTRL_EVENT_MODULE_PURGE    = 1,
     T64_CNTRL_EVENT_TLB_PURGE       = 2,
@@ -110,7 +111,7 @@ enum T64ModuleRegs : unsigned {
 };
 
 //----------------------------------------------------------------------------------------
-//
+// The overall state of the system.
 //
 //----------------------------------------------------------------------------------------
 enum T64SystemState : unsigned {
@@ -134,14 +135,20 @@ enum T64SimBreakPointType : unsigned {
 };
 
 //----------------------------------------------------------------------------------------
-// Bus operation request status.
+// System Bus operation request status.
 //
 //----------------------------------------------------------------------------------------
 enum T64BusOpStat : unsigned {
 
-    T64_BUS_OP_STAT_OK  = 0,
-    T64_BUS_OP_MCHECK   = 1,
-    T64_BUS_OP_SIM_BRK  = 2
+    T64_SYS_OP_OK              = 0,
+    T64_SYS_OP_INV_MOD_NUM     = 1,
+    T64_SYS_OP_MOD_TAB_FULL    = 2,
+    T64_SYS_OP_MOD_NUM_USED    = 3,
+    T64_SYS_OP_INVALID_ADR     = 3,
+    T64_SYS_OP_ADR_OVERLAP     = 4,
+    T64_SYS_OP_M_CHECK         = 5,
+    T64_SYS_OP_SIM_BRK         = 6,
+    T64_SYS_OP_INVALID_BNUM    = 7,
 };
 
 //----------------------------------------------------------------------------------------
@@ -182,7 +189,7 @@ struct T64Module {
     busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len ) = 0;
 
     virtual T64BusOpStat        
-    busOpControlEvent( T64BBusOpControlEvents event, 
+    busOpControlEvent( T64BusOpControlEvents event, 
                        T64Word  arg1, T64Word arg2 ) = 0;
 
     T64ModuleType               getModuleType( );
@@ -235,7 +242,7 @@ struct T64ThreadModule : T64Module {
                      T64ModuleType    modType, 
                      int              modNum,
                      T64Word          spaAdr,
-                     int              spaLen );
+                     unsigned         spaLen );
 
     ~ T64ThreadModule( );
 
@@ -300,7 +307,6 @@ struct T64SimBreakPointEntry {
     bool                    armed;
     T64Word                 adr;
     T64Word                 adrMask;
-
     uint64_t                modMask; 
 };
 
@@ -313,10 +319,10 @@ struct T64SimBreakPointEntry {
 //----------------------------------------------------------------------------------------
 struct T64SimBreakPointMap {
 
-    bool     codeBrkPointEnabled;
-    bool     dataBrkPointEnabled;
-    unsigned hwm;
-    T64SimBreakPointEntry map[ MAX_SIM_BREAKPOINTS ];
+    bool                    codeBrkPointEnabled;
+    bool                    dataBrkPointEnabled;
+    unsigned                hwm;
+    T64SimBreakPointEntry   map[ MAX_SIM_BREAKPOINTS ];
 };
 
 //----------------------------------------------------------------------------------------
@@ -343,8 +349,8 @@ struct T64System {
 
     void                        simHalt( int modNum );
 
-    int                         addModule( T64Module *module );
-    int                         removeModule( T64Module *module ); 
+    T64BusOpStat                addModule( T64Module *module );
+    T64BusOpStat                removeModule( T64Module *module ); 
     void                        moduleRunComplete( );
     
     T64ModuleType               getModuleType( int modNum ) const;
@@ -374,7 +380,7 @@ struct T64System {
                                             bool cond = false );
 
     T64BusOpStat                busOpControl( T64Module *mod,
-                                              T64BBusOpControlEvents event,
+                                              T64BusOpControlEvents event,
                                               T64Word             arg1, 
                                               T64Word             arg2 );
 
@@ -383,18 +389,18 @@ struct T64System {
     bool                        isCodeBrkPointEnabled( );
     bool                        isDataBrkPointENabled( );
     
-    bool                        addBreakPoint( int modNum, 
+    T64BusOpStat                addBreakPoint( int modNum, 
                                                T64SimBreakPointType type,
                                                T64Word adr,
                                                T64Word len ); 
 
-    bool                        removeBreakPoint( unsigned bNum,
+    T64BusOpStat                removeBreakPoint( unsigned bNum,
                                                   int      modNum );
 
-    bool                        enableBreakPoint( unsigned bNum, bool enb );
+    T64BusOpStat                enableBreakPoint( unsigned bNum, bool enb );
     bool                        isBreakPointEnabled( unsigned bNum );
 
-    bool                        armBreakPoint( unsigned bNum, bool arm );
+    T64BusOpStat                armBreakPoint( unsigned bNum, bool arm );
     bool                        isBreakPointArmed( unsigned bNum );
    
     T64SimBreakPointEntry       *getBreakPointEntry( unsigned bNum ); 

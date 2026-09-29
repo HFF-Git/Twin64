@@ -166,7 +166,7 @@ bool readMem( T64System *sys, T64Word adr, uint8_t *val, size_t size ) {
     if ( sys -> busOpRead( nullptr, 
                            physAdr, 
                            reinterpret_cast<uint8_t *>( val ), 
-                           size ) == T64_BUS_OP_STAT_OK ) {
+                           size ) == T64_SYS_OP_OK ) {
 
         copyEndianAware( reinterpret_cast<uint8_t *>( val ), 
                          reinterpret_cast<uint8_t *>( val ), 

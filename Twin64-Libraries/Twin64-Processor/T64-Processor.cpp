@@ -267,7 +267,7 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
                 tmp = 0;  // ??? test only ...
 
                 copyFromReg( data, tmp, wordOfs, len );
-                return( T64_BUS_OP_STAT_OK );
+                return( T64_SYS_OP_OK );
 
             } break;
 
@@ -276,7 +276,7 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
                 tmp = 0;  // ??? test only ...
 
                 copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_BUS_OP_STAT_OK );
+                return ( T64_SYS_OP_OK );
 
             } break;
 
@@ -284,14 +284,14 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
 
                 tmp = 0; // ??? test only ...
                 copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_BUS_OP_STAT_OK );
+                return ( T64_SYS_OP_OK );
 
             } break;
 
             case T64_IO_SPA_ADR_REG_OFS: {
 
                 copyFromReg( data, 0, wordOfs, len );
-                return ( T64_BUS_OP_STAT_OK );
+                return ( T64_SYS_OP_OK );
 
             } break;
 
@@ -299,7 +299,7 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
 
                 tmp = localTlb -> getTlbStatus( );
                 copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_BUS_OP_STAT_OK );
+                return ( T64_SYS_OP_OK );
 
             } break;
                 
@@ -307,7 +307,7 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
 
                 tmp = localTlb -> getTlbConfig( );
                 copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_BUS_OP_STAT_OK );
+                return ( T64_SYS_OP_OK );
 
             } break;
 
@@ -315,7 +315,7 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
 
                 tmp = localTlb -> getItlbHits();
                 copyFromReg( data, tmp, wordOfs, len );
-                return( T64_BUS_OP_STAT_OK );
+                return( T64_SYS_OP_OK );
 
             } break;
 
@@ -323,7 +323,7 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
 
                 tmp = localTlb -> getItlbMisses();
                 copyFromReg( data, tmp, wordOfs, len );
-                return( T64_BUS_OP_STAT_OK );
+                return( T64_SYS_OP_OK );
 
             } break;
 
@@ -331,7 +331,7 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
 
                 tmp = localTlb -> getItlbMissGTlbHits();
                 copyFromReg( data, tmp, wordOfs, len );
-                return( T64_BUS_OP_STAT_OK );
+                return( T64_SYS_OP_OK );
             
             } break;  
     
@@ -339,7 +339,7 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
                 
                 tmp = localTlb -> getItlbMissGTlbMisses();
                 copyFromReg( data, tmp, wordOfs, len );
-                return( T64_BUS_OP_STAT_OK );
+                return( T64_SYS_OP_OK );
 
             } break;                
 
@@ -347,7 +347,7 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
 
                 tmp = localTlb -> getDtlbHits();
                 copyFromReg( data, tmp, wordOfs, len );
-                return( T64_BUS_OP_STAT_OK );
+                return( T64_SYS_OP_OK );
 
             } break;
 
@@ -355,7 +355,7 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
 
                 tmp = localTlb -> getDtlbMisses();
                 copyFromReg( data, tmp, wordOfs, len );
-                return( T64_BUS_OP_STAT_OK );
+                return( T64_SYS_OP_OK );
 
             } break;
 
@@ -363,7 +363,7 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
 
                 tmp = localTlb -> getDtlbMissGTlbHits();
                 copyFromReg( data, tmp, wordOfs, len );
-                return( T64_BUS_OP_STAT_OK );
+                return( T64_SYS_OP_OK );
 
             } break;
 
@@ -371,14 +371,14 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
 
                 tmp = localTlb -> getDtlbMissGTlbMisses();
                 copyFromReg( data, tmp, wordOfs, len );
-                return( T64_BUS_OP_STAT_OK );
+                return( T64_SYS_OP_OK );
 
             } break;
 
             default: {
 
                 copyFromReg( data, tmp, 0, len );
-                return ( T64_BUS_OP_MCHECK );
+                return ( T64_SYS_OP_M_CHECK );
             }
         }
     }
@@ -389,27 +389,27 @@ T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t le
         if ( wordInRegSetIndex >= 16 ) {
 
             e = localTlb -> getDTlbEntry(( wordInRegSetIndex - 16 ) / 2 );
-            if ( e == nullptr ) return( T64_BUS_OP_MCHECK );
+            if ( e == nullptr ) return( T64_SYS_OP_M_CHECK );
         }
         else {
 
              e = localTlb -> getITlbEntry( wordInRegSetIndex / 2 );
-             if ( e == nullptr ) return( T64_BUS_OP_MCHECK );
+             if ( e == nullptr ) return( T64_SYS_OP_M_CHECK );
         }
 
         if ( wordInRegSetIndex % 2 == 0 ) {
 
             copyFromReg( data, e -> vAdr, wordOfs, len );
-            return( T64_BUS_OP_STAT_OK );
+            return( T64_SYS_OP_OK );
         }
         else {
 
             tmp = ( static_cast<T64Word>( e -> tlbInfo ) << 48 ) | ( e -> pAdr );
             copyFromReg( data, tmp, wordOfs, len );
-            return( T64_BUS_OP_STAT_OK );
+            return( T64_SYS_OP_OK );
         }
     }
-    else return ( T64_BUS_OP_MCHECK );
+    else return ( T64_SYS_OP_M_CHECK );
 }
 
 //----------------------------------------------------------------------------------------
@@ -427,7 +427,7 @@ T64BusOpStat T64Processor::handleHPAWrite( T64Word pAdr,
 
     // ??? what do we cover here ?
 
-    return ( T64_BUS_OP_STAT_OK );
+    return ( T64_SYS_OP_OK );
 }
 
 //----------------------------------------------------------------------------------------
@@ -444,7 +444,7 @@ T64BusOpStat T64Processor::handleHPAWrite( T64Word pAdr,
 //  check trap.
 //
 //----------------------------------------------------------------------------------------
-T64BusOpStat T64Processor::handleControlEvent( T64BBusOpControlEvents event, 
+T64BusOpStat T64Processor::handleControlEvent( T64BusOpControlEvents event, 
                                                T64Word arg1, 
                                                T64Word arg2 ) {
 
@@ -453,14 +453,14 @@ T64BusOpStat T64Processor::handleControlEvent( T64BBusOpControlEvents event,
         case T64_CNTRL_EVENT_TLB_PURGE: {
 
             return((localTlb -> purgeTlb( arg1 )) ? 
-                            T64_BUS_OP_STAT_OK : T64_BUS_OP_MCHECK );
+                            T64_SYS_OP_OK : T64_SYS_OP_M_CHECK );
 
         } break;
 
         case T64_CNTRL_EVENT_STORE_OP: {
 
             if ( getRsvAdr( ) == arg1 ) setRsvInfo( arg1, false );
-            return( T64_BUS_OP_STAT_OK );
+            return( T64_SYS_OP_OK );
 
         } break;
 
@@ -472,14 +472,14 @@ T64BusOpStat T64Processor::handleControlEvent( T64BBusOpControlEvents event,
                 globalTlb = nullptr;
             }
 
-            return( T64_BUS_OP_STAT_OK );
+            return( T64_SYS_OP_OK );
 
         } break;
 
-        default: return( T64_BUS_OP_MCHECK );
+        default: return( T64_SYS_OP_M_CHECK );
     }
 
-    return( T64_BUS_OP_STAT_OK );
+    return( T64_SYS_OP_OK );
 }
 
 //----------------------------------------------------------------------------------------
@@ -516,7 +516,7 @@ T64BusOpStat T64Processor::busOpWrite( T64Word adr,
     return( sys -> busOpWrite( this, adr, data, len, cond ));
 }
 
-T64BusOpStat T64Processor::busOpControl( T64BBusOpControlEvents id, 
+T64BusOpStat T64Processor::busOpControl( T64BusOpControlEvents id, 
                                          T64Word            arg1, 
                                          T64Word            arg2 ) {
 
@@ -533,7 +533,7 @@ T64BusOpStat T64Processor::busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t 
     return( handleHPAWrite( pAdr, data, len ));
 }   
 
-T64BusOpStat T64Processor::busOpControlEvent(  T64BBusOpControlEvents  event, 
+T64BusOpStat T64Processor::busOpControlEvent(  T64BusOpControlEvents  event, 
                                        T64Word             arg1, 
                                        T64Word             arg2 ) {
 

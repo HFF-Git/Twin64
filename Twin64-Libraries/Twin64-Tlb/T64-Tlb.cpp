@@ -312,8 +312,8 @@ T64BusOpStat T64GlobalTlb::busOpReadEvent( T64Word pAdr,
                                            uint8_t *data, 
                                            size_t len )  {
 
-    if ( ! isInIoHpaRange( pAdr )) return( T64_BUS_OP_MCHECK );
-    if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( T64_BUS_OP_MCHECK );
+    if ( ! isInIoHpaRange( pAdr )) return( T64_SYS_OP_M_CHECK );
+    if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( T64_SYS_OP_M_CHECK );
 
     // int     wordIndex           = (( pAdr - hpaAdr ) >> 3 );
     // int     regSetIndex         = wordIndex / T64_IO_REG_SET_SIZE;
@@ -324,7 +324,7 @@ T64BusOpStat T64GlobalTlb::busOpReadEvent( T64Word pAdr,
     // ??? what registers do we have ?
 
     copyFromReg( data, tmp, 0, len );
-    return ( T64_BUS_OP_STAT_OK );
+    return ( T64_SYS_OP_OK );
 }
 
 //----------------------------------------------------------------------------------------
@@ -336,8 +336,8 @@ T64BusOpStat T64GlobalTlb::busOpWriteEvent( T64Word pAdr,
                                             uint8_t *data, 
                                             size_t  len )  {
 
-    if ( ! isInIoHpaRange( pAdr )) return( T64_BUS_OP_MCHECK );
-    if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( T64_BUS_OP_MCHECK );
+    if ( ! isInIoHpaRange( pAdr )) return( T64_SYS_OP_M_CHECK );
+    if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( T64_SYS_OP_M_CHECK );
 
     // int     wordIndex           = (( pAdr - hpaAdr ) >> 3 );
     // int     regSetIndex         = wordIndex / T64_IO_REG_SET_SIZE;
@@ -347,7 +347,7 @@ T64BusOpStat T64GlobalTlb::busOpWriteEvent( T64Word pAdr,
     
     // ??? what registers can we write ?
 
-    return ( T64_BUS_OP_STAT_OK );
+    return ( T64_SYS_OP_OK );
 } 
 
 //----------------------------------------------------------------------------------------
@@ -355,7 +355,7 @@ T64BusOpStat T64GlobalTlb::busOpWriteEvent( T64Word pAdr,
 // for example.
 //
 //----------------------------------------------------------------------------------------
-T64BusOpStat T64GlobalTlb::busOpControlEvent( T64BBusOpControlEvents id, 
+T64BusOpStat T64GlobalTlb::busOpControlEvent( T64BusOpControlEvents id, 
                                               T64Word            arg1, 
                                               T64Word            arg2 )  {
 
@@ -364,17 +364,17 @@ T64BusOpStat T64GlobalTlb::busOpControlEvent( T64BBusOpControlEvents id,
         case T64_CNTRL_EVENT_TLB_INSERT: {
 
             return(( insertTlbEntry( arg1, arg2 )) ? 
-                     T64_BUS_OP_STAT_OK : T64_BUS_OP_MCHECK );
+                     T64_SYS_OP_OK : T64_SYS_OP_M_CHECK );
               
         } break;
 
         case T64_CNTRL_EVENT_TLB_PURGE: {
 
             return(( removeTlbEntry( arg1 )) ? 
-                     T64_BUS_OP_STAT_OK : T64_BUS_OP_MCHECK );
+                     T64_SYS_OP_OK : T64_SYS_OP_M_CHECK );
               
         } break;
 
-        default: return( T64_BUS_OP_MCHECK );
+        default: return( T64_SYS_OP_M_CHECK );
     }
 }

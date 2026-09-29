@@ -1,11 +1,13 @@
 //----------------------------------------------------------------------------------------
 //
-// Twin-64 - System
+// Twin-64 - Simulator breakpoints
 //
 //----------------------------------------------------------------------------------------
 // "T64System" is the system we simulate. It consist of a set of modules. A 
 // module represents a processor, a memory unit, and so on. This of the system
-// as a bus where the modules are plugged into.
+// as a bus where the modules are plugged into. The simulator breakpoints are
+// a subsystem which allows to set a code or data breakpoint at a physical 
+// address.
 //
 //----------------------------------------------------------------------------------------
 //
@@ -55,7 +57,7 @@ void updateBrkPointEnableFlags( T64SimBreakPointMap *map ) {
     map -> codeBrkPointEnabled = false;
     map -> dataBrkPointEnabled = false;
 
-    for ( int i = 0; i < map -> hwm; i++ ) {
+    for ( unsigned i = 0; i < map -> hwm; i++ ) {
 
         T64SimBreakPointEntry *e = &map -> map[ i ];
 
@@ -146,15 +148,15 @@ bool T64System::isDataBrkPointENabled( ) {
 // all existing breakpoint ranges when we allocate a new entry.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::addBreakPoint( int                  modNum,
-                               T64SimBreakPointType type,
-                               T64Word              adr,
-                               T64Word              len ) {
+T64BusOpStat T64System::addBreakPoint( int                  modNum,
+                                       T64SimBreakPointType type,
+                                       T64Word              adr,
+                                       T64Word              len ) {
 
     uint64_t modMask = getModuleMask( modNum );
-    if ( modMask == 0 ) return( false );
+    if ( modMask == 0 ) return( T64_SYS_OP_INV_MOD_NUM );
 
-    T64Word bpAdr     = adr & ~(len - 1);
+    T64Word bpAdr     = adr & ~( len - 1 );
     T64Word bpAdrMask = ~( len - 1 );
 
     for ( unsigned i = 0; i < breakPointMap.hwm; i++ ) {
@@ -169,7 +171,7 @@ bool T64System::addBreakPoint( int                  modNum,
             ptr -> enabled = true;
 
             updateBrkPointEnableFlags( &breakPointMap );
-            return( true );
+            return( T64_SYS_OP_OK );
         }
     }
 
@@ -178,7 +180,6 @@ bool T64System::addBreakPoint( int                  modNum,
         auto *ptr = &breakPointMap.map[ i ];
 
         if ( ptr -> type == T64_SIM_BREAK_NIL ) continue;
-
         if ( ptr -> type != type ) continue;
 
         T64Word ptrLen = ~ptr -> adrMask + 1;
@@ -186,7 +187,10 @@ bool T64System::addBreakPoint( int                  modNum,
         T64Word ptrEnd = ptr -> adr + ptrLen;
         T64Word bpEnd  = bpAdr + len;
 
-        if ( bpAdr < ptrEnd && ptr -> adr < bpEnd ) return( false );
+        if ( bpAdr < ptrEnd && ptr -> adr < bpEnd ) { 
+            
+            return( T64_SYS_OP_ADR_OVERLAP );
+        }
     }
 
     unsigned bNum = breakPointMap.hwm;
@@ -202,7 +206,11 @@ bool T64System::addBreakPoint( int                  modNum,
 
     if ( bNum == breakPointMap.hwm ) {
 
-        if ( breakPointMap.hwm >= MAX_SIM_BREAKPOINTS ) return( false );
+        if ( breakPointMap.hwm >= MAX_SIM_BREAKPOINTS ) {
+            
+            return( T64_SYS_OP_INVALID_BNUM );
+        }
+
         breakPointMap.hwm++;
     }
 
@@ -216,31 +224,27 @@ bool T64System::addBreakPoint( int                  modNum,
     ptr -> modMask = modMask;
 
     updateBrkPointEnableFlags( &breakPointMap );
-    return( true );
+    return( T64_SYS_OP_OK );
 }
 
 //----------------------------------------------------------------------------------------
 // Remove a module from the breakpoint mask. If no modules are left in the 
 // module mask, the breakpoint itself is removed. A module number of -1 has
-// the same effect.
-//
-// When a breakpoint is removed and it is the entry at the high water mark, we
-// shrink the high water accordingly. Furthermore, removing the last breakpoint
-// will also set the global breakpoint enable flag.
+// the same effect. When a breakpoint is removed and it is the entry at the 
+// high water mark, we shrink the high water mark accordingly.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::removeBreakPoint( unsigned bNum, int modNum ) {
+T64BusOpStat T64System::removeBreakPoint( unsigned bNum, int modNum ) {
 
     uint64_t modMask = getModuleMask( modNum );
-
-    if ( modMask == 0 ) return( false );
-    if ( bNum >= breakPointMap.hwm ) return( false );
+    if ( modMask == 0 ) return( T64_SYS_OP_INV_MOD_NUM );
+    if ( bNum >= breakPointMap.hwm ) return( T64_SYS_OP_INV_MOD_NUM );
 
     auto *ptr = &breakPointMap.map[ bNum ];
-    if ( ptr -> type == T64_SIM_BREAK_NIL ) return( false );
+    if ( ptr -> type == T64_SIM_BREAK_NIL ) return( T64_SYS_OP_INVALID_BNUM );
 
     ptr -> modMask &= ~modMask;
-    if ( ptr -> modMask != 0 ) return( true );
+    if ( ptr -> modMask != 0 ) return( T64_SYS_OP_OK );
 
     ptr -> type    = T64_SIM_BREAK_NIL;
     ptr -> enabled = false;
@@ -256,7 +260,7 @@ bool T64System::removeBreakPoint( unsigned bNum, int modNum ) {
     }
 
     updateBrkPointEnableFlags( &breakPointMap );
-    return( true );
+    return( T64_SYS_OP_OK );
 }
 
 //----------------------------------------------------------------------------------------
@@ -264,9 +268,9 @@ bool T64System::removeBreakPoint( unsigned bNum, int modNum ) {
 // the global enable flag is also updated.  
 //
 //----------------------------------------------------------------------------------------
-bool T64System::enableBreakPoint( unsigned bNum, bool enb ) {
+T64BusOpStat T64System::enableBreakPoint( unsigned bNum, bool enb ) {
 
-    if ( bNum >= breakPointMap.hwm ) return( false );
+    if ( bNum >= breakPointMap.hwm ) return( T64_SYS_OP_INVALID_BNUM );
    
     breakPointMap.map[ bNum ].enabled = enb;
     
@@ -275,12 +279,12 @@ bool T64System::enableBreakPoint( unsigned bNum, bool enb ) {
         if ( breakPointMap.map[ i ].enabled ) {
             
             updateBrkPointEnableFlags( &breakPointMap );
-            return( true );
+            return( T64_SYS_OP_OK );
         }
     }
 
     updateBrkPointEnableFlags( &breakPointMap );
-    return( true );
+    return( T64_SYS_OP_OK );
 }
 
 bool T64System::isBreakPointEnabled( unsigned bNum ) {
@@ -293,11 +297,11 @@ bool T64System::isBreakPointEnabled( unsigned bNum ) {
 // Return the armed state of a breakpoint.
 //
 //----------------------------------------------------------------------------------------
-bool T64System::armBreakPoint( unsigned bNum, bool arm ) {
+T64BusOpStat T64System::armBreakPoint( unsigned bNum, bool arm ) {
 
-    if ( bNum >= breakPointMap.hwm ) return( false );
+    if ( bNum >= breakPointMap.hwm ) return( T64_SYS_OP_INVALID_BNUM );
     breakPointMap.map[ bNum ].armed = arm;
-    return( true );
+    return( T64_SYS_OP_OK );
 }
 
 bool T64System::isBreakPointArmed( unsigned bNum ) {

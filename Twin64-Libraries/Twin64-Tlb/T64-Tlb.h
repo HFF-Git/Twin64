@@ -70,7 +70,7 @@ struct T64GlobalTlb : T64Module {
     T64BusOpStat    busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len );
     T64BusOpStat    busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len );  
 
-    T64BusOpStat    busOpControlEvent( T64BBusOpControlEvents id, 
+    T64BusOpStat    busOpControlEvent( T64BusOpControlEvents id, 
                                        T64Word            arg1, 
                                        T64Word            arg2 );
 
