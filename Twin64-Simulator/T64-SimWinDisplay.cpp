@@ -764,7 +764,8 @@ void SimWinDisplay::windowJump( T64Word pos, int winNum ) {
     if ( winNum == -1 ) winNum = getCurrentWindow( );
     if ( ! validWindowNum( winNum )) throw ( ERR_INVALID_WIN_ID );
    
-    if (SimWinScrollable* w = dynamic_cast<SimWinScrollable*>( windowList[ winNum ])) {
+    if ( SimWinScrollable* w = 
+            dynamic_cast<SimWinScrollable*>( windowList[ winNum ])) {
 
         w ->  winJump( pos ); 
 
@@ -849,7 +850,7 @@ void SimWinDisplay::windowNewMem( T64Word adr, int toggleVal ) {
 
     int slot = getFreeWindowSlot( );
 
-    windowList[ slot ] = reinterpret_cast<SimWin *>( new SimWinMem( glb, adr ));
+    windowList[ slot ] = new SimWinMem( glb, adr );
     windowList[ slot ] -> setWinName( "MEM" );
     windowList[ slot ] -> setWinIndex( slot );
     windowList[ slot ] -> setWinStack( 0 );
@@ -867,7 +868,7 @@ void SimWinDisplay::windowNewProcState( int modNum ) {
 
     int slot = getFreeWindowSlot( );
 
-    windowList[ slot ] = reinterpret_cast<SimWin *>( new SimWinProcState( glb, modNum ));
+    windowList[ slot ] = new SimWinProcState( glb, modNum );
     windowList[ slot ] -> setWinName( "PROC" );
     windowList[ slot ] -> setWinModNum( modNum );
     windowList[ slot ] -> setDefaults( );
@@ -880,7 +881,7 @@ void SimWinDisplay::windowNewTlb( int modNum ) {
 
     int slot = getFreeWindowSlot( );
 
-    windowList[ slot ] = reinterpret_cast<SimWin *>( new SimWinTlb( glb, modNum ));
+    windowList[ slot ] = new SimWinTlb( glb, modNum );
     windowList[ slot ] -> setWinName( "GTLB" );
     windowList[ slot ] -> setWinModNum( modNum );
     windowList[ slot ] -> setDefaults( );
@@ -893,7 +894,7 @@ void SimWinDisplay::windowNewText( char *pathStr ) {
 
     int slot = getFreeWindowSlot( );
 
-    windowList[ slot ] = reinterpret_cast<SimWin *>( new SimWinText( glb, pathStr ));
+    windowList[ slot ] = new SimWinText( glb, pathStr );
     windowList[ slot ] -> setWinName( "TEXT" );
     windowList[ slot ] -> setDefaults( );
     windowList[ slot ] -> setWinIndex( slot );

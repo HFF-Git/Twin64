@@ -193,9 +193,23 @@ void T64ThreadModule::moduleWorker( ) {
 
                 while (true) {
 
+                    // Has the entire simulated system been stopped?
+                    if ( sys -> getSystemState( ) == T64_SYS_STATE_HALT ) {
+
+                        moduleState.store( T64_MOD_STATE_HALTED,
+                                           std::memory_order_release );
+
+                        mUnitCount = 0;
+
+                        sys -> moduleRunComplete( );
+                        break;
+                    }
+
                     // Has this module been stopped?
                     if ( moduleState.load( std::memory_order_acquire )
                             != T64_MOD_STATE_EXECUTE) {
+
+                        mUnitCount = 0;
                         break;
                     }
 
@@ -206,16 +220,6 @@ void T64ThreadModule::moduleWorker( ) {
                        
                         moduleState.store( T64_MOD_STATE_HALTED,
                                            std::memory_order_release ) ;
-
-                        sys -> moduleRunComplete( );
-                        break;
-                    }
-
-                    // Has the entire simulated system been stopped?
-                    if ( sys -> getSystemState( ) == T64_SYS_STATE_HALT ) {
-
-                        moduleState.store( T64_MOD_STATE_HALTED,
-                                           std::memory_order_release );
 
                         sys -> moduleRunComplete( );
                         break;

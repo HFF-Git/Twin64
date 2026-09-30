@@ -428,22 +428,21 @@ T64BusOpStat T64System::busOpFetch(  T64Module *mod,
 
     if ( mod != nullptr ) {
 
-        int bpNum = checkBreakPoint( T64_SIM_BREAK_X, 
-                                     pAdr,
-                                     mod->getModuleNum( ));
+        int modNum = mod -> getModuleNum( );
+        int bpNum  = checkBreakPoint( T64_SIM_BREAK_X, pAdr, modNum );
 
         if ( bpNum != -1 ) {
 
-            if ( isBreakPointArmed( static_cast<unsigned>( bpNum ))) {
+            if ( isBreakPointArmed( modNum, bpNum )) {
 
-                armBreakPoint( static_cast<unsigned>( bpNum ), false );
+                armBreakPoint( modNum, bpNum, false );
                 return ( T64_SYS_OP_SIM_BRK );
             }
 
-            armBreakPoint( static_cast<unsigned>( bpNum ), true );
+            armBreakPoint( modNum, bpNum, true );
         }
     }
-
+    
     return ( mPtr -> busOpReadEvent( pAdr, instr, sizeof( T64Instr )));
 }
 
@@ -475,19 +474,21 @@ T64BusOpStat T64System::busOpRead( T64Module *mod,
 
     if ( mod != nullptr ) {
 
-        int bpNum = checkBreakPoint( T64_SIM_BREAK_R,
-                                     pAdr, 
-                                     mod->getModuleNum( ));
+        int modNum = mod -> getModuleNum( );
+        int bpNum  = checkBreakPoint( T64_SIM_BREAK_R,
+                                      pAdr, 
+                                      mod->getModuleNum( ));
 
         if ( bpNum != -1 ) {
 
-            if ( isBreakPointArmed( static_cast<unsigned>( bpNum ) )) {
+            if ( isBreakPointArmed( modNum,
+                                    static_cast<unsigned>( bpNum ))) {
 
-                armBreakPoint( static_cast<unsigned>( bpNum ), false );
+                armBreakPoint( modNum, static_cast<unsigned>( bpNum ), false );
                 return ( T64_SYS_OP_SIM_BRK );
             }
 
-            armBreakPoint( static_cast<unsigned>( bpNum ), true );
+            armBreakPoint( modNum, static_cast<unsigned>( bpNum ), true );
         }
     }
     
@@ -545,19 +546,21 @@ T64BusOpStat T64System::busOpWrite( T64Module *mod,
 
     if ( mod != nullptr ) {
 
-        int bpNum = checkBreakPoint( T64_SIM_BREAK_W,
-                                     pAdr, 
-                                     mod -> getModuleNum( ));
+        int modNum = mod -> getModuleNum( );
+        int bpNum  = checkBreakPoint( T64_SIM_BREAK_W,
+                                      pAdr, 
+                                      mod -> getModuleNum( ));
 
         if ( bpNum != -1 ) {            
 
-            if ( isBreakPointArmed( static_cast<unsigned>( bpNum ) )) {
+            if ( isBreakPointArmed( modNum,
+                                    static_cast<unsigned>( bpNum ) )) {
 
-                armBreakPoint( static_cast<unsigned>( bpNum ), false );
+                armBreakPoint( modNum, static_cast<unsigned>( bpNum ), false );
                 return ( T64_SYS_OP_SIM_BRK );
             }
 
-            armBreakPoint( static_cast<unsigned>( bpNum ), true );
+            armBreakPoint( modNum, static_cast<unsigned>( bpNum ), true );
         }
     }
 
@@ -684,7 +687,7 @@ void T64System::simRun( int modNum, int steps, bool haltOnTrap ) {
         for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
 
             if ( auto *m =
-                    dynamic_cast<T64ThreadModule *>(moduleMap[ i ])) {
+                    dynamic_cast<T64ThreadModule *>( moduleMap[ i ])) {
 
                 runPending++;
                 m -> execModule( steps, haltOnTrap );

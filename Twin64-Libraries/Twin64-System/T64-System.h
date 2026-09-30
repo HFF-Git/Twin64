@@ -304,10 +304,10 @@ struct T64SimBreakPointEntry {
 
     T64SimBreakPointType    type;
     bool                    enabled;
-    bool                    armed;
     T64Word                 adr;
     T64Word                 adrMask;
     uint64_t                modMask; 
+    uint64_t                armedMask;
 };
 
 //----------------------------------------------------------------------------------------
@@ -321,6 +321,8 @@ struct T64SimBreakPointMap {
 
     bool                    codeBrkPointEnabled;
     bool                    dataBrkPointEnabled;
+    bool                    codeBreakPointsSuspended;
+
     unsigned                hwm;
     T64SimBreakPointEntry   map[ MAX_SIM_BREAKPOINTS ];
 };
@@ -401,8 +403,14 @@ struct T64System {
     T64BusOpStat                enableBreakPoint( unsigned bNum, bool enb );
     bool                        isBreakPointEnabled( unsigned bNum );
 
-    T64BusOpStat                armBreakPoint( unsigned bNum, bool arm );
-    bool                        isBreakPointArmed( unsigned bNum );
+    void                        suspendCodeBreakPoints( bool enb );
+    bool                        areCodePointsSuspended( );
+
+    T64BusOpStat                armBreakPoint( int modNum, 
+                                               unsigned bNum, 
+                                               bool arm );
+
+    bool                        isBreakPointArmed( int modNum, unsigned bNum );
    
     T64SimBreakPointEntry       *getBreakPointEntry( unsigned bNum ); 
     const char                  *getBreakPointTypeStr( T64SimBreakPointType t );

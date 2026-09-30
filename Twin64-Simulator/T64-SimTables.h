@@ -106,6 +106,7 @@ const SimToken cmdTokTab[ ] = {
     { .name = "E",          .typ = TYP_CMD,     .tid = CMD_EXIT                     },
     
     { .name = "HIST",       .typ = TYP_CMD,     .tid = CMD_HIST                     },
+    { .name = "WLIST",      .typ = TYP_CMD,     .tid = CMD_WLIST                    },
     { .name = "DO",         .typ = TYP_CMD,     .tid = CMD_DO                       },
     { .name = "REDO",       .typ = TYP_CMD,     .tid = CMD_REDO                     },
     { .name = "ENV",        .typ = TYP_CMD,     .tid = CMD_ENV                      },
@@ -706,6 +707,13 @@ const SimHelpMsgEntry cmdHelpTab[ ] = {
         .cmdNameStr     = "hist",
         .cmdSyntaxStr   = "hist [ depth ]",
         .helpStr        = "command history"
+    },
+
+    {
+        .helpTypeId = TYP_CMD,  .helpTokId  = CMD_WLIST,
+        .cmdNameStr     = "wlist",
+        .cmdSyntaxStr   = "wlist [ sNum ]",
+        .helpStr        = "list windows"
     },
     
     {

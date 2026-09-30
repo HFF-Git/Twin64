@@ -225,12 +225,12 @@ T64BusOpStat T64System::addBreakPoint( int                  modNum,
 
     auto *ptr = &breakPointMap.map[ bNum ];
 
-    ptr -> type    = type;
-    ptr -> enabled = true;
-    ptr -> armed   = true;
-    ptr -> adr     = bpAdr;
-    ptr -> adrMask = bpAdrMask;
-    ptr -> modMask = modMask;
+    ptr -> type         = type;
+    ptr -> enabled      = true;
+    ptr -> adr          = bpAdr;
+    ptr -> adrMask      = bpAdrMask;
+    ptr -> modMask      = modMask;
+    ptr -> armedMask    = modMask;
 
     updateBrkPointEnableFlags( &breakPointMap );
     return( T64_SYS_OP_OK );
@@ -247,6 +247,7 @@ T64BusOpStat T64System::removeBreakPoint( unsigned bNum, int modNum ) {
 
     uint64_t modMask = getModuleMask( modNum );
     if ( modMask == 0 ) return( T64_SYS_OP_INV_MOD_NUM );
+
     if ( bNum >= breakPointMap.hwm ) return( T64_SYS_OP_INV_MOD_NUM );
 
     auto *ptr = &breakPointMap.map[ bNum ];
@@ -303,20 +304,45 @@ bool T64System::isBreakPointEnabled( unsigned bNum ) {
 }
 
 //----------------------------------------------------------------------------------------
+// For supporting single stepping, we need to just suspend code breakpoints 
+// for that one step.
+//
+//----------------------------------------------------------------------------------------
+void T64System::suspendCodeBreakPoints( bool suspend ) {
+
+    breakPointMap.codeBreakPointsSuspended = suspend;
+}
+
+bool T64System::areCodePointsSuspended( ) {
+
+    return( breakPointMap.codeBreakPointsSuspended );
+}
+
+//----------------------------------------------------------------------------------------
 // Return the armed state of a breakpoint.
 //
 //----------------------------------------------------------------------------------------
-T64BusOpStat T64System::armBreakPoint( unsigned bNum, bool arm ) {
+T64BusOpStat T64System::armBreakPoint( int modNum, unsigned bNum, bool arm ) {
 
-    if ( bNum >= breakPointMap.hwm ) return( T64_SYS_OP_INVALID_BNUM );
-    breakPointMap.map[ bNum ].armed = arm;
+    uint64_t modMask = getModuleMask( modNum );
+    if ( modMask == 0 ) return( T64_SYS_OP_INV_MOD_NUM );
+
+    if ( bNum >= breakPointMap.hwm )return( T64_SYS_OP_INVALID_BNUM );
+
+    if ( arm )  breakPointMap.map[ bNum ].armedMask |= modMask;
+    else        breakPointMap.map[ bNum ].armedMask &= ~modMask;
+
     return( T64_SYS_OP_OK );
 }
 
-bool T64System::isBreakPointArmed( unsigned bNum ) {
+bool T64System::isBreakPointArmed( int modNum, unsigned bNum ) {
 
-    if ( bNum < breakPointMap.hwm ) return( breakPointMap.map[ bNum ].armed );
-    else                            return( false );
+    uint64_t modMask = getModuleMask( modNum );
+    if ( modMask == 0 ) return( false );
+
+    if ( bNum >= breakPointMap.hwm ) return( false );
+
+    return(( breakPointMap.map[ bNum ].armedMask & modMask ) != 0 );
 }
 
 //----------------------------------------------------------------------------------------

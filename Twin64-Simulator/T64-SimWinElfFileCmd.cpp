@@ -40,6 +40,8 @@
 #pragma clang diagnostic ignored "-Wold-style-cast"
 #include <elfio/elfio.hpp>
 #pragma clang diagnostic pop
+#else 
+#include <elfio/elfio.hpp>
 #endif
 
 using namespace ELFIO;
@@ -56,10 +58,10 @@ namespace {
 //
 //----------------------------------------------------------------------------------------
 elfio *openElfFile( char *fileName ) {
-    
-    ELFIO::elfio *reader = new ( std::nothrow ) elfio;
-    
 
+    ELFIO::elfio *reader = new ( std::nothrow ) elfio;
+    if ( reader == nullptr ) throw( ERR_INVALID_ELF_FILE );
+    
     if ( ! reader -> load( fileName )) throw( ERR_INVALID_ELF_FILE );
     if ( reader -> get_encoding( ) != ELFDATA2MSB ) throw( ERR_INVALID_ELF_BYTE_ORDER );
     return( reader );
@@ -93,10 +95,10 @@ bool elfioValidate( elfio *reader, char* msg, size_t msg_len ) {
 //----------------------------------------------------------------------------------------
 bool writeMem( T64System *sys, T64Word ofs, uint32_t val ) {
 
-    if ( ! sys -> busOpWrite( nullptr, 
+    if ( sys -> busOpWrite( nullptr, 
                               ofs, 
                               reinterpret_cast<uint8_t *> ( &val ), 
-                              sizeof( uint32_t ))) {
+                              sizeof( uint32_t )) != T64_SYS_OP_OK ) {
 
         throw( ERR_MEM_OP_FAILED );
     }

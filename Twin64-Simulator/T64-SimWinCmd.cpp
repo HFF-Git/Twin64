@@ -1949,10 +1949,13 @@ void SimCommandsWin::stepCmd( ) {
 
     if ( numOfSteps == 1 ) {
 
+        // ??? should the be the armed mask ?
+
+        // ??? also we need to worry about someone changing IA....
+
         bool skipBrkPoint = glb -> system -> setCodeBrkPointEnable( false );
         glb -> system -> simRun( modNum, numOfSteps, haltOnTrap );
         glb -> system -> setCodeBrkPointEnable( skipBrkPoint );
-       
     }
     else {
 
@@ -2773,7 +2776,7 @@ void SimCommandsWin::modifyMemCmd( ) {
 
     size_t len = sizeof( T64Word );
     
-    if ( currentCmd == CMD_MB ) len = 1;
+    if      ( currentCmd == CMD_MB ) len = 1;
     else if ( currentCmd == CMD_MS ) len = 2;
     else if ( currentCmd == CMD_MW ) len = 4;
     else if ( currentCmd == CMD_MD ) len = 8;
@@ -3619,6 +3622,7 @@ void SimCommandsWin::processCmdLine( char *cmdBuf ) {
             case CMD_HIST:          histCmd( );                     break;
             case CMD_DO:            doCmd( );                       break;
             case CMD_REDO:          redoCmd( );                     break;
+            case CMD_WLIST:         displayWindowCmd( );            break;
 
             case CMD_IF:            ifCmd( );                       break;
 

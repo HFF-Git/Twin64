@@ -3,9 +3,11 @@
 // Twin64Sim - A 64-bit CPU Simulator - Window classes
 //
 //----------------------------------------------------------------------------------------
-// This module contains all of the methods for the different simulator windows. The 
-// exception is the command window, which is in a separate file. A window generally
-// consist of a banner line, shown in inverse video and a number of body lines.
+// This module contains all of the methods for the different simulator windows. 
+// The exception is the command window, which is in a separate file. A window 
+// generally consist of a banner line, shown in inverse video and a number of 
+// body lines. What follows are the body lines. The body line field can also 
+// have different layouts, called toggles.
 //
 //----------------------------------------------------------------------------------------
 //
@@ -16,11 +18,11 @@
 // the terms of the GNU General Public License as published by the Free Software 
 // Foundation, either version 3 of the License, or any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details. You 
-// should have received a copy of the GNU General Public License along with this 
-// program. If not, see <http://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <http://www.gnu.org/licenses/>.
 //
 //----------------------------------------------------------------------------------------
 #include "T64-SimDeclarations.h"
@@ -219,13 +221,12 @@ SimWinProcState::SimWinProcState( SimGlobals *glb, int modNum ) : SimWin( glb ) 
 //----------------------------------------------------------------------------------------
 void SimWinProcState::setDefaults( ) {
 
-    const unsigned ROW_BANNERS               = 2;
-    const unsigned ROW_REG_SUBWINDOW         = 4; 
-    const unsigned MIN_ROW_CODE_SUBWINDOW    = 7; 
-    const unsigned MAX_ROWS                  = 32;
-    const unsigned MAX_COLS                  = 98;
+    constexpr unsigned  MIN_ROWS        = 19;
+    constexpr unsigned  MAX_ROWS        = 19;
+    constexpr unsigned  MIN_COLS        = 98;
+    constexpr unsigned  MAX_COLS        = 98;
 
-    T64Cpu       *cpu                        = proc -> getCpuPtr( );
+    T64Cpu              *cpu            = proc -> getCpuPtr( );
     
     setWinType( WT_CPU_WIN );
     setRadix( toUInt32( glb -> env -> getEnvVarInt( ENV_RDX_DEFAULT )));
@@ -234,38 +235,29 @@ void SimWinProcState::setDefaults( ) {
     setWinToggleVal( 0 );
 
     setWinLimitsForToggle( 0, 
-                           ROW_BANNERS + 
-                           ROW_REG_SUBWINDOW + 
-                           MIN_ROW_CODE_SUBWINDOW,
+                           MIN_ROWS,
                            MAX_ROWS,
-                           MAX_COLS, 
+                           MIN_COLS, 
                            MAX_COLS );
 
     setWinLimitsForToggle( 1, 
-                           ROW_BANNERS + 
-                           ROW_REG_SUBWINDOW + 
-                           ROW_REG_SUBWINDOW +
-                           MIN_ROW_CODE_SUBWINDOW,
+                           MIN_ROWS,
                            MAX_ROWS,
-                           MAX_COLS, 
+                           MIN_COLS, 
                            MAX_COLS );
 
     setRows( getWinSize( 0 ).actualRow );
     setColumns( getWinSize( 0 ).minCol );
 
-     if ( getWinToggleVal( ) == 0 ) {
+     if (( getWinToggleVal( ) == 0 ) || ( getWinToggleVal( ) == 1 )) {
 
         for ( unsigned i = 0; i < T64_MAX_GREGS; i++ ) {
 
             lastGRegState[ i ] = cpu -> getGeneralReg( i ); 
         }
     }
-    else if ( getWinToggleVal( ) == 1 ) {
 
-        for ( unsigned i = 0; i < T64_MAX_GREGS; i++ ) {
-
-            lastGRegState[ i ] = cpu -> getGeneralReg( i ); 
-        }
+    if ( getWinToggleVal( ) == 1 ) {
 
         for ( unsigned i = 0; i < T64_MAX_CREGS; i++ ) {
 
@@ -273,25 +265,8 @@ void SimWinProcState::setDefaults( ) {
         }
     }
 
-    lastCodeWinBaseAdr = codeWinBaseAdr;
-
-    unsigned linesLeft = getRows( ) - ROW_BANNERS - ROW_REG_SUBWINDOW;
-
-    for ( size_t i = 0; i < linesLeft; i++ ) {
-
-        T64Word  ia = codeWinBaseAdr + static_cast<T64Word> ( i * 4 );
-        uint32_t instr;
-       
-        if ( readMem( glb -> system, ia, 
-                      reinterpret_cast<uint8_t *>( &instr ), 
-                      sizeof( instr ))) {
-
-            copyEndianAware( &lastDataBuf[ ia - codeWinBaseAdr ],
-                            reinterpret_cast<uint8_t *>( &instr ), 
-                            sizeof( instr ));
-
-        }
-    }
+    lastCodeWinRows     = MIN_ROWS;
+    lastCodeWinBaseAdr  = codeWinBaseAdr;
 
     setEnable( true );
 }
@@ -497,20 +472,38 @@ unsigned SimWinProcState::drawCodeSubWindow( unsigned linePos,
                                              unsigned linesLeft ) {
 
     uint32_t    fmtDesc     = FMT_DEFAULT;
-    T64Word     currentIa   = proc -> getCpuPtr( ) -> getPsrReg( );
     T64Word     windowSize  = static_cast<T64Word> ( linesLeft * 4 );
-    T64Word     windowEnd   = codeWinBaseAdr + windowSize;
-    uint32_t    instr       = 0x0;
+    T64Instr    instr       = 0x0;
     char        instrBuf[ MAX_TEXT_LINE_SIZE ] = { 0 };
     
+    T64Word     currentIa   = 
+        extractField64( proc -> getCpuPtr( ) -> getPsrReg( ), 0, 52 );
+
     if ( currentIa < codeWinBaseAdr + 4 ) {
 
         codeWinBaseAdr = ( currentIa >= 4 ) ? currentIa - 4 : 0;
 
-    } else if ( currentIa >= windowEnd - 4 ) {
+    } else if ( currentIa >= codeWinBaseAdr + windowSize - 4 ) {
 
         codeWinBaseAdr = currentIa - 4;
     }
+
+    if (( lastCodeWinBaseAdr != codeWinBaseAdr  ) ||
+        ( linesLeft          != lastCodeWinRows )) {
+
+        lastCodeWinBaseAdr  = codeWinBaseAdr;
+        lastCodeWinRows     = linesLeft;
+    
+        T64Word numOfBytes = ( static_cast<T64Word> ( linesLeft ) * 4 );
+
+        for ( T64Word i = 0; i < numOfBytes; i ++ ) {
+
+            readMem( glb -> system, 
+                     lastCodeWinBaseAdr + i, 
+                     reinterpret_cast<uint8_t *>( &lastDataBuf[ i ] ), 
+                     sizeof( uint8_t ));
+        }
+    } 
 
     setWinCursor( linePos, 1 );
 
@@ -529,25 +522,25 @@ unsigned SimWinProcState::drawCodeSubWindow( unsigned linePos,
                       reinterpret_cast<uint8_t *>( &instr ), 
                       sizeof( instr ))) {
 
-            T64Word tmpAdr  = ia - codeWinBaseAdr;
-            uint32_t dataVal = 0;
+            T64Word  tmpAdr  = ia - codeWinBaseAdr;
+            T64Instr dataVal = 0;
 
             copyEndianAware( reinterpret_cast<uint8_t *>( &dataVal ), 
-                             &lastDataBuf[tmpAdr], 
+                             &lastDataBuf[ tmpAdr ], 
                              sizeof( dataVal ));
 
             if ( dataVal != instr ) {
 
-                copyEndianAware( &lastDataBuf[tmpAdr],
+                copyEndianAware( &lastDataBuf[ tmpAdr ],
                                  reinterpret_cast<uint8_t *>( &instr ), 
                                  sizeof( instr ));
 
-                fmtDesc = FMT_DEFAULT | FMT_FG_COL_AMBER;
+                fmtDesc = FMT_DEFAULT | FMT_FG_COL_AMBER; 
             }
             else fmtDesc = FMT_DEFAULT;
 
             int bNum =  glb -> system -> 
-                            checkBreakPoint( T64_SIM_BREAK_X, ia, getWinModNum( ));
+                        checkBreakPoint( T64_SIM_BREAK_X, ia, getWinModNum( ));
 
             if (( bNum >= 0 ) && ( bNum < 10 )) {
 
@@ -1040,28 +1033,27 @@ void SimWinMem::drawMemDataLine64( T64Word itemAdr, uint32_t fmtDesc ) {
 void SimWinMem::drawMemDataLineCode( T64Word itemAdr ) {
 
     uint32_t   fmtDesc                      = FMT_DEFAULT;
-    uint32_t   instr                        = 0x0;
-    bool       highLight                    = false;
+    T64Instr   instr                        = 0x0;
     char       buf[ MAX_TEXT_LINE_SIZE ]    = { 0 };
 
     if ( readMem( glb -> system, 
                   itemAdr, reinterpret_cast<uint8_t *>( &instr ), 
                   sizeof( uint32_t ))) {
 
-        T64Word tmpAdr  = itemAdr - getCurrentItemAdr( );
+        T64Word  tmpAdr  = itemAdr - getCurrentItemAdr( );
         uint32_t dataVal = 0;
 
-        copyEndianAware(reinterpret_cast<uint8_t *>( &dataVal ), 
-                        &lastDataBuf[tmpAdr], 
-                        sizeof( dataVal ));
+        copyEndianAware( reinterpret_cast<uint8_t *>( &dataVal ), 
+                         &lastDataBuf[ tmpAdr ], 
+                         sizeof( dataVal ));
 
         if ( dataVal != instr ) {
 
-            copyEndianAware( &lastDataBuf[tmpAdr],
+            copyEndianAware( &lastDataBuf[ tmpAdr ],
                              reinterpret_cast<uint8_t *>( &instr ), 
                              sizeof( instr ));
 
-            highLight = true;
+            fmtDesc |= FMT_FG_COL_AMBER;
         }
     }
     else {
@@ -1069,8 +1061,6 @@ void SimWinMem::drawMemDataLineCode( T64Word itemAdr ) {
         printTextField( "Invalid address", fmtDesc );
         return;
     }
-
-    if ( highLight ) fmtDesc |= FMT_FG_COL_AMBER;
 
     printNumericField( instr, fmtDesc | FMT_ALIGN_LFT | FMT_HEX_8, 12 );
 
@@ -1136,7 +1126,7 @@ void SimWinMem::drawLine( T64Word itemAdr ) {
     else if ( getWinToggleVal( ) == 2 ) drawMemDataLine32( itemAdr, FMT_DEC_32 );
     else if ( getWinToggleVal( ) == 3 ) drawMemDataLine32( itemAdr, FMT_ASCII_4 );
     else if ( getWinToggleVal( ) == 4 ) drawMemDataLineCode( itemAdr );
-    else printTextField( "Internal Err: toggleVal" );
+    else printTextField( "MEM Win Internal Err: toggleVal" );
 }
 
 //****************************************************************************************

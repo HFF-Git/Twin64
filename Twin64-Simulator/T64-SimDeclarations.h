@@ -222,6 +222,7 @@ enum SimTokId : unsigned {
     //------------------------------------------------------------------------------------
     CMD_SET,                    CMD_EXIT,                   CMD_HELP,
     CMD_DO,                     CMD_REDO,                   CMD_HIST,
+    CMD_WLIST, 
     CMD_ENV,                    CMD_XF,                     CMD_LOADELF,
     CMD_WRITE_LINE,             CMD_ASSERT,                 CMD_CHECK,   
     CMD_DMOD,                   CMD_NMOD,                   CMD_RMOD,       
@@ -1144,6 +1145,7 @@ struct SimWinProcState : SimWin {
     T64Word         lastGRegState[ T64_MAX_GREGS ];
     T64Word         lastCRegState[ T64_MAX_CREGS ];
     
+    unsigned        lastCodeWinRows;
     T64Word         lastCodeWinBaseAdr;
     uint8_t         lastDataBuf[ MAX_WIN_ROW_SIZE * 4 ];
 };
@@ -1407,15 +1409,16 @@ private:
 };
 
 //----------------------------------------------------------------------------------------
-// The window display screen object is the central object of the simulator. Commands
-// send from the command input will eventually end up as calls to this object. A 
-// simulator screen is an ordered list of windows. Although you can disable a window
-// such that it disappears on the screen, when enabled, it will show up in the place
-// intended for it. For example, the program state register window will always be on
-// top, followed by the special regs. The command input scroll area is always last and
-// is the only window that cannot be disabled. In addition, windows can be grouped in
-// stacks that are displayed next to each other. The exception is the command window
-// area which is always displayed across the entire terminal window width.
+// The window display screen object is the central object of the simulator. 
+// Commands send from the command input will eventually end up as calls to this
+// object. A simulator screen is an ordered list of windows. Although you can 
+// disable a window such that it disappears on the screen, when enabled, it will
+// show up in the place intended for it. For example, the program state register
+// window will always be on top, followed by the special regs. The command input
+// scroll area is always last and is the only window that cannot be disabled. 
+// In addition, windows can be grouped in stacks that are displayed next to each
+// other. The exception is the command window area which is always displayed 
+// across the entire terminal window width.
 //
 //----------------------------------------------------------------------------------------
 struct SimWinDisplay {
