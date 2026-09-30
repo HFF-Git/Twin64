@@ -145,8 +145,14 @@ const char *T64Processor::getProcStateStr( ) {
                 case NO_TRAP: 
                     return( "HALT" );
 
-                case SIM_BRK_TRAP: 
-                    return( "SIM-BREAK" );
+                case SIM_BRK_TRAP_X: 
+                    return( "SIM-BREAK-X" );
+                
+                case SIM_BRK_TRAP_R: 
+                    return( "SIM-BREAK-R" );
+
+                case SIM_BRK_TRAP_W: 
+                    return( "SIM-BREAK-W" );
 
                 case MACHINE_CHECK: 
                     return( "TRAP: MACHINE-CHECK" );
@@ -247,7 +253,7 @@ T64GlobalTlb *T64Processor::getGlobalTlbPtr( ) {
 //
 // ??? we need a better way to handle the HPA space... should we view this
 // space as an array of n words ? should we then just copy from memory at that
-// offset ? should we just have enums for the arcgitected registers ?
+// offset ? should we just have enums for the architected registers ?
 //
 //----------------------------------------------------------------------------------------
 T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, uint8_t *data, size_t len ) {

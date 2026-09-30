@@ -138,9 +138,19 @@ void T64Cpu::setRegR( uint32_t instr, T64Word val ) {
 // Trap code helpers. Each routine fills in the trap data and raises an exception.
 //
 //----------------------------------------------------------------------------------------
-void T64Cpu::simulatorTrap( T64Word adr ) {
+void T64Cpu::simulatorTrapX( T64Word adr ) {
 
-    throw( T64Trap( SIM_BRK_TRAP, psrReg, instrReg, adr ));
+    throw( T64Trap( SIM_BRK_TRAP_X, psrReg, instrReg, adr ));
+}
+
+void T64Cpu::simulatorTrapR( T64Word adr ) {
+
+    throw( T64Trap( SIM_BRK_TRAP_R, psrReg, instrReg, adr ));
+}
+
+void T64Cpu::simulatorTrapW( T64Word adr ) {
+
+    throw( T64Trap( SIM_BRK_TRAP_W, psrReg, instrReg, adr ));
 }
 
 void T64Cpu::machineCheckTrap( T64Word adr ) {
@@ -439,7 +449,7 @@ T64Instr T64Cpu::instrRead( T64Word vAdr ) {
     switch ( proc -> busOpFetch( pAdr, reinterpret_cast<uint8_t *>( &instr ))) {
 
         case T64_SYS_OP_OK:                                 break;
-        case T64_SYS_OP_SIM_BRK: simulatorTrap( pAdr );     break;
+        case T64_SYS_OP_SIM_BRK: simulatorTrapX( pAdr );    break;
         default:                 machineCheckTrap( vAdr );  break;
     }
 
@@ -493,7 +503,7 @@ T64Word T64Cpu::dataRead( T64Word vAdr, size_t len, bool sExt, bool rsv ) {
                                 rsv )) {
 
         case T64_SYS_OP_OK:                                 break;
-        case T64_SYS_OP_SIM_BRK: simulatorTrap( pAdr );     break;
+        case T64_SYS_OP_SIM_BRK: simulatorTrapR( pAdr );    break;
         default:                 machineCheckTrap( vAdr );  break;
     }
 
@@ -561,7 +571,7 @@ bool T64Cpu::dataWrite( T64Word vAdr, T64Word data, size_t len, bool cond ) {
                                 cond )) {
 
         case T64_SYS_OP_OK:                                 break;
-        case T64_SYS_OP_SIM_BRK: simulatorTrap( pAdr );     break;
+        case T64_SYS_OP_SIM_BRK: simulatorTrapW( pAdr );    break;
         default:                 machineCheckTrap( vAdr );  break;
     }
 
@@ -1816,7 +1826,9 @@ T64TrapCode T64Cpu::executeInstr( ) {
     }
     catch ( const T64Trap t ) {
 
-        if ( t.trapCode != SIM_BRK_TRAP ) {
+        if (( t.trapCode != SIM_BRK_TRAP_X ) && 
+            ( t.trapCode != SIM_BRK_TRAP_R ) &&
+            ( t.trapCode != SIM_BRK_TRAP_W )) {
 
             proc -> setRsvInfo( 0, false );
 

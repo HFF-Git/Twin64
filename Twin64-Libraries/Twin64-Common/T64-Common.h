@@ -169,8 +169,9 @@ enum T64TrapCode : int {
 
     USER_DEFINED_TRAP               = 22,
 
-    SIM_BRK_TRAP                    = 30
-    
+    SIM_BRK_TRAP_X                  = 30,
+    SIM_BRK_TRAP_R                  = 31,
+    SIM_BRK_TRAP_W                  = 32
 };
 
 //----------------------------------------------------------------------------------------

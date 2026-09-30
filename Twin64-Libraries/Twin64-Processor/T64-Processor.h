@@ -178,7 +178,9 @@ struct T64Cpu {
 
     int             evalCond( size_t cond, T64Word val1, T64Word val2 );
 
-    void            simulatorTrap( T64Word adr );
+    void            simulatorTrapX( T64Word adr );
+    void            simulatorTrapR( T64Word adr );
+    void            simulatorTrapW( T64Word adr );
     void            machineCheckTrap( T64Word adr );
     void            externalInterruptTrap( );
     void            privModeOperationTrap( );
