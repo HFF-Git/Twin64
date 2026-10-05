@@ -411,12 +411,10 @@ const char *T64System::getSystemStateStr( T64SystemState state ) {
 
 //----------------------------------------------------------------------------------------
 // Bus instruction fetch operation. The fetch operation is very similar to the
-// data read bus operation. 
-//
-// For supporting simulator breaks, we check right after checking whether the 
-// physical address is a valid one for a possible breakpoint for the requesting
-// module at that location. Note that a module can also be a nullptr. A memory
-// and a TLB do not request bus read/write operations.
+// data read bus operation. For supporting simulator breaks, we also check for 
+//a possible breakpoint for the requesting module at that location. Note that 
+// a module can also be a nullptr, when we are called from the simulator command
+// interpreter. A memory and a TLB do not request bus read/write operations.
 //
 //----------------------------------------------------------------------------------------
 T64BusOpStat T64System::busOpFetch(  T64Module *mod, 
@@ -428,18 +426,14 @@ T64BusOpStat T64System::busOpFetch(  T64Module *mod,
 
     if ( mod != nullptr ) {
 
-        int modNum = mod -> getModuleNum( );
-        int bpNum  = checkBreakPoint( T64_SIM_BREAK_X, pAdr, modNum );
+        int  modNum      = mod -> getModuleNum( );
+        int  bpNum       = checkBreakPoint( T64_SIM_BREAK_X, pAdr, modNum );
+        bool bSuspended  = isBreakPointSuspended( modNum );
 
-        if ( bpNum != -1 ) {
+        if (( bpNum != -1 ) && ( ! bSuspended )) {
 
-            if ( isBreakPointArmed( modNum, bpNum )) {
-
-                armBreakPoint( modNum, bpNum, false );
-                return ( T64_SYS_OP_SIM_BRK );
-            }
-
-            armBreakPoint( modNum, bpNum, true );
+            breakPointOccurred( modNum );
+            return ( T64_SYS_OP_SIM_BRK );
         }
     }
     
@@ -457,9 +451,9 @@ T64BusOpStat T64System::busOpFetch(  T64Module *mod,
 // set the reservation info in the calling module. Note that this mechanism is
 // only used by the processor modules, IO modules do not support LDC/STC concepts.
 //
-// For supporting simulator breaks, we check right after checking whether the 
-// physical address is a valid one for a possible breakpoint for the requesting
-// module at that location. Note that a module can also be a nullptr. A memory
+// For supporting simulator breaks, we also check for a possible breakpoint for 
+// the requesting module at that location. Note that a module can also be a 
+// nullptr, when we are called from the simulator command interpreter. A memory
 // and a TLB do not request bus read/write operations.
 //
 //----------------------------------------------------------------------------------------
@@ -474,33 +468,43 @@ T64BusOpStat T64System::busOpRead( T64Module *mod,
 
     if ( mod != nullptr ) {
 
-        int modNum = mod -> getModuleNum( );
-        int bpNum  = checkBreakPoint( T64_SIM_BREAK_R,
-                                      pAdr, 
-                                      mod->getModuleNum( ));
+        int  modNum      = mod -> getModuleNum( );
+        int  bpNum       = checkBreakPoint( T64_SIM_BREAK_R, pAdr, modNum );
+        bool bSuspended  = isBreakPointSuspended( modNum );
 
-        if ( bpNum != -1 ) {
+        if (( bpNum != -1 ) && ( ! bSuspended )) {
 
-            if ( isBreakPointArmed( modNum,
-                                    static_cast<unsigned>( bpNum ))) {
-
-                armBreakPoint( modNum, static_cast<unsigned>( bpNum ), false );
-                return ( T64_SYS_OP_SIM_BRK );
-            }
-
-            armBreakPoint( modNum, static_cast<unsigned>( bpNum ), true );
+            breakPointOccurred( modNum );
+            return ( T64_SYS_OP_SIM_BRK );
         }
+
+        #if 0
+        // we found a suspended breakpoint.
+        // Module is suspended. This is the one execution unit
+        // following a breakpoint stop.
+        T64Trap *trap = ( reinterpret_cast<T64Processor *> ( mod )) -> getTrapInfo( ));
+
+        if (( trap != nullptr ) &&
+            ( trap -> trapCode == type ) &&
+            ( trap->arg0 == adr )) {
+    
+            return false;  // this is the old breakpoint: pass
+        }
+
+        // A different breakpoint was encountered while suspended.
+        breakPointOccurred( modNum );
+        #endif
     }
     
     if ( rsv ) {
 
         { 
-            std::lock_guard<std::mutex> lk(sLock);
+            std::lock_guard<std::mutex> lk( sLock );
 
             T64BusOpStat rStat = mPtr -> busOpReadEvent( pAdr, data, len );
             if ( rStat != T64_SYS_OP_OK ) return ( rStat );
 
-            if (dynamic_cast<T64ThreadModule*>( mod )) {
+            if ( dynamic_cast<T64ThreadModule*>( mod )) {
 
                 ( reinterpret_cast<T64ThreadModule *> ( mod )) -> 
                                                     setRsvInfo( pAdr, true );
@@ -519,19 +523,17 @@ T64BusOpStat T64System::busOpRead( T64Module *mod,
 // The cond parameter indicates whether the write operation is conditional.
 // A conditional write operation is used by the STC instruction. In this case, 
 // we need to check whether the calling module is a processor and has a valid 
-// reservation for the address. 
-//
-// If the reservation is valid, we clear the reservation and perform the write
-// operation. If the reservation is not valid, we do not perform the write
+// reservation for the address. If so, we clear the reservation and perform the
+// write operation. If the reservation is not valid, we do not perform the write
 // operation. The return value indicates whether the write operation was
 // performed or not.
 //
 // For normal write operations, we just perform the write operation and clear
 // any reservation for the address.
 //
-// For supporting simulator breaks, we check right after checking whether the 
-// physical address is a valid one for a possible breakpoint for the requesting
-// module at that location. Note that a module can also be a nullptr. A memory
+// For supporting simulator breaks, we also check for a possible breakpoint for 
+// the requesting module at that location. Note that a module can also be a 
+// nullptr, when we are called from the simulator command interpreter. A memory
 // and a TLB do not request bus read/write operations.
 //
 //----------------------------------------------------------------------------------------
@@ -546,22 +548,32 @@ T64BusOpStat T64System::busOpWrite( T64Module *mod,
 
     if ( mod != nullptr ) {
 
-        int modNum = mod -> getModuleNum( );
-        int bpNum  = checkBreakPoint( T64_SIM_BREAK_W,
-                                      pAdr, 
-                                      mod -> getModuleNum( ));
+        int  modNum      = mod -> getModuleNum( );
+        int  bpNum       = checkBreakPoint( T64_SIM_BREAK_W, pAdr, modNum );
+        bool bSuspended  = isBreakPointSuspended( modNum );
 
-        if ( bpNum != -1 ) {            
+        if (( bpNum != -1 ) && ( ! bSuspended )) {
 
-            if ( isBreakPointArmed( modNum,
-                                    static_cast<unsigned>( bpNum ) )) {
-
-                armBreakPoint( modNum, static_cast<unsigned>( bpNum ), false );
-                return ( T64_SYS_OP_SIM_BRK );
-            }
-
-            armBreakPoint( modNum, static_cast<unsigned>( bpNum ), true );
+            breakPointOccurred( modNum );
+            return ( T64_SYS_OP_SIM_BRK );
         }
+
+        #if 0
+        // we found a suspended breakpoint.
+        // Module is suspended. This is the one execution unit
+        // following a breakpoint stop.
+        T64Trap *trap = ( reinterpret_cast<T64Processor *> ( mod )) -> getTrapInfo( ));
+
+        if (( trap != nullptr ) &&
+            ( trap -> trapCode == type ) &&
+            ( trap->arg0 == adr )) {
+    
+            return false;  // this is the old breakpoint: pass
+        }
+
+        // A different breakpoint was encountered while suspended.
+        breakPointOccurred( modNum );
+        #endif
     }
 
     {
@@ -649,7 +661,9 @@ void T64System::simReset( int modNum ) {
                 if ( auto *m = 
                         dynamic_cast<T64ThreadModule *> ( moduleMap[ i ] )) {
 
-                    m -> resetModule( );
+                    m -> setModuleState( T64_MOD_STATE_RESET );
+
+                  //  m -> resetModule( );
                 }
             }
 
@@ -660,7 +674,9 @@ void T64System::simReset( int modNum ) {
             if ( auto *m = 
                     dynamic_cast<T64ThreadModule *> ( moduleMap[ modNum ] )) {
 
-                m -> resetModule( );
+                m -> setModuleState( T64_MOD_STATE_RESET );
+               
+                //  m -> resetModule( );
             }
         }
     }
@@ -733,7 +749,7 @@ void T64System::simHalt( int modNum ) {
             if ( auto *m =
                     dynamic_cast<T64ThreadModule *>(moduleMap[ i ])) {
 
-                m -> haltModule( );
+                m -> setModuleState( T64_MOD_STATE_HALTED );
             }
         }
     }
@@ -742,7 +758,8 @@ void T64System::simHalt( int modNum ) {
         if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
 
         if ( auto *m = dynamic_cast<T64ThreadModule *> ( moduleMap[ modNum ] ))
-            m -> haltModule( );
+
+            m -> setModuleState( T64_MOD_STATE_HALTED );
         }
     }
 }

@@ -46,46 +46,6 @@ uint64_t getModuleMask( int modNum ) {
     return( 1ULL << modNum );
 }
 
-//----------------------------------------------------------------------------------------
-// When changing a breakpoint enablement, the overall enable flags are potentially
-// updated too. When no breakpoint of a class is enabled the global flag is
-// disabled.
-//
-//----------------------------------------------------------------------------------------
-void updateBrkPointEnableFlags( T64SimBreakPointMap *map ) {
-
-    map -> codeBrkPointEnabled = false;
-    map -> dataBrkPointEnabled = false;
-
-    for ( unsigned i = 0; i < map -> hwm; i++ ) {
-
-        T64SimBreakPointEntry *e = &map -> map[ i ];
-
-        if ( e -> enabled ) {
-
-            switch ( e -> type ) {
-
-                case T64_SIM_BREAK_R:
-                case T64_SIM_BREAK_W:
-                case T64_SIM_BREAK_RW: {
-
-                    map -> dataBrkPointEnabled = true;
-
-                } break;
-
-                case T64_SIM_BREAK_X: {
-
-                    map -> codeBrkPointEnabled = true;
-
-                } break;
-
-                default: ;
-
-            }
-        }
-    }
-}
-
 } // namespace
 
 //----------------------------------------------------------------------------------------
@@ -94,8 +54,9 @@ void updateBrkPointEnableFlags( T64SimBreakPointMap *map ) {
 //----------------------------------------------------------------------------------------
 void T64System::initBreakPointMap( ) {
 
-    breakPointMap.codeBrkPointEnabled   = false;
-    breakPointMap.dataBrkPointEnabled   = false;
+    breakPointMap.breakPointsEnabled    = false;
+    breakPointMap.breakOccurredMask     = 0;
+    breakPointMap.breakSuspendedMask    = 0;
     breakPointMap.hwm                   =  0;
 
     for ( unsigned i = 0; i < MAX_SIM_BREAKPOINTS; i++ ) {
@@ -117,36 +78,6 @@ void T64System::initBreakPointMap( ) {
 unsigned T64System::getBreakPointMapHwm( ) {
 
     return( breakPointMap.hwm );
-}
-
-//----------------------------------------------------------------------------------------
-// Overall breakpoint state. We can enable and disable all code and data break
-// points. When no breakpoint is enabled, the respective flag is set to false,
-// allowing a quick check before checking the breakpoint map entries.
-//
-//----------------------------------------------------------------------------------------
-bool T64System::setCodeBrkPointEnable( bool enable ) {
-
-    bool tmp = breakPointMap.codeBrkPointEnabled;
-    breakPointMap.codeBrkPointEnabled = enable;
-    return( tmp );
-}
-
-bool T64System::setDataBrkPointEnable( bool enable ) {
-
-    bool tmp = breakPointMap.dataBrkPointEnabled;
-    breakPointMap.dataBrkPointEnabled = enable;
-    return( tmp );
-}
-
-bool T64System::isCodeBrkPointEnabled( ) {
-
-    return ( breakPointMap.codeBrkPointEnabled );
-}
-
-bool T64System::isDataBrkPointENabled( ) {
-
-    return ( breakPointMap.dataBrkPointEnabled );
 }
 
 //----------------------------------------------------------------------------------------
@@ -179,7 +110,7 @@ T64BusOpStat T64System::addBreakPoint( int                  modNum,
             ptr -> modMask |= modMask;
             ptr -> enabled = true;
 
-            updateBrkPointEnableFlags( &breakPointMap );
+            breakPointMap.breakPointsEnabled = true;
             return( T64_SYS_OP_OK );
         }
     }
@@ -230,9 +161,8 @@ T64BusOpStat T64System::addBreakPoint( int                  modNum,
     ptr -> adr          = bpAdr;
     ptr -> adrMask      = bpAdrMask;
     ptr -> modMask      = modMask;
-    ptr -> armedMask    = modMask;
 
-    updateBrkPointEnableFlags( &breakPointMap );
+    breakPointMap.breakPointsEnabled = true;
     return( T64_SYS_OP_OK );
 }
 
@@ -269,7 +199,17 @@ T64BusOpStat T64System::removeBreakPoint( unsigned bNum, int modNum ) {
         breakPointMap.hwm--;
     }
 
-    updateBrkPointEnableFlags( &breakPointMap );
+    breakPointMap.breakPointsEnabled = false;
+
+    for ( unsigned i = 0; i < breakPointMap.hwm; i++ ) {
+
+        if ( breakPointMap.map[ i ].enabled ) {
+
+            breakPointMap.breakPointsEnabled = true;
+            break;
+        }
+    }
+
     return( T64_SYS_OP_OK );
 }
 
@@ -283,17 +223,18 @@ T64BusOpStat T64System::enableBreakPoint( unsigned bNum, bool enb ) {
     if ( bNum >= breakPointMap.hwm ) return( T64_SYS_OP_INVALID_BNUM );
    
     breakPointMap.map[ bNum ].enabled = enb;
-    
+
+    breakPointMap.breakPointsEnabled = false;
+
     for ( unsigned i = 0; i < breakPointMap.hwm; i++ ) {
 
         if ( breakPointMap.map[ i ].enabled ) {
-            
-            updateBrkPointEnableFlags( &breakPointMap );
-            return( T64_SYS_OP_OK );
+
+            breakPointMap.breakPointsEnabled = true;
+            break;
         }
     }
-
-    updateBrkPointEnableFlags( &breakPointMap );
+    
     return( T64_SYS_OP_OK );
 }
 
@@ -304,46 +245,65 @@ bool T64System::isBreakPointEnabled( unsigned bNum ) {
 }
 
 //----------------------------------------------------------------------------------------
-// For supporting single stepping, we need to just suspend code breakpoints 
-// for that one step.
+// Suspend / resume a breakpoint. If the breakpoint number is -1, all breakpoints
+// that have occured in the occured mask are are suspended or resumed. This 
+// allows us to get past the breakpoints encountered in a single step operation. 
 //
 //----------------------------------------------------------------------------------------
-void T64System::suspendCodeBreakPoints( bool suspend ) {
+void T64System::suspendBreakPoint( int modNum, bool suspend ) {
 
-    breakPointMap.codeBreakPointsSuspended = suspend;
+    if ( modNum == -1 ) {
+
+        for ( int i = 0; i < MAX_MOD_MAP_ENTRIES; i++ ) {
+
+            if (( breakPointMap.breakOccurredMask & ( 1ULL << i )) != 0 ) {
+
+                if ( suspend ) breakPointMap.breakSuspendedMask |=  ( 1ULL << i );
+                else           breakPointMap.breakSuspendedMask &= ~( 1ULL << i );
+            }
+        }
+    }
+    else if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+
+        if ( suspend ) breakPointMap.breakSuspendedMask |=  ( 1ULL << modNum );
+        else           breakPointMap.breakSuspendedMask &= ~( 1ULL << modNum );
+    }
 }
 
-bool T64System::areCodePointsSuspended( ) {
+bool T64System::isBreakPointSuspended( int modNum ) {
 
-    return( breakPointMap.codeBreakPointsSuspended );
+    if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+        
+        return( ( breakPointMap.breakSuspendedMask & ( 1ULL << modNum )) != 0 );
+    }
+    else return( false );
 }
 
 //----------------------------------------------------------------------------------------
-// Return the armed state of a breakpoint.
+// Mark a breakpoint as having occurred in the global occured mask. This is used
+// to check whether a breakpoint has been hit.
 //
 //----------------------------------------------------------------------------------------
-T64BusOpStat T64System::armBreakPoint( int modNum, unsigned bNum, bool arm ) {
+void T64System::clearBreakPointOccurred( int modNum ) {
 
-    uint64_t modMask = getModuleMask( modNum );
-    if ( modMask == 0 ) return( T64_SYS_OP_INV_MOD_NUM );
+    if ( modNum == -1 ) {
 
-    if ( bNum >= breakPointMap.hwm )return( T64_SYS_OP_INVALID_BNUM );
-
-    if ( arm )  breakPointMap.map[ bNum ].armedMask |= modMask;
-    else        breakPointMap.map[ bNum ].armedMask &= ~modMask;
-
-    return( T64_SYS_OP_OK );
+        breakPointMap.breakOccurredMask = 0;
+    }
+    else if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+        
+        breakPointMap.breakOccurredMask &= ~( 1ULL << modNum );
+    }
 }
 
-bool T64System::isBreakPointArmed( int modNum, unsigned bNum ) {
+void T64System::breakPointOccurred( int modNum ) {
 
-    uint64_t modMask = getModuleMask( modNum );
-    if ( modMask == 0 ) return( false );
-
-    if ( bNum >= breakPointMap.hwm ) return( false );
-
-    return(( breakPointMap.map[ bNum ].armedMask & modMask ) != 0 );
+    if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
+        
+        breakPointMap.breakOccurredMask |= ( 1ULL << modNum );
+    }
 }
+
 
 //----------------------------------------------------------------------------------------
 // Return a pointer to the breakpoint entry.
@@ -382,16 +342,8 @@ int T64System::checkBreakPoint( T64SimBreakPointType bType,
                                 int                  modNum ) {
 
     if ( bType == T64_SIM_BREAK_NIL ) return( -1 );
+    if ( ! breakPointMap.breakPointsEnabled ) return( -1 );
 
-    if ( bType == T64_SIM_BREAK_X ) {
-
-        if ( ! breakPointMap.codeBrkPointEnabled ) return( -1 );
-    }
-    else {
-
-        if ( ! breakPointMap.dataBrkPointEnabled ) return( -1 );
-    }
-    
     uint64_t modBit = ( modNum == -1 ) ? UINT64_MAX : 1ULL << modNum;
 
     for ( unsigned i = 0; i < breakPointMap.hwm; i++ ) {

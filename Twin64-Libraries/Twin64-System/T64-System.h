@@ -177,11 +177,11 @@ struct T64Module {
                T64Word          spaAdr,
                T64Word          spaLen  );
 
-    virtual             ~T64Module()            = default;
+    virtual             ~T64Module( )   = default;
 
-    virtual void        initModule( )           = 0;
-    virtual void        resetModule( )          = 0;
-
+    virtual void        initModule( )   = 0;
+    virtual void        resetModule( )  = 0;
+    
     virtual T64BusOpStat        
     busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len ) = 0;
 
@@ -195,14 +195,14 @@ struct T64Module {
     T64ModuleType               getModuleType( );
     int                         getModuleNum( );
     const char                  *getModuleTypeName( );
+    T64ModuleState              getModuleState( );
     
     T64Word                     getHpaAdr( );
     T64Word                     getHpaLen( );
     T64Word                     getSpaAdr( );
     T64Word                     getSpaLen( );
 
-    T64ModuleState              getModuleState( );
-
+    
     // ??? should we have routines to get the data from SPA HPA ?
 
     protected: 
@@ -248,10 +248,8 @@ struct T64ThreadModule : T64Module {
 
     virtual void                initModule( );
     virtual void                resetModule( );
-    virtual void                haltModule( );
-    virtual void                runModule( );
+    void                        setModuleState( T64ModuleState state );
     virtual void                execModule( int steps, bool haltOnTrap );
-    
     virtual T64TrapCode         executeUnit( ) = 0;
 
     T64TrapCode                 getTrapCode( );
@@ -262,18 +260,17 @@ struct T64ThreadModule : T64Module {
     bool                        isRsvValid( );
 
     private: 
-
-    void                        setModuleState( T64ModuleState state );
+    
     void                        moduleWorker( );
 
     std::mutex                  mLock;
     std::condition_variable     mCondVar;
     std::thread                 mWorker;
-    T64TrapCode                 mTrapCode      = NO_TRAP;
-    int                         mUnitCount     = 0;
-    bool                        enterSimOnTrap = false;
-    bool                        rsvValid       = false;
-    T64Word                     rsvInfo        = 0;
+    T64TrapCode                 mTrapCode           = NO_TRAP;
+    int                         mUnitCount          = 0;
+    bool                        enterSimOnT64Trap   = false;
+    bool                        rsvValid            = false;
+    T64Word                     rsvInfo             = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -307,7 +304,6 @@ struct T64SimBreakPointEntry {
     T64Word                 adr;
     T64Word                 adrMask;
     uint64_t                modMask; 
-    uint64_t                armedMask;
 };
 
 //----------------------------------------------------------------------------------------
@@ -319,9 +315,9 @@ struct T64SimBreakPointEntry {
 //----------------------------------------------------------------------------------------
 struct T64SimBreakPointMap {
 
-    bool                    codeBrkPointEnabled;
-    bool                    dataBrkPointEnabled;
-    bool                    codeBreakPointsSuspended;
+    bool                    breakPointsEnabled;
+    uint64_t                breakOccurredMask;
+    uint64_t                breakSuspendedMask;
 
     unsigned                hwm;
     T64SimBreakPointEntry   map[ MAX_SIM_BREAKPOINTS ];
@@ -387,11 +383,7 @@ struct T64System {
                                               T64Word             arg2 );
 
     unsigned                    getBreakPointMapHwm( );
-    bool                        setCodeBrkPointEnable( bool enable );
-    bool                        setDataBrkPointEnable( bool enable );
-    bool                        isCodeBrkPointEnabled( );
-    bool                        isDataBrkPointENabled( );
-    
+   
     T64BusOpStat                addBreakPoint( int modNum, 
                                                T64SimBreakPointType type,
                                                T64Word adr,
@@ -402,23 +394,17 @@ struct T64System {
 
     T64BusOpStat                enableBreakPoint( unsigned bNum, bool enb );
     bool                        isBreakPointEnabled( unsigned bNum );
+    bool                        isBreakPointSuspended( int modNum );     
+    void                        suspendBreakPoint( int modNum, bool suspend );
+    void                        clearBreakPointOccurred( int modNum );         
+    void                        breakPointOccurred( int modNum );      
 
-    void                        suspendCodeBreakPoints( bool enb );
-    bool                        areCodePointsSuspended( );
-
-    T64BusOpStat                armBreakPoint( int modNum, 
-                                               unsigned bNum, 
-                                               bool arm );
-
-    bool                        isBreakPointArmed( int modNum, unsigned bNum );
-   
     T64SimBreakPointEntry       *getBreakPointEntry( unsigned bNum ); 
     const char                  *getBreakPointTypeStr( T64SimBreakPointType t );
 
     int                         checkBreakPoint( T64SimBreakPointType typ,
                                                  T64Word adr, 
                                                  int modNum );
-
 
     private:
 

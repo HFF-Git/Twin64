@@ -194,7 +194,7 @@ public:
         this -> arg0     = arg0;
         this -> arg1     = arg1;
     }
-    
+
     T64TrapCode trapCode;
     T64Word     instrAdr;
     T64Word     arg0;

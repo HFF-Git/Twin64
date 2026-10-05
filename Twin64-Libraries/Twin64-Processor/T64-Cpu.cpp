@@ -51,6 +51,8 @@ T64Cpu::T64Cpu( T64Processor *proc, T64CpuType cpuType ) {
     this -> proc    = proc;
     this -> cpuType = cpuType;
     this -> reset( );
+
+    this -> lastTrap = std::nullopt;
 }
 
 //----------------------------------------------------------------------------------------
@@ -138,6 +140,11 @@ void T64Cpu::setRegR( uint32_t instr, T64Word val ) {
 // Trap code helpers. Each routine fills in the trap data and raises an exception.
 //
 //----------------------------------------------------------------------------------------
+T64Trap *T64Cpu::getTrapInfo( ) {
+
+    return( lastTrap ? &lastTrap.value() : nullptr );
+}
+
 void T64Cpu::simulatorTrapX( T64Word adr ) {
 
     throw( T64Trap( SIM_BRK_TRAP_X, psrReg, instrReg, adr ));
@@ -1824,7 +1831,9 @@ T64TrapCode T64Cpu::executeInstr( ) {
   
         return ( NO_TRAP );
     }
-    catch ( const T64Trap t ) {
+    catch ( T64Trap t ) {
+
+        lastTrap = t;
 
         if (( t.trapCode != SIM_BRK_TRAP_X ) && 
             ( t.trapCode != SIM_BRK_TRAP_R ) &&

@@ -83,24 +83,12 @@ void T64ThreadModule::resetModule( ) {
     setModuleState( T64_MOD_STATE_RESET );
 }
 
-void T64ThreadModule::haltModule( ) {
-
-    mUnitCount = 0;
-    setModuleState( T64_MOD_STATE_HALTED );
-}
-
-void T64ThreadModule::runModule( ) {
-
-    mUnitCount = -1;
-    setModuleState( T64_MOD_STATE_EXECUTE );
-}
-
 void T64ThreadModule::execModule( int units, bool haltOnTrap ) {
 
     if ( units < -1 ) units = -1;
 
-    mUnitCount      = units;
-    enterSimOnTrap  = haltOnTrap;
+    mUnitCount         = units;
+    enterSimOnT64Trap  = haltOnTrap;
 
     setModuleState( T64_MOD_STATE_EXECUTE );
 }
@@ -134,9 +122,9 @@ T64TrapCode T64ThreadModule::getTrapCode( ) {
     return( mTrapCode );
 }
 
- void T64ThreadModule::setEnterSimOnTrap( bool val ) {
+ void T64ThreadModule::setEnterSimOnTrap( bool arg ) {
 
-    enterSimOnTrap = val;
+    enterSimOnT64Trap = arg;
  }
 
 //----------------------------------------------------------------------------------------
@@ -179,9 +167,8 @@ void T64ThreadModule::moduleWorker( ) {
 
             case T64_MOD_STATE_RESET: {
 
-                // ??? how do we get to the module reset function ?
-
-                mTrapCode = NO_TRAP;
+                mUnitCount  = 0;
+                mTrapCode   = NO_TRAP;
                 moduleState.store( T64_MOD_STATE_HALTED, 
                                    std::memory_order_release );
 
@@ -200,7 +187,6 @@ void T64ThreadModule::moduleWorker( ) {
                                            std::memory_order_release );
 
                         mUnitCount = 0;
-
                         sys -> moduleRunComplete( );
                         break;
                     }
@@ -244,7 +230,7 @@ void T64ThreadModule::moduleWorker( ) {
                             break;
                          }
 
-                         if ( enterSimOnTrap ) {
+                         if ( enterSimOnT64Trap ) {
 
                             moduleState.store( T64_MOD_STATE_HALTED,
                                            std::memory_order_release) ;

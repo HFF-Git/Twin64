@@ -1908,7 +1908,11 @@ void SimCommandsWin::resetCmd( ) {
 // step count of one, we do not want to halt on the instruction and on the next
 // step enter the breakpoint. We already halted the first time. For this special
 // case we temporarily disable code breakpoints and restore the state after the 
-// single step. For all other cases, we just run.
+// single step.
+//
+// A larger step count will just run the system for the specified number of steps. 
+// This has the nice side efect that we exactly run in each module the same 
+// number of steps. This is important for the multi-threaded processors. 
 //
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 
@@ -1945,21 +1949,19 @@ void SimCommandsWin::stepCmd( ) {
             throw( ERR_EXPCTED_PROC_MODULE );
     }
 
-    bool haltOnTrap   = glb -> env -> getEnvVarBool( ENV_HALT_ON_TRAPS );
+    bool haltOnT64Traps = glb -> env -> getEnvVarBool( ENV_HALT_ON_TRAPS );
 
-    if ( numOfSteps == 1 ) {
+    if ( numOfSteps >= 1 ) {
 
-        // ??? should the be the armed mask ?
-
-        // ??? also we need to worry about someone changing IA....
-
-        bool skipBrkPoint = glb -> system -> setCodeBrkPointEnable( false );
-        glb -> system -> simRun( modNum, numOfSteps, haltOnTrap );
-        glb -> system -> setCodeBrkPointEnable( skipBrkPoint );
+        glb -> system -> suspendBreakPoint( modNum, true );
+        glb -> system -> clearBreakPointOccurred( -1 );
+        glb -> system -> simRun( modNum, 1, haltOnT64Traps );
+        glb -> system -> suspendBreakPoint( modNum, false );
     }
-    else {
 
-        glb -> system -> simRun( modNum, numOfSteps, haltOnTrap );
+    for ( int i = 1; i < numOfSteps; i++ ) {
+
+        glb -> system -> simRun( modNum, 1, haltOnT64Traps );
     }
 
     setCmdWinSysState( glb -> system -> getSystemState( ));
@@ -1973,6 +1975,11 @@ void SimCommandsWin::stepCmd( ) {
 // The system state is set to "RUN" before we enter the simulator RUN. This is
 // necessary because we will not return for the simulator run until we stop again.
 // To give an indication that we are now in RUN mode, we update before.
+//
+// Similar to the step command, we need to handle the break point facility. We 
+// will suspend the breakpoints occurred for the first step and then just enter
+// the RUN mode, running until we hit another brealpoint or a halt. 
+//
 //
 // ??? we need to handle the console window. It should be enabled before we pass 
 // control to the CPU. Make it the current window, saving the previous current 
@@ -1995,6 +2002,10 @@ void SimCommandsWin::runCmd( ) {
     
     setCmdWinSysState( T64_SYS_STATE_RUN );
     glb -> winDisplay -> reDraw( );
+
+    glb -> system -> suspendBreakPoint( -1, true );
+    glb -> system -> simRun( -1, 1, haltOnTraps );
+    glb -> system -> suspendBreakPoint( -1, false );
 
     glb -> system -> simRun( -1, -1, haltOnTraps  );
     setCmdWinSysState( glb -> system -> getSystemState( ));
