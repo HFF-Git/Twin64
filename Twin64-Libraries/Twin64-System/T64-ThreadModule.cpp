@@ -43,13 +43,16 @@ T64ThreadModule::T64ThreadModule( T64System        *sys,
                                                 spaAdr, 
                                                 spaLen ) { 
 
-    mTrapCode = NO_TRAP;
+    mTrapCodeOnUnitExec = NO_TRAP;
+    mTrapAdrOnUnitExec = 0;
+
     moduleState.store( T64_MOD_STATE_HALTED, std::memory_order_release );      
 }
 
 T64ThreadModule:: ~ T64ThreadModule( ) {
 
-    mTrapCode = NO_TRAP;
+    mTrapCodeOnUnitExec = NO_TRAP;
+    mTrapAdrOnUnitExec = 0;
     moduleState.store( T64_MOD_STATE_TERMINATE, std::memory_order_release );
 
     if ( mWorker.joinable( )) mWorker.join();
@@ -119,7 +122,12 @@ bool T64ThreadModule::isRsvValid( ) {
 //----------------------------------------------------------------------------------------
 T64TrapCode T64ThreadModule::getTrapCode( ) {
 
-    return( mTrapCode );
+    return( mTrapCodeOnUnitExec );
+}
+
+T64Word T64ThreadModule::getTrapAdr( ) {
+
+    return( mTrapAdrOnUnitExec );
 }
 
  void T64ThreadModule::setEnterSimOnTrap( bool arg ) {
@@ -130,9 +138,12 @@ T64TrapCode T64ThreadModule::getTrapCode( ) {
 //----------------------------------------------------------------------------------------
 // The module thread worker routine. The module is the class for processors.
 //
-// If the thread is in HALT state, we wait on the "mCondVar" variable. Our mutex
-// ensures synchronized access. If the thread was awoken we continue the main 
-// loop, where we get as first thing the new state, so we know what we should do.
+// The worker is essentially the processor's execution loop. The module state 
+// acts like a control register: HALTED waits for a state change, while EXECUTE
+// repeatedly executes one unit and handles traps, simulator breakpoints, and 
+// execution limits. Code breakpoints are recognized when an instruction 
+// completes and establishes the breakpoint address as the new IA; data 
+// breakpoints are detected by the bus operations.
 //
 // Think of it like a CPU:
 //
@@ -168,7 +179,8 @@ void T64ThreadModule::moduleWorker( ) {
             case T64_MOD_STATE_RESET: {
 
                 mUnitCount  = 0;
-                mTrapCode   = NO_TRAP;
+                mTrapCodeOnUnitExec = NO_TRAP;
+                mTrapAdrOnUnitExec  = 0;
                 moduleState.store( T64_MOD_STATE_HALTED, 
                                    std::memory_order_release );
 
@@ -180,7 +192,6 @@ void T64ThreadModule::moduleWorker( ) {
 
                 while (true) {
 
-                    // Has the entire simulated system been stopped?
                     if ( sys -> getSystemState( ) == T64_SYS_STATE_HALT ) {
 
                         moduleState.store( T64_MOD_STATE_HALTED,
@@ -191,7 +202,6 @@ void T64ThreadModule::moduleWorker( ) {
                         break;
                     }
 
-                    // Has this module been stopped?
                     if ( moduleState.load( std::memory_order_acquire )
                             != T64_MOD_STATE_EXECUTE) {
 
@@ -199,11 +209,11 @@ void T64ThreadModule::moduleWorker( ) {
                         break;
                     }
 
-                    // Has this module completed its requested execution?
                     if ( mUnitCount == 0 ) {
 
-                        mTrapCode = NO_TRAP;
-                       
+                        mTrapCodeOnUnitExec = NO_TRAP;
+                        mTrapAdrOnUnitExec  = 0;
+
                         moduleState.store( T64_MOD_STATE_HALTED,
                                            std::memory_order_release ) ;
 
@@ -211,16 +221,29 @@ void T64ThreadModule::moduleWorker( ) {
                         break;
                     }
 
-                    // Execute one unit.
-                    mTrapCode = executeUnit( );
+                    mTrapCodeOnUnitExec = executeUnit( );
 
-                    // Check for traps.
-                    if  ( mTrapCode != NO_TRAP ) {
+                    if ( mTrapCodeOnUnitExec == NO_TRAP ) {
 
-                         if (( mTrapCode == MACHINE_CHECK  ) ||
-                             ( mTrapCode == SIM_BRK_TRAP_X ) ||
-                             ( mTrapCode == SIM_BRK_TRAP_R ) ||
-                             ( mTrapCode == SIM_BRK_TRAP_W )) {
+                        T64Word ia = mTrapNextInstAdr;
+
+                        if ( sys -> checkBreakPoint( T64_SIM_BREAK_X,
+                                                    ia,
+                                                    getModuleNum( )) != -1 ) {
+
+                            mTrapCodeOnUnitExec = SIM_BRK_TRAP_X;
+                            mTrapAdrOnUnitExec  = ia;
+
+                            sys -> breakPointOccurred( getModuleNum( ));
+                        }
+                    }
+
+                    if  ( mTrapCodeOnUnitExec != NO_TRAP ) {
+
+                         if (( mTrapCodeOnUnitExec == MACHINE_CHECK  ) ||
+                             ( mTrapCodeOnUnitExec == SIM_BRK_TRAP_X ) ||
+                             ( mTrapCodeOnUnitExec == SIM_BRK_TRAP_R ) ||
+                             ( mTrapCodeOnUnitExec == SIM_BRK_TRAP_W )) {
 
                             moduleState.store( T64_MOD_STATE_HALTED,
                                            std::memory_order_release) ;

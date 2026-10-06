@@ -253,11 +253,20 @@ struct T64ThreadModule : T64Module {
     virtual T64TrapCode         executeUnit( ) = 0;
 
     T64TrapCode                 getTrapCode( );
+    T64Word                     getTrapAdr( );
+    
     void                        setEnterSimOnTrap( bool val );
   
     void                        setRsvInfo( T64Word pAdr, bool valid );
     T64Word                     getRsvAdr( );
     bool                        isRsvValid( );
+
+    protected:
+
+    T64TrapCode                 mTrapCodeOnUnitExec = NO_TRAP;
+    T64Word                     mTrapAdrOnUnitExec  = 0;
+    T64Word                     mTrapNextInstAdr    = 0;
+    bool                        enterSimOnT64Trap   = false;
 
     private: 
     
@@ -266,9 +275,8 @@ struct T64ThreadModule : T64Module {
     std::mutex                  mLock;
     std::condition_variable     mCondVar;
     std::thread                 mWorker;
-    T64TrapCode                 mTrapCode           = NO_TRAP;
+   
     int                         mUnitCount          = 0;
-    bool                        enterSimOnT64Trap   = false;
     bool                        rsvValid            = false;
     T64Word                     rsvInfo             = 0;
 };
@@ -340,6 +348,9 @@ struct T64System {
     const char                  *getSystemStateStr( T64SystemState state );
 
     void                        simReset( int modNum = -1 );
+
+    void                        simStep( int  modNum      = -1, 
+                                         bool haltOnTrap  = false );
 
     void                        simRun( int  modNum      = -1, 
                                         int  steps       = 1,

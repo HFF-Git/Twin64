@@ -1955,13 +1955,13 @@ void SimCommandsWin::stepCmd( ) {
 
         glb -> system -> suspendBreakPoint( modNum, true );
         glb -> system -> clearBreakPointOccurred( -1 );
-        glb -> system -> simRun( modNum, 1, haltOnT64Traps );
+        glb -> system -> simStep( modNum, haltOnT64Traps );
         glb -> system -> suspendBreakPoint( modNum, false );
     }
 
     for ( int i = 1; i < numOfSteps; i++ ) {
 
-        glb -> system -> simRun( modNum, 1, haltOnT64Traps );
+        glb -> system -> simStep( modNum, haltOnT64Traps );
     }
 
     setCmdWinSysState( glb -> system -> getSystemState( ));
@@ -2004,7 +2004,8 @@ void SimCommandsWin::runCmd( ) {
     glb -> winDisplay -> reDraw( );
 
     glb -> system -> suspendBreakPoint( -1, true );
-    glb -> system -> simRun( -1, 1, haltOnTraps );
+    glb -> system -> clearBreakPointOccurred( -1 );
+    glb -> system -> simStep( -1, haltOnTraps );
     glb -> system -> suspendBreakPoint( -1, false );
 
     glb -> system -> simRun( -1, -1, haltOnTraps  );

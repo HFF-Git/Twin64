@@ -417,26 +417,43 @@ const char *T64System::getSystemStateStr( T64SystemState state ) {
 // interpreter. A memory and a TLB do not request bus read/write operations.
 //
 //----------------------------------------------------------------------------------------
-T64BusOpStat T64System::busOpFetch(  T64Module *mod, 
-                                     T64Word   pAdr, 
-                                     uint8_t   *instr ) {
+T64BusOpStat T64System::busOpFetch( T64Module *mod, 
+                                    T64Word   pAdr, 
+                                    uint8_t   *instr ) {
 
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return ( T64_SYS_OP_INVALID_ADR );
 
-    if ( mod != nullptr ) {
+    T64ThreadModule *m = dynamic_cast<T64ThreadModule *> ( mod );
 
-        int  modNum      = mod -> getModuleNum( );
-        int  bpNum       = checkBreakPoint( T64_SIM_BREAK_X, pAdr, modNum );
-        bool bSuspended  = isBreakPointSuspended( modNum );
+    if ( m != nullptr ) {
 
-        if (( bpNum != -1 ) && ( ! bSuspended )) {
+        int  modNum = m -> getModuleNum( );
+        int  bpNum  = checkBreakPoint( T64_SIM_BREAK_X, pAdr, modNum );
 
-            breakPointOccurred( modNum );
-            return ( T64_SYS_OP_SIM_BRK );
+        if ( bpNum != -1 ) {
+
+            if ( ! isBreakPointSuspended( modNum )) {
+
+                breakPointOccurred( modNum );
+                return ( T64_SYS_OP_SIM_BRK );
+            }
+
+            // Module is suspended. Allow the breakpoint that caused
+            // the previous stop to be passed.
+            bool oldBreakPoint =
+                ( m -> getTrapCode( ) == SIM_BRK_TRAP_X ) &&
+                ( m -> getTrapAdr( )  == pAdr );
+
+            if ( ! oldBreakPoint ) {
+
+                // A different breakpoint was encountered while suspended.
+                breakPointOccurred( modNum );
+                return ( T64_SYS_OP_SIM_BRK );
+            }
         }
     }
-    
+
     return ( mPtr -> busOpReadEvent( pAdr, instr, sizeof( T64Instr )));
 }
 
@@ -466,54 +483,49 @@ T64BusOpStat T64System::busOpRead( T64Module *mod,
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return ( T64_SYS_OP_INVALID_ADR );
 
-    if ( mod != nullptr ) {
+    T64ThreadModule *m = dynamic_cast<T64ThreadModule *> ( mod );
 
-        int  modNum      = mod -> getModuleNum( );
-        int  bpNum       = checkBreakPoint( T64_SIM_BREAK_R, pAdr, modNum );
-        bool bSuspended  = isBreakPointSuspended( modNum );
+    if ( m != nullptr ) {
 
-        if (( bpNum != -1 ) && ( ! bSuspended )) {
+        int modNum = m -> getModuleNum( );
+        int bpNum  = checkBreakPoint( T64_SIM_BREAK_R, pAdr, modNum );
 
-            breakPointOccurred( modNum );
-            return ( T64_SYS_OP_SIM_BRK );
-        }
+        if ( bpNum != -1 ) {
 
-        #if 0
-        // we found a suspended breakpoint.
-        // Module is suspended. This is the one execution unit
-        // following a breakpoint stop.
-        T64Trap *trap = ( reinterpret_cast<T64Processor *> ( mod )) -> getTrapInfo( ));
+            if ( ! isBreakPointSuspended( modNum )) {
 
-        if (( trap != nullptr ) &&
-            ( trap -> trapCode == type ) &&
-            ( trap->arg0 == adr )) {
-    
-            return false;  // this is the old breakpoint: pass
-        }
-
-        // A different breakpoint was encountered while suspended.
-        breakPointOccurred( modNum );
-        #endif
-    }
-    
-    if ( rsv ) {
-
-        { 
-            std::lock_guard<std::mutex> lk( sLock );
-
-            T64BusOpStat rStat = mPtr -> busOpReadEvent( pAdr, data, len );
-            if ( rStat != T64_SYS_OP_OK ) return ( rStat );
-
-            if ( dynamic_cast<T64ThreadModule*>( mod )) {
-
-                ( reinterpret_cast<T64ThreadModule *> ( mod )) -> 
-                                                    setRsvInfo( pAdr, true );
+                breakPointOccurred( modNum );
+                return ( T64_SYS_OP_SIM_BRK );
             }
 
-             return ( T64_SYS_OP_OK );
+            // Module is suspended. This is the one execution unit
+            // following a breakpoint stop. Allow the same breakpoint
+            // that caused the previous stop to be passed.
+
+            bool oldBreakPoint =
+                ( m -> getTrapCode( ) == SIM_BRK_TRAP_R ) &&
+                ( m -> getTrapAdr( )  == pAdr );
+
+            if ( ! oldBreakPoint ) {
+
+                breakPointOccurred( modNum );
+                return ( T64_SYS_OP_SIM_BRK );
+            }
         }
     }
-    else return ( mPtr -> busOpReadEvent( pAdr, data, len ));
+
+    if ( rsv ) {
+
+        std::lock_guard<std::mutex> lk( sLock );
+
+        T64BusOpStat rStat = mPtr -> busOpReadEvent( pAdr, data, len );
+        if ( rStat != T64_SYS_OP_OK ) return ( rStat );
+
+        m -> setRsvInfo( pAdr, true );
+        return ( T64_SYS_OP_OK );
+    }
+
+    return ( mPtr -> busOpReadEvent( pAdr, data, len ));
 }
 
 //----------------------------------------------------------------------------------------
@@ -546,9 +558,11 @@ T64BusOpStat T64System::busOpWrite( T64Module *mod,
     T64Module *mPtr = lookupByAdr( pAdr );
     if ( mPtr == nullptr ) return ( T64_SYS_OP_INVALID_ADR );
 
-    if ( mod != nullptr ) {
+    T64ThreadModule *m = dynamic_cast<T64ThreadModule *> ( mod );
 
-        int  modNum      = mod -> getModuleNum( );
+    if ( m != nullptr ) {
+
+        int  modNum      = m -> getModuleNum( );
         int  bpNum       = checkBreakPoint( T64_SIM_BREAK_W, pAdr, modNum );
         bool bSuspended  = isBreakPointSuspended( modNum );
 
@@ -558,22 +572,22 @@ T64BusOpStat T64System::busOpWrite( T64Module *mod,
             return ( T64_SYS_OP_SIM_BRK );
         }
 
-        #if 0
-        // we found a suspended breakpoint.
-        // Module is suspended. This is the one execution unit
-        // following a breakpoint stop.
-        T64Trap *trap = ( reinterpret_cast<T64Processor *> ( mod )) -> getTrapInfo( ));
+        if ( bpNum != -1 ) {
 
-        if (( trap != nullptr ) &&
-            ( trap -> trapCode == type ) &&
-            ( trap->arg0 == adr )) {
-    
-            return false;  // this is the old breakpoint: pass
+            // Module is suspended. Allow the breakpoint that caused
+            // the previous stop to be passed.
+
+            bool oldBreakPoint =
+                ( m -> getTrapCode( ) == SIM_BRK_TRAP_W ) &&
+                ( m -> getTrapAdr( )  == pAdr );
+
+            if ( ! oldBreakPoint ) {
+
+                // A different breakpoint was encountered while suspended.
+                breakPointOccurred( modNum );
+                return ( T64_SYS_OP_SIM_BRK );
+            }
         }
-
-        // A different breakpoint was encountered while suspended.
-        breakPointOccurred( modNum );
-        #endif
     }
 
     {
@@ -583,21 +597,18 @@ T64BusOpStat T64System::busOpWrite( T64Module *mod,
 
         if ( cond ) {
 
-            if ( auto p = dynamic_cast<T64ThreadModule*>( mod )) {
+            if ( m -> getRsvAdr( ) == pAdr ) {
 
-                if ( p -> getRsvAdr( ) == pAdr ) {
+                if (  m -> isRsvValid( )) {
 
-                    if (  p -> isRsvValid( )) {
-
-                        p -> setRsvInfo( pAdr, false );
-                        rStat = mPtr -> busOpWriteEvent( pAdr, data, len );
-                    }
-                    else rStat = T64_SYS_OP_M_CHECK;
-                }
-                else {
-
+                    m -> setRsvInfo( pAdr, false );
                     rStat = mPtr -> busOpWriteEvent( pAdr, data, len );
                 }
+                    else rStat = T64_SYS_OP_M_CHECK;
+            }
+            else {
+
+                rStat = mPtr -> busOpWriteEvent( pAdr, data, len );
             }
         }
         else rStat = mPtr -> busOpWriteEvent( pAdr, data, len );
@@ -730,6 +741,15 @@ void T64System::simRun( int modNum, int steps, bool haltOnTrap ) {
 
         return runPending == 0;
     });
+}
+
+//----------------------------------------------------------------------------------------
+// "simStep" is a special case of "simRun". We just run one step and return.
+//
+//----------------------------------------------------------------------------------------
+void T64System::simStep( int modNum, bool haltOnTrap ) {
+
+    simRun( modNum, 1, haltOnTrap );
 }
 
 //----------------------------------------------------------------------------------------

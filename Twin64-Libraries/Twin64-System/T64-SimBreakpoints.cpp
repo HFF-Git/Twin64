@@ -280,8 +280,8 @@ bool T64System::isBreakPointSuspended( int modNum ) {
 }
 
 //----------------------------------------------------------------------------------------
-// Mark a breakpoint as having occurred in the global occured mask. This is used
-// to check whether a breakpoint has been hit.
+// Clear the global occurred mask. If the module number is -1, clear all modules;
+// otherwise clear only the specified module.
 //
 //----------------------------------------------------------------------------------------
 void T64System::clearBreakPointOccurred( int modNum ) {
@@ -296,6 +296,10 @@ void T64System::clearBreakPointOccurred( int modNum ) {
     }
 }
 
+//----------------------------------------------------------------------------------------
+// Mark a breakpoint as having occurred in the global occurred mask.
+//
+//----------------------------------------------------------------------------------------
 void T64System::breakPointOccurred( int modNum ) {
 
     if (( modNum >= 0 ) && ( modNum < MAX_MOD_MAP_ENTRIES )) {
@@ -303,7 +307,6 @@ void T64System::breakPointOccurred( int modNum ) {
         breakPointMap.breakOccurredMask |= ( 1ULL << modNum );
     }
 }
-
 
 //----------------------------------------------------------------------------------------
 // Return a pointer to the breakpoint entry.

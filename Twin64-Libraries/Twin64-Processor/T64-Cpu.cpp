@@ -51,8 +51,6 @@ T64Cpu::T64Cpu( T64Processor *proc, T64CpuType cpuType ) {
     this -> proc    = proc;
     this -> cpuType = cpuType;
     this -> reset( );
-
-    this -> lastTrap = std::nullopt;
 }
 
 //----------------------------------------------------------------------------------------
@@ -140,11 +138,6 @@ void T64Cpu::setRegR( uint32_t instr, T64Word val ) {
 // Trap code helpers. Each routine fills in the trap data and raises an exception.
 //
 //----------------------------------------------------------------------------------------
-T64Trap *T64Cpu::getTrapInfo( ) {
-
-    return( lastTrap ? &lastTrap.value() : nullptr );
-}
-
 void T64Cpu::simulatorTrapX( T64Word adr ) {
 
     throw( T64Trap( SIM_BRK_TRAP_X, psrReg, instrReg, adr ));
@@ -1776,7 +1769,7 @@ void T64Cpu::instrSysTrapOp( T64Instr instr ) {
 T64TrapCode T64Cpu::executeInstr( ) {
 
     try {
-
+       
         instrReg = instrRead( extractField64( psrReg, 0, 52 ));
         
         switch ( extractInstrOpCode( instrReg ) ) {
@@ -1828,12 +1821,23 @@ T64TrapCode T64Cpu::executeInstr( ) {
         recoveryCounterCheck( );
         singleStepTrapCheck( );
         externalInterruptCheck( );
-  
+
+        proc -> mTrapNextInstAdr = extractField64( psrReg, 0, 52 );
         return ( NO_TRAP );
     }
     catch ( T64Trap t ) {
 
-        lastTrap = t;
+        proc -> mTrapCodeOnUnitExec = t.trapCode;
+
+        if ( t.trapCode == SIM_BRK_TRAP_X ) {
+            
+            proc -> mTrapAdrOnUnitExec = t.instrAdr;
+        }
+        else if (( t.trapCode == SIM_BRK_TRAP_R ) ||
+                    ( t.trapCode == SIM_BRK_TRAP_W )) {
+            
+            proc -> mTrapAdrOnUnitExec = t.arg1;
+        }
 
         if (( t.trapCode != SIM_BRK_TRAP_X ) && 
             ( t.trapCode != SIM_BRK_TRAP_R ) &&
@@ -1841,14 +1845,12 @@ T64TrapCode T64Cpu::executeInstr( ) {
 
             proc -> setRsvInfo( 0, false );
 
-            T64TrapCode code = t.trapCode;
-
             cRegFile[ CTL_REG_IPSR   ] = t.instrAdr;
             cRegFile[ CTL_REG_IARG_0 ] = t.arg0;
             cRegFile[ CTL_REG_IARG_1 ] = t.arg1;  
 
             T64Word ivaAdr  = cRegFile[ CTL_REG_IVA ];
-            psrReg          = ivaAdr + ( code * 32 );
+            psrReg          = ivaAdr + ( t.trapCode * 32 );
         }
 
         return( t.trapCode );

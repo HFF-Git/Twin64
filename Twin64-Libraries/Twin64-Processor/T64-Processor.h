@@ -283,8 +283,6 @@ struct T64Cpu {
     T64CpuType      cpuType         = T64_CPU_T_NIL;
     T64Word         physMemSize     = T64_MAX_PHYS_MEM_LIMIT;
     T64Processor    *proc           = nullptr;
-
-    std::optional<T64Trap> lastTrap;
 };
 
 //----------------------------------------------------------------------------------------
@@ -342,8 +340,6 @@ struct T64Processor : T64ThreadModule {
     T64LocalTlb     *getLocalTlbPtr( );
     const char      *getProcStateStr( );
     T64GlobalTlb    *getGlobalTlbPtr( );
-
-    T64Trap         *getTrapInfo( );
 
 private:
 

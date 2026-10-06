@@ -240,11 +240,6 @@ T64GlobalTlb *T64Processor::getGlobalTlbPtr( ) {
     return( globalTlb );
 }
 
-T64Trap *T64Processor::getTrapInfo( ) {
-
-    return ( cpu -> getTrapInfo( ));
-}
-
 //----------------------------------------------------------------------------------------
 // We have a read request for the processor HPA address range. 
 //
