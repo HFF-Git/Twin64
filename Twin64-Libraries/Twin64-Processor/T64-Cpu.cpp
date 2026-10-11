@@ -1692,17 +1692,49 @@ void T64Cpu::instrSysMstOp( T64Instr instr ) {
 
     if ( extractInstrFieldU( instr, 0, 8 ) != 0 ) illegalInstrTrap( );
 
+    privModeCheck( );
+
     switch ( extractInstrFieldU( instr, 19, 3 )) {
 
-        case 0: {
+        case 0: { // RSM
 
-            // RSM
+            T64Word saveVal = 0;
+            if ( extractPsrEbit( psrReg ) == 1 ) depositBit64( &saveVal, 58, 1 );
+            if ( extractPsrRbit( psrReg ) == 1 ) depositBit64( &saveVal, 59, 1 );
+            if ( extractPsrBbit( psrReg ) == 1 ) depositBit64( &saveVal, 60, 1 );
+            if ( extractPsrTbit( psrReg ) == 1 ) depositBit64( &saveVal, 61, 1 );
+            if ( extractPsrJbit( psrReg ) == 1 ) depositBit64( &saveVal, 62, 1 );
+            if ( extractPsrIbit( psrReg ) == 1 ) depositBit64( &saveVal, 63, 1 );
+
+            if ( extractInstrBit( instr, 58 )) depositPsrEbit( &psrReg, 0 );
+            if ( extractInstrBit( instr, 59 )) depositPsrBbit( &psrReg, 0 );
+            if ( extractInstrBit( instr, 60 )) depositPsrRbit( &psrReg, 0 );
+            if ( extractInstrBit( instr, 61 )) depositPsrTbit( &psrReg, 0 );
+            if ( extractInstrBit( instr, 62 )) depositPsrJbit( &psrReg, 0 );
+            if ( extractInstrBit( instr, 63 )) depositPsrIbit( &psrReg, 0 );
+           
+            setRegR( instr, saveVal );
 
         } break;
 
-        case 1: {
+        case 1: { // SSM
 
-            // SSM
+            T64Word saveVal = 0;
+            if ( extractPsrEbit( psrReg ) == 1 ) depositBit64( &saveVal, 58, 1 );
+            if ( extractPsrRbit( psrReg ) == 1 ) depositBit64( &saveVal, 59, 1 );
+            if ( extractPsrBbit( psrReg ) == 1 ) depositBit64( &saveVal, 60, 1 );
+            if ( extractPsrTbit( psrReg ) == 1 ) depositBit64( &saveVal, 61, 1 );
+            if ( extractPsrJbit( psrReg ) == 1 ) depositBit64( &saveVal, 62, 1 );
+            if ( extractPsrIbit( psrReg ) == 1 ) depositBit64( &saveVal, 63, 1 );
+
+            if ( extractInstrBit( instr, 58 )) depositPsrEbit( &psrReg, 1 );
+            if ( extractInstrBit( instr, 59 )) depositPsrBbit( &psrReg, 1 );
+            if ( extractInstrBit( instr, 60 )) depositPsrRbit( &psrReg, 1 );
+            if ( extractInstrBit( instr, 61 )) depositPsrTbit( &psrReg, 1 );
+            if ( extractInstrBit( instr, 62 )) depositPsrJbit( &psrReg, 1 );
+            if ( extractInstrBit( instr, 63 )) depositPsrIbit( &psrReg, 1 );
+           
+            setRegR( instr, saveVal );
             
         } break;
 
@@ -1733,7 +1765,7 @@ void T64Cpu::instrSysDiagOp( T64Instr instr ) {
     if ( extractInstrFieldU( instr, 0, 9 ) != 0 ) illegalInstrTrap( );
 
     unsigned diagOpt = ( extractInstrFieldU( instr, 19, 3 ) * 4 ) + 
-                    extractInstrFieldU( instr, 13, 2 );
+                                      extractInstrFieldU( instr, 13, 2 );
 
     setRegR( instr, diagOpHandler( diagOpt, getRegB( instr ), getRegA( instr )));
     nextInstr( );

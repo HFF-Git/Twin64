@@ -534,14 +534,14 @@ inline bool extractPsrMbit( T64Word psr ) {
     return( extractBit64( psr, 63 ));
 }
 
-inline bool extractPsrEbit( T64Word psr ) {
-
-    return( extractBit64( psr, 62 ));
-}
-
 inline bool extractPsrXbit( T64Word psr ) {
 
     return( extractBit64( psr, 61 ));
+}
+
+inline bool extractPsrEbit( T64Word psr ) {
+
+    return( extractBit64( psr, 62 ));
 }
 
 inline bool extractPsrRbit( T64Word psr ) {
@@ -574,6 +574,11 @@ inline void depositPsrXbit( T64Word *psr, uint8_t val ) {
     depositBit64( psr, 61, val );
 }
 
+inline void depositPsrEbit( T64Word *psr, uint8_t val ) {
+
+    depositBit64( psr, 62, val );
+}
+
 inline void depositPsrRbit( T64Word *psr, uint8_t val ) {
 
     depositBit64( psr, 60, val );
@@ -587,6 +592,11 @@ inline void depositPsrBbit( T64Word *psr, uint8_t val ) {
 inline void depositPsrTbit( T64Word *psr, uint8_t val ) {
 
     depositBit64( psr, 58, val );
+}
+
+inline void depositPsrJbit( T64Word *psr, uint8_t val ) {
+
+    depositBit64( psr, 57, val );
 }
 
 inline void depositPsrIbit( T64Word *psr, uint8_t val ) {
