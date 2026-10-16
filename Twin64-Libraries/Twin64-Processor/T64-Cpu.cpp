@@ -587,7 +587,7 @@ T64Word T64Cpu::dataReadRegBOfsImm13( uint32_t instr, bool sExt, bool rsv ) {
     T64Word     adr     = getRegB( instr );
     unsigned    dw      = extractInstrDwField( instr ); 
     T64Word     ofs     = extractInstrSignedScaledImm13( instr );
-    size_t      len     = 1U << dw;
+    size_t      len     = size_t{1} << dw;
     
     return( dataRead( addAdrOfs32( adr, ofs ), len, sExt, rsv ));
 }
@@ -601,7 +601,7 @@ T64Word T64Cpu::dataReadRegBOfsRegX( uint32_t instr, bool sExt ) {
     T64Word     adr     = getRegB( instr );
     unsigned    dw      = extractInstrDwField( instr );
     T64Word     ofs     = getRegA( instr ) << dw;
-    size_t      len     = 1U << dw;
+    size_t      len     = size_t{1} << dw;
 
     return( dataRead( addAdrOfs32( adr, ofs ), len, sExt ));
 }
@@ -617,7 +617,7 @@ bool T64Cpu::dataWriteRegBOfsImm13( uint32_t instr, bool cond ) {
     unsigned    dw          = extractInstrDwField( instr );
     T64Word     ofs         = extractInstrSignedScaledImm13( instr );
     T64Word     targetAdr   = addAdrOfs32( adr, ofs );
-    size_t      len         = 1 << dw;
+    size_t      len         = size_t{1} << dw;
     T64Word     val         = getRegR( instr );
     
     return( dataWrite( targetAdr, val, len, cond ));
@@ -634,7 +634,7 @@ bool T64Cpu:: dataWriteRegBOfsRegX( uint32_t instr ) {
     unsigned    dw          = extractInstrDwField( instr );
     T64Word     ofs         = getRegA( instr ) << dw;
     T64Word     targetAdr   = addAdrOfs32( adr, ofs );
-    size_t      len         = 1U << dw;
+    size_t      len         = size_t{1} << dw;
     T64Word     val         = getRegR( instr );
   
     return( dataWrite( targetAdr, val, len ));

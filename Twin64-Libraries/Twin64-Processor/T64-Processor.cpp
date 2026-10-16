@@ -458,7 +458,7 @@ T64BusOpStat T64Processor::handleControlEvent( T64BusOpControlEvents event,
 
         case T64_CNTRL_EVENT_TLB_PURGE: {
 
-            return((localTlb -> purgeTlb( arg1 )) ? 
+            return(( localTlb -> purgeTlb( arg1 )) ? 
                             T64_SYS_OP_OK : T64_SYS_OP_M_CHECK );
 
         } break;
@@ -484,8 +484,6 @@ T64BusOpStat T64Processor::handleControlEvent( T64BusOpControlEvents event,
 
         default: return( T64_SYS_OP_M_CHECK );
     }
-
-    return( T64_SYS_OP_OK );
 }
 
 //----------------------------------------------------------------------------------------
