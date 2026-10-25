@@ -63,7 +63,8 @@ enum T64ModuleType {
     T64_MOD_TYPE_CPU_TLB            = 13, 
     T64_MOD_TYPE_GTLB               = 20,
     T64_MOD_TYPE_MEM                = 30,
-    T64_MOD_TYPE_IO                 = 40   
+    T64_MOD_TYPE_CONSOLE            = 40,
+    T64_MOD_TYPE_DISC               = 50
 };
 
 //----------------------------------------------------------------------------------------

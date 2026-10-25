@@ -39,6 +39,8 @@ add_subdirectory( Twin64-Simulator )
 
 add_subdirectory( Twin64-Libraries/Twin64-Common )
 add_subdirectory( Twin64-Libraries/Twin64-System )
+add_subdirectory( Twin64-Libraries/Twin64-Console )
+add_subdirectory( Twin64-Libraries/Twin64-Disc )
 add_subdirectory( Twin64-Libraries/Twin64-Processor )
 add_subdirectory( Twin64-Libraries/Twin64-Tlb )
 add_subdirectory( Twin64-Libraries/Twin64-Memory )

@@ -635,7 +635,7 @@ T64BusOpStat T64System::busOpWrite( T64Module *mod,
 //
 //----------------------------------------------------------------------------------------
 T64BusOpStat T64System::busOpControl( T64Module              *mod,
-                                      T64BusOpControlEvents event,
+                                      T64BusOpControlEvents  event,
                                       T64Word                arg1, 
                                       T64Word                arg2 ) {
                                 

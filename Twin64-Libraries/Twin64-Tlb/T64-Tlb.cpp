@@ -339,15 +339,9 @@ T64BusOpStat T64GlobalTlb::busOpWriteEvent( T64Word pAdr,
     if ( ! isInIoHpaRange( pAdr )) return( T64_SYS_OP_M_CHECK );
     if ( ! isAlignedAdr( pAdr, sizeof( T64Word) )) return ( T64_SYS_OP_M_CHECK );
 
-    // int     wordIndex           = (( pAdr - hpaAdr ) >> 3 );
-    // int     regSetIndex         = wordIndex / T64_IO_REG_SET_SIZE;
-    // int     wordInRegSetIndex   = wordIndex % T64_IO_REG_SET_SIZE;
-    // int     wordOfs             = pAdr % sizeof( T64Word );
-    // T64Word tmp                 = 0;
+    if ( len == 0 ) *data = 0; // for now ...
     
-    // ??? what registers can we write ?
-
-    return ( T64_SYS_OP_OK );
+    return ( T64_SYS_OP_M_CHECK );
 } 
 
 //----------------------------------------------------------------------------------------

@@ -178,7 +178,7 @@ void T64ThreadModule::moduleWorker( ) {
 
             case T64_MOD_STATE_RESET: {
 
-                mUnitCount  = 0;
+                mUnitCount          = 0;
                 mTrapCodeOnUnitExec = NO_TRAP;
                 mTrapAdrOnUnitExec  = 0;
                 moduleState.store( T64_MOD_STATE_HALTED, 

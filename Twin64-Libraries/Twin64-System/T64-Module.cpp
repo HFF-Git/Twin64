@@ -75,8 +75,8 @@ const char *T64Module::getModuleTypeName( ) {
         case T64_MOD_TYPE_CPU_CORE:     return ( "CPU" );
         case T64_MOD_TYPE_CPU_TLB:      return ( "TLB"  );
         case T64_MOD_TYPE_GTLB:         return ( "TLB"  );
-        case T64_MOD_TYPE_IO:           return ( "IO" );
         case T64_MOD_TYPE_MEM:          return ( "MEM" );
+        case T64_MOD_TYPE_CONSOLE:      return ( "CONSOLE" );
         case T64_MOD_TYPE_NIL:          return ( "NIL" );
         default:                        return ( "NIL" );
     }
