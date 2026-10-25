@@ -1231,6 +1231,8 @@ void SimCommandsWin::addMemModule( int modNum ) {
 // "AddTlbModule" will add our global TLB module.
 //
 //  NMOD TLB, <modNum>, <tlbType>
+//
+// ??? we only have one global TLB ...
 //----------------------------------------------------------------------------------------
 void SimCommandsWin::addTlbModule( int modNum ) {
 
@@ -1271,44 +1273,49 @@ void SimCommandsWin::addTlbModule( int modNum ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "addIoModule" parses the parameters for an IO module. We are entered with the
-// token being the module type keyword. The routine loops over the key/value 
-// pairs to get all module type info. Omitted key/value pairs are set to their
-// reasonable defaults.
+// "addConsoleModule" parses the parameters for the console module. We are 
+// entered with the token being the module type keyword. The routine loops over
+// the key/value pairs to get all module type info. Omitted key/value pairs are
+// set to their reasonable defaults.
 //
-//  NMOD IO, <modNum>, <ioType>, SPA_ADR=xxx, SPA_LEN=xxx, ...
+//  NMOD CONSOLE, <modNum>
 //
+// ??? we can only have one CONSOLE
 //----------------------------------------------------------------------------------------
-void SimCommandsWin::addIoModule( int modNum ) {
+void SimCommandsWin::addConsoleModule( int modNum ) {
 
     if ( modNum == -1 ) throw( SimErrMsgId( ERR_EXPECTED_MOD_NUM ));
 
-    if ( tok -> isToken( TOK_COMMA )) {
-
-        tok -> nextToken( );
-
-        // IO type
-
-    }
-
-    if ( tok -> isToken( TOK_COMMA )) {
-
-        tok -> nextToken( );
-
-        // SPA_ADR
-    }
-
-    if ( tok -> isToken( TOK_COMMA )) {
-
-        tok -> nextToken( );
-
-        // SPA_LEN 
-
-    }
-
+    
     tok -> checkEOS( );
 
     // ??? analog to proc...
+    
+
+}
+
+//----------------------------------------------------------------------------------------
+// "addDiscModule" parses the parameters for the console module. We are 
+// entered with the token being the module type keyword. The routine loops over
+// the key/value pairs to get all module type info. Omitted key/value pairs are
+// set to their reasonable defaults.
+//
+//  NMOD DISC, <modNum>, ... 
+//
+// ??? what parameters would we need for a disc ?
+// ??? size, file path, etc.
+// ??? SPA needed ?
+//
+//----------------------------------------------------------------------------------------
+void SimCommandsWin::addDiscModule( int modNum ) {
+
+    if ( modNum == -1 ) throw( SimErrMsgId( ERR_EXPECTED_MOD_NUM ));
+
+    
+    tok -> checkEOS( );
+
+    // ??? analog to proc...
+    
 
 }
 
@@ -1750,11 +1757,13 @@ void SimCommandsWin::addModuleCmd( ) {
     
     switch ( moduleTyp ) {
 
-        case TOK_PROC:  addProcModule( modNum );    break;
-        case TOK_MEM:   addMemModule( modNum );     break;
-        case TOK_TLB:   addTlbModule( modNum );     break;
-        case TOK_IO:    addIoModule( modNum );      break;
-        default:        throw( ERR_INVALID_MODULE_TYPE );
+        case TOK_PROC:      addProcModule( modNum );    break;
+        case TOK_MEM:       addMemModule( modNum );     break;
+        case TOK_TLB:       addTlbModule( modNum );     break;
+        case TOK_CONSOLE:   addConsoleModule( modNum ); break;
+        case TOK_DISC:      addDiscModule( modNum );    break;
+
+        default:            throw( ERR_INVALID_MODULE_TYPE );
     }
 }
 
@@ -1911,7 +1920,7 @@ void SimCommandsWin::resetCmd( ) {
 // single step.
 //
 // A larger step count will just run the system for the specified number of steps. 
-// This has the nice side efect that we exactly run in each module the same 
+// This has the nice side effect that we exactly run in each module the same 
 // number of steps. This is important for the multi-threaded processors. 
 //
 // ??? we need to handle the console window. It should be enabled before we pass 
@@ -1978,7 +1987,7 @@ void SimCommandsWin::stepCmd( ) {
 //
 // Similar to the step command, we need to handle the break point facility. We 
 // will suspend the breakpoints occurred for the first step and then just enter
-// the RUN mode, running until we hit another brealpoint or a halt. 
+// the RUN mode, running until we hit another breakpoint or a halt. 
 //
 //
 // ??? we need to handle the console window. It should be enabled before we pass 

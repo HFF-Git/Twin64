@@ -205,7 +205,9 @@ enum SimTokId : unsigned {
     TOK_ASCII,                  TOK_MEM,                    TOK_CODE,
     TOK_STATS,                  TOK_TEXT,                   TOK_SYS,        
     TOK_PROC,                   TOK_CPU,                    TOK_IO,
-    TOK_TLB,                    TOK_MEM_ROM,                TOK_MEM_RAM,  
+    TOK_TLB,                    TOK_MEM_ROM,                TOK_MEM_RAM,
+    TOK_CONSOLE,                TOK_DISC,  
+
     TOK_BYTE,                   TOK_UBYTE,                  TOK_SHORT,  
     TOK_USHORT,                 TOK_HALF,                   TOK_UHALF, 
     TOK_WORD,                   TOK_UWORD,                  TOK_DWORD,      
@@ -1341,7 +1343,8 @@ private:
     void            addProcModule( int modNum );
     void            addMemModule( int modNum );
     void            addTlbModule( int modNum );
-    void            addIoModule( int modNum );
+    void            addConsoleModule( int modNum );
+    void            addDiscModule( int modNum );
 
     void            addModuleCmd( );
     void            removeModuleCmd( );
