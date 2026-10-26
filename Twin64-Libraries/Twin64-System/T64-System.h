@@ -96,19 +96,19 @@ enum T64ModuleState : int {
 // Modules have registers in their HPA. The can be accessed via load / store 
 // instructions. 
 //
-// ??? I/O Elements also use these names ?
 //----------------------------------------------------------------------------------------
 enum T64ModuleRegs : unsigned {
 
-    T64_MREG_STATUS     = 0,
-    T64_MREG_COMMAND    = 1,
-    T64_MREG_EIR        = 2,
-    T64_MREG_CONFIG     = 3,
-    T64_MREG_VERSION    = 4,
-    T64_MREG_SPA_ADR_1  = 5,
-    T64_MREG_SPA_LEN_1  = 6,
-    T64_MREG_SPA_ADR_2  = 7,
-    T64_MREG_SPA_LEN_2  = 8
+    T64_MREG_STATUS         = 0,
+    T64_MREG_COMMAND        = 1,
+    T64_MREG_CONFIG         = 2,
+    T64_MREG_EIRR           = 3,
+    T64_MREG_SPA_ADR        = 4,
+    T64_MREG_RESERVED_0     = 5,
+    T64_MREG_RESERVED_1     = 6,
+    T64_MREG_RESERVED_2     = 7,
+
+    T64_MREG_MODULE_START   = 8
 };
 
 //----------------------------------------------------------------------------------------
@@ -204,7 +204,6 @@ struct T64Module {
     T64Word                     getSpaLen( );
 
     
-    // ??? should we have routines to get the data from SPA HPA ?
 
     protected: 
 
@@ -220,12 +219,9 @@ struct T64Module {
 
     T64Word                     mrStatus;
     T64Word                     mrCommand;
-    T64Word                     mrData;
-    T64Word                     mrEir;
     T64Word                     mrConfig;
-    T64Word                     mrVersion;
-    T64Word                     mrType;
-    T64Word                     mrId;
+    T64Word                     mrEirr;
+    T64Word                     mrSpaAdr;
 };
 
 //----------------------------------------------------------------------------------------

@@ -50,29 +50,25 @@ enum T64Options : uint32_t {
 };
 
 //----------------------------------------------------------------------------------------
-// The processor HPA page definitions. There are a couple of register sets. Reg
-// set 0 is the processor reg set itself. It contains the module relevant 
-// definitions, such as configuration options. 
-//
-// Reg Set 1 contains the TLB data elements. Each TLB entry is represented by
-// two 64-bit words. The first word contains the virtual address and the second
-// word contains the physical address and tlb information.
+// The processor HPA page definitions. In addition to the architected I/O module
+// supervisor registers, we define registers for processor elements such as the 
+// local TLBs. 
 //
 //----------------------------------------------------------------------------------------
 enum T64ProcRegSetOfs : int {
 
-    T64_IO_TLB_STATUS_REG_OFS   = 8,
-    T64_IO_TLB_CONFIG_REG_OFS   = 9,
+    T64_IO_TLB_STATUS_REG_OFS   = T64_MREG_MODULE_START + 0,
+    T64_IO_TLB_CONFIG_REG_OFS   = T64_MREG_MODULE_START + 1,
 
-    T64_IO_ITLB_HITS_OFS        = 12,
-    T64_IO_ITLB_MISSES_OFS      = 13,
-    T64_IO_ITLB_GTLB_HITS_OFS   = 14,
-    T64_IO_ITLB_GTLB_MISSES_OFS = 15,
+    T64_IO_ITLB_HITS_OFS        = T64_MREG_MODULE_START + 2,
+    T64_IO_ITLB_MISSES_OFS      = T64_MREG_MODULE_START + 3,
+    T64_IO_ITLB_GTLB_HITS_OFS   = T64_MREG_MODULE_START + 4,
+    T64_IO_ITLB_GTLB_MISSES_OFS = T64_MREG_MODULE_START + 5,
 
-    T64_IO_DTLB_HITS_OFS        = 16,
-    T64_IO_DTLB_MISSES_OFS      = 17,
-    T64_IO_DTLB_GTLB_HITS_OFS   = 18,
-    T64_IO_DTLB_GTLB_MISSES_OFS = 19
+    T64_IO_DTLB_HITS_OFS        = T64_MREG_MODULE_START + 6,
+    T64_IO_DTLB_MISSES_OFS      = T64_MREG_MODULE_START + 7,
+    T64_IO_DTLB_GTLB_HITS_OFS   = T64_MREG_MODULE_START + 8,
+    T64_IO_DTLB_GTLB_MISSES_OFS = T64_MREG_MODULE_START + 9,
 };
 
 //----------------------------------------------------------------------------------------

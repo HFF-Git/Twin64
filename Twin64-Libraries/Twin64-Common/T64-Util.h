@@ -141,14 +141,15 @@ inline bool isAlignedOfs( T64Word ofs,  unsigned align ) {
 }
 
 //----------------------------------------------------------------------------------------
-// "copyEndianAware" converts the data to little endian format if we run on a
-// little endian machine. Only lengths of 1, 2, 4, or 8 are supported.
+// "copyEndianAware" converts the data to big endian format if we run on a
+// little endian machine. Only lengths of 1, 2, 4, or 8 are supported. As an 
+// internal function, we expect correct values, and just sanity check again.
 //
 //----------------------------------------------------------------------------------------
-inline bool copyEndianAware( uint8_t *dst, const uint8_t *src, size_t len ) {
+inline void copyEndianAware( uint8_t *dst, const uint8_t *src, size_t len ) {
 
     if (( len != 1 ) && ( len != 2 ) && 
-        ( len != 4 ) && ( len != 8 )) return( false );     
+        ( len != 4 ) && ( len != 8 )) return;     
 
     switch ( len ) {
 
@@ -185,8 +186,6 @@ inline bool copyEndianAware( uint8_t *dst, const uint8_t *src, size_t len ) {
            
         } break;
     }
-
-    return( true );
 }
 
 //----------------------------------------------------------------------------------------
@@ -204,6 +203,29 @@ inline void copyFromReg( uint8_t *dst, T64Word reg, size_t ofs, size_t len ) {
     memcpy( dst,  
             ( reinterpret_cast<uint8_t *> ( &reg ) + ofs % sizeof( T64Word )), 
             len );
+}
+
+//----------------------------------------------------------------------------------------
+// Likewise, we also often need to write to a portion of a reg.
+//
+//----------------------------------------------------------------------------------------
+inline void copyToReg( T64Word *reg, const uint8_t *src, size_t ofs, size_t len ) {
+
+    T64Word value = *reg;
+
+    copyEndianAware( reinterpret_cast<uint8_t *>(&value),
+                     reinterpret_cast<uint8_t *>(&value),
+                     sizeof(T64Word) );
+
+    memcpy( reinterpret_cast<uint8_t *>(&value) + ofs % sizeof(T64Word),
+            src,
+            len );
+
+    copyEndianAware( reinterpret_cast<uint8_t *>(&value),
+                     reinterpret_cast<uint8_t *>(&value),
+                     sizeof(T64Word) );
+
+    *reg = value;
 }
 
 //----------------------------------------------------------------------------------------

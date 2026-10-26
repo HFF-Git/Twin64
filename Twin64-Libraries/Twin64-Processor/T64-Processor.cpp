@@ -251,213 +251,196 @@ T64GlobalTlb *T64Processor::getGlobalTlbPtr( ) {
 }
 
 //----------------------------------------------------------------------------------------
-// We have a read request for the processor HPA address range. 
-//
-// The data is stored in 64-bit registers. The data is big endian in our CPU
-// architecture. However, the data stored in a variable is potentially little
-// endian on our simulator environment. We need to first correct the endianess 
-// and then return the requested number of bytes at the offset in the register.
-//
-//
-// ??? we need a better way to handle the architected regs and the additional 
-// defined regs. How about a simple view: the HPA page is just a set of 64-bit
-// register slots. The first n regs are architected, the rest is module specific.
+// We have a read request for the processor HPA address range. The data is stored
+// in 64-bit registers. The data is big endian in our CPU architecture. However,
+// the data stored in a variable is potentially little endian on our simulator 
+// environment. We need to first correct the endianess and then return the 
+// requested number of bytes at the offset in the register.
 //
 //----------------------------------------------------------------------------------------
 T64BusOpStat T64Processor::handleHPARead( T64Word pAdr, 
                                           uint8_t *data, 
                                           size_t  len ) {
 
-    unsigned   wordIndex    = static_cast<unsigned>((( pAdr - hpaAdr ) >> 3 ));
-    unsigned   wordOfs      = static_cast<unsigned>( pAdr % sizeof( T64Word ));
+    size_t wordIndex = static_cast<size_t>(( pAdr - hpaAdr ) / 
+                            static_cast<T64Word>( sizeof( T64Word )));
 
+    size_t wordOfs   = static_cast<size_t>( pAdr % 
+                            static_cast<T64Word>( sizeof( T64Word )));
 
-    unsigned   regSetIndex        = wordIndex / T64_IO_REG_SET_SIZE;
-    unsigned   wordInRegSetIndex  = wordIndex % T64_IO_REG_SET_SIZE;
-    
-    T64Word tmp                   = 0;
+    switch ( wordIndex ) {
 
-    
+        case T64_MREG_STATUS: {
 
-    // ??? if architected regs...
-    // ??? are all regs 64-bit ? if we have a 16bit register, it would still
-    // occupy a slot, but we only use the 16 bits.
-    // ??? do we allow byte, short, word and double access ?
-
-
-
-    
-    if ( regSetIndex == 0 ) {
-
-        switch ( wordInRegSetIndex ) {
- 
-            case T64_IO_STATUS_REG_OFS: {
-
-                tmp = 0;  // ??? test only ...
-
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;
-
-            case T64_IO_COMMAND_REG_OFS: {
-
-                tmp = 0;  // ??? test only ...
-
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;
-
-            case T64_IO_CONFIG_REG_OFS: {
-
-                tmp = 0; // ??? test only ...
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;
-
-            case T64_IO_SPA_ADR_REG_OFS: {
-
-                copyFromReg( data, 0, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;
-
-            case T64_IO_TLB_STATUS_REG_OFS: {
-
-                tmp = localTlb -> getTlbStatus( );
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;
-                
-            case T64_IO_TLB_CONFIG_REG_OFS: {
-
-                tmp = localTlb -> getTlbConfig( );
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;
-
-            case T64_IO_ITLB_HITS_OFS: {
-
-                tmp = localTlb -> getItlbHits();
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;
-
-            case T64_IO_ITLB_MISSES_OFS: {
-
-                tmp = localTlb -> getItlbMisses();
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;
-
-            case T64_IO_ITLB_GTLB_HITS_OFS: {
-
-                tmp = localTlb -> getItlbMissGTlbHits();
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-            
-            } break;  
-    
-            case T64_IO_ITLB_GTLB_MISSES_OFS: {
-                
-                tmp = localTlb -> getItlbMissGTlbMisses();
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;                
-
-            case T64_IO_DTLB_HITS_OFS: { 
-
-                tmp = localTlb -> getDtlbHits();
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;
-
-            case T64_IO_DTLB_MISSES_OFS: {
-
-                tmp = localTlb -> getDtlbMisses();
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;
-
-            case T64_IO_DTLB_GTLB_HITS_OFS: {
-
-                tmp = localTlb -> getDtlbMissGTlbHits();
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;
-
-            case T64_IO_DTLB_GTLB_MISSES_OFS: {
-
-                tmp = localTlb -> getDtlbMissGTlbMisses();
-                copyFromReg( data, tmp, wordOfs, len );
-                return ( T64_SYS_OP_OK );
-
-            } break;
-
-            default: {
-
-                copyFromReg( data, tmp, 0, len );
-                return ( T64_SYS_OP_M_CHECK );
-            }
-        }
-    }
-    else if ( regSetIndex == 1 ) {
-    
-        T64TlbEntry *e = nullptr;
-
-        if ( wordInRegSetIndex >= 16 ) {
-
-            e = localTlb -> getDTlbEntry(( wordInRegSetIndex - 16 ) / 2 );
-            if ( e == nullptr ) return ( T64_SYS_OP_M_CHECK );
-        }
-        else {
-
-             e = localTlb -> getITlbEntry( wordInRegSetIndex / 2 );
-             if ( e == nullptr ) return ( T64_SYS_OP_M_CHECK );
-        }
-
-        if ( wordInRegSetIndex % 2 == 0 ) {
-
-            copyFromReg( data, e -> vAdr, wordOfs, len );
+            copyFromReg( data, mrStatus, wordOfs, len );
             return ( T64_SYS_OP_OK );
         }
-        else {
 
-            tmp = ( static_cast<T64Word>( e -> tlbInfo ) << 48 ) | ( e -> pAdr );
+        case T64_MREG_COMMAND: {
+
+            copyFromReg( data, mrCommand, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_CONFIG: {
+
+            copyFromReg( data, mrConfig, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_EIRR: {
+
+            copyFromReg( data, mrEirr, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_SPA_ADR: {
+
+            copyFromReg( data, mrSpaAdr, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+
+        } break;
+
+        case T64_IO_TLB_STATUS_REG_OFS: {
+
+            T64Word tmp = localTlb -> getTlbStatus( );
             copyFromReg( data, tmp, wordOfs, len );
             return ( T64_SYS_OP_OK );
+
+        } break;
+            
+        case T64_IO_TLB_CONFIG_REG_OFS: {
+
+            T64Word tmp = localTlb -> getTlbConfig( );
+            copyFromReg( data, tmp, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+
+        } break;
+
+        case T64_IO_ITLB_HITS_OFS: {
+
+            T64Word tmp = localTlb -> getItlbHits();
+            copyFromReg( data, tmp, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+
+        } break;
+
+        case T64_IO_ITLB_MISSES_OFS: {
+
+            T64Word tmp = localTlb -> getItlbMisses();
+            copyFromReg( data, tmp, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+
+        } break;
+
+        case T64_IO_ITLB_GTLB_HITS_OFS: {
+
+            T64Word tmp = localTlb -> getItlbMissGTlbHits();
+            copyFromReg( data, tmp, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        
+        } break;  
+
+        case T64_IO_ITLB_GTLB_MISSES_OFS: {
+            
+            T64Word tmp = localTlb -> getItlbMissGTlbMisses();
+            copyFromReg( data, tmp, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+
+        } break;                
+
+        case T64_IO_DTLB_HITS_OFS: { 
+
+            T64Word tmp = localTlb -> getDtlbHits();
+            copyFromReg( data, tmp, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+
+        } break;
+
+        case T64_IO_DTLB_MISSES_OFS: {
+
+            T64Word tmp = localTlb -> getDtlbMisses();
+            copyFromReg( data, tmp, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+
+        } break;
+
+        case T64_IO_DTLB_GTLB_HITS_OFS: {
+
+            T64Word tmp = localTlb -> getDtlbMissGTlbHits();
+            copyFromReg( data, tmp, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+
+        } break;
+
+        case T64_IO_DTLB_GTLB_MISSES_OFS: {
+
+            T64Word tmp = localTlb -> getDtlbMissGTlbMisses();
+            copyFromReg( data, tmp, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+
+        } break;
+
+        default: {
+
+            *data = 0;
+            return ( T64_SYS_OP_M_CHECK );
         }
     }
-    else return ( T64_SYS_OP_M_CHECK );
 }
 
 //----------------------------------------------------------------------------------------
-// We have a write request for the processor HPA address range.
+// We have a write request for the processor HPA address range. The code is very
+// similar to the HPA read operation, except the direction is reverse.
 //
 //----------------------------------------------------------------------------------------
 T64BusOpStat T64Processor::handleHPAWrite( T64Word pAdr, 
                                            uint8_t *data, 
                                            size_t  len ) {
 
-    unsigned   wordIndex    = static_cast<unsigned>((( pAdr - hpaAdr ) >> 3 ));
-    unsigned   wordOfs      = static_cast<unsigned>( pAdr % sizeof( T64Word ));
+    size_t wordIndex = static_cast<size_t>(( pAdr - hpaAdr ) / 
+                            static_cast<T64Word>( sizeof( T64Word )));
 
+    size_t wordOfs = static_cast<size_t>( pAdr % 
+                            static_cast<T64Word>( sizeof( T64Word )));
     switch ( wordIndex ) {
 
+        case T64_MREG_STATUS: {
 
+            copyToReg( &mrStatus, data, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_COMMAND: {
+
+            copyToReg( &mrCommand, data, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_CONFIG: {
+
+            copyToReg( &mrConfig, data, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_EIRR: {
+
+            copyToReg( &mrEirr, data, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_SPA_ADR: {
+
+            copyToReg( &mrSpaAdr, data, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+
+        } break;
+
+        default: {
+
+            return ( T64_SYS_OP_M_CHECK );
+        }
     }
-
-    return ( T64_SYS_OP_M_CHECK ); // for now ...
 }
 
 //----------------------------------------------------------------------------------------

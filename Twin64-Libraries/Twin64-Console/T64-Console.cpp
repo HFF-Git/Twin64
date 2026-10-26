@@ -63,8 +63,6 @@ T64Console::T64Console( T64System           *sys,
                                            0 ) {
 
     this -> sys = sys;
-
-   
 }
 
 //----------------------------------------------------------------------------------------
@@ -73,7 +71,6 @@ T64Console::T64Console( T64System           *sys,
 //----------------------------------------------------------------------------------------
 T64Console:: ~T64Console( ) {
 
-    
 }
 
 //----------------------------------------------------------------------------------------
@@ -101,47 +98,159 @@ void T64Console::resetModule( ) {
 
 T64TrapCode T64Console::executeUnit( ) {
 
-    // ??? rough idea:
-    // ??? we will execute the read and write operation. A read would just copy
-    // the character to the IO register. A special character needs to be defined
-    // that gets us back to he simulator. A write operation copies a character
-    // if available to the terminal window.
+    // ??? if transmit reg non-empty -> set write status to busy and write to 
+    // terminal. set the write status to ready.
+
+    // ??? set status to ready )( ? ).
+    // ??? do a non-block terminal read.
+    // ??? if there is a normal character store to read buffer, set read data 
+    //     available in status reg. 
+    // ??? else if the character is a special char, we cause a break...
+
+    // ??? should we use all 8 bytes of the data regs ? Then we would need 
+    // a kind if size for each reg ...
 
     return( NO_TRAP );
 };
 
 
 //----------------------------------------------------------------------------------------
-// We have a read request for the processor HPA address range. 
-//
-// The data is stored in 64-bit registers. The data is big endian in our CPU
-// architecture. However, the data stored in a variable is potentially little
-// endian on our simulator environment. We need to first correct the endianess 
-// and then return the requested number of bytes at the offset in the register.
+// We have a read request for the processor HPA address range. The data is stored
+// in 64-bit registers from which we can read a portion if necessary. The data 
+// is big endian in our CPU architecture. However, the data stored in a variable
+// is potentially little endian on our simulator environment. We need to first 
+// correct the endianess and then return the requested number of bytes at the 
+// offset in the register.
 //
 //----------------------------------------------------------------------------------------
 T64BusOpStat T64Console::handleHPARead( T64Word pAdr, 
                                         uint8_t *data, 
                                         size_t  len ) {
 
-    // ??? access to the console registers... 
-    // ??? factor out the architected registers in all modules...
+    size_t wordIndex = static_cast<size_t>(( pAdr - hpaAdr ) / 
+                            static_cast<T64Word>( sizeof( T64Word )));
 
-   return ( T64_SYS_OP_OK );
+    size_t wordOfs = static_cast<size_t>( pAdr % 
+                            static_cast<T64Word>( sizeof( T64Word )));
+
+    switch( wordIndex ) {
+
+        case T64_MREG_STATUS: {
+
+            copyFromReg( data, mrStatus, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_COMMAND: {
+
+            copyFromReg( data, mrCommand, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_CONFIG: {
+
+            copyFromReg( data, mrConfig, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_EIRR: {
+
+            copyFromReg( data, mrEirr, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_SPA_ADR: {
+
+            copyFromReg( data, mrSpaAdr, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+
+        } break;
+
+        case T64_MREG_CONSOLE_READ_DATA: {
+
+            return ( T64_SYS_OP_M_CHECK );
+
+        } break;
+
+        case T64_MREG_CONSOLE_WRITE_DATA: {
+
+            return ( T64_SYS_OP_M_CHECK );
+
+        } break;
+
+        default: {
+
+            *data = 0;
+            return ( T64_SYS_OP_M_CHECK );
+        }
+    }
 }
 
 //----------------------------------------------------------------------------------------
-// We have a write request for the processor HPA address range.
+// We have a write request for the processor HPA address range. Like the read 
+// operation, we can also write a portion to the register, if required. 
 //
 //----------------------------------------------------------------------------------------
 T64BusOpStat T64Console::handleHPAWrite( T64Word pAdr, 
                                          uint8_t *data, 
                                          size_t  len ) {
 
-    // ??? access to the console registers... 
-    // ??? factor out the architected registers in all modules...
+    size_t wordIndex = static_cast<size_t>(( pAdr - hpaAdr ) / 
+                            static_cast<T64Word>( sizeof( T64Word )));
 
-    return ( T64_SYS_OP_OK );
+    size_t wordOfs = static_cast<size_t>( pAdr % 
+                            static_cast<T64Word>( sizeof( T64Word )));
+
+    switch( wordIndex ) {
+
+        case T64_MREG_STATUS: {
+
+            copyToReg( &mrStatus, data, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_COMMAND: {
+
+            copyToReg( &mrCommand, data, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_CONFIG: {
+
+            copyToReg( &mrConfig, data, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_EIRR: {
+
+            copyToReg( &mrEirr, data, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+        }
+
+        case T64_MREG_SPA_ADR: {
+
+            copyToReg( &mrSpaAdr, data, wordOfs, len );
+            return ( T64_SYS_OP_OK );
+
+        } break;
+
+        case T64_MREG_CONSOLE_READ_DATA: {
+
+            return ( T64_SYS_OP_M_CHECK );
+
+        } break;
+
+        case T64_MREG_CONSOLE_WRITE_DATA: {
+
+            return ( T64_SYS_OP_M_CHECK );
+
+        } break;
+
+        default: {
+
+            return ( T64_SYS_OP_M_CHECK );
+        }
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -172,19 +281,31 @@ T64BusOpStat T64Console::handleControlEvent( T64BusOpControlEvents event,
 // purge and so on.
 //
 //----------------------------------------------------------------------------------------
-T64BusOpStat T64Console::busOpReadEvent( T64Word pAdr, uint8_t *data, size_t len ) {
+T64BusOpStat T64Console::busOpReadEvent( T64Word pAdr, 
+                                         uint8_t *data, 
+                                          size_t len ) {
 
-    return( handleHPARead( pAdr, data, len ));
+    if ( isInIoHpaRange( pAdr )) {
+
+        return( handleHPARead( pAdr, data, len ));
+    }
+    else return ( T64_SYS_OP_INVALID_ADR );
 }
 
-T64BusOpStat T64Console::busOpWriteEvent( T64Word pAdr, uint8_t *data, size_t len ) {
+T64BusOpStat T64Console::busOpWriteEvent( T64Word pAdr, 
+                                          uint8_t *data, 
+                                          size_t len ) {
 
-    return( handleHPAWrite( pAdr, data, len ));
+    if ( isInIoHpaRange( pAdr )) {
+
+        return( handleHPAWrite( pAdr, data, len ));
+    }
+    else return ( T64_SYS_OP_INVALID_ADR );
 }   
 
-T64BusOpStat T64Console::busOpControlEvent(  T64BusOpControlEvents  event, 
-                                       T64Word             arg1, 
-                                       T64Word             arg2 ) {
+T64BusOpStat T64Console::busOpControlEvent( T64BusOpControlEvents  event, 
+                                            T64Word                arg1, 
+                                            T64Word                arg2 ) {
 
     return( handleControlEvent( event, arg1, arg2 ));
 }

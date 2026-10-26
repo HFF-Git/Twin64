@@ -47,19 +47,13 @@ enum T64ConsoleOptions : uint32_t {
 };
 
 //----------------------------------------------------------------------------------------
-// The console module HPA page definitions. There are a couple of register sets. 
-// Reg
-// set 0 is the processor reg set itself. It contains the module relevant 
-// definitions, such as configuration options. 
-//
-// Reg Set 1 contains the TLB data elements. Each TLB entry is represented by
-// two 64-bit words. The first word contains the virtual address and the second
-// word contains the physical address and tlb information.
+// The console module HPA page definitions. 
 //
 //----------------------------------------------------------------------------------------
 enum T64ConsoleRegSetOfs : int {
 
-    
+    T64_MREG_CONSOLE_READ_DATA  = T64_MREG_MODULE_START + 0,
+    T64_MREG_CONSOLE_WRITE_DATA = T64_MREG_MODULE_START + 1
 };
 
 //----------------------------------------------------------------------------------------
